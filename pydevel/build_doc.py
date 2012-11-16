@@ -1,0 +1,199 @@
+# -*- coding: utf-8 -*-
+"""
+'build_doc' command using Sphinx (plus Doxygen/Breathe for extension docs)
+"""
+#**************************************************************************
+# 
+# This material was prepared by the Los Alamos National Security, LLC 
+# (LANS), under Contract DE-AC52-06NA25396 with the U.S. Department of 
+# Energy (DOE). All rights in the material are reserved by DOE on behalf 
+# of the Government and LANS pursuant to the contract. You are authorized 
+# to use the material for Government purposes but it is not to be released 
+# or distributed to the public. NEITHER THE UNITED STATES NOR THE UNITED 
+# STATES DEPARTMENT OF ENERGY, NOR LOS ALAMOS NATIONAL SECURITY, LLC, NOR 
+# ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR 
+# ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
+# COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
+# PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE 
+# PRIVATELY OWNED RIGHTS.
+# 
+#**************************************************************************
+
+import os, sys, fnmatch, glob, shutil, platform, subprocess
+from numpy.distutils.command.build_ext import build_ext
+from distutils import dir_util
+
+import util
+
+
+def create_breathe_stylesheet(dirname):
+    dirs = os.path.split(dirname)
+    if (dirs[1] == '' and not dirs[0].endswith('_static')) or \
+            (dirs[1] != '' and dirs[1] != '_static'):
+        dirname = os.path.join(dirname, '_static')
+    util.mkdir(dirname)
+    f = open(os.path.join(dirname, 'breathe.css'), 'w')
+    f.write('''
+/* -- breathe specific styles ----------------------------------------------- */
+
+/* So enum value descriptions are displayed inline to the item */
+.breatheenumvalues li tt + p {
+	display: inline;
+}
+
+/* So parameter descriptions are displayed inline to the item */
+.breatheparameterlist li tt + p {
+	display: inline;
+}
+
+''')
+    f.close()
+
+
+class build_doc(build_ext):
+    '''
+    Build Sphinx documentation
+    '''
+    def run(self):
+        if not self.distribution.doc_modules:
+            return
+
+        ## Make sure that sources are complete in build_lib.
+        self.run_command('build_src')
+
+        build = self.get_finalized_command('build')
+        target = os.path.abspath(os.path.join(build.build_base, 'http'))
+        util.mkdir(target)
+        build_verbose = self.distribution.verbose
+        environ = self.distribution.environment
+
+        for dext in self.distribution.doc_modules:
+            if self.distribution.verbose:
+                print 'building documentation "' + dext.name + '" sources'
+
+            doc_dir = os.path.abspath(dext.source_directory)
+            working_dir = os.path.abspath(os.path.join(self.build_temp,
+                                                       dext.source_directory))
+            here = os.getcwd()
+
+            reprocess = True
+            ref = os.path.join(target, dext.name + '.html')
+            root_dir = dext.name
+            if os.path.exists(ref) and not self.force:
+                reprocess = False
+                docbase = os.path.join(doc_dir, 'modules')
+                for root, dirnames, filenames in os.walk(docbase):
+                    for fn in fnmatch.filter(filenames, '*.rst'):
+                        doc = os.path.join(root, fn)
+                        if os.path.getmtime(ref) < os.path.getmtime(doc):
+                            reprocess = True
+                            break
+                        src = os.path.join(root_dir, root[len(docbase)+1:],
+                                            fn[:-3] + 'py')
+                        if os.path.exists(src):
+                            if os.path.getmtime(ref) < os.path.getmtime(src):
+                                reprocess = True
+                                break
+            if reprocess:
+                bld_dir = os.path.abspath(self.build_lib)
+                src_dir = os.path.abspath('.')
+                doc_bld_dir = os.path.join(bld_dir,
+                                           os.path.relpath(doc_dir, src_dir))
+                environ['BUILD_DIR'] = bld_dir
+                environ['SOURCE_DIR'] = src_dir
+                environ['REL_SRC_DIR'] = os.path.relpath(src_dir, doc_bld_dir)
+
+                dir_util.copy_tree(doc_dir, working_dir, True)
+                ## Configure rst files
+                util.configure_files(environ, doc_dir, '*.rst', working_dir)
+
+                if self.distribution.has_ext_modules() and \
+                        os.path.exists(os.path.join(doc_dir, dext.doxygen_cfg)):
+                    ## Doxygen + breathe
+                    for s in dext.doxygen_srcs:
+                        util.configure_file(environ,
+                                            os.path.join(doc_dir, s),
+                                            os.path.join(working_dir, s))
+                    try:
+                        doxygen_exe = util.find_program('doxygen')
+                    except:
+                        sys.stderr.write('ERROR: Doxygen not installed ' +
+                                         '(required for documentation).\n')
+                        return
+
+                    reprocess = True
+                    ref = os.path.join(working_dir, 'html', 'index.html')
+                    if os.path.exists(ref) and not self.force:
+                        reprocess = False
+                        for d in environ['C_SOURCE_DIRS'].split(' '):
+                            for orig in glob.glob(os.path.join(d, '*.h*')):
+                               if os.path.getmtime(ref) < \
+                                        os.path.getmtime(orig):
+                                    reprocess = True
+                                    break
+                    if reprocess:
+                        if self.distribution.verbose:
+                            out = sys.stdout
+                            err = sys.stderr
+                        else:
+                            out = err = open('doxygen.log', 'w')
+                        os.chdir(working_dir)
+                        cmd_line = [doxygen_exe, dext.doxygen_cfg]
+                        status = subprocess.call(cmd_line,
+                                                 stdout=out, stderr=err)
+                        if status != 0:
+                            raise Exception("Command '" + str(cmd_line) +
+                                            "' returned non-zero exit status "
+                                            + str(status))
+
+                        if not self.distribution.verbose:
+                            out.close()
+                        dir_util.copy_tree('html', os.path.join(target, 'html'))
+                        os.chdir(here)
+                        create_breathe_stylesheet(target)
+
+                for f in dext.extra_docs:
+                    shutil.copy(os.path.join(doc_dir, f), target)
+
+                ## Sphinx
+                if dext.sphinx_config is None:
+                    dext.sphinx_config = os.path.join(os.path.dirname(__file__),
+                                                      'sphinx_conf.py.in')
+                elif os.path.dirname(dext.sphinx_config) == '':
+                    dext.sphinx_config =  os.path.join(doc_dir,
+                                                       dext.sphinx_config)
+                util.configure_file(environ, dext.sphinx_config,
+                                    os.path.join(working_dir, 'conf.py'))
+                import warnings
+                try:
+                    import sphinx
+                    from sphinx.application import Sphinx
+                    if 'windows' in platform.system().lower() or \
+                            not build_verbose:
+                        from sphinx.util.console import nocolor
+                except:
+                    sys.stderr.write('ERROR: Sphinx not installed ' +
+                                     '(required for documentation).\n')
+                    return
+                warnings.filterwarnings("ignore",
+                                        category=PendingDeprecationWarning)
+                warnings.filterwarnings("ignore", category=UserWarning)
+
+                status = sys.stdout
+                if not build_verbose:
+                    status = open('sphinx.log', 'w')
+                if 'windows' in platform.system().lower() or not build_verbose:
+                    nocolor()
+                try:
+                    sphinx_app = Sphinx(working_dir, working_dir, target,
+                                        os.path.join(target, '.doctrees'),
+                                        'html', None, status)
+                    sphinx_app.build(True)
+                except Exception, e:
+                    if build_verbose:
+                        print 'ERROR: ' + str(e)
+                    else:
+                        pass
+                if not build_verbose:
+                    status.close()
+                warnings.resetwarnings()
