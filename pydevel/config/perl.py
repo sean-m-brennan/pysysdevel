@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find MPICH library
+Find Perl headers and library
 """
 #**************************************************************************
 # 
@@ -25,15 +25,25 @@ import os
 from pydevel.util import *
 
 environment = dict()
-mpich_found = False
+perl_found = False
 
 
 def is_installed():
-    global environment, mpich_found
-
-    return True ##FIXME
+    global environment, perl_found
+    try:
+        perl_dev_dir, perl_lib  = find_library('perl', [],
+                                               [os.path.join('perl4', 'CORE'),
+                                                os.path.join('perl5', 'CORE'),])
+        environment['PERL_INCLUDE_DIR'] = perl_dev_dir
+        environment['PERL_LIBRARY_DIR'] = perl_dev_dir
+        environment['PERL_LIBRARY'] = os.path.join(perl_dev_dir, perl_lib)
+        perl_found = True
+    except Exception,e:
+        perl_found = False
+    return perl_found
 
 
 
 def install(target='build'):
     global environment
+    raise "Perl development library required, but not installed."

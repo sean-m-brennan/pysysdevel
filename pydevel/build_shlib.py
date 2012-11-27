@@ -100,10 +100,19 @@ class build_shlib(build_clib):
 
         # save source type information so that build_ext can use it.
         source_languages = []
+        arg = build_info.get('language', None)
+        if arg: source_languages.append(arg)
         if c_sources: source_languages.append('c')
         if cxx_sources: source_languages.append('c++')
         if requiref90: source_languages.append('f90')
         elif f_sources: source_languages.append('f77')
+
+        specified = build_info.get('language', None)
+        if specified:
+            source_languages.append(specified)
+            if specified == 'c++':  ## force c++ compiler
+                cxx_sources += c_sources
+                c_sources = []
         build_info['source_languages'] = source_languages
 
         lib_file = compiler.library_filename(lib_name, lib_type='shared',

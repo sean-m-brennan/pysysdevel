@@ -110,7 +110,7 @@ def find_header(filename, pathlist=[], extra_subdir=''):
     raise Exception(filename + ' not found.')
 
 
-def find_library(name, pathlist=[]):
+def find_library(name, pathlist=[], subpaths=[]):
     '''
     Find the containing directory and proper filename (returned as a tuple)
     of the given library.
@@ -126,18 +126,20 @@ def find_library(name, pathlist=[]):
     for path in pathlist + default_path_prefixes:
         if path != None and os.path.exists(path):
             for root in default_path_roots:
-                for prefix in prefixes:
-                    for suffix in suffixes:
-                        dirname = os.path.join(path, root)
-                        filename = prefix + name + '*' + suffix
-                        if DEBUG:
-                            print 'Searching ' + dirname + ' for ' + filename
-                        full = os.path.join(dirname, filename)
-                        if os.path.exists(dirname):
-                            for fn in os.listdir(dirname):
-                                if fnmatch.fnmatch(fn, filename):
-                                    return os.path.split(os.path.join(dirname,
-                                                                      fn))
+                for sub in subpaths + ['.']:
+                    for prefix in prefixes:
+                        for suffix in suffixes:
+                            dirname = os.path.join(path, root, sub)
+                            filename = prefix + name + '*' + suffix
+                            if DEBUG:
+                                print 'Searching ' + dirname + \
+                                    ' for ' + filename
+                            full = os.path.join(dirname, filename)
+                            if os.path.exists(dirname):
+                                for fn in os.listdir(dirname):
+                                    if fnmatch.fnmatch(fn, filename):
+                                        return os.path.split(
+                                            os.path.join(dirname, fn))
     raise Exception(name + ' library not found.')
 
 
