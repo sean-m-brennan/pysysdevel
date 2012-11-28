@@ -26,11 +26,16 @@ environment = dict()
 ffnet_found = False
 
 
+def null():
+    global environment
+    environment['FFNET_VERSION'] = None
+
+
 def is_installed():
     global environment, ffnet_found
     try:
-        import serial
-        environment['FFNET_VERSION'] = serial.VERSION
+        import ffnet
+        environment['FFNET_VERSION'] = ffnet.version
         ffnet_found = True
     except:
         pass
@@ -40,37 +45,13 @@ def is_installed():
 def install(target='build'):
     global environment
     if not ffnet_found:
-        try:
-            from setuptools.command import easy_install
-            easy_install.main(["-U","ffnet"])
-            import ffnet
-            environment['FFNET_VERSION'] = ffnet.version
-        except:
-            try:
-                import urllib, tarfile, subprocess
-                website = 'http://prdownloads.sourceforge.net/ffnet/'
-                ver = '0.7.1'
-                environment['FFNET_VERSION'] = ver
-                here = os.path.abspath(os.getcwd())
-                download_file = 'ffnet-' + ver + '.tar.gz'
-                set_downloading_file(website + download_file)
-                if not os.path.exists(target):
-                    os.makedirs(target)
-                os.chdir(target)
-                if not os.path.exists(download_file):
-                    urllib.urlretrieve(website + download_file,
-                                       os.path.join(target, download_file),
-                                       download_progress)
-                z = tarfile.open(download_file, 'r:gz')
-                z.extractall()                
-                os.chdir('ffnet-' + ver)
-                cmd_line = ['python', 'setup.py', 'install']
-                ##TODO installing package will fail
-                status = subprocess.call(cmd_line)
-                if status != 0:
-                    raise Exception("Command '" + str(cmd_line) +
-                                    "' returned non-zero exit status "
-                                    + str(status))
-                os.chdir(here)
-            except Exception,e:
-                raise Exception('Unable to install ffnet: ' + str(e))
+        website = 'http://prdownloads.sourceforge.net/ffnet/'
+        ver = '0.7.1'
+        archive = 'ffnet-' + ver + '.tar.gz'
+        install_pypkg_locally('ffnet-' + ver, website, archive, target)
+        environment['FFNET_VERSION'] = ver
+        ## also requires networkx
+        website = 'http://networkx.lanl.gov/download/networkx/'
+        ver = '1.7'
+        archive = 'networkx-' + ver + '.tar.gz'
+        install_pypkg_locally('networkx-' + ver, website, archive, target)

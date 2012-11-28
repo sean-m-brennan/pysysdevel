@@ -20,7 +20,7 @@ Find Perl headers and library
 # 
 #**************************************************************************
 
-import os
+import os, platform
 
 from pydevel.util import *
 
@@ -28,22 +28,46 @@ environment = dict()
 perl_found = False
 
 
+def null():
+    global environment
+    environment['PERL_INCLUDE_DIR'] = None
+    environment['PERL_LIBRARY_DIR'] = None
+    environment['PERL_LIBRARY'] = None
+
+
 def is_installed():
     global environment, perl_found
+    perl_core_dir = ''
     try:
-        perl_dev_dir, perl_lib  = find_library('perl', [],
-                                               [os.path.join('perl4', 'CORE'),
-                                                os.path.join('perl5', 'CORE'),])
-        environment['PERL_INCLUDE_DIR'] = perl_dev_dir
-        environment['PERL_LIBRARY_DIR'] = perl_dev_dir
-        environment['PERL_LIBRARY'] = os.path.join(perl_dev_dir, perl_lib)
+        try:
+            perl_core_dir = os.environ['PERL_CORE']
+        except:
+            try:
+                perl_core_dir = os.environ['PERL_ROOT']
+            except:
+                pass
+        if perl_core_dir != '':
+            _, perl_lib  = find_library('perl', [perl_core_dir], ['perl5'])
+            perl_core_dir = find_header('perl.h', [perl_core_dir])
+        else:
+            base_dirs = []
+            if 'windows' in platform.system().lower():
+                base_dirs += [os.path.join('c:', 'perl')]
+            perl_core_dir, perl_lib  = find_library('perl', base_dirs,
+                                                    ['perl5'])
+            perl_core_dir = find_header('perl.h', [perl_core_dir])
+        environment['PERL_INCLUDE_DIR'] = perl_core_dir
+        environment['PERL_LIBRARY_DIR'] = perl_core_dir
+        environment['PERL_LIBRARY'] = os.path.join(perl_core_dir, perl_lib)
         perl_found = True
     except Exception,e:
+        print e
         perl_found = False
     return perl_found
 
 
-
 def install(target='build'):
-    global environment
-    raise "Perl development library required, but not installed."
+    ## User must install
+    raise Exception('Perl development library required, but not installed.' +
+                    '\nTry http://www.perl.org/get.html;' +
+                    ' or yum install perl-devel')

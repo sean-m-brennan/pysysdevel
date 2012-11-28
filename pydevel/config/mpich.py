@@ -20,7 +20,7 @@ Find MPICH library
 # 
 #**************************************************************************
 
-import os
+import os, struct
 
 from pydevel.util import *
 
@@ -28,12 +28,47 @@ environment = dict()
 mpich_found = False
 
 
+def null():
+    global environment
+    environment['MPICH_INCLUDE_DIR'] = None
+    environment['MPICH_LIBRARY_DIR'] = None
+    environment['MPICH_LIBRARY'] = None
+
+
 def is_installed():
     global environment, mpich_found
-
-    return True ##FIXME
-
+    mpich_dev_dir = ''
+    try:
+        arch = 'i686'
+        if struct.calcsize('P') == 8:
+            arch = 'x86_64'
+        try:
+            mpich_dev_dir = os.environ['MPICH_ROOT']
+        except:
+            pass
+        if mpich_dev_dir != '':
+            mpich_lib_dir, mpich_lib  = find_library('mpich', [mpich_dev_dir])
+            mpich_inc_dir = find_header('mpi.h', [mpich_dev_dir],
+                                        ['mpich2', 'mpich2-' + arch,])
+        else:
+            base_dirs = []
+            if 'windows' in platform.system().lower():
+                base_dirs += [os.path.join('c:', 'mpich')] #FIXME
+            mpich_lib_dir, mpich_lib  = find_library('mpich', base_dirs)
+            mpich_inc_dir = find_header('mpi.h', base_dirs,
+                                        ['mpich2', 'mpich2-' + arch,])
+        environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir
+        environment['MPICH_LIBRARY_DIR'] = mpich_lib_dir
+        environment['MPICH_LIBRARY'] = os.path.join(mpich_lib_dir, mpich_lib)
+        mpich_found = True
+    except Exception,e:
+        print e
+        mpich_found = False
+    return mpich_found
 
 
 def install(target='build'):
-    global environment
+    ## User must install
+    raise Exception('MPICH development library required, but not installed.' +
+                    '\nTry http://www.mpich.org/downloads/;' +
+                    ' or yum install mpich2-devel')

@@ -28,6 +28,12 @@ environment = dict()
 archive_found = False
 
 
+def null():
+    global environment
+    environment['ARCHIVE_INCLUDE_DIR'] = None
+    environment['ARCHIVE_LIB_DIR'] = None
+
+
 def is_installed():
     global environment, archive_found
     try:
@@ -39,7 +45,6 @@ def is_installed():
         archive_found = True
     except:
         ## look for it
-        environment['ARCHIVE_ROOT'] = None
         try:
             win_loc = os.path.join(os.environ['ProgramFiles'], 'GnuWin32')
         except:

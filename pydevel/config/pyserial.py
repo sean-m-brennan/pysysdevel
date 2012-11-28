@@ -26,6 +26,11 @@ environment = dict()
 pyserial_found = False
 
 
+def null():
+    global environment
+    environment['PYSERIAL_VERSION'] = None
+
+
 def is_installed():
     global environment, pyserial_found
     try:
@@ -40,37 +45,8 @@ def is_installed():
 def install(target='build'):
     global environment
     if not pyserial_found:
-        try:
-            from setuptools.command import easy_install
-            easy_install.main(["-U","pyserial"])
-            import serial
-            environment['PYSERIAL_VERSION'] = serial.VERSION
-        except:
-            try:
-                import urllib, tarfile, subprocess
-                website = 'http://pypi.python.org/packages/source/p/pyserial/'
-                ver = '2.6'
-                environment['PYSERIAL_VERSION'] = ver
-                here = os.path.abspath(os.getcwd())
-                download_file = 'pyserial-' + ver + '.tar.gz'
-                set_downloading_file(website + download_file)
-                if not os.path.exists(target):
-                    os.makedirs(target)
-                os.chdir(target)
-                if not os.path.exists(download_file):
-                    urllib.urlretrieve(website + download_file,
-                                       os.path.join(target, download_file),
-                                       download_progress)
-                z = tarfile.open(download_file, 'r:gz')
-                z.extractall()                
-                os.chdir('pyserial-' + ver)
-                cmd_line = ['python', 'setup.py', 'install']
-                ##TODO installing package will fail
-                status = subprocess.call(cmd_line)
-                if status != 0:
-                    raise Exception("Command '" + str(cmd_line) +
-                                    "' returned non-zero exit status "
-                                    + str(status))
-                os.chdir(here)
-            except Exception,e:
-                raise Exception('Unable to install PySerial: ' + str(e))
+        website = 'http://pypi.python.org/packages/source/p/pyserial/'
+        ver = '2.6'
+        archive = 'pyserial-' + ver + '.tar.gz'
+        install_pypkg_locally('pyserial-' + ver, website, archive, target)
+        environment['PYSERIAL_VERSION'] = ver

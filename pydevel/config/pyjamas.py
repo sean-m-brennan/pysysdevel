@@ -26,6 +26,12 @@ environment = dict()
 pyjamas_found = False
 
 
+def null():
+    global environment
+    environment['PYJAMAS_ROOT'] = None
+    environment['PYJSBUILD_EXECUTABLE'] = None
+
+
 def is_installed():
     global environment, pyjamas_found
     try:

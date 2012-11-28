@@ -156,7 +156,7 @@ class build_exe(build_clib):
             else:
                 log.info("building '%s' library", exe.name)
 
-            """ FIXME?
+            """ 
             config_fc = exe.config_fc or {}
             if fcompiler is not None and config_fc:
                 log.info('using additional config_fc from setup script '\

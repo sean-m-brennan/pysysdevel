@@ -28,12 +28,42 @@ environment = dict()
 hdf5_found = False
 
 
+def null():
+    global environment
+    environment['HDF5_INCLUDE_DIR'] = None
+    environment['HDF5_LIBRARY_DIR'] = None
+    environment['HDF5_LIBRARY'] = None
+
+
 def is_installed():
     global environment, hdf5_found
-
-    return True ##FIXME
-
+    hdf5_dev_dir = ''
+    try:
+        try:
+            hdf5_dev_dir = os.environ['HDF5_ROOT']
+        except:
+            pass
+        if hdf5_dev_dir != '':
+            hdf5_lib_dir, hdf5_lib  = find_library('hdf5', [hdf5_dev_dir])
+            hdf5_inc_dir = find_header('hdf5.h', [hdf5_dev_dir])
+        else:
+            base_dirs = []
+            if 'windows' in platform.system().lower():
+                base_dirs += [os.path.join('c:', 'hdf5')] #FIXME
+            hdf5_lib_dir, hdf5_lib  = find_library('hdf5', base_dirs)
+            hdf5_inc_dir = find_header('hdf5.h', base_dirs)
+        environment['HDF5_INCLUDE_DIR'] = hdf5_inc_dir
+        environment['HDF5_LIBRARY_DIR'] = hdf5_lib_dir
+        environment['HDF5_LIBRARY'] = os.path.join(hdf5_lib_dir, hdf5_lib)
+        hdf5_found = True
+    except Exception,e:
+        print e
+        hdf5_found = False
+    return hdf5_found
 
 
 def install(target='build'):
-    global environment
+    ## User must install
+    raise Exception('HDF5 development library required, but not installed.' +
+                    '\nTry http://www.hdfgroup.org/HDF5/release/obtain5.html;' +
+                    ' or yum install hdf5-devel')

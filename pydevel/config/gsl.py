@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find GSL library
+Find GNU Scientific Library
 """
 #**************************************************************************
 # 
@@ -28,12 +28,42 @@ environment = dict()
 gsl_found = False
 
 
+def null():
+    global environment
+    environment['GSL_INCLUDE_DIR'] = None
+    environment['GSL_LIBRARY_DIR'] = None
+    environment['GSL_LIBRARY'] = None
+
+
 def is_installed():
     global environment, gsl_found
-
-    return True ##FIXME
-
+    gsl_dev_dir = ''
+    try:
+        try:
+            gsl_dev_dir = os.environ['GSL_ROOT']
+        except:
+            pass
+        if gsl_dev_dir != '':
+            gsl_lib_dir, gsl_lib  = find_library('gsl', [gsl_dev_dir])
+            gsl_inc_dir = find_header('gsl_types.h', [gsl_dev_dir], ['gsl'])
+        else:
+            base_dirs = []
+            if 'windows' in platform.system().lower():
+                base_dirs += [os.path.join('c:', 'gsl')] #FIXME
+            gsl_lib_dir, gsl_lib  = find_library('gsl', base_dirs)
+            gsl_inc_dir = find_header('gsl_types.h', base_dirs, ['gsl'])
+        environment['GSL_INCLUDE_DIR'] = gsl_inc_dir
+        environment['GSL_LIBRARY_DIR'] = gsl_lib_dir
+        environment['GSL_LIBRARY'] = os.path.join(gsl_lib_dir, gsl_lib)
+        gsl_found = True
+    except Exception,e:
+        print e
+        gsl_found = False
+    return gsl_found
 
 
 def install(target='build'):
-    global environment
+    ## User must install
+    raise Exception('GSL development library required, but not installed.' +
+                    '\nTry ftp://ftp.gnu.org/gnu/gsl/gsl-1.15.tar.gz;' +
+                    ' or yum install gsl-devel')

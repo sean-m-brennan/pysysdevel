@@ -85,37 +85,37 @@ def find_program(name, pathlist=[]):
 
 
 
-def find_header(filename, pathlist=[], extra_subdir=''):
+def find_header(filename, extra_paths=[], extra_subdirs=[], limit=False):
     '''
     Find the containing directory of the specified header file.
     extra_subdir may be a pattern.
     '''
-    subdirs = ['', 'include',
-               extra_subdir, os.path.join('include', extra_subdir)]
-    for path in pathlist + default_path_prefixes:
+    subdirs = ['include',]
+    for sub in extra_subdirs:
+        subdirs += [os.path.join('include', sub), sub]
+    subdirs += ['']  ## lastly, widen search
+    pathlist = extra_paths
+    if not limit:
+        pathlist += default_path_prefixes
+    for path in pathlist:
         if path != None and os.path.exists(path):
-            if DEBUG:
-                print 'Searching ' + path + ' for ' + filename
             for sub in subdirs:
-                for root, dirnames, filenames in os.walk(path):
-                    subpaths = []
-                    if dirnames == [] and sub == '':
-                        subpaths = [path]
-                    for dirname in fnmatch.filter(dirnames, sub):
-                        subpaths.append(os.path.join(path, root, dirname))
-                    for subpath in subpaths:
-                        full = os.path.join(subpath, filename)
-                        if os.path.exists(full):
-                            return os.path.dirname(full)
+                ext_path = os.path.join(path, sub)
+                if DEBUG:
+                    print 'Searching ' + ext_path + ' for ' + filename
+                for root, dirnames, filenames in os.walk(ext_path):
+                    for fn in filenames:
+                        if fnmatch.fnmatch(fn, filename):
+                            return os.path.dirname(os.path.join(root, filename))
     raise Exception(filename + ' not found.')
 
 
-def find_library(name, pathlist=[], subpaths=[]):
+def find_library(name, extra_paths=[], extra_subdirs=[], limit=False):
     '''
     Find the containing directory and proper filename (returned as a tuple)
     of the given library.
     '''
-    default_path_roots = ['', 'lib', 'lib64']
+    default_lib_paths = ['', 'lib', 'lib64']
     suffixes = ['.so', '.a']
     prefixes = ['', 'lib']
     if 'windows' in platform.system().lower():
@@ -123,23 +123,28 @@ def find_library(name, pathlist=[], subpaths=[]):
         suffixes = ['.lib', '.a', '.dll']
     if 'darwin' in platform.system().lower():
         suffixes += ['.dylib']
-    for path in pathlist + default_path_prefixes:
+    subdirs = []
+    for sub in extra_subdirs:
+        subdirs += [sub]
+    subdirs += ['']  ## lastly, widen search
+    pathlist = extra_paths
+    if not limit:
+        pathlist += default_path_prefixes
+    for path in pathlist:
         if path != None and os.path.exists(path):
-            for root in default_path_roots:
-                for sub in subpaths + ['.']:
-                    for prefix in prefixes:
-                        for suffix in suffixes:
-                            dirname = os.path.join(path, root, sub)
-                            filename = prefix + name + '*' + suffix
-                            if DEBUG:
-                                print 'Searching ' + dirname + \
-                                    ' for ' + filename
-                            full = os.path.join(dirname, filename)
-                            if os.path.exists(dirname):
-                                for fn in os.listdir(dirname):
+            for subpath in default_lib_paths:
+                for sub in subdirs:
+                    for root, dirnames, filenames in \
+                            os.walk(os.path.join(path, subpath, sub)):
+                        for prefix in prefixes:
+                            for suffix in suffixes:
+                                filename = prefix + name + '*' + suffix
+                                if DEBUG:
+                                    print 'Searching ' + root + \
+                                        ' for ' + filename
+                                for fn in filenames:
                                     if fnmatch.fnmatch(fn, filename):
-                                        return os.path.split(
-                                            os.path.join(dirname, fn))
+                                        return root, fn
     raise Exception(name + ' library not found.')
 
 
@@ -214,6 +219,53 @@ def download_progress(count, block_size, total_size):
     if VERBOSE:
         sys.stdout.write("\r" + download_file + "  %d%%" % percent)
         sys.stdout.flush()
+
+
+local_lib_dir = 'python'
+
+def install_pypkg_locally(name, website, archive, build_dir):
+    import urllib, tarfile, zipfile, subprocess
+    here = os.path.abspath(os.getcwd())
+    target_dir = os.path.abspath(build_dir)
+    try:
+        set_downloading_file(archive)
+        if not os.path.exists(archive):
+            urllib.urlretrieve(website + archive, archive, download_progress)
+            sys.stdout.write('\n')
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        os.chdir(target_dir)
+        if not os.path.exists(name):
+            if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
+                z = tarfile.open(os.path.join(here, archive), 'r:gz')
+                z.extractall()
+            elif archive.endswith('.tar.bz2'):
+                z = tarfile.open(os.path.join(here, archive), 'r:bz2')
+                z.extractall()
+            elif archive.endswith('.zip'):
+                z = zipfile.ZipFile(os.path.join(here, archive), 'r')
+                z.extractall()
+            else:
+                raise Exception('Unrecognized archive compression: ' + archive)
+        os.chdir(name)
+        cmd_line = ['python', 'setup.py', 'install',
+                    '--home=' + target_dir,
+                    '--install-lib=' + os.path.join(target_dir, local_lib_dir),
+                    ]
+        log = open(name + '.log', 'w')
+        status = subprocess.call(cmd_line, stdout=log)
+        log.close()
+        if status != 0:
+            raise Exception("Command '" + str(cmd_line) +
+                            "' returned non-zero exit status "
+                            + str(status))
+        if not os.path.join(target_dir, local_lib_dir) in sys.path:
+            sys.path.insert(0, os.path.join(target_dir, local_lib_dir))
+        os.chdir(here)
+    except Exception,e:
+        os.chdir(here)
+        raise Exception('Unable to install ' + name + ' locally: ' + str(e))
+
 
 
 def is_out_of_date(target, source, additional=[]):
@@ -499,7 +551,7 @@ def handle_arguments(argv, option_list=[]):
             runscript = arg[6:].lower()
             if not runscript.endswith('.py'):
                 runscript = 'run_' + runscript + '.py'
-            for root, dirnames, filenames in os.walk('.'): #FIXME source dir
+            for root, dirnames, filenames in os.walk('.'): ## source directory
                 for filename in filenames:
                     if filename == runscript:
                         runscript = os.path.join(root, filename)
@@ -521,6 +573,11 @@ def handle_arguments(argv, option_list=[]):
             options[arg[8:]] = True
             if not 'install' in argv:
                 argv.insert(idx, 'install')
+            argv.remove(arg)
+        elif arg.startswith('clean_') and arg[8:] in option_plus_list:
+            options[arg[8:]] = True
+            if not 'clean' in argv:
+                argv.insert(idx, 'clean')
             argv.remove(arg)
 
     build_all = True
@@ -566,10 +623,10 @@ def get_options(pkg_config, options):
         msvc_debug_path = os.path.join(msvc_path, 'Debug_NonRedist',
                                        'x86', 'Microsoft.VC90.DebugCRT')
 
-        #FIXME detect MinGW vs MSVC
-        ## use repo'd msvc*90.dll since we're using MinGW
-        msvc_release_path = os.path.join('pydevel', 'win_release')
-        msvc_debug_path = os.path.join('pydevel', 'win_debug')
+        if not os.path.exists(msvc_release_path):  ## use MingW
+            # FIXME MinGW msvc*90.dll??
+            msvc_release_path = os.path.join('pydevel', 'win_release')
+            msvc_debug_path = os.path.join('pydevel', 'win_debug')
 
         if pkg_config.build_config.lower() == 'debug':
             msvc_glob = os.path.join(msvc_debug_path, '*.*')
@@ -586,7 +643,7 @@ def get_options(pkg_config, options):
         addtnl_files += pkg_config.get_data_files(options['app'])
         addtnl_files += pkg_config.get_extra_data_files(options['app'])
         addtnl_files += [('.', [icon_file])]
-        #addtnl_files += [('.', glob.glob(msvc_glob))]
+        #addtnl_files += [('.', glob.glob(msvc_glob))] FIXME?
         icon_res = [(0, icon_file)]
 
         if INCLUDE_GTK_WIN:

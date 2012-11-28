@@ -27,6 +27,16 @@ from pydevel.util import *
 environment = dict()
 mingw_found = False
 
+
+def null():
+    global environment
+    environment['MSVCRT_DIR'] = None
+    environment['MINGW_DIR'] = None
+    environment['MINGW_CC'] = None
+    environment['MINGW_FORTRAN'] = None
+    environment['MINGW_CXX'] = None
+
+
 def is_installed():
     global environment, mingw_found
     ## Python was (most likely) built with msvcr90.dll, thus it's a dependency
@@ -34,11 +44,13 @@ def is_installed():
         ## the easy/sure way
         environment['MSVCRT_DIR'] = os.environ['MSVCRT_DIR']
     except:
-        msvcrt_dir = os.path.join(os.environ['ProgramFiles'],
-                                  'Microsoft Visual Studio 9.0',
-                                  'VC', 'redist', 'x86',
-                                  'Microsoft.VC90.CRT')
-        environment['MSVCRT_DIR'], _ = find_library('msvcr90', [msvcrt_dir])
+        msvcrt_dirs = [os.path.join(os.environ['ProgramFiles'],
+                                    'Microsoft Visual Studio 9.0',
+                                    'VC', 'redist', 'x86',
+                                    'Microsoft.VC90.CRT'),
+                       os.environ['ProgramFiles'],
+                       ]
+        environment['MSVCRT_DIR'], _ = find_library('msvcr90', msvcrt_dirs)
 
     try:
         ## the easy way
@@ -71,4 +83,4 @@ def is_installed():
 
 def install():
     if not mingw_found:
-        raise Exception('MinGW not found.')
+        raise Exception('MinGW required, but not found.')

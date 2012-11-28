@@ -26,6 +26,11 @@ environment = dict()
 gccxml_found = False
 
 
+def null():
+    global environment
+    environment['GCCXML_EXECUTABLE'] = None
+
+
 def is_installed():
     global environment, gccxml_found
     try:

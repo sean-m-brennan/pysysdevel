@@ -30,6 +30,14 @@ environment = dict()
 boost_found = False
 
 
+def null():
+    global environment
+    environment['BOOST_ROOT'] = ''
+    environment['BOOST_INCLUDE_DIR'] = ''
+    environment['BOOST_LIB_DIR'] = ''
+    environment['BOOST_VERSION'] = ''
+
+
 def is_installed():
     global environment, boost_found
     try:

@@ -35,6 +35,11 @@ def configure_system(prerequisite_list, version,
     other required software is installed.
     Install missing prerequisites that have an installer defined.
     '''
+    skip = False
+    for idx, arg in enumerate(sys.argv[:]):
+        if arg.startswith('clean'):
+            skip = True
+
     pyver = platform.python_version() 
     if pyver < required_python_version:
         raise Exception('Python version > ' + required_python_version +
@@ -46,7 +51,9 @@ def configure_system(prerequisite_list, version,
         try:
             __import__(full_name)
             helper = sys.modules[full_name]
-            if not helper.is_installed():
+            if skip:
+                helper.null()
+            elif not helper.is_installed():
                 if not install:
                     raise Exception(help_name + ' cannot be found.')
                 helper.install()

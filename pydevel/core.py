@@ -19,16 +19,15 @@ Custom extensions and setup
 # 
 #**************************************************************************
 
-import sys, shutil, os, platform
+import sys, shutil, os, platform, subprocess
 from numpy.distutils import extension
 from numpy.distutils.numpy_distribution import NumpyDistribution
 from numpy.distutils.command.build import build as old_build
 from numpy.distutils.command.config_compiler import config_cc as old_config_cc
 from numpy.distutils.command.config_compiler import config_fc as old_config_fc
-from distutils.command.install import install as old_install
-import subprocess
-
 from numpy.distutils.core import Extension
+from distutils.command.install import install as old_install
+from distutils.command.clean import clean as old_clean
 
 import util
 
@@ -162,7 +161,7 @@ class CustomDistribution(NumpyDistribution):
         self.subpackages = attrs.get('subpackages')
         if self.subpackages != None:
             del old_attrs['subpackages']
-        self.quit_on_error = True #FIXME
+        self.quit_on_error = True
         NumpyDistribution.__init__(self, old_attrs)
 
     def has_c_libraries(self):
@@ -249,7 +248,9 @@ class build(old_build):
                 argv = list(sys.argv[idx:])
                 if 'install' in argv:
                     argv.remove('install')
-                print "BUILDING " + str(sub[1]) + ' in ' + str(sub[1])
+                if 'clean' in argv:
+                    argv.remove('clean')
+                print "BUILDING " + str(sub[0]) + ' in ' + str(sub[1])
                 if subprocess.call(['python',
                                     os.path.join(sub[1], 'setup.py'),
                                     ] +  argv) and self.quit_on_error():
@@ -292,7 +293,9 @@ class install(old_install):
                 argv = list(sys.argv[idx:])
                 if 'build' in argv:
                     argv.remove('build')
-                print "INSTALLING " + str(sub[1]) + ' from ' + str(sub[1])
+                if 'clean' in argv:
+                    argv.remove('clean')
+                print "INSTALLING " + str(sub[0]) + ' from ' + str(sub[1])
                 subprocess.call(['python',
                                  os.path.join(sub[1], 'setup.py'),
                                  ] +  argv)
@@ -340,10 +343,45 @@ class config_fc(old_config_fc):
         old_config_fc.finalize_options(self)
 
 
+class clean(old_clean):
+    def run(self):
+        # Remove .pyc files
+        if hasattr(os, 'walk'):
+            for root, dirs, files in os.walk('.'):
+                for f in files:
+                    if f.endswith('.pyc'):
+                        try:
+                            os.unlink(f)
+                        except:
+                            pass
+
+        # Remove generated directories
+        build = self.get_finalized_command('build')
+        build_dir = build.build_base
+        if os.path.exists(build_dir):
+            try:
+                shutil.rmtree(build_dir, ignore_errors=True)
+            except:
+                pass
+        if self.distribution.subpackages != None:
+            for sub in self.distribution.subpackages:
+                idx = sys.argv.index('setup.py') + 1
+                argv = list(sys.argv[idx:])
+                print "CLEANING " + str(sub[0]) + ' in ' + str(sub[1])
+                subprocess.call(['python',
+                                 os.path.join(sub[1], 'setup.py'),
+                                 ] +  argv)
+
+        old_clean.run(self)
+
+
+
 ##################################################
 ## Almost verbatim from numpy.disutils.core
 
 if 'setuptools' in sys.modules:
+    raise NotImplementedError('Pydevel is incompatible with setuptools')
+
     have_setuptools = True
     from setuptools import setup as old_setup
     # easy_install imports math, it may be picked up from cwd
@@ -392,6 +430,7 @@ my_cmdclass = {'build':            build,
                'install_headers':  install_headers.install_headers,
                'install':          install,
                'bdist_rpm':        bdist_rpm.bdist_rpm,
+               'clean':            clean,
                }
 if have_setuptools:
     # Use our own versions of develop and egg_info to ensure that build_src is

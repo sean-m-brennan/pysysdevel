@@ -28,6 +28,13 @@ environment = dict()
 sqlite_found = False
 
 
+def null():
+    global environment
+    environment['SQLITE3_INCLUDE_DIR'] = None
+    environment['SQLITE3_LIB_DIR'] = None
+    environment['SQLITE3_LIBRARY'] = None
+
+
 def is_installed():
     global environment, sqlite_found
     ## look for it

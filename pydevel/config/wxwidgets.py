@@ -25,10 +25,17 @@ import os, subprocess
 from pydevel.util import *
 
 environment = dict()
+wx_found = False
+
+
+def null():
+    global environment
+    environment['WX_CPP_FLAGS'] = []
+    environment['WX_LD_FLAGS'] = []
 
 
 def is_installed():
-    global environment
+    global environment, wx_found
     try:
         wx_config = os.environ['WX_CONFIG']
     except:
@@ -47,4 +54,7 @@ def is_installed():
     
 
 def install():
-    pass
+    if not wx_found:
+        raise Exception('WxWidgets not found. (include=' +
+                        str(environment['WX_CPP_FLAGS']) + ', library=' +
+                        str(environment['WX_LD_FLAGS']) + ')')

@@ -28,14 +28,27 @@ environment = dict()
 ctypesgen_found = False
 
 
+def null():
+    global environment
+    environment['CTYPESGEN_EXE'] = None
+
+
 def is_installed():
     global environment, ctypesgen_found
-
-    return True ##FIXME
-
+    try:
+        environment['CTYPESGEN_EXE'] = find_program('ctypesgen.py')
+        ctypesgen_found = True
+    except:
+        pass
+    return ctypesgen_found
 
 
 def install(target='build'):
     global environment
-
-    #svn checkout http://ctypesgen.googlecode.com/svn/trunk/ ctypesgen
+    if not ctypesgen_found:
+        website = 'http://pypi.python.org/packages/source/c/ctypesgen/'
+        ver = '0.r125'
+        archive = 'ctypesgen-' + ver + '.tar.gz'
+        install_pypkg_locally('ctypesgen-' + ver, website, archive, target)
+        environment['CTYPESGEN_EXE'] = \
+            find_program('ctypesgen.py', [os.path.join(target, 'bin')])

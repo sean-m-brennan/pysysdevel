@@ -35,6 +35,28 @@ version_zfill = 6
 VERSION = R2012a
 
 
+def null():
+    global environment
+    environment['GMAT_ROOT'] = ''
+    environment['GMAT_VERSION'] = ''
+    environment['GMAT_DATA'] = None
+    environment['GMAT_INCLUDE_DIRS'] = []
+    environment['GMAT_SRC_DIR'] = ''
+    environment['GMAT_BASE_DIR'] = ''
+    environment['GMAT_BASE_INCLUDE_DIRS'] = []
+    environment['GMAT_BASE_SRCS'] = []
+    environment['GMAT_GUI_DIR'] = ''
+    environment['GMAT_GUI_INCLUDE_DIRS'] = []
+    environment['GMAT_GUI_SRCS'] = []
+    environment['GMAT_CONSOLE_DIR'] = ''
+    environment['GMAT_CONSOLE_SOURCES'] = []
+    environment['GMAT_CONSOLE_EXTRA_SOURCES'] = []
+    environment['GMAT_C_DIR'] = ''
+    environment['GMAT_C_INCLUDE_DIRS'] = []
+    environment['GMAT_C_EXT_HEADERS'] = []
+    environment['GMAT_C_EXT_SOURCES'] = []
+
+
 def is_installed():
     global environment, gmat_found
     try:
@@ -58,7 +80,7 @@ def is_installed():
         _set_environment(gmat_root, gmat_version)
         gmat_found = True
     except Exception, e:
-        pass
+        gmat_found = False
     return gmat_found
 
 
@@ -89,33 +111,41 @@ def install(target='build'):
 
             download_file = archive_dir + archive
             set_downloading_file(website + download_file)
-            if not os.path.exists(target):
-                os.makedirs(target)
-            os.chdir(target)
             if not os.path.exists(download_file):
                 urllib.urlretrieve(website + download_file, download_file,
                                    reporthook=download_progress)
                 sys.stdout.write('\n')
+            if not os.path.exists(target):
+                os.makedirs(target)
+            os.chdir(target)
             if not os.path.exists(archive_dir):
                 if archive == '.zip':
-                    z = zipfile.ZipFile(download_file)
+                    z = zipfile.ZipFile(os.path.join(here,
+                                                     download_file), 'r')
                     z.extractall()
                 else:
-                    tgz = tarfile.open(download_file, 'r:gz')
+                    tgz = tarfile.open(os.path.join(here,
+                                                    download_file), 'r:gz')
                     tgz.extractall()
-        
+            os.chdir(here)
+
             download_file = data_archive_dir + archive
             set_downloading_file(website + download_file)
             if not os.path.exists(download_file):
                 urllib.urlretrieve(website + download_file, download_file,
                                    reporthook=download_progress)
                 sys.stdout.write('\n')
+            if not os.path.exists(target):
+                os.makedirs(target)
+            os.chdir(target)
             if not os.path.exists(data_archive_dir):
                 if archive == '.zip':
-                    z = zipfile.ZipFile(download_file)
+                    z = zipfile.ZipFile(os.path.join(here,
+                                                     download_file), 'r')
                     z.extractall()
                 else:
-                    tgz = tarfile.open(download_file, 'r:gz')
+                    tgz = tarfile.open(os.path.join(here,
+                                                    download_file), 'r:gz')
                     tgz.extractall()
             os.chdir(here)
         environment['GMAT_VERSION'] = ver
@@ -125,7 +155,7 @@ def install(target='build'):
         print 'Using GMAT version ' + ver
     except Exception,e:
         print 'Unable to install GMAT sources: ' + str(e)
-        #traceback.print_exc(file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
 
 
 
