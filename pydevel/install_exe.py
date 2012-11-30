@@ -35,7 +35,10 @@ class install_exe(install_lib.install_lib):
         build_exe = self.get_finalized_command('build_exe')
         install = self.get_finalized_command('install')
 
-        target_dir = os.path.join(install.prefix, 'bin')
+        if install.prefix is None:
+            target_dir = os.path.join(install.install_base, 'bin')
+        else:
+            target_dir = os.path.join(install.prefix, 'bin')
         self.mkpath(target_dir)
         for exe in build_exe.install_executables:
             source = os.path.join(build_exe.build_temp, exe)

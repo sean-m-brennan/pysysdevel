@@ -20,7 +20,7 @@ Find F2C
 # 
 #**************************************************************************
 
-import os, shutil, subprocess
+import os
 
 from pydevel.util import *
 
@@ -60,7 +60,7 @@ def install(target='build'):
     abs_target = os.path.abspath(target)
     if not f2c_found:
         try:
-            import urllib, tarfile, subprocess
+            import urllib, tarfile, shutil
             download_file = 'f2c.h'
             set_downloading_file(download_file)
             if not os.path.exists(download_file):
@@ -71,6 +71,7 @@ def install(target='build'):
             environment['F2C_INCLUDE_DIR'] = target
 
             if not USING_GFORTRAN:
+                import subprocess
                 website += 'src/'
                 f2c_srcs = ['cds.c', 'data.c', 'defines.h', 'defs.h', 'equiv.c',
                             'error.c', 'exec.c', 'expr.c', 'f2c.1', 'f2c.1t',
@@ -104,10 +105,10 @@ def install(target='build'):
                 if 'windows' in platform.system().lower():
                     ## TODO only for MSVC
                     shutil.copy('makefile.vc', 'makefile')
-                    subprocess.check_call(['nmake'])
+                    subprocess.check_call(['nmake'])  # TODO log output
                 else:
                     shutil.copy('makefile.u', 'makefile')
-                    subprocess.check_call(['make'])
+                    subprocess.check_call(['make'])  # TODO log output
                 environment['F2C_LIB_DIR'] = f2c_build_dir      
                 environment['F2C_LIBRARY'] = find_library('f2c',
                                                           [f2c_build_dir],

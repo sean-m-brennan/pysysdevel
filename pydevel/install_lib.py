@@ -40,35 +40,39 @@ class install_lib(old_install_lib):
         build_shlib = self.get_finalized_command('build_shlib')
         install = self.get_finalized_command('install')
 
-        target_dir = os.path.join(install.prefix, lib)
+        if install.prefix is None:
+            target_dir = os.path.join(install.install_base, lib)
+        else:
+            target_dir = os.path.join(install.prefix, lib)
         self.mkpath(target_dir)
         if build_shlib.install_shared_libraries:
             for lib in build_shlib.install_shared_libraries:
-                target_dir = os.path.join(self.install_dir, lib[0])
+                target = os.path.join(target_dir, lib[0])
                 source = os.path.join(build_shlib.build_clib, lib[1])
-                self.copy_file(source, target_dir)
+                self.copy_file(source, target)
 
         if self.distribution.extra_install_modules:
             for pkg in self.distribution.extra_install_modules:
                 source = util.get_module_location(pkg)
                 if os.path.isdir(source):
-                    self.copy_tree(source,
-                                   os.path.join(self.install_dir, pkg))
+                    self.copy_tree(source, os.path.join(target_dir, pkg))
                 else:
-                    self.copy_file(source, self.install_dir)
+                    self.copy_file(source, target_dir)
 
         if self.distribution.extra_install_libraries:
-           for pkg_tpl in self.distribution.extra_install_libraries:
-                target_dir = os.path.join(self.install_dir, pkg_tpl[0])
+            for pkg_tpl in self.distribution.extra_install_libraries:
                 for lib_tpl in pkg_tpl[1]:
                     libpath = lib_tpl[0]
-                    for libname in lib_tpl[1]:
-                        pathpattern = os.path.join(libpath, '*' + libname + '*')
-                        if 'windows' in platform.system().lower():
-                            pathpattern += '.dll'
-                        elif 'darwin' in platform.system().lower():
-                            pathpattern += '.dylib*'
-                        else:
-                            pathpattern += '.so*'
-                        for source in glob.glob(pathpattern):
-                            self.copy_file(source, target_dir)
+                    suffixes = ['.so*']
+                    prefixes = ['', 'lib']
+                    if 'windows' in platform.system().lower():
+                        suffixes = ['.dll']
+                    elif 'darwin' in platform.system().lower():
+                        suffixes += ['.dylib*']
+                    for prefix in prefixes:
+                        for suffix in suffixes:
+                            for libname in lib_tpl[1]:
+                                filename = prefix + libname + '*' + suffix
+                                for source in glob.glob(os.path.join(libpath,
+                                                                     filename)):
+                                    self.copy_file(source, target_dir)

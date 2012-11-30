@@ -32,7 +32,8 @@ def null():
     global environment
     environment['PERL_INCLUDE_DIR'] = None
     environment['PERL_LIBRARY_DIR'] = None
-    environment['PERL_LIBRARY'] = None
+    environment['PERL_LIBRARIES'] = []
+    environment['PERL_LIBS'] = []
 
 
 def is_installed():
@@ -58,7 +59,8 @@ def is_installed():
             perl_core_dir = find_header('perl.h', [perl_core_dir])
         environment['PERL_INCLUDE_DIR'] = perl_core_dir
         environment['PERL_LIBRARY_DIR'] = perl_core_dir
-        environment['PERL_LIBRARY'] = os.path.join(perl_core_dir, perl_lib)
+        environment['PERL_LIBRARIES'] = [perl_lib]
+        environment['PERL_LIBS'] = ['perl']
         perl_found = True
     except Exception,e:
         print e

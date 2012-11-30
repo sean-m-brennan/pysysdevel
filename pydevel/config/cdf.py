@@ -80,10 +80,24 @@ def install(target='build'):
                 z = tarfile.open(os.path.join(here, download_file), 'r:gz')
                 z.extractall()
             os.chdir(pkg_dir)
-            log = open(pkg_dir + '.log', 'w')
-            subprocess.check_call(['make', 'OS=' + oper_sys, 'ENV=gnu', 'all'],
-                                  stdout=log)
-            log.close()
+            log_file = pkg_dir + '.log'
+            log = open(log_file, 'w')
+            cmd_line = ['make', 'OS=' + oper_sys, 'ENV=gnu', 'all']
+            try:
+                sys.stdout.write('PREREQUISITE cdf ')
+                p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
+                status = process_progress(p)
+                log.close()
+            except KeyboardInterrupt,e:
+                p.terminate()
+                log.close()
+                raise e
+            if status != 0:
+                sys.stdout.write(' failed; See ' + log_file + '\n')
+                raise Exception("Command '" + cmd_line + "' failed: " +
+                                str(status))
+            else:
+                sys.stdout.write(' done\n')
             environment['CDF_INCLUDE_DIR'] = os.path.join(src_dir, 'include')
             environment['CDF_LIB_DIR'], lib = find_library('cdf', [src_dir],
                                                            limit=True)

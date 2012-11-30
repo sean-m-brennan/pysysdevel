@@ -50,6 +50,7 @@ def install(target='build'):
         archive = 'ffnet-' + ver + '.tar.gz'
         install_pypkg_locally('ffnet-' + ver, website, archive, target)
         environment['FFNET_VERSION'] = ver
+
         ## also requires networkx
         website = 'http://networkx.lanl.gov/download/networkx/'
         ver = '1.7'

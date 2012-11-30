@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-'install_data' command for installing shared libraries and executables
+Find GCC OpenMP library
 """
 #**************************************************************************
 # 
@@ -19,29 +20,35 @@
 # 
 #**************************************************************************
 
-import os
-import util
+import os, glob
 
-from numpy.distutils.command.install_data import install_data as old_data
+from pydevel.util import *
+
+environment = dict()
+gomp_found = False
 
 
-class install_data(old_data):
-    def initialize_options(self):
-        old_data.initialize_options(self)
-        self.data_dirs = self.distribution.data_dirs
-        if self.data_files is None:
-            self.data_files = []
+def null():
+    global environment
+    environment['GOMP_LIBRARY_DIR'] = None
+    environment['GOMP_LIBRARY'] = ''
 
-    def run (self):
-        old_data.run(self)
-        if not hasattr(self.distribution, 'using_py2exe') or \
-                not self.distribution.using_py2exe:
-            install = self.get_finalized_command('install')
-            if install.prefix is None:
-                target_dir = install.install_base
-            else:
-                target_dir = install.prefix
-            for tpl in self.data_dirs:
-                target = os.path.join(target_dir, 'share', tpl[0])
-                for d in tpl[1]:
-                    util.copy_tree(d, target, excludes=['.svn*', 'CVS*'])
+
+def is_installed():
+    global environment, gomp_found
+    try:
+        gomp_lib_dir, gomp_lib  = find_library('gomp')
+        environment['GOMP_LIBRARY_DIR'] = gomp_lib_dir
+        environment['GOMP_LIBRARY'] = gomp_lib
+        gomp_found = True
+    except Exception,e:
+        print e
+        gomp_found = False
+    return gomp_found
+
+
+def install(target='build'):
+    ## User must install
+    raise Exception('GOMP development library required, but not installed.' +
+                    '\nlibgomp is part of GCC, your development environment ' +
+                    'may be messed up. Try yum install libgomp, at a minimum.')

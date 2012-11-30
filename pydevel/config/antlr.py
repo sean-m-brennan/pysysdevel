@@ -89,7 +89,7 @@ def install(target='build'):
     abs_target = os.path.abspath(target)
     if not java_antlr_found:
         try:
-            import urllib, tarfile, subprocess
+            import urllib, tarfile
             download_file = 'antlr-' + ver + '.tar.gz'
             set_downloading_file(website + download_file)
             if not os.path.exists(download_file):
@@ -115,7 +115,7 @@ def install(target='build'):
 
     if not python_antlr_found:
         try:
-            import urllib, tarfile, subprocess
+            import urllib, tarfile
             download_file = 'antlr_python_runtime-' + ver + '.tar.gz'
             set_downloading_file(website + download_file)
             if not os.path.exists(download_file):

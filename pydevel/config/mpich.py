@@ -20,7 +20,7 @@ Find MPICH library
 # 
 #**************************************************************************
 
-import os, struct
+import os, struct, glob
 
 from pydevel.util import *
 
@@ -32,7 +32,8 @@ def null():
     global environment
     environment['MPICH_INCLUDE_DIR'] = None
     environment['MPICH_LIBRARY_DIR'] = None
-    environment['MPICH_LIBRARY'] = None
+    environment['MPICH_LIBRARIES'] = []
+    environment['MPICH_LIBS'] = []
 
 
 def is_installed():
@@ -54,12 +55,14 @@ def is_installed():
             base_dirs = []
             if 'windows' in platform.system().lower():
                 base_dirs += [os.path.join('c:', 'mpich')] #FIXME
-            mpich_lib_dir, mpich_lib  = find_library('mpich', base_dirs)
+            mpich_lib_dir, mpich_libs  = find_libraries('mpich', base_dirs)
             mpich_inc_dir = find_header('mpi.h', base_dirs,
                                         ['mpich2', 'mpich2-' + arch,])
         environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir
         environment['MPICH_LIBRARY_DIR'] = mpich_lib_dir
-        environment['MPICH_LIBRARY'] = os.path.join(mpich_lib_dir, mpich_lib)
+        environment['MPICH_LIBRARIES'] = mpich_libs
+        environment['MPICH_LIBS'] = ['mpich', 'mpichcxx', 'mpichf90',]
+        ## FIXME derive from found libs
         mpich_found = True
     except Exception,e:
         print e

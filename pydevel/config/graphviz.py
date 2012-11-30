@@ -32,7 +32,8 @@ def null():
     global environment
     environment['GRAPHVIZ_INCLUDE_DIR'] = None
     environment['GRAPHVIZ_LIBRARY_DIR'] = None
-    environment['GRAPHVIZ_LIBRARY'] = None
+    environment['GRAPHVIZ_LIBRARIES'] = []
+    environment['GRAPHVIZ_LIBS'] = []
 
 
 def is_installed():
@@ -52,12 +53,13 @@ def is_installed():
             base_dirs = []
             if 'windows' in platform.system().lower():
                 base_dirs += [os.path.join('c:', 'graphviz')] #FIXME
-            graphviz_lib_dir, graphviz_lib  = find_library('graph', base_dirs)
+            graphviz_lib_dir, graphviz_lib = find_library('graph', base_dirs)
             graphviz_inc_dir = find_header('graphviz_version.h', base_dirs,
                                            ['graphviz'])
         environment['GRAPHVIZ_INCLUDE_DIR'] = graphviz_inc_dir
         environment['GRAPHVIZ_LIBRARY_DIR'] = graphviz_lib_dir
-        environment['GRAPHVIZ_LIBRARY'] = os.path.join(graphviz_lib_dir, graphviz_lib)
+        environment['GRAPHVIZ_LIBRARIES'] = [graphviz_lib]
+        environment['GRAPHVIZ_LIBS'] = ['graph']
         graphviz_found = True
     except Exception,e:
         print e

@@ -80,20 +80,39 @@ def install(target='build'):
             os.chdir(here)
             working_dir = os.path.join(target, 'pyjamas-' + ver)
             os.chdir(working_dir)
-            util.patch_file('library/HTTPRequest.browser.py',
-                            'onProgress', 'localHandler', 'handler')
+            log_file = 'pyjamas.log'
+            log = open(log_file, 'w')
+            patch_file('library/HTTPRequest.browser.py',
+                       'onProgress', 'localHandler', 'handler')
             cmd_line = ['python', 'bootstrap.py',]
-            status = subprocess.call(cmd_line)
+            sys.stdout.write('PREREQUISITE pyjamas ')
+            try:
+                p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
+                status = process_progress(p)
+            except KeyboardInterrupt,e:
+                p.terminate()
+                log.close()
+                raise e
             if status != 0:
-                raise Exception("Command '" + str(cmd_line) +
-                                "' returned non-zero exit status "
-                                + str(status))
+                log.close()
+                sys.stdout.write(' failed; See ' + log_file + '\n')
+                raise Exception('Pyjamas is required, but could not be ' +
+                                'installed locally; See ' + log_file)
+
             cmd_line = ['python', 'run_bootstrap_first_then_setup.py', 'build']
-            status = subprocess.call(cmd_line)
+            try:
+                p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
+                status = process_progress(p)
+                log.close()
+            except KeyboardInterrupt,e:
+                p.terminate()
+                log.close()
+                raise e
             if status != 0:
-                raise Exception("Command '" + str(cmd_line) +
-                                "' returned non-zero exit status "
-                                + str(status))
+                sys.stdout.write(' failed; See ' + log_file + '\n')
+                raise Exception('Pyjamas is required, but could not be ' +
+                                'installed locally; See ' + log_file)
+            sys.stdout.write(' done\n')
             os.chdir(here)
             environment['PYJAMAS_ROOT'] = working_dir
             environment['PYJSBUILD_EXECUTABLE'] = find_program('pyjsbuild',

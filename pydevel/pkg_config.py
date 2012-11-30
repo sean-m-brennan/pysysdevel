@@ -34,39 +34,49 @@ class pkg_config(object):
                  data_files=dict(), extra_data=[], req_pkgs=[], dyn_mods=[],
                  environ=dict(), prereq=[], redistrib=[],
                  img_dir='', build_dir=''):
-        self.PACKAGE          = package_tree.root()
-        self.NAME             = name
-        self.VERSION          = version[:version.rindex('.')]
-        self.RELEASE          = version
-        self.COPYRIGHT        = copyright
-        self.AUTHOR           = author
-        self.COMPANY          = company
-        self.ID               = pkg_id
-        self.PACKAGE_TREE     = package_tree
+        if package_tree is not None:
+            self.PACKAGE       = package_tree.root()
+        else:
+            self.PACKAGE       = name.lower()
+        self.NAME              = name
+        self.VERSION           = version[:version.rindex('.')]
+        self.RELEASE           = version
+        self.COPYRIGHT         = copyright
+        self.AUTHOR            = author
+        self.COMPANY           = company
+        self.ID                = pkg_id
+        self.PACKAGE_TREE      = package_tree
 
-        self.source_files     = srcs
-        self.runscripts       = runscripts
-        self.package_files    = data_files
-        self.extra_data_files = extra_data
-        self.required_pkgs    = req_pkgs
-        self.dynamic_modules  = dyn_mods
-        self.environment      = environ
-        self.prerequisites    = prereq
-        self.redistributed    = redistrib
-        self.image_dir        = img_dir
-        self.build_dir        = build_dir
-        self.build_config     = 'release'
+        self.source_files      = srcs
+        self.runscripts        = runscripts
+        self.package_files     = data_files
+        self.extra_data_files  = extra_data
+        self.required_pkgs     = req_pkgs
+        self.dynamic_modules   = dyn_mods
+        self.environment       = environ
+        self.prerequisites     = prereq
+        self.redistributed     = redistrib
+        self.image_dir         = img_dir
+        self.build_dir         = build_dir
+        self.build_config      = 'release'
 
-        self.package_names = dict((tree.root(),
-                                   '_'.join(list(reversed(tree.flatten()))))
-                                  for tree in self.PACKAGE_TREE.inverted())
-        self.names         = dict((tree.root(),
-                                   '.'.join(list(reversed(tree.flatten()))))
-                                  for tree in self.PACKAGE_TREE.subtrees())
-        self.parents       = dict((node, self.PACKAGE_TREE.parent(node))
-                                  for node in self.PACKAGE_TREE.flatten())
-        self.hierarchy     = dict((tree.root(), list(reversed(tree.flatten())))
-                                  for tree in self.PACKAGE_TREE.subtrees())
+        if package_tree is not None:
+            self.package_names = dict((tree.root(),
+                                       '_'.join(list(reversed(tree.flatten()))))
+                                      for tree in self.PACKAGE_TREE.inverted())
+            self.names         = dict((tree.root(),
+                                       '.'.join(list(reversed(tree.flatten()))))
+                                      for tree in self.PACKAGE_TREE.subtrees())
+            self.parents       = dict((node, self.PACKAGE_TREE.parent(node))
+                                      for node in self.PACKAGE_TREE.flatten())
+            self.hierarchy     = dict((tree.root(),
+                                       list(reversed(tree.flatten())))
+                                      for tree in self.PACKAGE_TREE.subtrees())
+        else:
+            self.package_names = dict()
+            self.names         = dict()
+            self.parents       = dict()
+            self.hierarchy     = dict()
 
         self.environment['PACKAGE'] = self.PACKAGE
         self.environment['NAME'] = self.NAME

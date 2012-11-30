@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find GNU Scientific Library
+Find HYPRE library
 """
 #**************************************************************************
 # 
@@ -20,52 +20,49 @@ Find GNU Scientific Library
 # 
 #**************************************************************************
 
-import os
+import os, glob
 
 from pydevel.util import *
 
 environment = dict()
-gsl_found = False
+hypre_found = False
 
 
 def null():
     global environment
-    environment['GSL_INCLUDE_DIR'] = None
-    environment['GSL_LIBRARY_DIR'] = None
-    environment['GSL_LIBRARIES'] = []
-    environment['GSL_LIBS'] = []
+    environment['HYPRE_INCLUDE_DIR'] = None
+    environment['HYPRE_LIBRARY_DIR'] = None
+    environment['HYPRE_LIBRARIES'] = []
 
 
 def is_installed():
-    global environment, gsl_found
-    gsl_dev_dir = ''
+    global environment, hypre_found
+    hypre_dev_dir = ''
     try:
         try:
-            gsl_dev_dir = os.environ['GSL_ROOT']
+            hypre_dev_dir = os.environ['HYPRE_ROOT']
         except:
             pass
-        if gsl_dev_dir != '':
-            gsl_lib_dir, gsl_libs  = find_libraries('gsl', [gsl_dev_dir])
-            gsl_inc_dir = find_header('gsl_types.h', [gsl_dev_dir], ['gsl'])
+        if hypre_dev_dir != '':
+            hypre_lib_dir, hypre_lib  = find_library('hypre', [hypre_dev_dir])
+            hypre_inc_dir = find_header('hypre.h', [hypre_dev_dir])
         else:
             base_dirs = []
             if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('c:', 'gsl')] #FIXME
-            gsl_lib_dir, gsl_libs  = find_libraries('gsl', base_dirs)
-            gsl_inc_dir = find_header('gsl_types.h', base_dirs, ['gsl'])
-        environment['GSL_INCLUDE_DIR'] = gsl_inc_dir
-        environment['GSL_LIBRARY_DIR'] = gsl_lib_dir
-        environment['GSL_LIBRARIES'] = gsl_libs
-        environment['GSL_LIBS'] = ['gsl', 'gslcblas',]
-        gsl_found = True
+                base_dirs += [os.path.join('c:', 'hypre')] #FIXME
+            hypre_lib_dir, hypre_libs  = find_libraries('hypre', base_dirs)
+            hypre_inc_dir = find_header('hypre.h', base_dirs)
+        environment['HYPRE_INCLUDE_DIR'] = hypre_inc_dir
+        environment['HYPRE_LIBRARY_DIR'] = hypre_lib_dir
+        environment['HYPRE_LIBRARIES'] = hypre_libs
+        hypre_found = True
     except Exception,e:
         print e
-        gsl_found = False
-    return gsl_found
+        hypre_found = False
+    return hypre_found
 
 
 def install(target='build'):
     ## User must install
-    raise Exception('GSL development library required, but not installed.' +
-                    '\nTry ftp://ftp.gnu.org/gnu/gsl/gsl-1.15.tar.gz;' +
-                    ' or yum install gsl-devel')
+    raise Exception('HYPRE development library required, but not installed.' +
+                    '\nTry https://computation.llnl.gov/casc/hypre/software.html')

@@ -20,7 +20,7 @@ Utilities for finding prerequisities
 # 
 #**************************************************************************
 
-import os, sys, platform, fnmatch, warnings, glob, struct
+import os, sys, platform, fnmatch, warnings, glob, struct, time
 
 default_path_prefixes = ['/usr','/usr/local','/opt/local','C:\\MinGW']
 
@@ -115,6 +115,15 @@ def find_library(name, extra_paths=[], extra_subdirs=[], limit=False):
     Find the containing directory and proper filename (returned as a tuple)
     of the given library.
     '''
+    return find_libraries(name, extra_paths, extra_subdirs, limit, True)
+
+
+def find_libraries(name, extra_paths=[], extra_subdirs=[],
+                   limit=False, single=False):
+    '''
+    Find the containing directory and proper filenames (returned as a tuple)
+    of the given library.
+    '''
     default_lib_paths = ['', 'lib', 'lib64']
     suffixes = ['.so', '.a']
     prefixes = ['', 'lib']
@@ -142,9 +151,15 @@ def find_library(name, extra_paths=[], extra_subdirs=[], limit=False):
                                 if DEBUG:
                                     print 'Searching ' + root + \
                                         ' for ' + filename
+                                libs = []
                                 for fn in filenames:
                                     if fnmatch.fnmatch(fn, filename):
-                                        return root, fn
+                                        if single:
+                                            return root, fn
+                                        else:
+                                            libs.append(fn)
+                                if len(libs) > 0:
+                                    return root, libs
     raise Exception(name + ' library not found.')
 
 
@@ -187,6 +202,25 @@ def patch_file(filepath, match, original, replacement):
         fixed.write(line)
     
 
+def process_progress(p):
+    max_dots = 10
+    prev = dots = 0
+    status = p.poll()
+    while status is None:
+        prev = dots
+        dots += 1
+        dots %= max_dots
+        if prev:
+            sys.stdout.write('\b' * prev)
+        sys.stdout.write('.' * dots)
+        sys.stdout.flush()
+        time.sleep(0.2)
+        status = p.poll()
+    sys.stdout.write('\b' * dots)
+    sys.stdout.write('.' * max_dots)
+    sys.stdout.flush()
+    return status
+ 
 
 def get_header_version(hdr_file, define_val):
     '''
@@ -252,13 +286,23 @@ def install_pypkg_locally(name, website, archive, build_dir):
                     '--home=' + target_dir,
                     '--install-lib=' + os.path.join(target_dir, local_lib_dir),
                     ]
-        log = open(name + '.log', 'w')
-        status = subprocess.call(cmd_line, stdout=log)
-        log.close()
+        log_file = name + '.log'
+        log = open(log_file, 'w')
+        sys.stdout.write('PREREQUISITE ' + name + ' ')
+        try:
+            p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
+            status = process_progress(p)
+            log.close()
+        except KeyboardInterrupt,e:
+            p.terminate()
+            log.close()
+            raise e
         if status != 0:
-            raise Exception("Command '" + str(cmd_line) +
-                            "' returned non-zero exit status "
-                            + str(status))
+            sys.stdout.write(' failed; See ' + log_file + '\n')
+            raise Exception(name + ' is required, but could not be ' +
+                            'installed locally; See ' + log_file)
+        else:
+            sys.stdout.write(' done\n')
         if not os.path.join(target_dir, local_lib_dir) in sys.path:
             sys.path.insert(0, os.path.join(target_dir, local_lib_dir))
         os.chdir(here)

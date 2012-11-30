@@ -20,6 +20,7 @@ Custom extensions and setup
 #**************************************************************************
 
 import sys, shutil, os, platform, subprocess
+
 from numpy.distutils import extension
 from numpy.distutils.numpy_distribution import NumpyDistribution
 from numpy.distutils.command.build import build as old_build
@@ -161,7 +162,12 @@ class CustomDistribution(NumpyDistribution):
         self.subpackages = attrs.get('subpackages')
         if self.subpackages != None:
             del old_attrs['subpackages']
-        self.quit_on_error = True
+        self.generated_files = attrs.get('generated_files')
+        if self.generated_files != None:
+            del old_attrs['generated_files']
+        self.quit_on_error = attrs.get('quit_on_error')
+        if self.quit_on_error != None:
+            del old_attrs['quit_on_error']
         NumpyDistribution.__init__(self, old_attrs)
 
     def has_c_libraries(self):
@@ -229,7 +235,10 @@ class build(old_build):
             self.distribution.has_data_directories()
 
     def quit_on_error(self):
-        return self.distribution.quit_on_error
+        if hasattr(self.distribution, 'quit_on_error') and \
+                self.distribution.quit_on_error is not None:
+            return self.distribution.quit_on_error
+        return False
 
 
     sub_commands = old_build.sub_commands[:3] + [
@@ -250,11 +259,27 @@ class build(old_build):
                     argv.remove('install')
                 if 'clean' in argv:
                     argv.remove('clean')
-                print "BUILDING " + str(sub[0]) + ' in ' + str(sub[1])
-                if subprocess.call(['python',
-                                    os.path.join(sub[1], 'setup.py'),
-                                    ] +  argv) and self.quit_on_error():
-                    break
+                sys.stdout.write("BUILDING " + str(sub[0]) +
+                                 ' in ' + str(sub[1]) + ' ')
+                log_file = os.path.join(self.build_base,
+                                        sub[0] + '_build.log')
+                log = open(log_file, 'w')
+                try:
+                    p = subprocess.Popen(['python',
+                                          os.path.join(sub[1], 'setup.py'),
+                                          ] +  argv, stdout=log, stderr=log)
+                    status = util.process_progress(p)
+                    log.close()
+                except KeyboardInterrupt,e:
+                    p.terminate()
+                    log.close()
+                    raise e
+                if status != 0:
+                    sys.stdout.write(' failed; See ' + log_file + '\n')
+                    if self.quit_on_error():
+                        sys.exit(status)
+                else:
+                    sys.stdout.write(' done\n')
             if self.has_pure_modules() or self.has_c_libraries() or \
                     self.has_ext_modules() or self.has_shared_libraries() or \
                     self.has_pypp_extensions() or self.has_web_extensions() or \
@@ -288,6 +313,7 @@ class install(old_install):
 
     def run(self):
         if self.distribution.subpackages != None:
+            build = self.get_finalized_command('build')
             for sub in self.distribution.subpackages:
                 idx = sys.argv.index('setup.py') + 1
                 argv = list(sys.argv[idx:])
@@ -295,11 +321,27 @@ class install(old_install):
                     argv.remove('build')
                 if 'clean' in argv:
                     argv.remove('clean')
-                print "INSTALLING " + str(sub[0]) + ' from ' + str(sub[1])
-                subprocess.call(['python',
-                                 os.path.join(sub[1], 'setup.py'),
-                                 ] +  argv)
-            build = self.get_finalized_command('build')
+                sys.stdout.write("INSTALLING " + str(sub[0]) +
+                                 ' from ' + str(sub[1]) + ' ')
+                log_file = os.path.join(build.build_base,
+                                        sub[0] + '_install.log')
+                log = open(log_file, 'w')
+                try:
+                    p = subprocess.Popen(['python',
+                                          os.path.join(sub[1], 'setup.py'),
+                                          ] +  argv, stdout=log, stderr=log)
+                    status = util.process_progress(p)
+                    log.close()
+                except KeyboardInterrupt,e:
+                    p.terminate()
+                    log.close()
+                    raise e
+                if status != 0:
+                    sys.stdout.write(' failed; See ' + log_file + '\n')
+                    if build.quit_on_error():
+                        sys.exit(status)
+                else:
+                    sys.stdout.write(' done\n')
             if build.has_pure_modules() or build.has_c_libraries() or \
                     build.has_ext_modules() or build.has_shared_libraries() or \
                     build.has_pypp_extensions() or \
@@ -371,6 +413,20 @@ class clean(old_clean):
                 subprocess.call(['python',
                                  os.path.join(sub[1], 'setup.py'),
                                  ] +  argv)
+
+        # Remove user-specified generated files
+        if self.distribution.generated_files != None:
+            for path in self.distribution.generated_files:
+                if os.path.isfile(path) or os.path.islink(path):
+                    try:
+                        os.unlink(path)
+                    except:
+                        pass
+                elif os.path.isdir(path):
+                    try:
+                        shutil.rmtree(path, ignore_errors=True)
+                    except:
+                        pass
 
         old_clean.run(self)
 

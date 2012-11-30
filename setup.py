@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+"""
+Build and install pydevel
+"""
 #**************************************************************************
 # 
 # This material was prepared by the Los Alamos National Security, LLC 
@@ -29,6 +31,8 @@ if cwd:
 def main(argv=None):
     if argv is None:
         argv = sys.argv
+
+    #FIXME documentation
 
     setup(name        = 'pydevel',
           version     = '0.5.2',

@@ -26,9 +26,10 @@ __all__ = ['antlr', 'archive', 'boost', 'cdf', 'ctypesgen', 'f2c',
 
 
 import os, sys, platform
+from pydevel import util
 
-def configure_system(prerequisite_list, version,
-                     required_python_version='2.4', install=True):
+def configure_system(prerequisite_list, version, required_python_version='2.4',
+                     install=True, quiet=True):
     '''
     Given a list of required software and optionally a Python version,
     verify that python is the proper version and that
