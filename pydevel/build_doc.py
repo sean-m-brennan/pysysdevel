@@ -72,6 +72,7 @@ class build_doc(build_ext):
                 print 'building documentation "' + dext.name + '" sources'
 
             doc_dir = os.path.abspath(dext.source_directory)
+            extra_dirs = dext.extra_directories
             working_dir = os.path.abspath(os.path.join(self.build_temp,
                                                        dext.source_directory))
             here = os.getcwd()
@@ -101,9 +102,14 @@ class build_doc(build_ext):
                                            os.path.relpath(doc_dir, src_dir))
                 environ['BUILD_DIR'] = bld_dir
                 environ['SOURCE_DIR'] = src_dir
-                environ['REL_SRC_DIR'] = os.path.relpath(src_dir, doc_bld_dir)
+                environ['RELATIVE_SOURCE_DIR'] = os.path.relpath(src_dir,
+                                                                 doc_bld_dir)
 
                 dir_util.copy_tree(doc_dir, working_dir, True)
+                for d in extra_dirs:
+                    subdir = os.path.basename(os.path.normpath(d))
+                    dir_util.copy_tree(d, os.path.join(target, subdir), True)
+
                 ## Configure rst files
                 util.configure_files(environ, doc_dir, '*.rst', working_dir)
 

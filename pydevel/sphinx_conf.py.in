@@ -14,8 +14,9 @@
 import sys, os, datetime
 from config import pkg
 
-build_dir = '@@{BUILD_DIR}'  ## must be an absolute path
-source_dir = '@@{SOURCE_DIR}'  ## must be an absolute path
+build_dir   = '@@{BUILD_DIR}'            ## must be an absolute path
+source_dir  = '@@{SOURCE_DIR}'           ## must be an absolute path
+rel_src_dir = '@@{RELATIVE_SOURCE_DIR}'  ## must be a relative path
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -40,9 +41,9 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
 general_theme = pkg.PACKAGE
 document_date = datetime.date.today().strftime('%d-%b-%Y')
 
-# Logo images
-my_logo = os.path.join(source_dir, pkg.image_dir, pkg.logo_file)
-my_extra_logo = os.path.join(source_dir, pkg.image_dir, pkg.extra_logo_file)
+# Logo images (Linked)
+my_logo = os.path.join(pkg.image_dir, pkg.logo_file)
+my_extra_logo = os.path.join(pkg.image_dir, pkg.extra_logo_file)
 
 # Breathe (C++ code extension) details
 breathe_default_project = pkg.NAME
@@ -148,8 +149,8 @@ html_title = pkg.NAME + ' manual'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-html_favicon = os.path.join(source_dir, pkg.image_path, pkg.PACKAGE + '.ico')
+# pixels large. (Copied)
+html_favicon = os.path.join(rel_src_dir, pkg.image_path, pkg.PACKAGE + '.ico')
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -216,7 +217,7 @@ pdf_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-#pdf_logo = os.path.join(source_dir, pkg.image_dir, pkg.logo)
+pdf_logo = os.path.join(rel_src_dir, pkg.image_path, pkg.logo)
 
 pdf_stylesheets = ['sphinx']
 #pdf_stylesheets = ['agogo']
@@ -272,7 +273,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-#latex_logo = os.path.join(source_dir, pkg.image_dir, pkg.logo)
+latex_logo = os.path.join(rel_src_dir, pkg.image_path, pkg.logo)
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.

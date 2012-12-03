@@ -46,13 +46,15 @@ class WebExtension(extension.Extension):
 
 class DocExtension(extension.Extension):
     def __init__(self, name, source_dir, sphinx_cfg=None,
-                 doxy_cfg=None, doxy_srcs=[], extra_docs = []):
+                 doxy_cfg=None, doxy_srcs=[], extra_docs = [],
+                 extra_directories=[],):
         extension.Extension.__init__(self, name, [])
         self.source_directory = source_dir
         self.sphinx_config = sphinx_cfg
         self.doxygen_cfg = doxy_cfg
         self.doxygen_srcs = doxy_srcs
         self.extra_docs = extra_docs
+        self.extra_directories = extra_directories
 
 
 class AntlrGrammar(extension.Extension):
