@@ -85,7 +85,7 @@ def find_program(name, pathlist=[]):
 
 
 
-def find_header(filename, extra_paths=[], extra_subdirs=[], limit=False):
+def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
     '''
     Find the containing directory of the specified header file.
     extra_subdir may be a pattern.
@@ -102,11 +102,17 @@ def find_header(filename, extra_paths=[], extra_subdirs=[], limit=False):
             for sub in subdirs:
                 ext_path = os.path.join(path, sub)
                 if DEBUG:
-                    print 'Searching ' + ext_path + ' for ' + filename
+                    print 'Searching ' + ext_path + ' for ' + filepath
+                filename = os.path.basename(filepath)
+                dirname = os.path.dirname(filepath)
                 for root, dirnames, filenames in os.walk(ext_path):
+                    rt = os.path.normpath(root)
                     for fn in filenames:
-                        if fnmatch.fnmatch(fn, filename):
-                            return os.path.dirname(os.path.join(root, filename))
+                        if dirname == ''and fnmatch.fnmatch(fn, filename):
+                            return root
+                        elif fnmatch.fnmatch(os.path.basename(rt), dirname) \
+                                and fnmatch.fnmatch(fn, filename):
+                            return os.path.dirname(rt)
     raise Exception(filename + ' not found.')
 
 

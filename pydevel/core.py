@@ -254,6 +254,10 @@ class build(old_build):
 
     def run(self):
         if self.distribution.subpackages != None:
+            try:
+                os.makedirs(self.build_base)
+            except:
+                pass
             for sub in self.distribution.subpackages:
                 idx = sys.argv.index('setup.py') + 1
                 argv = list(sys.argv[idx:])
@@ -265,11 +269,16 @@ class build(old_build):
                                  ' in ' + str(sub[1]) + ' ')
                 log_file = os.path.join(self.build_base,
                                         sub[0] + '_build.log')
+                try:
+                    addtnl_args = sub[2]
+                except:
+                    addtnl_args = []
                 log = open(log_file, 'w')
                 try:
                     p = subprocess.Popen(['python',
                                           os.path.join(sub[1], 'setup.py'),
-                                          ] +  argv, stdout=log, stderr=log)
+                                          ] +  argv + addtnl_args,
+                                         stdout=log, stderr=log)
                     status = util.process_progress(p)
                     log.close()
                 except KeyboardInterrupt,e:
@@ -366,8 +375,6 @@ class config_cc(old_config_cc):
 class config_fc(old_config_fc):
     def initialize_options(self):
         old_config_fc.initialize_options(self)
-        ## force specific compiler
-        self.fcompiler = 'gnu95'  ## i.e. gfortran
         try:
             old_ldflags = os.environ['LDFLAGS']
         except:

@@ -45,17 +45,19 @@ def is_installed():
         boost_root = os.environ['BOOST_ROOT']
         boost_root = boost_root.strip('"')
         environment['BOOST_ROOT'] = boost_root
-        environment['BOOST_INCLUDE_DIR'] = os.path.join(boost_root, 'boost')
+        incl_dir = find_header(os.path.join('boost', 'version.hpp'),
+                               [boost_root])
+        environment['BOOST_INCLUDE_DIR'] = incl_dir
         try:
-            environment['BOOST_LIB_DIR'] = os.environ['BOOST_LIBRARYDIR']
+            environment['BOOST_LIB_DIR'] = os.environ['BOOST_LIBRARY_DIR']
         except:
             if os.path.exists(os.path.join(boost_root, 'stage', 'lib')):
                 environment['BOOST_LIB_DIR'] = os.path.join(boost_root,
                                                             'stage', 'lib')
             else:
                 environment['BOOST_LIB_DIR'] = os.path.join(boost_root, 'lib')
-        boost_version = get_header_version(os.path.join(boost_root, 'boost',
-                                                         'version.hpp'),
+        boost_version = get_header_version(os.path.join(incl_dir, 'boost',
+                                                        'version.hpp'),
                                            'BOOST_LIB_VERSION')
         boost_version = boost_version.strip('"')
         environment['BOOST_VERSION'] = boost_version
@@ -70,7 +72,7 @@ def is_installed():
         environment['BOOST_INCLUDE_DIR'] = incl_dir
         environment['BOOST_LIB_DIR'], _ = find_library('boost_python',
                                                        [win_alt])
-        boost_version = get_header_version(os.path.join(incl_dir,
+        boost_version = get_header_version(os.path.join(incl_dir, 'boost',
                                                         'version.hpp'),
                                            'BOOST_LIB_VERSION')
         boost_version = boost_version.strip('"')
