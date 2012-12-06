@@ -47,7 +47,8 @@ class WebExtension(extension.Extension):
 class DocExtension(extension.Extension):
     def __init__(self, name, source_dir, sphinx_cfg=None,
                  doxy_cfg=None, doxy_srcs=[], extra_docs = [],
-                 extra_directories=[],):
+                 extra_directories=[], no_sphinx=False,
+                 style=util.DEFAULT_STYLE):
         extension.Extension.__init__(self, name, [])
         self.source_directory = source_dir
         self.sphinx_config = sphinx_cfg
@@ -55,6 +56,8 @@ class DocExtension(extension.Extension):
         self.doxygen_srcs = doxy_srcs
         self.extra_docs = extra_docs
         self.extra_directories = extra_directories
+        self.without_sphinx = no_sphinx
+        self.style = style
 
 
 class AntlrGrammar(extension.Extension):

@@ -50,7 +50,20 @@ class build_shlib(build_clib):
     def build_libraries(self, libraries):
         if self.libraries and len(self.libraries) > 0:
             for (lib_name, build_info) in libraries:
+                ## Special defines
+                env = self.distribution.environment
+                key = lib_name + '_DEFINES'
+                if env and key in env:
+                    extra_preargs = build_info.get('extra_compiler_args') or []
+                    install_data = self.get_finalized_command('install_data')
+                    for define in env[key]:
+                        template = define[0]
+                        insert = util.safe_eval(define[1])
+                        arg = template.replace('@@def@@', insert)
+                        extra_preargs.append(arg)
+                    build_info['extra_compiler_args'] = extra_preargs
                 self.build_a_library(build_info, lib_name, libraries)
+
 
     def build_a_library(self, build_info, lib_name, libraries):
         libraries = build_info.get('libraries') or []

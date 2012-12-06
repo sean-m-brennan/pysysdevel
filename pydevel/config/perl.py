@@ -65,7 +65,6 @@ def is_installed():
     except Exception,e:
         print e
         perl_found = False
-    print 'PERL ' + environment['PERL_INCLUDE_DIR'] + ' ' + environment['PERL_LIBRARY_DIR']
     return perl_found
 
 

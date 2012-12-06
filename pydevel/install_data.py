@@ -31,17 +31,19 @@ class install_data(old_data):
         self.data_dirs = self.distribution.data_dirs
         if self.data_files is None:
             self.data_files = []
+        install = self.get_finalized_command('install')
+        if install.prefix is None:
+            self.data_install_dir = os.path.join(install.install_base, 'share')
+        else:
+            self.data_install_dir = os.path.join(install.prefix, 'share')
+ 
 
     def run (self):
         old_data.run(self)
         if not hasattr(self.distribution, 'using_py2exe') or \
                 not self.distribution.using_py2exe:
-            install = self.get_finalized_command('install')
-            if install.prefix is None:
-                target_dir = install.install_base
-            else:
-                target_dir = install.prefix
-            for tpl in self.data_dirs:
-                target = os.path.join(target_dir, 'share', tpl[0])
+           for tpl in self.data_dirs:
+                target = os.path.join(self.data_install_dir, tpl[0])
                 for d in tpl[1]:
-                    util.copy_tree(d, target, excludes=['.svn*', 'CVS*'])
+                    util.copy_tree(d, target, excludes=['.svn*', 'CVS*',
+                                                        'Makefile*'])

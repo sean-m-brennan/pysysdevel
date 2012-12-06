@@ -113,13 +113,19 @@ class build_doc(build_ext):
                 ## Configure rst files
                 util.configure_files(environ, doc_dir, '*.rst', working_dir)
 
-                if self.distribution.has_ext_modules() and \
-                        os.path.exists(os.path.join(doc_dir, dext.doxygen_cfg)):
+                if os.path.exists(os.path.join(doc_dir, dext.doxygen_cfg)):
                     ## Doxygen + breathe
+                    'Config ' + os.path.join(doc_dir, dext.doxygen_cfg)
+                    util.configure_file(environ,
+                                        os.path.join(doc_dir, dext.doxygen_cfg),
+                                        os.path.join(working_dir,
+                                                     dext.doxygen_cfg),
+                                        style=dext.style)
                     for s in dext.doxygen_srcs:
                         util.configure_file(environ,
                                             os.path.join(doc_dir, s),
-                                            os.path.join(working_dir, s))
+                                            os.path.join(working_dir, s),
+                                            style=dext.style)
                     try:
                         doxygen_exe = util.find_program('doxygen')
                     except:
@@ -162,6 +168,8 @@ class build_doc(build_ext):
                     shutil.copy(os.path.join(doc_dir, f), target)
 
                 ## Sphinx
+                if dext.without_sphinx:
+                    return
                 if dext.sphinx_config is None:
                     dext.sphinx_config = os.path.join(os.path.dirname(__file__),
                                                       'sphinx_conf.py.in')

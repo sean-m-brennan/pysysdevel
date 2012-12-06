@@ -37,6 +37,19 @@ class build_clib(old_build_clib):
     def build_libraries(self, libraries):
         if self.libraries and len(self.libraries) > 0:
             for (lib_name, build_info) in libraries:
+                ## Special defines
+                env = self.distribution.environment
+                key = lib_name + '_DEFINES'
+                if env and key in env:
+                    extra_preargs = build_info.get('extra_compiler_args') or []
+                    install_data = self.get_finalized_command('install_data')
+                    for define in env[key]:
+                        template = define[0]
+                        insert = util.safe_eval(define[1])
+                        arg = template.replace('@@def@@', insert)
+                        extra_preargs.append(template)
+                    build_info['extra_compiler_args'] = extra_preargs
+
                 ## Conditional recompile
                 target_library = 'lib' + \
                     self.compiler.library_filename(lib_name, output_dir='')

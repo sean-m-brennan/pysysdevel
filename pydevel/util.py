@@ -435,34 +435,52 @@ def copy_tree(src, dst, preserve_mode=1, preserve_times=1, preserve_symlinks=0,
     return outputs
 
 
-def nested_values(line, var_dict, d=0):
-    token = '@@'
-    fr_len = len(token) + 1
+(DEFAULT_STYLE, AUTOMAKE_STYLE, AUTOCONF_STYLE) = range(3)
 
-    cmt = line.find('#')
-    front = line.find(token + '{')
+def nested_values(line, var_dict, d=0, style=DEFAULT_STYLE):
+    fr_delim = '@@{'
+    bk_delim = '}'
+    cmt_delim = '#'
+    if style == AUTOCONF_STYLE:
+        fr_delim = '$('
+        bk_delim = ')'
+    elif style == AUTOMAKE_STYLE:
+        fr_delim = '@'
+        bk_delim = '@'
+    fr_len = len(fr_delim)
+    
+    cmt = line.find(cmt_delim)
+    front = line.find(fr_delim)
     while front >= 0:  ## sequential
-        back = line.find('}', front+fr_len)
+        back = line.find(bk_delim, front+fr_len)
         if back < 0 or (cmt >= 0 and cmt < front):
             break
-        last = line.rfind(token + '{', front+fr_len)
+        last = line.rfind(fr_delim, front+fr_len)
         while last >= 0 and last < back and last > front:  ## nested only
-            back2 = line.rfind('}', front+fr_len)
+            back2 = line.rfind(bk_delim, front+fr_len)
             replacement = nested_values(line[front+fr_len:back2], var_dict, d+1)
             line = line.replace(line[front+fr_len:back2], replacement)
-            last = line.rfind(token + '{', front+fr_len)
-        back = line.find('}', front+fr_len)
+            last = line.rfind(fr_delim, front+fr_len)
+        back = line.find(bk_delim, front+fr_len)
         valname = line[front+fr_len:back]
+        if len(valname.split()) > 1:  ## disallow whitespace
+            front = back
+            continue
+        print 'get ' + valname + ' in ' + line + ' at ' + str(front+fr_len) + ':' + str(back)
         value = var_dict[valname]
         line = line.replace(line[front:back+1], str(value))
-        front = line.find(token + '{')
+        front = line.find(fr_delim)
     return line
 
 
-def configure_file(var_dict, filepath, newpath=None, suffix='.in'):
+def configure_file(var_dict, filepath, newpath=None, suffix='.in',
+                   style=DEFAULT_STYLE):
     '''
     Given a dictionary of environment variables and a path,
     replace all occurrences of @@{VAR} with the value of the VAR key.
+    If style is AUTOCONF_STYLE, use the style $(VAR).
+    If style is AUTOMAKE_STYLE, use the style @VAR@.
+    VAR may not have whitespace in the string.
     '''
     if newpath is None:
         newpath = filepath[:-(len(suffix))]
@@ -478,7 +496,7 @@ def configure_file(var_dict, filepath, newpath=None, suffix='.in'):
         mkdir(newdir)
     new = open(newpath, 'w')
     for line in orig:
-        line = nested_values(line, var_dict)
+        line = nested_values(line, var_dict, style=style)
         new.write(line)
     orig.close()
     new.close()
@@ -574,6 +592,16 @@ def get_os():
     return os_name
 
 
+def safe_eval(stmt):
+    ## TODO restrict possible functions/modules used
+    safe_list = []  ## allowable modules and functions
+    safe_builtins = []  ## allowable builtin functions
+    safe_dict = dict([ (k, globals().get(k, None)) for k in safe_list ])
+    safe_dict['__builtins__'] = safe_builtins
+    #return eval(stmt, safe_dict)  #TODO not implemented
+    return eval(stmt)
+
+
 def handle_arguments(argv, option_list=[]):
     if '--quiet' in argv:
         set_verbose(False)
@@ -613,8 +641,24 @@ def handle_arguments(argv, option_list=[]):
         options['runscript'] = runscript
         options['app'] = app
 
+    options['install_dir'] = sys.prefix
+    data_directory = 'share'
+    data_override = False
     for idx, arg in enumerate(argv[:]):
-        if arg.startswith('build_') and arg[6:] in option_plus_list:
+        if arg.startswith('--prefix='):
+            options['install_dir'] = arg[9:]
+        elif arg.startswith('--home='):
+            options['install_dir'] = arg[7:]
+        elif arg.startswith('--user='):
+            options['install_dir'] = arg[7:]
+        elif arg.startswith('--install-data='):
+            path = arg[15:]
+            if os.path.isabs(path):
+                options['data_install_dir'] = path
+                data_override = True  ## always overrides the above prefixes
+            else:
+                data_directory = path
+        elif arg.startswith('build_') and arg[6:] in option_plus_list:
             options[arg[6:]] = True
             if not 'build' in argv:
                 argv.insert(idx, 'build')
@@ -629,6 +673,9 @@ def handle_arguments(argv, option_list=[]):
             if not 'clean' in argv:
                 argv.insert(idx, 'clean')
             argv.remove(arg)
+    if not data_override:
+        options['data_install_dir'] = os.path.join(options['install_dir'],
+                                                   data_directory)
 
     build_all = True
     for opt in option_list:  ## do not build docs by default
