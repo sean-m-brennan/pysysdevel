@@ -20,7 +20,7 @@ Utilities for finding prerequisities
 # 
 #**************************************************************************
 
-import os, sys, platform, fnmatch, warnings, glob, struct, time
+import os, sys, platform, fnmatch, warnings, glob, struct, time, shutil
 
 default_path_prefixes = ['/usr','/usr/local','/opt/local','C:\\MinGW']
 

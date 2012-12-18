@@ -40,8 +40,8 @@ class install_data(old_data):
 
     def run (self):
         old_data.run(self)
-        if not hasattr(self.distribution, 'using_py2exe') or \
-                not self.distribution.using_py2exe:
+        if (not hasattr(self.distribution, 'using_py2exe') or \
+                not self.distribution.using_py2exe) and self.data_dirs:
            for tpl in self.data_dirs:
                 target = os.path.join(self.data_install_dir, tpl[0])
                 for d in tpl[1]:

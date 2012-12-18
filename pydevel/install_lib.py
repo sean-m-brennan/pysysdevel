@@ -47,17 +47,18 @@ class install_lib(old_install_lib):
         self.mkpath(target_dir)
         if build_shlib.install_shared_libraries:
             for lib in build_shlib.install_shared_libraries:
-                target = os.path.join(target_dir, lib[0])
+                target = target_dir + os.sep
                 source = os.path.join(build_shlib.build_clib, lib[1])
                 self.copy_file(source, target)
 
         if self.distribution.extra_install_modules:
+            module_dir = install.install_platlib
             for pkg in self.distribution.extra_install_modules:
                 source = util.get_module_location(pkg)
                 if os.path.isdir(source):
-                    self.copy_tree(source, os.path.join(target_dir, pkg))
+                    self.copy_tree(source, os.path.join(module_dir, pkg))
                 else:
-                    self.copy_file(source, target_dir)
+                    self.copy_file(source, module_dir)
 
         if self.distribution.extra_install_libraries:
             for pkg_tpl in self.distribution.extra_install_libraries:
