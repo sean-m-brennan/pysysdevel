@@ -134,3 +134,7 @@ class build_js(build_ext):
                                     "' returned non-zero exit status "
                                     + str(status))
                 os.chdir(here)
+            if not os.path.lexists(os.path.join(target, 'index.html')):
+                os.chdir(target)
+                os.symlink(wext.name + '.html', 'index.html')
+                os.chdir(here)
