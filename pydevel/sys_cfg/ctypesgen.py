@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find SQLite3
+Find ctypesgen package
 """
 #**************************************************************************
 # 
@@ -25,33 +25,31 @@ import os
 from pydevel.util import *
 
 environment = dict()
-sqlite_found = False
+ctypesgen_found = False
 
 
 def null():
     global environment
-    environment['SQLITE3_INCLUDE_DIR'] = None
-    environment['SQLITE3_LIB_DIR'] = None
-    environment['SQLITE3_LIBRARY'] = None
+    environment['CTYPESGEN_EXE'] = None
 
 
-def is_installed():
-    global environment, sqlite_found
-    ## look for it
+def is_installed(version=None):
+    global environment, ctypesgen_found
     try:
-        win_loc = os.path.join(os.environ['ProgramFiles'], 'SQLite3')
+        environment['CTYPESGEN_EXE'] = find_program('ctypesgen.py')
+        ctypesgen_found = True
     except:
-        win_loc = None
-    incl_dir = find_header('sqlite3.h', [win_loc,])
-    environment['SQLITE3_INCLUDE_DIR'] = incl_dir
-    environment['SQLITE3_LIB_DIR'], lib = find_library('sqlite3', [win_loc,])
-    environment['SQLITE3_LIBRARY'] = 'sqlite3'
-    sqlite_found = True
-    return sqlite_found
+        pass
+    return ctypesgen_found
 
 
-def install():
-    if not sqlite_found:
-        raise Exception('SQLite3 not found. (include=' +
-                        str(environment['SQLITE3_INCLUDE_DIR']) + ', library=' +
-                        str(environment['SQLITE3_LIB_DIR']) + ')')
+def install(target='build', version=None):
+    global environment
+    if not ctypesgen_found:
+        website = 'http://pypi.python.org/packages/source/c/ctypesgen/'
+        if version is None:
+            version = '0.r125'
+        archive = 'ctypesgen-' + version + '.tar.gz'
+        install_pypkg_locally('ctypesgen-' + version, website, archive, target)
+        environment['CTYPESGEN_EXE'] = \
+            find_program('ctypesgen.py', [os.path.join(target, 'bin')])

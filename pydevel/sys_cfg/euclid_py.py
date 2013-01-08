@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Entry point for custom packaging
+Find/install Euclid
 """
 #**************************************************************************
 # 
@@ -19,9 +20,31 @@ Entry point for custom packaging
 # 
 #**************************************************************************
 
+from pydevel.util import *
 
-__all__ = ['pkg_config', 'core',
-           'build_clib', 'build_doc', 'build_exe', 'build_js',
-           'build_pypp_ext', 'build_py', 'build_shlib', 'build_src',
-           'install_data', 'install_exe', 'install_lib',
-           'util', 'httplib', 'urllib2', 'sys_cfg',]
+environment = dict()
+euclid_found = False
+
+
+def null():
+    global environment
+    environment['EUCLID_VERSION'] = None
+
+
+def is_installed(version=None):
+    global environment, euclid_found
+    try:
+        import euclid
+        euclid_found = True
+    except Exception,e:
+        print 'Euclid not found: ' + str(e)
+    return euclid_found
+
+
+def install(target='build', version=None):
+    global environment
+    if not euclid_found:
+        website = 'http://pyeuclid.googlecode.com/svn/trunk/'
+        src = 'euclid.py'
+        install_pyscript_locally(website, src, target)
+        environment['EUCLID_VERSION'] = 'latest'

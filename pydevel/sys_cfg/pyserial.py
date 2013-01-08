@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find/install Py++/PyGCCXML
+Find/install Python serial package
 """
 #**************************************************************************
 # 
@@ -23,36 +23,31 @@ Find/install Py++/PyGCCXML
 from pydevel.util import *
 
 environment = dict()
-pyplusplus_found = False
+pyserial_found = False
 
 
 def null():
     global environment
-    environment['PYPLUSPLUS_VERSION'] = None
+    environment['PYSERIAL_VERSION'] = None
 
 
-def is_installed():
-    global environment, pyplusplus_found
+def is_installed(version=None):
+    global environment, pyserial_found
     try:
-        import pyplusplus
-        try:
-            environment['PYPLUSPLUS_VERSION'] = pyplusplus.__version__
-        except:
-            pass
-        pyplusplus_found = True
-    except Exception,e:
-        print 'Py++ not found: ' + str(e)
-    return pyplusplus_found
+        import serial
+        environment['PYSERIAL_VERSION'] = serial.VERSION
+        pyserial_found = True
+    except:
+        pass
+    return pyserial_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     global environment
-    if not pyplusplus_found:
-        website = 'http://prdownloads.sourceforge.net/pygccxml/'
-        ver = '1.0.0'
-        archive = 'pygccxml-' + ver + '.zip'
-        install_pypkg_locally('pygccxml-' + ver, website, archive, target)
-
-        archive = 'pyplusplus-' + ver + '.zip'
-        install_pypkg_locally('pyplusplus-' + ver, website, archive, target)
-        environment['PYPLUSPLUS_VERSION'] = ver
+    if not pyserial_found:
+        website = 'http://pypi.python.org/packages/source/p/pyserial/'
+        if version is None:
+            version = '2.6'
+        archive = 'pyserial-' + version + '.tar.gz'
+        install_pypkg_locally('pyserial-' + version, website, archive, target)
+        environment['PYSERIAL_VERSION'] = version

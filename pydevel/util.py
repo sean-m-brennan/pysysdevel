@@ -20,9 +20,31 @@ Utilities for finding prerequisities
 # 
 #**************************************************************************
 
-import os, sys, platform, fnmatch, warnings, glob, struct, time, shutil
+import os, sys
 
-default_path_prefixes = ['/usr','/usr/local','/opt/local','C:\\MinGW']
+## Prefer local implementations (urllib2, httplib) over global
+here = os.path.dirname(__file__)
+sys.path.insert(0, os.path.abspath(here))
+
+import platform, fnmatch, warnings, glob, struct, time, shutil
+import urllib2, httplib
+import urllib, socket, tempfile
+import tarfile, zipfile, subprocess
+
+
+default_path_prefixes = ['/usr','/usr/local','/opt/local','C:\\MinGW'] + glob.glob('C:\\Python*')
+
+download_file = ''
+
+local_lib_dir = 'python'
+download_dir  = 'third_party'
+
+default_py2exe_library = 'library.zip'
+
+
+_sep_ = ':'
+if 'windows' in platform.system().lower():
+    _sep_ = ';'
 
 VERBOSE = True
 DEBUG = False
@@ -34,10 +56,6 @@ def set_verbose(b):
 def set_debug(b):
     global DEBUG
     DEBUG = b
-
-_sep_ = ':'
-if 'windows' in platform.system().lower():
-    _sep_ = ';'
 
 
 def uniquify(seq, id_fctn=None):
@@ -134,7 +152,6 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
     suffixes = ['.so', '.a']
     prefixes = ['', 'lib']
     if 'windows' in platform.system().lower():
-        default_path_roots += ['']
         suffixes = ['.lib', '.a', '.dll']
     if 'darwin' in platform.system().lower():
         suffixes += ['.dylib']
@@ -242,8 +259,6 @@ def get_header_version(hdr_file, define_val):
                     ') in ' + hdr_file)
 
 
-download_file = ''
-
 def set_downloading_file(dlf):
     '''
     Set the global for the download_progress callback below.
@@ -253,7 +268,7 @@ def set_downloading_file(dlf):
 
 def download_progress(count, block_size, total_size):
     '''
-    Callback for displaying progress for use with urllib.urlretrieve()
+    Callback for displaying progress for use with urlretrieve()
     '''
     percent = int(count * block_size * 100 / total_size)
     if VERBOSE:
@@ -261,40 +276,69 @@ def download_progress(count, block_size, total_size):
         sys.stdout.flush()
 
 
-local_lib_dir = 'python'
+def install_pyscript_locally(website, name, build_dir):
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
+    target_dir = os.path.join(build_dir, local_lib_dir)
+    try:
+        sys.stdout.write('PREREQUISITE ' + name + ' ')
+        set_downloading_file(name)
+        if not os.path.exists(name):
+            urlretrieve(website + name, os.path.join(download_dir, name),
+                        download_progress)
+            sys.stdout.write('\n')
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        shutil.copy(os.path.join(download_dir, name), target_dir)
+    except Exception,e:
+        raise Exception('Unable to install ' + name + ' locally: ' + str(e))
 
-def install_pypkg_locally(name, website, archive, build_dir):
-    import urllib, tarfile, zipfile, subprocess
+
+def install_pypkg_locally(name, website, archive, build_dir, env=None):
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
     here = os.path.abspath(os.getcwd())
     target_dir = os.path.abspath(build_dir)
     try:
         set_downloading_file(archive)
-        if not os.path.exists(archive):
-            urllib.urlretrieve(website + archive, archive, download_progress)
+        if not os.path.exists(os.path.join(download_dir, archive)):
+            urlretrieve(website + archive, os.path.join(download_dir, archive),
+                        download_progress)
             sys.stdout.write('\n')
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
         os.chdir(target_dir)
+        sys.stdout.write('PREREQUISITE ' + name + ' ')
+        sys.stdout.flush()
         if not os.path.exists(name):
             if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
-                z = tarfile.open(os.path.join(here, archive), 'r:gz')
+                z = tarfile.open(os.path.join(here, download_dir, archive),
+                                 'r:gz')
                 z.extractall()
             elif archive.endswith('.tar.bz2'):
-                z = tarfile.open(os.path.join(here, archive), 'r:bz2')
+                z = tarfile.open(os.path.join(here, download_dir, archive),
+                                 'r:bz2')
                 z.extractall()
             elif archive.endswith('.zip'):
-                z = zipfile.ZipFile(os.path.join(here, archive), 'r')
+                z = zipfile.ZipFile(os.path.join(here, download_dir, archive),
+                                    'r')
                 z.extractall()
             else:
                 raise Exception('Unrecognized archive compression: ' + archive)
         os.chdir(name)
-        cmd_line = ['python', 'setup.py', 'install',
+        if env:
+            for e in env:
+                (key, value) = e.split('=')
+                os.environ[key] = value
+        os.environ['PYTHONPATH'] = os.path.join(target_dir, local_lib_dir)
+        cmd_line = ['python', 'setup.py', 'build', 'install',
                     '--home=' + target_dir,
                     '--install-lib=' + os.path.join(target_dir, local_lib_dir),
                     ]
         log_file = name + '.log'
         log = open(log_file, 'w')
-        sys.stdout.write('PREREQUISITE ' + name + ' ')
+        log.write(str(cmd_line) + '\n\n')
+        log.flush()
         try:
             p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
             status = process_progress(p)
@@ -309,8 +353,8 @@ def install_pypkg_locally(name, website, archive, build_dir):
                             'installed locally; See ' + log_file)
         else:
             sys.stdout.write(' done\n')
-        if not os.path.join(target_dir, local_lib_dir) in sys.path:
-            sys.path.insert(0, os.path.join(target_dir, local_lib_dir))
+        #if not os.path.join(target_dir, local_lib_dir) in sys.path:
+        #    sys.path.insert(0, os.path.join(target_dir, local_lib_dir))
         os.chdir(here)
     except Exception,e:
         os.chdir(here)
@@ -466,7 +510,6 @@ def nested_values(line, var_dict, d=0, style=DEFAULT_STYLE):
         if len(valname.split()) > 1:  ## disallow whitespace
             front = back
             continue
-        print 'get ' + valname + ' in ' + line + ' at ' + str(front+fr_len) + ':' + str(back)
         value = var_dict[valname]
         line = line.replace(line[front:back+1], str(value))
         front = line.find(fr_delim)
@@ -545,7 +588,6 @@ def get_script_relative_rpath(pkg_name, argv):
 
 
 def get_installed_base(loc):
-    import platform
     ver = 'python'+ str(sys.version_info[0]) +'.'+ str(sys.version_info[1])
     if loc is None:
         loc = sys.prefix
@@ -564,7 +606,12 @@ def get_pyd_suffix():
         if s[1] == 'rb' and s[0][0] == '.':
             return s[0]
 
-def get_module_location(modname):
+def get_module_location(modname, preferred_dir=None):
+    if preferred_dir is not None:
+        if modname in os.listdir(preferred_dir):
+            return os.path.join(preferred_dir, modname)
+        elif modname + '.py' in os.listdir(preferred_dir):
+            return os.path.join(preferred_dir, modname + '.py')
     __import__(modname)
     module = sys.modules[modname]
     d, f = os.path.split(module.__file__)
@@ -615,6 +662,7 @@ def handle_arguments(argv, option_list=[]):
     options = dict()
     options['bundle'] = False
     options['runscript'] = ''
+    options['ziplib'] = None
 
     bundle = False
     if 'py2exe' in argv:
@@ -628,7 +676,7 @@ def handle_arguments(argv, option_list=[]):
             app = runscript = arg[6:].lower()
             runscript = arg[6:].lower()
             if not runscript.endswith('.py'):
-                runscript = 'run_' + runscript + '.py'
+                runscript = runscript + '.py'
             for root, dirnames, filenames in os.walk('.'): ## source directory
                 for filename in filenames:
                     if filename == runscript:
@@ -636,6 +684,14 @@ def handle_arguments(argv, option_list=[]):
                         break
             argv.remove(arg)
             break
+        if arg.startswith('--ziplib'):
+            if '=' in arg:
+                options['ziplib'] = arg[9:]
+                if options['ziplib'][-4:] != '.zip':
+                    options['ziplib'] += '.zip'
+            else:
+                options['ziplib'] = default_py2exe_library
+            
     if bundle and app != '' and runscript != '':
         options['bundle'] = bundle
         options['runscript'] = runscript
@@ -710,6 +766,7 @@ def get_options(pkg_config, options):
         warnings.resetwarnings()
 
         INCLUDE_GTK_WIN = False
+        INCLUDE_TCLTK_WIN = False
         os.environ['PATH'] += _sep_ + 'gtk/lib' + _sep_ + 'gtk/bin'
 
         msvc_version = '9.0'  ## boost-python requires MSVC 9.0
@@ -749,24 +806,28 @@ def get_options(pkg_config, options):
         else:
             gtk_includes = []
 
-        excludes = ['_gtkagg', '_tkagg', 'bsddb', 'curses', 'email',
+        excludes = ['bsddb', 'curses', 'email',
                     'pywin.debugger', 'pywin.debugger.dbgcon', 'pywin.dialogs',
-                    'tcl', 'Tkconstants', 'Tkinter',
                     ]
-        if not INCLUDE_GTK_WIN:
-            excludes += ['pygtk', 'gtk', 'gobject', 'gtkhtml2',]
-
-        dll_excludes = ['libgdk-win32-2.0-0.dll', 'libgobject-2.0-0.dll',
-                        'tcl84.dll', 'tk84.dll', 'mswsock.dll', 'powrprof.dll',
+        dll_excludes = ['mswsock.dll', 'powrprof.dll',
                         'mpr.dll', 'msvcirt.dll', 'msvcrt.dll', 'netapi32.dll',
                         'netrap.dll', 'samlib.dll']
+
+        if not INCLUDE_TCLTK_WIN:
+            excludes += ['_gtkagg', '_tkagg', 'tcl', 'Tkconstants', 'Tkinter',]
+            dll_excludes += ['tcl84.dll', 'tk84.dll',]
+        if not INCLUDE_GTK_WIN:
+            excludes += ['pygtk', 'gtk', 'gobject', 'gtkhtml2',]
+            dll_excludes += ['libgdk-win32-2.0-0.dll', 'libgobject-2.0-0.dll',]
+
 
         exe_opts = {'py2exe': {
                     'unbuffered': False,
                     'optimize': 2,
                     'includes': flatten(pkg_config.dynamic_modules.values()) + \
                         gtk_includes,
-                    'packages': flatten(pkg_config.required_pkgs.values()),# + packages_present,
+                    'packages': flatten(pkg_config.required_pkgs.values()) + \
+                        pkg_config.extra_pkgs,
                     'ignores': [],
                     'excludes': excludes,
                     'dll_excludes': dll_excludes,
@@ -789,7 +850,7 @@ def get_options(pkg_config, options):
                     'company_name': pkg_config.COMPANY,
                     }]
 
-        pkgs = []
+        pkgs = pkg_config.extra_pkgs
         pkg_data = dict({})
         p = pkg_config.PACKAGE
         while True:
@@ -804,9 +865,9 @@ def get_options(pkg_config, options):
             package_dir = {pkg_config.PACKAGE: pkg_config.PACKAGE},
             packages = pkgs,
             package_data = pkg_data,
-            data_files = addtnl_files,
+            data_files = addtnl_files + pkg_config.extra_libraries,
             options = exe_opts,
-            zipfile = None,
+            zipfile = options['ziplib'],
             )
 
         return specific_options
@@ -836,7 +897,8 @@ def get_options(pkg_config, options):
         opts = {'py2app': {
             'optimize': 2,
             'includes': pkg_config.dynamic_modules,
-            'packages': pkg_config.required_pkgs + packages_present,
+            'packages': pkg_config.required_pkgs + pkg_config.extra_pkgs + \
+                packages_present,
             'iconfile': os.path.join(pkg_config.PACKAGE, pkg_config.image_dir,
                                      pkg_config.PACKAGE + '.icns'),
             'excludes': ['tcl', 'Tkconstants', 'Tkinter', 'pytz',],
@@ -887,8 +949,10 @@ def get_options(pkg_config, options):
             data[pkg_name] = pkg_config.package_files[p]
         specific_options = dict(
             package_dir = directories,
-            packages = flatten(pkg_config.names.values()),
+            packages = flatten(pkg_config.names.values()) + \
+                pkg_config.extra_pkgs,
             package_data = data,
+            scripts = pkg_config.runscripts,
             )
         if target_os == 'windows':
             specific_options['bdist_wininst'] = {
@@ -910,8 +974,9 @@ def post_setup(pkg_config, options):
         dist_dir = os.path.join('bin_dist', options['app'])
         current = os.getcwd()
         os.chdir(dist_dir)
-        archive = pkg_config.PACKAGE + '_' + options['app'] + '_' + os_name + \
-            '_' + pkg_config.RELEASE + '.zip'
+        archive = options['app'] + '_' + os_name + '_' + pkg_config.RELEASE + '.zip'
+        if pkg_config.PACKAGE != options['app']:
+            archive = pkg_config.PACKAGE + '_' + archive
         z = zipfile.ZipFile(os.path.join(current, 'bin_dist', archive),
                             'w', zipfile.ZIP_DEFLATED)
         for root, dirnames, filenames in os.walk('.'):
@@ -919,3 +984,73 @@ def post_setup(pkg_config, options):
                 z.write(os.path.join(root, filename))
         z.close()
         os.chdir(current)
+
+
+
+def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
+    '''
+    Identical to urllib.urlretrieve, except that it handles
+    SSL, proxies ands redirects properly.
+    '''
+    proxy_url = proxy
+    if proxy_url is None:
+        try:
+            proxy_url = os.environ['HTTP_PROXY']
+        except:
+            try:
+                proxy_url = os.environ['http_proxy']
+            except:
+                raise Exception('No proxy specified. ' +
+                                'Either call urlretrieve with a proxy ' +
+                                "argument, or provide a 'http_proxy' " +
+                                'environment variable.')
+
+    proxies = urllib2.ProxyHandler({'http': proxy_url, 'https': proxy_url})
+    opener = urllib2.build_opener(proxies)
+    urllib2.install_opener(opener)
+
+    req = urllib2.Request(url=url, data=data)
+    fp = urllib2.urlopen(req)
+    try:
+        headers = fp.info()
+        if filename:
+            tfp = open(filename, 'wb')
+        else:
+            tfp = tempfile.NamedTemporaryFile(delete=False)
+            filename = tfp.name
+
+        try:
+            result = filename, headers
+            bs = 1024*8
+            size = -1
+            read = 0
+            blocknum = 0
+            if "content-length" in headers:
+                size = int(headers["Content-Length"])
+            if progress:
+                progress(blocknum, bs, size)
+
+            while True:
+                block = fp.read(bs)
+                if not block or block == "":
+                    break
+                read += len(block)
+                tfp.write(block)
+                blocknum += 1
+                if progress:
+                    progress(blocknum, bs, size)
+        finally:
+            tfp.close()
+    finally:
+        fp.close()
+    del fp
+    del tfp
+
+    if size >= 0 and read < size:
+        raise urllib.ContentTooShortError("retrieval incomplete: "
+                                          "got only %i out of %i bytes" %
+                                          (read, size), result)
+
+    return result
+
+

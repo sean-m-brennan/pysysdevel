@@ -19,7 +19,7 @@
 # 
 #**************************************************************************
 
-import os, struct, glob, platform
+import os, sys, struct, glob, platform
 
 from distutils.command.install_lib import install_lib as old_install_lib
 from distutils.util import change_root, convert_path
@@ -37,8 +37,10 @@ class install_lib(old_install_lib):
         lib = 'lib'
         if struct.calcsize('P') == 8:
             lib = 'lib64'
+        build = self.get_finalized_command('build')
         build_shlib = self.get_finalized_command('build_shlib')
         install = self.get_finalized_command('install')
+        self.verbose = util.DEBUG
 
         if install.prefix is None:
             target_dir = os.path.join(install.install_base, lib)
@@ -52,13 +54,26 @@ class install_lib(old_install_lib):
                 self.copy_file(source, target)
 
         if self.distribution.extra_install_modules:
+            ## prefer updated packages
+            local_pkgs_dir = os.path.join(build.build_base, util.local_lib_dir)
+            sys.path.insert(0, os.path.abspath(local_pkgs_dir))
+            insertions = 1
+            for ent in os.listdir(os.path.abspath(local_pkgs_dir)):
+                if os.path.isdir(os.path.join(local_pkgs_dir, ent)) and \
+                        ent[-4:] == '.egg':
+                    pth = os.path.join(local_pkgs_dir, ent)
+                    sys.path.insert(0, os.path.abspath(pth))
+                    insertions += 1
+
             module_dir = install.install_platlib
-            for pkg in self.distribution.extra_install_modules:
-                source = util.get_module_location(pkg)
+            for mod in self.distribution.extra_install_modules:
+                source = util.get_module_location(mod, local_pkgs_dir)
                 if os.path.isdir(source):
-                    self.copy_tree(source, os.path.join(module_dir, pkg))
+                    self.copy_tree(source, os.path.join(module_dir, mod))
                 else:
                     self.copy_file(source, module_dir)
+            for i in range(insertions):
+                sys.path.pop(0)
 
         if self.distribution.extra_install_libraries:
             for pkg_tpl in self.distribution.extra_install_libraries:

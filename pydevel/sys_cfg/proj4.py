@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find GNU Scientific Library
+Find PROJ4 library
 """
 #**************************************************************************
 # 
@@ -20,52 +20,53 @@ Find GNU Scientific Library
 # 
 #**************************************************************************
 
-import os
+import os, glob
 
 from pydevel.util import *
 
 environment = dict()
-gsl_found = False
+proj4_found = False
 
 
 def null():
     global environment
-    environment['GSL_INCLUDE_DIR'] = None
-    environment['GSL_LIBRARY_DIR'] = None
-    environment['GSL_LIBRARIES'] = []
-    environment['GSL_LIBS'] = []
+    environment['PROJ4_INCLUDE_DIR'] = None
+    environment['PROJ4_LIBRARY_DIR'] = None
+    environment['PROJ4_LIBRARIES'] = []
+    environment['PROJ4_LIBS'] = []
 
 
-def is_installed():
-    global environment, gsl_found
-    gsl_dev_dir = ''
+def is_installed(version=None):
+    global environment, proj4_found
+    proj4_dev_dir = ''
     try:
         try:
-            gsl_dev_dir = os.environ['GSL_ROOT']
+            proj4_dev_dir = os.environ['PROJ4_ROOT']
         except:
             pass
-        if gsl_dev_dir != '':
-            gsl_lib_dir, gsl_libs  = find_libraries('gsl', [gsl_dev_dir])
-            gsl_inc_dir = find_header('gsl_types.h', [gsl_dev_dir], ['gsl'])
+        if proj4_dev_dir != '':
+            proj4_lib_dir, proj4_libs  = find_libraries('proj', [proj4_dev_dir])
+            proj4_inc_dir = find_header('proj_api.h', [proj4_dev_dir])
         else:
             base_dirs = []
             if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('c:', 'gsl')] #FIXME
-            gsl_lib_dir, gsl_libs  = find_libraries('gsl', base_dirs)
-            gsl_inc_dir = find_header('gsl_types.h', base_dirs, ['gsl'])
-        environment['GSL_INCLUDE_DIR'] = gsl_inc_dir
-        environment['GSL_LIBRARY_DIR'] = gsl_lib_dir
-        environment['GSL_LIBRARIES'] = gsl_libs
-        environment['GSL_LIBS'] = ['gsl', 'gslcblas',]
-        gsl_found = True
+                base_dirs += [os.path.join('c:', 'proj')] #FIXME
+            proj4_lib_dir, proj4_libs  = find_libraries('proj', base_dirs)
+            proj4_inc_dir = find_header('proj_api.h', base_dirs)
+        environment['PROJ4_INCLUDE_DIR'] = proj4_inc_dir
+        environment['PROJ4_LIBRARY_DIR'] = proj4_lib_dir
+        environment['PROJ4_LIBRARIES'] = proj4_libs
+        environment['PROJ4_LIBS'] = ['proj',]
+        ## FIXME derive from found libs
+        proj4_found = True
     except Exception,e:
         print e
-        gsl_found = False
-    return gsl_found
+        proj4_found = False
+    return proj4_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     ## User must install
-    raise Exception('GSL development library required, but not installed.' +
-                    '\nTry ftp://ftp.gnu.org/gnu/gsl/gsl-1.15.tar.gz;' +
-                    ' or yum install gsl-devel')
+    raise Exception('PROJ4 development library required, but not installed.' +
+                    '\nTry http://trac.osgeo.org/proj/;' +
+                    ' or yum install proj-devel')

@@ -35,7 +35,7 @@ def null():
     environment['CDF_LIBRARY'] = None
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, cdf_found
     try:
         incl_dir = find_header('cdf.h')
@@ -48,9 +48,10 @@ def is_installed():
     return cdf_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     global environment
-    version = '34_1'
+    if version is None:
+        version = '34_1'
     website = 'http://cdaweb.gsfc.nasa.gov/pub/software/cdf/dist/cdf' + version
     if 'windows' in platform.system().lower():
         os_dir = 'w32'
@@ -62,14 +63,17 @@ def install(target='build'):
     website += '/' + os_dir + '/'
     here = os.path.abspath(os.getcwd())
     abs_target = os.path.abspath(target)
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
     if not cdf_found:
         try:
-            import urllib, tarfile, subprocess
+            import tarfile, subprocess
             download_file = 'cdf' + version + '-dist-cdf.tar.gz'
             set_downloading_file(download_file)
-            if not os.path.exists(download_file):
-                urllib.urlretrieve(website + download_file, download_file,
-                                   download_progress)
+            if not os.path.exists(os.path.join(download_dir, download_file)):
+                urlretrieve(website + download_file,
+                            os.path.join(download_dir, download_file),
+                            download_progress)
                 sys.stdout.write('\n')
             if not os.path.exists(target):
                 os.makedirs(target)
@@ -77,7 +81,8 @@ def install(target='build'):
             pkg_dir = 'cdf' + version + '-dist'
             src_dir = os.path.abspath(os.path.join(pkg_dir, 'src'))
             if not os.path.exists(pkg_dir):
-                z = tarfile.open(os.path.join(here, download_file), 'r:gz')
+                z = tarfile.open(os.path.join(here, download_dir,
+                                              download_file), 'r:gz')
                 z.extractall()
             os.chdir(pkg_dir)
             log_file = pkg_dir + '.log'

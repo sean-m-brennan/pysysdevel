@@ -36,7 +36,7 @@ def null():
     environment['MPICH_LIBS'] = []
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, mpich_found
     mpich_dev_dir = ''
     try:
@@ -70,7 +70,7 @@ def is_installed():
     return mpich_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     ## User must install
     raise Exception('MPICH development library required, but not installed.' +
                     '\nTry http://www.mpich.org/downloads/;' +

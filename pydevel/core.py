@@ -173,6 +173,16 @@ class CustomDistribution(NumpyDistribution):
         self.quit_on_error = attrs.get('quit_on_error')
         if self.quit_on_error != None:
             del old_attrs['quit_on_error']
+
+        ## py2exe options
+        self.ctypes_com_server = attrs.pop("ctypes_com_server", [])
+        self.com_server = attrs.pop("com_server", [])
+        self.service = attrs.pop("service", [])
+        self.windows = attrs.pop("windows", [])
+        self.console = attrs.pop("console", [])
+        self.isapi = attrs.pop("isapi", [])
+        self.zipfile = attrs.pop("zipfile", util.default_py2exe_library)
+
         NumpyDistribution.__init__(self, old_attrs)
 
     def has_c_libraries(self):

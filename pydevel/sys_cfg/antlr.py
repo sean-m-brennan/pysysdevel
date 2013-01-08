@@ -36,7 +36,7 @@ def null():
     environment['ANTLR_COMMAND'] = None
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, antlr_found, java_antlr_found, python_antlr_found
     try:
         _sep_ = ':'
@@ -80,26 +80,33 @@ def is_installed():
     return antlr_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     global environment
 
     website = 'http://www.antlr.org/download/'
-    ver = '3.1.2'
+    if version is None:
+        ver = '3.1.2'
+    else:
+        ver = version
     here = os.path.abspath(os.getcwd())
     abs_target = os.path.abspath(target)
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
     if not java_antlr_found:
         try:
-            import urllib, tarfile
+            import tarfile
             download_file = 'antlr-' + ver + '.tar.gz'
             set_downloading_file(website + download_file)
-            if not os.path.exists(download_file):
-                urllib.urlretrieve(website + download_file, download_file,
-                                   download_progress)
-            set_downloading_file(website + download_file)
+            if not os.path.exists(os.path.join(download_dir, download_file)):
+                urlretrieve(website + download_file,
+                            os.path.join(download_dir, download_file),
+                            download_progress)
+            set_downloading_file(download_file)
             if not os.path.exists(target):
                 os.makedirs(target)
             os.chdir(target)
-            z = tarfile.open(os.path.join(here, download_file), 'r:gz')
+            z = tarfile.open(os.path.join(here, download_dir, download_file),
+                             'r:gz')
             z.extractall()
             jarfile = os.path.join('antlr-' + ver, 'lib',
                                    'antlr-' + ver + '.jar')
@@ -115,18 +122,20 @@ def install(target='build'):
 
     if not python_antlr_found:
         try:
-            import urllib, tarfile
+            import tarfile
             download_file = 'antlr_python_runtime-' + ver + '.tar.gz'
-            set_downloading_file(website + download_file)
-            if not os.path.exists(download_file):
-                urllib.urlretrieve(website + 'Python/' + download_file,
-                                   download_file, download_progress)
+            set_downloading_file(download_file)
+            if not os.path.exists(os.path.join(download_dir, download_file)):
+                urlretrieve(website + 'Python/' + download_file,
+                            os.path.join(download_dir, download_file),
+                            download_progress)
             if not os.path.exists(target):
                 os.makedirs(target)
             os.chdir(target)
             pkg_dir = 'antlr_python_runtime-' + ver
             if not os.path.exists(pkg_dir):
-                z = tarfile.open(os.path.join(here, download_file), 'r:gz')
+                z = tarfile.open(os.path.join(here, download_dir,
+                                              download_file), 'r:gz')
                 z.extractall()
             target_dir = os.path.join(here, target, 'lib', 'python')
             try:

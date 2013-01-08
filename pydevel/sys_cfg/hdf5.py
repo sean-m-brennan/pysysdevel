@@ -36,7 +36,7 @@ def null():
     environment['HDF5_LIBS'] = []
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, hdf5_found
     hdf5_dev_dir = ''
     try:
@@ -66,7 +66,7 @@ def is_installed():
     return hdf5_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     ## User must install
     raise Exception('HDF5 development library required, but not installed.' +
                     '\nTry http://www.hdfgroup.org/HDF5/release/obtain5.html;' +

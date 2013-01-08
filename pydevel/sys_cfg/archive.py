@@ -34,7 +34,7 @@ def null():
     environment['ARCHIVE_LIB_DIR'] = None
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, archive_found
     try:
         ## the easy way
@@ -57,7 +57,7 @@ def is_installed():
     return archive_found
 
 
-def install():
+def install(target='build', version=None):
     if not archive_found:
         raise Exception('Archive not found. (ARCHIVE_ROOT=' +
                         str(environment['ARCHIVE_ROOT']) + ', include=' +

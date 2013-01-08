@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find ctypesgen package
+Find/install Py++/PyGCCXML
 """
 #**************************************************************************
 # 
@@ -20,35 +20,41 @@ Find ctypesgen package
 # 
 #**************************************************************************
 
-import os
-
 from pydevel.util import *
 
 environment = dict()
-ctypesgen_found = False
+pyplusplus_found = False
 
 
 def null():
     global environment
-    environment['CTYPESGEN_EXE'] = None
+    environment['PYPLUSPLUS_VERSION'] = None
 
 
-def is_installed():
-    global environment, ctypesgen_found
+def is_installed(version=None):
+    global environment, pyplusplus_found
     try:
-        environment['CTYPESGEN_EXE'] = find_program('ctypesgen.py')
-        ctypesgen_found = True
-    except:
-        pass
-    return ctypesgen_found
+        import pyplusplus
+        try:
+            environment['PYPLUSPLUS_VERSION'] = pyplusplus.__version__
+        except:
+            pass
+        pyplusplus_found = True
+    except Exception,e:
+        print 'Py++ not found: ' + str(e)
+    return pyplusplus_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     global environment
-    if not ctypesgen_found:
-        website = 'http://pypi.python.org/packages/source/c/ctypesgen/'
-        ver = '0.r125'
-        archive = 'ctypesgen-' + ver + '.tar.gz'
-        install_pypkg_locally('ctypesgen-' + ver, website, archive, target)
-        environment['CTYPESGEN_EXE'] = \
-            find_program('ctypesgen.py', [os.path.join(target, 'bin')])
+    if not pyplusplus_found:
+        if version is None:
+            version = '1.0.0'
+        website = 'http://downloads.sourceforge.net/project/pygccxml/pygccxml/pygccxml-' + version[:-2] + '/'
+        archive = 'pygccxml-' + version + '.zip'
+        install_pypkg_locally('pygccxml-' + version, website, archive, target)
+
+        website = 'http://downloads.sourceforge.net/project/pygccxml/pyplusplus/pyplusplus-' + version[:-2] + '/'
+        archive = 'pyplusplus-' + version + '.zip'
+        install_pypkg_locally('pyplusplus-' + version, website, archive, target)
+        environment['PYPLUSPLUS_VERSIONSION'] = version

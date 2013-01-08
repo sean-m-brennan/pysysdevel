@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find Boost
+Find SQLite3
 """
 #**************************************************************************
 # 
@@ -20,41 +20,38 @@ Find Boost
 # 
 #**************************************************************************
 
-import os, subprocess
+import os
 
 from pydevel.util import *
 
 environment = dict()
-wx_found = False
+sqlite_found = False
 
 
 def null():
     global environment
-    environment['WX_CPP_FLAGS'] = []
-    environment['WX_LD_FLAGS'] = []
+    environment['SQLITE3_INCLUDE_DIR'] = None
+    environment['SQLITE3_LIB_DIR'] = None
+    environment['SQLITE3_LIBRARY'] = None
 
 
-def is_installed():
-    global environment, wx_found
+def is_installed(version=None):
+    global environment, sqlite_found
+    ## look for it
     try:
-        wx_config = os.environ['WX_CONFIG']
+        win_loc = os.path.join(os.environ['ProgramFiles'], 'SQLite3')
     except:
-        try:
-            wx_config = find_program('wx-config')
-        except:
-            return False
-    cppflags_cmd = [wx_config, '--cppflags']
-    process = subprocess.Popen(cppflags_cmd, stdout=subprocess.PIPE)
-    environment['WX_CPP_FLAGS'] = process.communicate()[0].split()
+        win_loc = None
+    incl_dir = find_header('sqlite3.h', [win_loc,])
+    environment['SQLITE3_INCLUDE_DIR'] = incl_dir
+    environment['SQLITE3_LIB_DIR'], lib = find_library('sqlite3', [win_loc,])
+    environment['SQLITE3_LIBRARY'] = 'sqlite3'
+    sqlite_found = True
+    return sqlite_found
 
-    ldflags_cmd = [wx_config, '--libs', '--gl-libs', '--static=no']
-    process = subprocess.Popen(ldflags_cmd, stdout=subprocess.PIPE)
-    environment['WX_LD_FLAGS'] = process.communicate()[0].split()
-    return True
-    
 
-def install():
-    if not wx_found:
-        raise Exception('WxWidgets not found. (include=' +
-                        str(environment['WX_CPP_FLAGS']) + ', library=' +
-                        str(environment['WX_LD_FLAGS']) + ')')
+def install(target='build', version=None):
+    if not sqlite_found:
+        raise Exception('SQLite3 not found. (include=' +
+                        str(environment['SQLITE3_INCLUDE_DIR']) + ', library=' +
+                        str(environment['SQLITE3_LIB_DIR']) + ')')

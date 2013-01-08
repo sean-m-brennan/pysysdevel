@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Entry point for custom packaging
+Find GCC OpenMP library
 """
 #**************************************************************************
 # 
@@ -19,9 +20,35 @@ Entry point for custom packaging
 # 
 #**************************************************************************
 
+import os, glob
 
-__all__ = ['pkg_config', 'core',
-           'build_clib', 'build_doc', 'build_exe', 'build_js',
-           'build_pypp_ext', 'build_py', 'build_shlib', 'build_src',
-           'install_data', 'install_exe', 'install_lib',
-           'util', 'httplib', 'urllib2', 'sys_cfg',]
+from pydevel.util import *
+
+environment = dict()
+gomp_found = False
+
+
+def null():
+    global environment
+    environment['GOMP_LIBRARY_DIR'] = None
+    environment['GOMP_LIBRARY'] = ''
+
+
+def is_installed(version=None):
+    global environment, gomp_found
+    try:
+        gomp_lib_dir, gomp_lib  = find_library('gomp')
+        environment['GOMP_LIBRARY_DIR'] = gomp_lib_dir
+        environment['GOMP_LIBRARY'] = gomp_lib
+        gomp_found = True
+    except Exception,e:
+        print e
+        gomp_found = False
+    return gomp_found
+
+
+def install(target='build', version=None):
+    ## User must install
+    raise Exception('GOMP development library required, but not installed.' +
+                    '\nlibgomp is part of GCC, your development environment ' +
+                    'may be messed up. Try yum install libgomp, at a minimum.')

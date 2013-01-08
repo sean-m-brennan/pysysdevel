@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find GCCXML
+Find Boost
 """
 #**************************************************************************
 # 
@@ -20,27 +20,41 @@ Find GCCXML
 # 
 #**************************************************************************
 
+import os, subprocess
+
 from pydevel.util import *
 
 environment = dict()
-gccxml_found = False
+wx_found = False
 
 
 def null():
     global environment
-    environment['GCCXML_EXECUTABLE'] = None
+    environment['WX_CPP_FLAGS'] = []
+    environment['WX_LD_FLAGS'] = []
 
 
-def is_installed():
-    global environment, gccxml_found
+def is_installed(version=None):
+    global environment, wx_found
     try:
-        environment['GCCXML_EXECUTABLE'] = find_program('gccxml')
-        gccxml_found = True
+        wx_config = os.environ['WX_CONFIG']
     except:
-        pass
-    return gccxml_found
+        try:
+            wx_config = find_program('wx-config')
+        except:
+            return False
+    cppflags_cmd = [wx_config, '--cppflags']
+    process = subprocess.Popen(cppflags_cmd, stdout=subprocess.PIPE)
+    environment['WX_CPP_FLAGS'] = process.communicate()[0].split()
 
+    ldflags_cmd = [wx_config, '--libs', '--gl-libs', '--static=no']
+    process = subprocess.Popen(ldflags_cmd, stdout=subprocess.PIPE)
+    environment['WX_LD_FLAGS'] = process.communicate()[0].split()
+    return True
+    
 
-def install():
-    if not gccxml_found:
-        raise Exception('GCCXML not found.')
+def install(target='build', version=None):
+    if not wx_found:
+        raise Exception('WxWidgets not found. (include=' +
+                        str(environment['WX_CPP_FLAGS']) + ', library=' +
+                        str(environment['WX_LD_FLAGS']) + ')')

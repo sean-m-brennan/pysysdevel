@@ -37,7 +37,7 @@ def null():
     environment['MINGW_CXX'] = None
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, mingw_found
     ## Python was (most likely) built with msvcr90.dll, thus it's a dependency
     try:
@@ -81,6 +81,6 @@ def is_installed():
     return mingw_found
 
 
-def install():
+def install(target='build', version=None):
     if not mingw_found:
         raise Exception('MinGW required, but not found.')

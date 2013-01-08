@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find GCC OpenMP library
+Find/install wxGlade
 """
 #**************************************************************************
 # 
@@ -20,35 +20,41 @@ Find GCC OpenMP library
 # 
 #**************************************************************************
 
-import os, glob
-
 from pydevel.util import *
 
 environment = dict()
-gomp_found = False
+wxglade_found = False
 
 
 def null():
     global environment
-    environment['GOMP_LIBRARY_DIR'] = None
-    environment['GOMP_LIBRARY'] = ''
+    environment['WXGLADE_VERSION'] = None
+    environment['WXGLADE_EXECUTABLE'] = None
 
 
-def is_installed():
-    global environment, gomp_found
+def is_installed(version=None):
+    global environment, wxglade_found
     try:
-        gomp_lib_dir, gomp_lib  = find_library('gomp')
-        environment['GOMP_LIBRARY_DIR'] = gomp_lib_dir
-        environment['GOMP_LIBRARY'] = gomp_lib
-        gomp_found = True
+        import wxglade.common
+        ver = wxglade.common.version
+        if not version is None and ver < version:
+            return wxglade_found
+        environment['WXGLADE_VERSION'] = ver
+        environment['WXGLADE_EXECUTABLE'] = find_program('wxglade')
+        wxglade_found = True
     except Exception,e:
-        print e
-        gomp_found = False
-    return gomp_found
+        print 'Wxglade not found: ' + str(e)
+    return wxglade_found
 
 
-def install(target='build'):
-    ## User must install
-    raise Exception('GOMP development library required, but not installed.' +
-                    '\nlibgomp is part of GCC, your development environment ' +
-                    'may be messed up. Try yum install libgomp, at a minimum.')
+def install(target='build', version=None):
+    global environment
+    if not wxglade_found:
+        if version is None:
+            version = '0.6.5'
+        website = 'http://downloads.sourceforge.net/project/wxglade/wxglade/' + version + '/'
+        archive = 'wxGlade-' + version + '.tar.gz'
+        install_pypkg_locally('wxGlade-' + version, website, archive, target)
+        environment['WXGLADE_VERSION'] = version
+        environment['WXGLADE_EXECUTABLE'] = find_program('wxglade.py',
+							 [os.path.join(target, 'python', 'wxglade')])

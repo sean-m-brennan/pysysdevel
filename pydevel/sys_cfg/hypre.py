@@ -35,7 +35,7 @@ def null():
     environment['HYPRE_LIBRARIES'] = []
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, hypre_found
     hypre_dev_dir = ''
     try:
@@ -62,7 +62,7 @@ def is_installed():
     return hypre_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     ## User must install
     raise Exception('HYPRE development library required, but not installed.' +
                     '\nTry https://computation.llnl.gov/casc/hypre/software.html')

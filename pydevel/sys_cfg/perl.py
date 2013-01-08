@@ -36,7 +36,7 @@ def null():
     environment['PERL_LIBS'] = []
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, perl_found
     perl_core_dir = ''
     try:
@@ -68,7 +68,7 @@ def is_installed():
     return perl_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     ## User must install
     raise Exception('Perl development library required, but not installed.' +
                     '\nTry http://www.perl.org/get.html;' +

@@ -25,6 +25,8 @@ from pydevel.util import *
 environment = dict()
 pyjamas_found = False
 
+NEWEST = True
+
 
 def null():
     global environment
@@ -32,7 +34,7 @@ def null():
     environment['PYJSBUILD_EXECUTABLE'] = None
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, pyjamas_found
     try:
         pyjamas_root = os.environ['PYJAMAS_ROOT']
@@ -53,37 +55,58 @@ def is_installed():
     return pyjamas_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     global environment
     if not pyjamas_found:
-        ## easy_install does not install pyjsbuild
+        if not os.path.exists(download_dir):
+            os.makedirs(download_dir)
         try:
-            import urllib, tarfile, subprocess
-            ## TODO: latest download
-            #website = 'https://github.com/pyjs/pyjs/archive'
-            #ver = '0.8.1a'
-            website = 'http://prdownloads.sourceforge.net/pyjamas/'
-            ver = '0.8.1~+alpha'
-            environment['PYJAMAS_VERSION'] = ver
+            import tarfile, zipfile, subprocess
+            if NEWEST:
+                if version is None:
+                    version = '0.8.1a'
+                website = 'https://github.com/pyjs/pyjs/zipball/0.8.1a'
+                download_file = ''
+                archive = 'pyjs-' + version + '.zip'
+            else:
+                if version is None:
+                    version = '0.8.1~+alpha'
+                website = 'http://downloads.sourceforge.net/project/pyjamas/pyjamas/' + version[:5] + '/'
+                download_file = 'pyjamas-' + version + '.tar.gz'
+                archive = download_file
+            environment['PYJAMAS_VERSION'] = version
             here = os.path.abspath(os.getcwd())
-            #download_file = 'pyjs-master.tar.gz'
-            download_file = 'pyjamas-' + ver + '.tar.gz'
-            set_downloading_file(website + download_file)
+            set_downloading_file(archive)
             if not os.path.exists(target):
                 os.makedirs(target)
-            os.chdir(target)
-            if not os.path.exists(download_file):
-                urllib.urlretrieve(website + download_file, download_file,
-                                   download_progress)
-            z = tarfile.open(download_file, 'r:gz')
-            z.extractall()
-            os.chdir(here)
-            working_dir = os.path.join(target, 'pyjamas-' + ver)
+            download_path = os.path.abspath(os.path.join(download_dir, archive))
+            if not os.path.exists(download_path):
+                print 'DIR ' + os.getcwd()
+                urlretrieve(website + download_file, download_path,
+                            download_progress)
+            working_dir = os.path.join(target, 'pyjamas-' + version)
+            if not os.path.exists(working_dir):
+                if download_path[-3:] == 'zip':
+                    z = zipfile.ZipFile(download_path, 'r')
+                    z.extractall()
+                    os.rename(z.namelist()[0], 'pyjamas-' + version)
+                else:
+                    z = tarfile.open(download_path, 'r:gz')
+                    z.extractall()
+
             os.chdir(working_dir)
+            if os.path.exists(os.path.join('library',
+                                           'HTTPRequest.browser.py')):
+                patch_file(os.path.join('library', 'HTTPRequest.browser.py'),
+                           'onProgress', 'localHandler', 'handler')
+            elif os.path.exists(os.path.join('library', 'pyjamas', 
+                                           'HTTPRequest.browser.py')):
+                patch_file(os.path.join('library', 'pyjamas', 
+                                        'HTTPRequest.browser.py'),
+                           'onProgress', 'localHandler', 'handler')
+
             log_file = 'pyjamas.log'
             log = open(log_file, 'w')
-            patch_file('library/HTTPRequest.browser.py',
-                       'onProgress', 'localHandler', 'handler')
             cmd_line = ['python', 'bootstrap.py',]
             sys.stdout.write('PREREQUISITE pyjamas ')
             try:

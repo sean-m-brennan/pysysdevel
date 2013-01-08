@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Entry point for custom packaging
+Find/install Python image library
 """
 #**************************************************************************
 # 
@@ -19,9 +20,37 @@ Entry point for custom packaging
 # 
 #**************************************************************************
 
+from pydevel.util import *
 
-__all__ = ['pkg_config', 'core',
-           'build_clib', 'build_doc', 'build_exe', 'build_js',
-           'build_pypp_ext', 'build_py', 'build_shlib', 'build_src',
-           'install_data', 'install_exe', 'install_lib',
-           'util', 'httplib', 'urllib2', 'sys_cfg',]
+environment = dict()
+pil_found = False
+
+
+def null():
+    global environment
+    environment['PIL_VERSION'] = None
+
+
+def is_installed(version=None):
+    global environment, pil_found
+    try:
+        import PIL.Image
+        ver = PIL.Image.VERSION
+        if not version is None and ver < version:
+            return pil_found
+        environment['PIL_VERSION'] = ver
+        pil_found = True
+    except Exception,e:
+        print 'PIL not found: ' + str(e)
+    return pil_found
+
+
+def install(target='build', version=None):
+    global environment
+    if not pil_found:
+        website = 'http://effbot.org/downloads/'
+        if version is None:
+            version = '1.1.7'
+        archive = 'Imaging-' + version + '.tar.gz'
+        install_pypkg_locally('Imaging-' + version, website, archive, target)
+        environment['PIL_VERSION'] = version

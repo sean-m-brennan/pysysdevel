@@ -31,7 +31,7 @@ def null():
     environment['FFNET_VERSION'] = None
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, ffnet_found
     try:
         import ffnet
@@ -42,14 +42,15 @@ def is_installed():
     return ffnet_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     global environment
     if not ffnet_found:
         website = 'http://prdownloads.sourceforge.net/ffnet/'
-        ver = '0.7.1'
-        archive = 'ffnet-' + ver + '.tar.gz'
-        install_pypkg_locally('ffnet-' + ver, website, archive, target)
-        environment['FFNET_VERSION'] = ver
+        if version is None:
+            version = '0.7.1'
+        archive = 'ffnet-' + version + '.tar.gz'
+        install_pypkg_locally('ffnet-' + version, website, archive, target)
+        environment['FFNET_VERSION'] = version
 
         ## also requires networkx
         website = 'http://networkx.lanl.gov/download/networkx/'

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find/install mod_pywebsocket
+Find GCCXML
 """
 #**************************************************************************
 # 
@@ -23,35 +23,24 @@ Find/install mod_pywebsocket
 from pydevel.util import *
 
 environment = dict()
-pywebsocket_found = False
+gccxml_found = False
 
 
 def null():
     global environment
-    environment['PYWEBSOCKET_ROOT'] = None
+    environment['GCCXML_EXECUTABLE'] = None
 
 
-def is_installed():
-    global environment, pywebsocket_found
+def is_installed(version=None):
+    global environment, gccxml_found
     try:
-        pywebsocket_root = os.environ['PYWEBSOCKET_ROOT']
-        environment['PYWEBSOCKET_ROOT'] = pywebsocket_root
-        sys.path.insert(0, os.path.join(pywebsocket_root, 'build', 'lib'))
-        pywebsocket_found = True
+        environment['GCCXML_EXECUTABLE'] = find_program('gccxml')
+        gccxml_found = True
     except:
-        try:
-            import mod_pywebsocket
-            pywebsocket_found = True
-        except:
-            pass
-    return pywebsocket_found
+        pass
+    return gccxml_found
 
 
-def install(target='build'):
-    global environment
-    if not pywebsocket_found:
-        website = 'http://pywebsocket.googlecode.com/files/'
-        ver = '0.7.6'
-        archive = 'mod_pywebsocket-' + ver + '.tar.gz'
-        pkg_dir = os.path.join('pywebsocket-' + ver, 'src')
-        install_pypkg_locally(pkg_dir, website, archive, target)
+def install(target='build', version=None):
+    if not gccxml_found:
+        raise Exception('GCCXML not found.')

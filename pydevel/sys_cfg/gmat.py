@@ -57,7 +57,7 @@ def null():
     environment['GMAT_C_EXT_SOURCES'] = []
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, gmat_found
     try:
         gmat_root = os.environ['GMAT_ROOT']
@@ -69,7 +69,10 @@ def is_installed():
                 rev_num = pysvn.Client().info(gmat_root).revision.number
                 gmat_version = 'svn-' + str(rev_num).zfill(version_zfill)
             except:
-                gmat_version = 'R2012a' 
+                gmat_version = 'R2012a'
+        if not version is None and gmat_version < version:
+            gmat_found = False
+            return gmat_found
         environment['GMAT_ROOT'] = gmat_root
         environment['GMAT_VERSION'] = gmat_version
         try:
@@ -84,11 +87,12 @@ def is_installed():
     return gmat_found
 
 
-def install(target='build'):
+def install(target='build', version=SVN):
     global environment
-
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
     try:
-        if VERSION == SVN:
+        if version == SVN:
             import pysvn
             svn_repo = 'https://gmat.svn.sourceforge.net/svnroot/gmat/trunk'
             client = pysvn.Client()
@@ -97,12 +101,15 @@ def install(target='build'):
             if not os.path.exists(src_dir):
                 client.checkout(svn_repo, src_dir)
             rev_num = client.info(src_dir).revision.number
-            ver = version_strs[VERSION] +'-'+ str(rev_num).zfill(version_zfill)
+            ver = version_strs[version] +'-'+ str(rev_num).zfill(version_zfill)
         else:
-            import urllib, tarfile, zipfile
+            import tarfile, zipfile
             here = os.path.abspath(os.getcwd())
             website = 'http://prdownloads.sourceforge.net/gmat/'
-            ver = version_strs[VERSION]
+            if version is None:
+                ver = version_strs[VERSION]
+            else:
+                ver = version
             archive = '.zip'
             archive_dir = 'gmat-src-' + ver + '-Beta'
             data_archive_dir = 'gmat-datafiles-' + ver + '-Beta'
@@ -110,41 +117,43 @@ def install(target='build'):
             data_dir = os.path.join(target, data_archive_dir)
 
             download_file = archive_dir + archive
-            set_downloading_file(website + download_file)
-            if not os.path.exists(download_file):
-                urllib.urlretrieve(website + download_file, download_file,
-                                   reporthook=download_progress)
+            set_downloading_file(download_file)
+            if not os.path.exists(os.path.join(download_dir, download_file)):
+                urlretrieve(website + download_file,
+                            os.path.join(download_dir, download_file),
+                            reporthook=download_progress)
                 sys.stdout.write('\n')
             if not os.path.exists(target):
                 os.makedirs(target)
             os.chdir(target)
             if not os.path.exists(archive_dir):
                 if archive == '.zip':
-                    z = zipfile.ZipFile(os.path.join(here,
+                    z = zipfile.ZipFile(os.path.join(here, download_dir, 
                                                      download_file), 'r')
                     z.extractall()
                 else:
-                    tgz = tarfile.open(os.path.join(here,
+                    tgz = tarfile.open(os.path.join(here, download_dir, 
                                                     download_file), 'r:gz')
                     tgz.extractall()
             os.chdir(here)
 
             download_file = data_archive_dir + archive
-            set_downloading_file(website + download_file)
-            if not os.path.exists(download_file):
-                urllib.urlretrieve(website + download_file, download_file,
-                                   reporthook=download_progress)
+            set_downloading_file(download_file)
+            if not os.path.exists(os.path.join(download_dir, download_file)):
+                urlretrieve(website + download_file,
+                            os.path.join(download_dir, download_file),
+                            reporthook=download_progress)
                 sys.stdout.write('\n')
             if not os.path.exists(target):
                 os.makedirs(target)
             os.chdir(target)
             if not os.path.exists(data_archive_dir):
                 if archive == '.zip':
-                    z = zipfile.ZipFile(os.path.join(here,
+                    z = zipfile.ZipFile(os.path.join(here, download_dir,
                                                      download_file), 'r')
                     z.extractall()
                 else:
-                    tgz = tarfile.open(os.path.join(here,
+                    tgz = tarfile.open(os.path.join(here, download_dir,
                                                     download_file), 'r:gz')
                     tgz.extractall()
             os.chdir(here)

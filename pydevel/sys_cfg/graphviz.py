@@ -36,7 +36,7 @@ def null():
     environment['GRAPHVIZ_LIBS'] = []
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, graphviz_found
     graphviz_dev_dir = ''
     try:
@@ -67,7 +67,7 @@ def is_installed():
     return graphviz_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     ## User must install
     raise Exception('Graphviz library required, but not installed.' +
                     '\nTry http://www.graphviz.org/Download.php;' +

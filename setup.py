@@ -20,7 +20,9 @@ Build and install pydevel
 # 
 #**************************************************************************
 
-import os, sys, time
+import os, sys
+from distutils.core import setup
+
 
 # Just in case we are being called from a different directory
 cwd = os.path.dirname(__file__)

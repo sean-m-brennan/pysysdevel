@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find/install Python serial package
+Find/install mod_pywebsocket
 """
 #**************************************************************************
 # 
@@ -23,30 +23,36 @@ Find/install Python serial package
 from pydevel.util import *
 
 environment = dict()
-pyserial_found = False
+pywebsocket_found = False
 
 
 def null():
     global environment
-    environment['PYSERIAL_VERSION'] = None
+    environment['PYWEBSOCKET_ROOT'] = None
 
 
-def is_installed():
-    global environment, pyserial_found
+def is_installed(version=None):
+    global environment, pywebsocket_found
     try:
-        import serial
-        environment['PYSERIAL_VERSION'] = serial.VERSION
-        pyserial_found = True
+        pywebsocket_root = os.environ['PYWEBSOCKET_ROOT']
+        environment['PYWEBSOCKET_ROOT'] = pywebsocket_root
+        sys.path.insert(0, os.path.join(pywebsocket_root, 'build', 'lib'))
+        pywebsocket_found = True
     except:
-        pass
-    return pyserial_found
+        try:
+            import mod_pywebsocket
+            pywebsocket_found = True
+        except:
+            pass
+    return pywebsocket_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     global environment
-    if not pyserial_found:
-        website = 'http://pypi.python.org/packages/source/p/pyserial/'
-        ver = '2.6'
-        archive = 'pyserial-' + ver + '.tar.gz'
-        install_pypkg_locally('pyserial-' + ver, website, archive, target)
-        environment['PYSERIAL_VERSION'] = ver
+    if not pywebsocket_found:
+        website = 'http://pywebsocket.googlecode.com/files/'
+        if version is None:
+            version = '0.7.6'
+        archive = 'mod_pywebsocket-' + version + '.tar.gz'
+        pkg_dir = os.path.join('pywebsocket-' + version, 'src')
+        install_pypkg_locally(pkg_dir, website, archive, target)

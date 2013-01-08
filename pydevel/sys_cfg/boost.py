@@ -24,8 +24,6 @@ import os
 
 from pydevel.util import *
 
-required_version = '1_33'
-
 environment = dict()
 boost_found = False
 
@@ -38,8 +36,13 @@ def null():
     environment['BOOST_VERSION'] = ''
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, boost_found
+    if version is None:
+        required_version = '1_33'
+    else:
+        required_version = version.replace('.', '_')
+
     try:
         ## the easy way
         boost_root = os.environ['BOOST_ROOT']
@@ -83,7 +86,7 @@ def is_installed():
     return boost_found
 
 
-def install():
+def install(target='build', version=None):
     if not boost_found:
         raise Exception('Boost not found. (BOOST_ROOT=' +
                         str(environment['BOOST_ROOT']) + ', include=' +

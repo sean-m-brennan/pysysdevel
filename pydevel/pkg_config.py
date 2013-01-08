@@ -19,6 +19,9 @@ Package specification
 # 
 #**************************************************************************
 
+import os, platform
+
+
 class pkg_config(object):
     '''
     Package configuration class for use with pydevel.
@@ -31,9 +34,9 @@ class pkg_config(object):
     '''
     def __init__(self, name, package_tree,
                  pkg_id, version, author, company, copyright, srcs, runscripts,
-                 data_files=dict(), extra_data=[], req_pkgs=[], dyn_mods=[],
-                 environ=dict(), prereq=[], redistrib=[],
-                 img_dir='', build_dir=''):
+                 data_files=[], extra_data=[], req_pkgs=[], dyn_mods=[],
+                 extra_pkgs=[], extra_libs=[], environ=dict(), prereq=[],
+                 redistrib=[], img_dir='', build_dir='', description=''):
         if package_tree is not None:
             self.PACKAGE       = package_tree.root()
         else:
@@ -46,19 +49,23 @@ class pkg_config(object):
         self.COMPANY           = company
         self.ID                = pkg_id
         self.PACKAGE_TREE      = package_tree
+        self.DESCRIPTION       = description
+        self.REQUIRED          = req_pkgs
 
         self.source_files      = srcs
         self.runscripts        = runscripts
-        self.package_files     = data_files
+        self.package_files     = dict({self.PACKAGE: data_files})
         self.extra_data_files  = extra_data
-        self.required_pkgs     = req_pkgs
-        self.dynamic_modules   = dyn_mods
+        self.required_pkgs     = dict({self.PACKAGE: req_pkgs})
+        self.dynamic_modules   = dict({self.PACKAGE: dyn_mods})
         self.environment       = environ
         self.prerequisites     = prereq
         self.redistributed     = redistrib
         self.image_dir         = img_dir
         self.build_dir         = build_dir
         self.build_config      = 'release'
+        self.extra_pkgs        = extra_pkgs
+        self.extra_libraries   = extra_libs
 
         if package_tree is not None:
             self.package_names = dict((tree.root(),
@@ -72,11 +79,16 @@ class pkg_config(object):
             self.hierarchy     = dict((tree.root(),
                                        list(reversed(tree.flatten())))
                                       for tree in self.PACKAGE_TREE.subtrees())
+            self.directories   = dict((tree.root(),
+                                       os.path.join(*(list(reversed(tree.flatten()))[1:]))) \
+                                          for tree in self.PACKAGE_TREE.subtrees() if len(tree) > 1)
+            self.directories[self.PACKAGE] = '.'
         else:
             self.package_names = dict()
             self.names         = dict()
             self.parents       = dict()
             self.hierarchy     = dict()
+            self.directories   = dict()
 
         self.environment['PACKAGE'] = self.PACKAGE
         self.environment['NAME'] = self.NAME
@@ -95,6 +107,9 @@ class pkg_config(object):
 
     def get_source_files(self, *args):
         return self.source_files
+
+    def get_data_files(self, *args):
+        return [('', self.package_files[self.PACKAGE])]
 
     def get_extra_data_files(self, *args):
         return self.extra_data_files

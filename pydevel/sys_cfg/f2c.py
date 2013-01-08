@@ -34,7 +34,7 @@ def null():
     environment['F2C_INCLUDE_DIR'] = None
 
 
-def is_installed():
+def is_installed(version=None):
     global environment, f2c_found
     ## look for it
     try:
@@ -52,22 +52,25 @@ def is_installed():
     return f2c_found
 
 
-def install(target='build'):
+def install(target='build', version=None):
     global environment
 
     website = 'http://www.netlib.org/f2c/'
     here = os.path.abspath(os.getcwd())
     abs_target = os.path.abspath(target)
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
     if not f2c_found:
         try:
-            import urllib, tarfile, shutil
+            import tarfile, shutil
             download_file = 'f2c.h'
             set_downloading_file(download_file)
-            if not os.path.exists(download_file):
-                urllib.urlretrieve(website + download_file, download_file,
-                                   download_progress)
+            if not os.path.exists(os.path.join(download_dir, download_file)):
+                urlretrieve(website + download_file,
+                            os.path.join(download_dir, download_file),
+                            download_progress)
                 sys.stdout.write('\n')
-            shutil.copy(download_file, target)
+            shutil.copy(os.path.join(download_dir, download_file), target)
             environment['F2C_INCLUDE_DIR'] = target
 
             if not USING_GFORTRAN:
@@ -88,18 +91,17 @@ def install(target='build'):
                             'putpcc.c', 'sysdep.c', 'sysdep.h', 'sysdeptest.c',
                             'tokens', 'tokdefs.h', 'usignal.h', 'vax.c',
                             'version.c', 'xsum.c', 'xsum0.out', 'readme',]
-                f2c_dir = 'f2c'
+                f2c_dir = os.path.join(download_dir, 'f2c')
                 if not os.path.exists(f2c_dir):
                     os.makedirs(f2c_dir)
                 os.chdir(f2c_dir)
                 for src in f2c_srcs:
                     set_downloading_file(src)
                     if not os.path.exists(src):
-                        urllib.urlretrieve(website + src, src,
-                                           download_progress)
+                        urlretrieve(website + src, src, download_progress)
                         sys.stdout.write('\n')
                 os.chdir(here)
-                f2c_build_dir = os.path.join(target, f2c_dir)
+                f2c_build_dir = os.path.join(target, 'f2c')
                 shutil.copytree(f2c_dir, f2c_build_dir)
                 os.chdir(f2c_build_dir)
                 if 'windows' in platform.system().lower():
