@@ -931,10 +931,12 @@ def get_options(pkg_config, options):
     
         specific_options = dict(
             app = target,
+            #packages = pkgs,
+            #package_data = pkg_data,
             data_files = addtnl_files,
             options = opts,
             )
-        
+       
         return specific_options
 
     ##############################
@@ -953,6 +955,7 @@ def get_options(pkg_config, options):
                 pkg_config.extra_pkgs,
             package_data = data,
             scripts = pkg_config.runscripts,
+            data_files = pkg_config.extra_data_files,
             )
         if target_os == 'windows':
             specific_options['bdist_wininst'] = {

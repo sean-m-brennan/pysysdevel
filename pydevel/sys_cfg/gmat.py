@@ -121,9 +121,9 @@ def install(target='build', version=SVN):
             if not os.path.exists(os.path.join(download_dir, download_file)):
                 urlretrieve(website + download_file,
                             os.path.join(download_dir, download_file),
-                            reporthook=download_progress)
+                            download_progress)
                 sys.stdout.write('\n')
-            if not os.path.exists(target):
+            if not os.path.isdir(target):
                 os.makedirs(target)
             os.chdir(target)
             if not os.path.exists(archive_dir):
@@ -142,7 +142,7 @@ def install(target='build', version=SVN):
             if not os.path.exists(os.path.join(download_dir, download_file)):
                 urlretrieve(website + download_file,
                             os.path.join(download_dir, download_file),
-                            reporthook=download_progress)
+                            download_progress)
                 sys.stdout.write('\n')
             if not os.path.exists(target):
                 os.makedirs(target)

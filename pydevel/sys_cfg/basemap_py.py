@@ -83,6 +83,7 @@ def install(target='build', version=None):
               glob.glob(os.path.join(basemap_dir, 'data', '*.*')))]
         environment['BASEMAP_DEPENDENCIES'] = ['geos_c']
         patch(basemap_dir)
+        sys.path.insert(0, os.path.join(target, local_lib_dir))
 
 
 def patch(basemap_dir):
