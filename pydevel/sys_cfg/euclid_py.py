@@ -48,4 +48,3 @@ def install(target='build', version=None):
         src = 'euclid.py'
         install_pyscript_locally(website, src, target)
         environment['EUCLID_VERSION'] = 'latest'
-        sys.path.insert(0, os.path.join(target, local_lib_dir))

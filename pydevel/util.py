@@ -280,6 +280,8 @@ def install_pyscript_locally(website, name, build_dir):
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
     target_dir = os.path.join(build_dir, local_lib_dir)
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
     try:
         sys.stdout.write('PREREQUISITE ' + name + ' ')
         set_downloading_file(name)
@@ -335,6 +337,7 @@ def install_pypkg_locally(name, website, archive, build_dir, env=None):
                     '--home=' + target_dir,
                     '--install-lib=' + os.path.join(target_dir, local_lib_dir),
                     ]
+        os.environ['PYTHONPATH'] = ''
         log_file = name + '.log'
         log = open(log_file, 'w')
         log.write(str(cmd_line) + '\n\n')
@@ -353,8 +356,8 @@ def install_pypkg_locally(name, website, archive, build_dir, env=None):
                             'installed locally; See ' + log_file)
         else:
             sys.stdout.write(' done\n')
-        #if not os.path.join(target_dir, local_lib_dir) in sys.path:
-        #    sys.path.insert(0, os.path.join(target_dir, local_lib_dir))
+        if not os.path.join(target_dir, local_lib_dir) in sys.path:
+            sys.path.insert(0, os.path.join(target_dir, local_lib_dir))
         os.chdir(here)
     except Exception,e:
         os.chdir(here)
@@ -607,7 +610,7 @@ def get_pyd_suffix():
             return s[0]
 
 def get_module_location(modname, preferred_dir=None):
-    if preferred_dir is not None:
+    if preferred_dir is not None and os.path.exists(preferred_dir):
         if modname in os.listdir(preferred_dir):
             return os.path.join(preferred_dir, modname)
         elif modname + '.py' in os.listdir(preferred_dir):

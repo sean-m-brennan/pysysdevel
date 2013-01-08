@@ -56,14 +56,16 @@ class install_lib(old_install_lib):
         if self.distribution.extra_install_modules:
             ## prefer updated packages
             local_pkgs_dir = os.path.join(build.build_base, util.local_lib_dir)
-            sys.path.insert(0, os.path.abspath(local_pkgs_dir))
-            insertions = 1
-            for ent in os.listdir(os.path.abspath(local_pkgs_dir)):
-                if os.path.isdir(os.path.join(local_pkgs_dir, ent)) and \
-                        ent[-4:] == '.egg':
-                    pth = os.path.join(local_pkgs_dir, ent)
-                    sys.path.insert(0, os.path.abspath(pth))
-                    insertions += 1
+            insertions = 0
+            if os.path.exists(local_pkgs_dir):
+                sys.path.insert(0, os.path.abspath(local_pkgs_dir))
+                insertions += 1
+                for ent in os.listdir(os.path.abspath(local_pkgs_dir)):
+                    if os.path.isdir(os.path.join(local_pkgs_dir, ent)) and \
+                            ent[-4:] == '.egg':
+                        pth = os.path.join(local_pkgs_dir, ent)
+                        sys.path.insert(0, os.path.abspath(pth))
+                        insertions += 1
 
             module_dir = install.install_platlib
             for mod in self.distribution.extra_install_modules:

@@ -267,6 +267,8 @@ class build(old_build):
 
     def run(self):
         if self.distribution.subpackages != None:
+            if self.get_finalized_command('install').ran:
+                return  ## avoid build after install
             try:
                 os.makedirs(self.build_base)
             except:
@@ -320,6 +322,10 @@ class install(old_install):
     Order is important: numpy, my build_shlib, distutils, the rest.
     build_doc MUST be last.
     '''
+    def initialize_options (self):
+        old_install.initialize_options(self)
+        self.ran = False
+
     def has_lib(self):
         return old_install.has_lib(self) or self.distribution.has_shared_libs()
 
@@ -337,6 +343,7 @@ class install(old_install):
 
     def run(self):
         if self.distribution.subpackages != None:
+            self.ran = True
             build = self.get_finalized_command('build')
             for sub in self.distribution.subpackages:
                 idx = sys.argv.index('setup.py') + 1

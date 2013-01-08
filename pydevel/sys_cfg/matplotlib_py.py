@@ -74,4 +74,3 @@ def install(target='build', version=None):
             root = root[root.index('mpl-data'):]
             d[root] = files
         environment['MATPLOTLIB_DATA_FILES'] = d.items()
-        sys.path.insert(0, os.path.join(target, local_lib_dir))
