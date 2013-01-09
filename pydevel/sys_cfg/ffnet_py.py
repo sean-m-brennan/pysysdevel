@@ -37,14 +37,17 @@ def is_installed(version=None):
         import ffnet
         environment['FFNET_VERSION'] = ffnet.version
         ffnet_found = True
-    except:
-        pass
+    except Exception,e:
+        print e
     return ffnet_found
 
 
 def install(target='build', version=None):
     global environment
     if not ffnet_found:
+        if 'windows' in platform.system().lower():
+            raise Exception('Install networkx and ffnet from ' + 
+                            'http://www.lfd.uci.edu/~gohlke/pythonlibs')
         website = 'http://prdownloads.sourceforge.net/ffnet/'
         if version is None:
             version = '0.7.1'

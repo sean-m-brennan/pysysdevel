@@ -38,9 +38,15 @@ def null():
 def is_installed(version=None):
     global environment, cdf_found
     try:
-        incl_dir = find_header('cdf.h')
+        base_dirs = []
+        if 'windows' in platform.system().lower():
+            base_dirs += ['C:\CDF Distribution\cdf34_1-dist']
+        incl_dir = find_header('cdf.h', base_dirs)
         environment['CDF_INCLUDE_DIR'] = incl_dir
-        environment['CDF_LIB_DIR'], lib = find_library('cdf')
+        lib_name = 'cdf'
+        if 'windows' in platform.system().lower():
+            lib_name += 'NativeLibrary'
+        environment['CDF_LIB_DIR'], lib = find_library('cdf', base_dirs)
         environment['CDF_LIBRARY'] = lib
         cdf_found = True
     except Exception,e:
@@ -61,6 +67,8 @@ def install(target='build', version=None):
     else:
         oper_sys = os_dir = 'linux'
     website += '/' + os_dir + '/'
+    if 'windows' in platform.system().lower():
+        raise Exception('Install CDF maually from ' + website)
     here = os.path.abspath(os.getcwd())
     abs_target = os.path.abspath(target)
     if not os.path.exists(download_dir):
