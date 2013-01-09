@@ -345,6 +345,10 @@ class install(old_install):
         if self.distribution.subpackages != None:
             self.ran = True
             build = self.get_finalized_command('build')
+            try:
+                os.makedirs(build.build_base)
+            except:
+                pass
             for sub in self.distribution.subpackages:
                 idx = sys.argv.index('setup.py') + 1
                 argv = list(sys.argv[idx:])

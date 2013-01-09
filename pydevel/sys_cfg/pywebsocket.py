@@ -55,4 +55,5 @@ def install(target='build', version=None):
             version = '0.7.6'
         archive = 'mod_pywebsocket-' + version + '.tar.gz'
         pkg_dir = os.path.join('pywebsocket-' + version, 'src')
-        install_pypkg_locally(pkg_dir, website, archive, target)
+        install_pypkg_locally('pywebsocket-' + version, website,
+                              archive, target, src_dir=pkg_dir)

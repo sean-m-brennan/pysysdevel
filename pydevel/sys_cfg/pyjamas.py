@@ -81,11 +81,12 @@ def install(target='build', version=None):
                 os.makedirs(target)
             download_path = os.path.abspath(os.path.join(download_dir, archive))
             if not os.path.exists(download_path):
-                print 'DIR ' + os.getcwd()
                 urlretrieve(website + download_file, download_path,
                             download_progress)
-            working_dir = os.path.join(target, 'pyjamas-' + version)
+            working_dir = os.path.abspath(os.path.join(target,
+                                                       'pyjamas-' + version))
             if not os.path.exists(working_dir):
+                os.chdir(target)
                 if download_path[-3:] == 'zip':
                     z = zipfile.ZipFile(download_path, 'r')
                     z.extractall()

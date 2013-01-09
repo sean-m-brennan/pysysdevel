@@ -106,7 +106,8 @@ def find_program(name, pathlist=[]):
 def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
     '''
     Find the containing directory of the specified header file.
-    extra_subdir may be a pattern.
+    extra_subdir may be a pattern. For Windows, it is important to not
+    have a trailing path separator.
     '''
     subdirs = ['include',]
     for sub in extra_subdirs:
@@ -127,10 +128,10 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
                     rt = os.path.normpath(root)
                     for fn in filenames:
                         if dirname == ''and fnmatch.fnmatch(fn, filename):
-                            return root
+                            return root.rstrip(os.sep)
                         elif fnmatch.fnmatch(os.path.basename(rt), dirname) \
                                 and fnmatch.fnmatch(fn, filename):
-                            return os.path.dirname(rt)
+                            return os.path.dirname(rt).rstrip(os.sep)
     raise Exception(filename + ' not found.')
 
 
@@ -146,7 +147,8 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                    limit=False, single=False):
     '''
     Find the containing directory and proper filenames (returned as a tuple)
-    of the given library.
+    of the given library. For Windows, it is important to not have a
+    trailing path separator.
     '''
     default_lib_paths = ['', 'lib', 'lib64']
     suffixes = ['.so', '.a']
@@ -178,11 +180,11 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                 for fn in filenames:
                                     if fnmatch.fnmatch(fn, filename):
                                         if single:
-                                            return root, fn
+                                            return root.rstrip(os.sep), fn
                                         else:
                                             libs.append(fn)
                                 if len(libs) > 0:
-                                    return root, libs
+                                    return root.rstrip(os.sep), libs
     raise Exception(name + ' library not found.')
 
 
@@ -296,7 +298,10 @@ def install_pyscript_locally(website, name, build_dir):
         raise Exception('Unable to install ' + name + ' locally: ' + str(e))
 
 
-def install_pypkg_locally(name, website, archive, build_dir, env=None):
+def install_pypkg_locally(name, website, archive, build_dir,
+                          env=None, src_dir=None):
+    if src_dir is None:
+        src_dir = name
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
     here = os.path.abspath(os.getcwd())
@@ -312,7 +317,7 @@ def install_pypkg_locally(name, website, archive, build_dir, env=None):
         os.chdir(target_dir)
         sys.stdout.write('PREREQUISITE ' + name + ' ')
         sys.stdout.flush()
-        if not os.path.exists(name):
+        if not os.path.exists(src_dir):
             if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
                 z = tarfile.open(os.path.join(here, download_dir, archive),
                                  'r:gz')
@@ -327,7 +332,7 @@ def install_pypkg_locally(name, website, archive, build_dir, env=None):
                 z.extractall()
             else:
                 raise Exception('Unrecognized archive compression: ' + archive)
-        os.chdir(name)
+        os.chdir(src_dir)
         if env:
             for e in env:
                 (key, value) = e.split('=')

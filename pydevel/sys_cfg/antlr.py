@@ -137,7 +137,7 @@ def install(target='build', version=None):
                 z = tarfile.open(os.path.join(here, download_dir,
                                               download_file), 'r:gz')
                 z.extractall()
-            target_dir = os.path.join(here, target, 'lib', 'python')
+            target_dir = os.path.join(here, target, local_lib_dir)
             try:
                 os.makedirs(target_dir)
             except:
