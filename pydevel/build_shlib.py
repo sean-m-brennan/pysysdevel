@@ -157,9 +157,13 @@ class build_shlib(build_clib):
 
         # check availability of Fortran compilers
         if (f_sources or fmodule_sources) and fcompiler is None:
-            raise DistutilsError, "library %s has Fortran sources"\
-                  " but no Fortran compiler found" % (lib_name)
+            ver = '77'
+            if requiref90:
+                ver = '90'
+            raise DistutilsError, "library %s has Fortran%s sources"\
+                  " but no Fortran compiler found" % (lib_name, ver)
 
+        print 'Moving on'
         macros = build_info.get('macros')
         include_dirs = build_info.get('include_dirs')
         if include_dirs is None:

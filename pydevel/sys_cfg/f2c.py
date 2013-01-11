@@ -60,6 +60,8 @@ def install(target='build', version=None):
     abs_target = os.path.abspath(target)
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
+    if not os.path.exists(target):
+        os.makedirs(target)
     if not f2c_found:
         try:
             import tarfile, shutil

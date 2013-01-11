@@ -298,7 +298,8 @@ def _set_environment(gmat_root, gmat_version):
                     environment['GMAT_BASE_' + lib + '_HDRS'].append(path)
                     base_hdrs.append(path)
         environment['GMAT_BASE_INCLUDE_DIRS'] += include_dirs
-    base_srcs.append(os.path.join(base_dir, 'solarsys', 'msise90_sub.for'))
+    environment['GMAT_FORTRAN_SRCS'] = [os.path.join(base_dir, 'solarsys',
+                                                     'msise90_sub.for')]
     environment['GMAT_BASE_HDRS'] = base_hdrs
     environment['GMAT_BASE_SRCS'] = base_srcs
 

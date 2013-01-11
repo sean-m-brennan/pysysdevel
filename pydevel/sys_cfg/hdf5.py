@@ -40,6 +40,11 @@ def is_installed(version=None):
     global environment, hdf5_found
     hdf5_dev_dir = ''
     try:
+        hdf5_lib_list = ['hdf5', 'hdf5_fortran', 'hdf5_cpp',
+                         'hdf5_hl', 'hdf5hl_fortran', 'hdf5_hl_cpp',]
+        if 'windows' in platform.system().lower():
+            hdf5_lib_list = ['hdf5dll', 'hdf5_fortrandll', 'hdf5_cppdll',
+                             'hdf5_hldll', 'hdf5_hl_fortrandll', 'hdf5_hl_cppdll',]
         try:
             hdf5_dev_dir = os.environ['HDF5_ROOT']
         except:
@@ -50,14 +55,14 @@ def is_installed(version=None):
         else:
             base_dirs = []
             if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('c:', 'hdf5')] #FIXME
+                progfiles = os.environ['ProgramFiles']
+                base_dirs += [os.path.join(progfiles, 'HDF_Group', 'HDF5')]
             hdf5_lib_dir, hdf5_libs  = find_libraries('hdf5', base_dirs)
             hdf5_inc_dir = find_header('hdf5.h', base_dirs)
         environment['HDF5_INCLUDE_DIR'] = hdf5_inc_dir
         environment['HDF5_LIBRARY_DIR'] = hdf5_lib_dir
         environment['HDF5_LIBRARIES'] = hdf5_libs
-        environment['HDF5_LIBS'] = ['hdf5',  'hdf5_fortran', 'hdf5_cpp',
-                                    'hdf5_hl', 'hdf5hl_fortran', 'hdf5_hl_cpp',]
+        environment['HDF5_LIBS'] = hdf5_lib_list
         ## FIXME derive from found libs
         hdf5_found = True
     except Exception,e:

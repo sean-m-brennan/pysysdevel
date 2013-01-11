@@ -50,7 +50,8 @@ def is_installed(version=None):
         else:
             base_dirs = []
             if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('c:', 'gsl')] #FIXME
+                progfiles = os.environ['ProgramFiles']
+                base_dirs += [os.path.join(progfiles, 'GnuWin32')]
             gsl_lib_dir, gsl_libs  = find_libraries('gsl', base_dirs)
             gsl_inc_dir = find_header('gsl_types.h', base_dirs, ['gsl'])
         environment['GSL_INCLUDE_DIR'] = gsl_inc_dir

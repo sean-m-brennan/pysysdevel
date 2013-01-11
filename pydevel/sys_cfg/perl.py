@@ -38,29 +38,45 @@ def null():
 
 def is_installed(version=None):
     global environment, perl_found
-    perl_core_dir = ''
+    core_dir = ''
+    lib_ver = ''
     try:
+        if version is None:
+            ver = '5'
+        else:
+            ver = version.split('.')[0]
+        if 'windows' in platform.system().lower():
+            ver = ''
         try:
-            perl_core_dir = os.environ['PERL_CORE']
+            core_dir = os.environ['PERL_CORE']
         except:
             try:
-                perl_core_dir = os.environ['PERL_ROOT']
+                core_dir = os.environ['PERL_ROOT']
             except:
                 pass
-        if perl_core_dir != '':
-            _, perl_lib  = find_library('perl', [perl_core_dir], ['perl5'])
-            perl_core_dir = find_header('perl.h', [perl_core_dir])
+        if core_dir != '':
+            perl_exe = find_program('perl', [core_dir])
+            _, perl_lib  = find_library('perl', [core_dir], ['perl' + ver])
+            core_dir = find_header('perl.h', [core_dir])
         else:
-            base_dirs = []
+            base_bin_dirs = []
+            base_lib_dirs = []
             if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('c:', 'perl')]
-            perl_core_dir, perl_lib  = find_library('perl', base_dirs,
-                                                    ['perl5'])
-            perl_core_dir = find_header('perl.h', [perl_core_dir])
-        environment['PERL_INCLUDE_DIR'] = perl_core_dir
-        environment['PERL_LIBRARY_DIR'] = perl_core_dir
+                ## assumes Strawberry Perl from http://strawberryperl.com
+                perl_base = os.path.join('c:', os.sep, 'strawberry', 'perl')
+                base_bin_dirs += [os.path.join(perl_base, 'bin')]
+                base_lib_dirs += [os.path.join(perl_base, 'lib', 'CORE')]
+            perl_exe = find_program('perl', base_bin_dirs)
+            core_dir, perl_lib  = find_library('perl', base_lib_dirs,
+                                               ['perl' + ver])
+            if 'windows' in platform.system().lower():
+                lib_ver = perl_lib.split('.')[0].split('perl')[1]
+            core_dir = find_header('perl.h', [core_dir])
+        environment['PERL_PATH'] = perl_exe
+        environment['PERL_INCLUDE_DIR'] = core_dir
+        environment['PERL_LIBRARY_DIR'] = core_dir
         environment['PERL_LIBRARIES'] = [perl_lib]
-        environment['PERL_LIBS'] = ['perl']
+        environment['PERL_LIBS'] = ['perl' + lib_ver]
         perl_found = True
     except Exception,e:
         print e

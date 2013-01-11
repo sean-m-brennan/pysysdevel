@@ -20,7 +20,7 @@ Find Graphviz library
 # 
 #**************************************************************************
 
-import os
+import os, glob
 
 from pydevel.util import *
 
@@ -47,15 +47,15 @@ def is_installed(version=None):
         if graphviz_dev_dir != '':
             graphviz_lib_dir, graphviz_lib  = find_library('graph',
                                                            [graphviz_dev_dir])
-            graphviz_inc_dir = find_header('graphviz_version.h',
+            graphviz_inc_dir = find_header('graph.h',
                                            [graphviz_dev_dir], ['graphviz'])
         else:
             base_dirs = []
             if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('c:', 'graphviz')] #FIXME
+                progfiles = os.environ['ProgramFiles']
+                base_dirs += glob.glob(os.path.join(progfiles, 'Graphviz*'))
             graphviz_lib_dir, graphviz_lib = find_library('graph', base_dirs)
-            graphviz_inc_dir = find_header('graphviz_version.h', base_dirs,
-                                           ['graphviz'])
+            graphviz_inc_dir = find_header('graph.h', base_dirs, ['graphviz'])
         environment['GRAPHVIZ_INCLUDE_DIR'] = graphviz_inc_dir
         environment['GRAPHVIZ_LIBRARY_DIR'] = graphviz_lib_dir
         environment['GRAPHVIZ_LIBRARIES'] = [graphviz_lib]

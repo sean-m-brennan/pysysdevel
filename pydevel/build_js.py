@@ -19,7 +19,7 @@
 # 
 #**************************************************************************
 
-import os, sys, logging, subprocess
+import os, sys, logging, subprocess, shutil
 from numpy.distutils.command.build_ext import build_ext
 from distutils.errors import DistutilsExecError
 
@@ -135,6 +135,5 @@ class build_js(build_ext):
                                     + str(status))
                 os.chdir(here)
             if not os.path.lexists(os.path.join(target, 'index.html')):
-                os.chdir(target)
-                os.symlink(wext.name + '.html', 'index.html')
-                os.chdir(here)
+                shutil.copyfile(os.path.join(target, wext.name + '.html'),
+                                os.path.join(target, 'index.html'))

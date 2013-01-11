@@ -50,7 +50,7 @@ def is_installed(version=None):
         else:
             base_dirs = []
             if 'windows' in platform.system().lower():
-                base_dirs += ['C:\\OSGeo4W']
+                base_dirs += [os.path.join('C:', os.sep, 'OSGeo4W')]
             geos_lib_dir, geos_libs  = find_libraries('geos_c', base_dirs)
             geos_inc_dir = find_header('geos_c.h', base_dirs)
         quoted_ver = get_header_version(os.path.join(geos_inc_dir, 'geos_c.h'),

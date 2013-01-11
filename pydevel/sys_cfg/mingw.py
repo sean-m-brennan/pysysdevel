@@ -65,7 +65,7 @@ def is_installed(version=None):
         mingw_found = True
     except:
         ## look for it
-        primary_loc = 'C:\\MinGW\\bin'
+        primary_loc = os.path.join('C:', os.sep, 'MinGW', 'bin')
         try:
             alt_loc = os.path.join(os.environ['ProgramFiles'], 'MinGW', 'bin')
         except:

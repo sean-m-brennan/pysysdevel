@@ -50,7 +50,7 @@ def is_installed(version=None):
         else:
             base_dirs = []
             if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('c:', 'proj')] #FIXME
+                base_dirs += [os.path.join('C:', os.sep, 'OSGeo4W')]
             proj4_lib_dir, proj4_libs  = find_libraries('proj', base_dirs)
             proj4_inc_dir = find_header('proj_api.h', base_dirs)
         environment['PROJ4_INCLUDE_DIR'] = proj4_inc_dir

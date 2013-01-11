@@ -37,10 +37,13 @@ def null():
 
 def is_installed(version=None):
     global environment, cdf_found
+    if version is None:
+        version = '34_1'
     try:
         base_dirs = []
         if 'windows' in platform.system().lower():
-            base_dirs += ['C:\CDF Distribution\cdf34_1-dist']
+            base_dirs += [os.path.join('C:', os.sep, 'CDF Distribution',
+                                       'cdf' + version + '-dist']
         incl_dir = find_header('cdf.h', base_dirs)
         environment['CDF_INCLUDE_DIR'] = incl_dir
         lib_name = 'cdf'

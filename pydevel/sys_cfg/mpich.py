@@ -40,6 +40,9 @@ def is_installed(version=None):
     global environment, mpich_found
     mpich_dev_dir = ''
     try:
+        mpich_lib_list = ['mpich', 'mpichcxx', 'mpichf90']
+        if 'windows' in platform.system().lower():
+            mpich_lib_list = ['mpi', 'mpicxx', 'fmpich2g']
         arch = 'i686'
         if struct.calcsize('P') == 8:
             arch = 'x86_64'
@@ -48,20 +51,23 @@ def is_installed(version=None):
         except:
             pass
         if mpich_dev_dir != '':
-            mpich_lib_dir, mpich_lib  = find_library('mpich', [mpich_dev_dir])
+            mpich_lib_dir, mpich_lib  = find_library(mpich_lib_list[0],
+                                                     [mpich_dev_dir])
             mpich_inc_dir = find_header('mpi.h', [mpich_dev_dir],
                                         ['mpich2', 'mpich2-' + arch,])
         else:
             base_dirs = []
             if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('c:', 'mpich')] #FIXME
-            mpich_lib_dir, mpich_libs  = find_libraries('mpich', base_dirs)
+                progfiles = os.environ['PROGRAMFILES']
+                base_dirs += [os.path.join(progfiles, 'MPICH2')]
+            mpich_lib_dir, mpich_libs  = find_libraries(mpich_lib_list[0],
+                                                        base_dirs)
             mpich_inc_dir = find_header('mpi.h', base_dirs,
                                         ['mpich2', 'mpich2-' + arch,])
         environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir
         environment['MPICH_LIBRARY_DIR'] = mpich_lib_dir
         environment['MPICH_LIBRARIES'] = mpich_libs
-        environment['MPICH_LIBS'] = ['mpich', 'mpichcxx', 'mpichf90',]
+        environment['MPICH_LIBS'] = mpich_lib_list
         ## FIXME derive from found libs
         mpich_found = True
     except Exception,e:

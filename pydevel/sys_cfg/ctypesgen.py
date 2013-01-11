@@ -31,12 +31,15 @@ ctypesgen_found = False
 def null():
     global environment
     environment['CTYPESGEN_EXE'] = None
+    environment['CTYPESGEN_PATH'] = None
 
 
 def is_installed(version=None):
     global environment, ctypesgen_found
     try:
         environment['CTYPESGEN_EXE'] = find_program('ctypesgen.py')
+        import ctypesgencore
+        environment['CTYPESGEN_PATH'] = os.path.dirname(ctypesgencore.__file__)
         ctypesgen_found = True
     except:
         pass
@@ -53,3 +56,4 @@ def install(target='build', version=None):
         install_pypkg_locally('ctypesgen-' + version, website, archive, target)
         environment['CTYPESGEN_EXE'] = \
             find_program('ctypesgen.py', [os.path.join(target, 'bin')])
+        environment['CTYPESGEN_PATH'] = os.path.join(target, local_lib_dir)

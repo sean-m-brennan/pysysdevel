@@ -218,7 +218,7 @@ class CustomDistribution(NumpyDistribution):
 class build(old_build):
     '''
     Subclass numpy build command to support new commands.
-    Order is important: numpy, my build_shlib, distutils, the rest.
+    Order is important: numpy, distutils, the rest.
     build_doc MUST be last.
     Assumes commands from build.build: build_py, build_clib, build_ext,
       build_scripts
@@ -255,12 +255,18 @@ class build(old_build):
             return self.distribution.quit_on_error
         return False
 
-
-    sub_commands = old_build.sub_commands[:3] + [
-        ('build_shlib',    has_shared_libraries),
-        ('build_pypp_ext', has_pypp_extensions),
+    ## Order is important
+    sub_commands = [
+        ('config_cc',      lambda *args: True),
+        ('config_fc',      lambda *args: True),
+        ('build_src',      old_build.has_ext_modules),
+        ('build_py',       old_build.has_pure_modules),
         ('build_js',       has_web_extensions),
-        ] + old_build.sub_commands[3:] + [
+        ('build_clib',     old_build.has_c_libraries),
+        ('build_shlib',    has_shared_libraries),
+        ('build_ext',      old_build. has_ext_modules),
+        ('build_pypp_ext', has_pypp_extensions),
+        ('build_scripts',  old_build.has_scripts),
         ('build_doc',      has_documents),
         ('build_exe',      has_executables),
         ]

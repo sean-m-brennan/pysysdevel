@@ -69,7 +69,7 @@ def is_installed(version=None):
     except Exception, e:
         ## look for global machine installation
         environment['BOOST_ROOT'] = None
-        win_alt = os.path.normpath('C:\\Boost')
+        win_alt = os.path.normpath(os.path.join('C:', os.sep, 'Boost'))
         incl_dir = find_header(os.path.join('boost', 'python.hpp'),
                                [win_alt], 'boost-*')
         environment['BOOST_INCLUDE_DIR'] = incl_dir

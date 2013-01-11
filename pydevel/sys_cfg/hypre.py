@@ -49,7 +49,8 @@ def is_installed(version=None):
         else:
             base_dirs = []
             if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('c:', 'hypre')] #FIXME
+                progfiles = os.environ['PROGRAMFILES']
+                base_dirs += [os.path.join(progfiles, 'hypre')] #FIXME
             hypre_lib_dir, hypre_libs  = find_libraries('hypre', base_dirs)
             hypre_inc_dir = find_header('hypre.h', base_dirs)
         environment['HYPRE_INCLUDE_DIR'] = hypre_inc_dir
