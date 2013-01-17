@@ -30,7 +30,7 @@ gsl_found = False
 
 def null():
     global environment
-    environment['GSL_INCLUDE_DIR'] = None
+    environment['GSL_INCLUDE_DIR'] = ''
     environment['GSL_LIBRARY_DIR'] = None
     environment['GSL_LIBRARIES'] = []
     environment['GSL_LIBS'] = []

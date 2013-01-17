@@ -55,6 +55,7 @@ def null():
     environment['GMAT_C_INCLUDE_DIRS'] = []
     environment['GMAT_C_EXT_HEADERS'] = []
     environment['GMAT_C_EXT_SOURCES'] = []
+    environment['GMAT_FORTRAN_SRCS'] = []
 
 
 def is_installed(version=None):
