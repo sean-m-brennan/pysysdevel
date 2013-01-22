@@ -116,6 +116,8 @@ class build_js(build_ext):
                     if 'debug' in arg.lower():
                         cmd_line.append('--debug')
                         cmd_line.append('--print-statements')
+                    else:
+                        cmd_line.append(arg)
                 if self.distribution.verbose:
                     cmd_line.append('--log-level=' + str(logging.INFO))
                 else:
