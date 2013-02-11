@@ -1,0 +1,270 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+#**************************************************************************
+# 
+# This material was prepared by the Los Alamos National Security, LLC 
+# (LANS), under Contract DE-AC52-06NA25396 with the U.S. Department of 
+# Energy (DOE). All rights in the material are reserved by DOE on behalf 
+# of the Government and LANS pursuant to the contract. You are authorized 
+# to use the material for Government purposes but it is not to be released 
+# or distributed to the public. NEITHER THE UNITED STATES NOR THE UNITED 
+# STATES DEPARTMENT OF ENERGY, NOR LOS ALAMOS NATIONAL SECURITY, LLC, NOR 
+# ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR 
+# ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
+# COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
+# PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE 
+# PRIVATELY OWNED RIGHTS.
+# 
+#**************************************************************************
+
+import os
+import sys
+import logging
+import time
+import tempfile
+import socket
+import inspect
+import traceback
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
+import websocketserver
+import websockethandler
+import daemon
+
+from query import query  ## user defined
+
+
+WEBSOCKET_HOST = socket.getfqdn()
+WEBSOCKET_PORT = 9876
+WEBSOCKET_ORIGIN = 'http://dev.impact.lanl.gov' #FIXME configure?
+WEBSOCKET_TLS_PKEY = None
+WEBSOCKET_TLS_CERT = None
+
+RESOURCE     = 'impact' #FIXME configure?
+SERVICE_NAME = RESOURCE.upper()
+
+
+def json_handler(obj):
+    if type(obj) == datetime.datetime:
+        return obj.isoformat()
+    elif type(obj) == numpy.ndarray:
+        return obj.tolist()
+    else:
+        raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj))
+
+
+
+class ServiceQuery(websockethandler.WebHandlerService):
+    def __init__(self, dispatcher, param_dict):
+        websockethandler.WebHandlerService.__init__(self, SERVICE_NAME +
+                                                    ' query service')
+        self.socket_dispatch = dispatcher
+                
+
+    def handle_message(self, message):
+        try:
+            if message.lower().startswith('list_steps'):
+                if self.socket_dispatch != None:
+                    msg_tpls = query.list_steps(json.loads(message[11:]))
+                    if msg_tpls != None:
+                        for m in msg_tpls:
+                            self.socket_dispatch.send_data(
+                                'STEP' + str(m[0]) + 
+                                json.dumps(m[1]), default=json_handler)
+
+            elif message.lower().startswith('step'):
+                if self.socket_dispatch != None:
+                    step_num = int(message[4])
+                    try:
+                        func = getattr(query, 'step' + str(step_num))
+                        msg = func(json.loads(message[6:]))
+                        if msg != None:
+                            if isinstance(msg, Exception):
+                                self.socket_dispatch.send_data('ERROR:' +
+                                                               str(msg))
+                            else:
+                                self.socket_dispatch.send_data(
+                                    'STEP' + str(step_num+1) + 
+                                    json.dumps(msg, default=json_handler))
+                    except AttributeError:
+                        self.log.debug("Unknown step: " + message)
+
+            else:
+                self.log.debug("Unknown command: " + message)
+        except Exception, e:
+            #self.log.debug(str(e) + ' at %s:%d' % inspect.stack()[1][1:3])
+            self.log.debug(traceback.format_exc())
+                
+    def closing(self):
+        return False
+
+    def quit(self):
+        pass
+
+
+class ServiceBatch(websockethandler.WebHandlerService):
+    def __init__(self, dispatcher, param_dict):
+        websockethandler.WebHandlerService.__init__(self, SERVICE_NAME +
+                                                    ' batch service')
+        self.socket_dispatch = dispatcher
+        self.parameters = dict()
+        try:
+            if query.validate_parameters(param_dict):
+                self.parameters = param_dict
+            else:
+                if self.socket_dispatch != None:
+                    error = 'ERROR:Invalid parameters.'
+                    self.socket_dispatch.send_data(error)
+        except:
+            pass
+
+    def handle_message(self, unused):
+        ## not using input
+        results = "RESULT:"
+        try:
+            results += json.dumps(query.last_step(self.parameters),
+                                  default=json_handler)
+            if self.socket_dispatch != None:
+                self.socket_dispatch.send_data(results)
+        except models.UnknownModelException, e:
+            error = "ERROR:" + str(e)
+            if self.socket_dispatch != None:
+                self.socket_dispatch.send_data(error)
+        except NotImplementedError, e:
+            error = "ERROR:" + str(e)
+            if self.socket_dispatch != None:
+                self.socket_dispatch.send_data(error)
+        except:
+            pass
+
+    def closing(self):
+        return False
+
+    def quit(self):
+        pass
+
+
+
+class ServiceSpawn(websockethandler.WebResourceFactory):
+    def __call__(self, dispatcher, resource):
+        service = None
+        res = resource
+        if resource.startswith('/' + RESOURCE + '/'):
+            res = resource[8:]
+            subs = res.split('/')
+            params = dict()
+            for sub in subs:
+                if sub == '':
+                    continue
+                key_val = sub.split('=')
+                params[key_val[0]] = key_val[1]
+            service = ServiceQuery(dispatcher, params)
+            service.start()
+        elif resource.startswith('/' + RESOURCE + '_batch/'):
+            res = resource[14:]
+            subs = res.split('/')
+            params = dict()
+            for sub in subs:
+                key_val = sub.split('=')
+                params[key_val[0]] = key_val[1]
+            service = ServiceBatch(dispatcher, params)
+            service.start()
+        return service
+
+
+class ServiceServer(object):
+    def __init__(self, log_file, log_level=logging.WARNING, verbose=False):
+        if log_file is None:  ## log to stdout
+            logging.basicConfig(format='%(asctime)s  %(name)s - %(message)s',
+                                level=log_level)
+        else:
+            logging.basicConfig(filename=log_file, filemode='w',
+                                format='%(asctime)s  %(name)s - %(message)s',
+                                level=log_level)
+        self.webserver = websocketserver.WebSocketServer(ServiceServiceSpawn,
+                                                         WEBSOCKET_HOST,
+                                                         WEBSOCKET_PORT,
+                                                         WEBSOCKET_ORIGIN,
+                                                         WEBSOCKET_TLS_PKEY,
+                                                         WEBSOCKET_TLS_CERT,
+                                                         True, verbose)
+
+    def run(self):
+        self.webserver.start()
+        while True:
+            time.sleep(.05)
+
+    def quit(self):
+        try:
+            self.webserver.quit()
+            self.webserver.join(1)
+        except Exception, e:
+            self.log.error('webserver thread: ' + str(e))
+
+
+class ServiceDaemon(daemon.Daemon):
+    _svc_name_ = SERVICE_NAME + '_Server'
+    _svc_display_name_ = SERVICE_NAME + ' Server'
+
+    def __init__(self, debug=logging.WARNING):
+        log_file = os.path.join(tempfile.gettempdir(),
+                                SERVICE_NAME + '_Server.log')
+        logging.basicConfig(filename=log_file,
+                            format='%(asctime)s  %(name)s - %(message)s',
+                            level=debug)
+        self.webserver = websocketserver.WebSocketServer(ServiceSpawn,
+                                                         WEBSOCKET_HOST,
+                                                         WEBSOCKET_PORT,
+                                                         WEBSOCKET_ORIGIN,
+                                                         WEBSOCKET_TLS_PKEY,
+                                                         WEBSOCKET_TLS_CERT,
+                                                         True)
+        daemon.Daemon.__init__(self, log_file)
+        self.log = logging.getLogger()
+
+    def stop(self):
+        self.webserver.quit()
+        self.webserver.join(1)
+        self.sleep(1)
+        self.log.info('Shutting down ' + SERVICE_NAME + ' websocket server.')
+        self.log.info('----------------------------------------')
+        self.force_stop()
+  
+    def run(self):
+        self.webserver.start()
+        self.log.info('Started ' + SERVICE_NAME + ' websocket server.')
+        while True:
+            time.sleep(.05)
+
+
+##############################
+
+
+def main(argv=None):
+    app_name = SERVICE_NAME + 'server.main()'
+    if argv is None:
+        app_name = os.path.split(sys.argv[0])[1]
+        argv = sys.argv
+
+    if '-d' in argv or '--debug' in argv:
+        verbose = False
+        level = logging.WARNING
+        if '-v' in argv or '--verbose' in argv:
+            verbose = True
+            level = logging.DEBUG
+        try:
+            server = ServiceServer(None, logging.DEBUG, verbose)
+            server.run()
+        except KeyboardInterrupt:
+            server.quit()
+    else:
+        server = ServiceDaemon(logging.INFO)
+        server.start()
+
+
+if __name__ == "__main__":
+    main()
