@@ -19,7 +19,8 @@ Package specification
 # 
 #**************************************************************************
 
-import os, platform
+import os
+import platform
 
 
 class pkg_config(object):

@@ -28,7 +28,7 @@ except ImportError:
 import websocketclient
 
 
-class DataHandler(websocketclient.WebSocketHandler):
+class WSdataHandler(websocketclient.WebSocketHandler):
     def __init__(self, parent):
         websocketclient.WebSocketHandler.__init__(self)
         self.app = parent
@@ -37,23 +37,25 @@ class DataHandler(websocketclient.WebSocketHandler):
         log.debug('Disconnected')
 
     def receive(self, data):
+        log.debug('Received ' + data)
         if data.lower().startswith('step'):
-            self.app.step_in(int(data[5]), json.loads(data[6:]))
-        elif data[:6] == 'ERROR:':
+            self.app.step_in(int(data[4]), json.loads(data[6:]))
+        elif data[:6].lower() == 'error:':
             self.app.error(data[6:])
         else:
             log.warning('Unknown data: ' + data)
 
 
-class PHPHandler(object):
+class PHPdataHandler(object):
     def __init__(self, app):
         self.app = app
 
     def onError(self, msg):
         self.app.error(msg)
 
-    def onCompletion(self, msg):
-        self.app.step_in(int(data[5]), data[6:])
+    def onCompletion(self, data):
+        log.debug('Received ' + data)
+        self.app.step_in(int(data[4]), json.loads(data[6:]))
 
     def onTimeout(self, msg):
         self.app.timeout()
@@ -65,14 +67,17 @@ class WebUI(object):
     def prepWebUI(self, server, resource):
         Window.addWindowCloseListener(self)
 
-        self.dh = DataHandler(self)
+        self.ws_dh = WSdataHandler(self)
         location = Window.getLocation()
         search = location.getSearch()[1:]
         params = '/'.join(search.split('&'))
         full_resource = resource + '/' + params
-        self.ws = websocketclient.WebSocketClient(full_resource, self.dh,
+        self.server = server
+        self.ws = websocketclient.WebSocketClient(full_resource, self.ws_dh,
                                                   fallback=True)
-        self.ws.connect(server)
+        self.ws.connect(self.server)
+
+        self.php_dh = PHPdataHandler(self)
         self.php_script = resource + '.php'
 
 
@@ -90,20 +95,20 @@ class WebUI(object):
 
 
     def connected(self):
-        if self.ws is None or self.dh is None:
+        if self.ws is None:
             return False
         return self.ws.isOpen()
 
     def send_to_server(self, msg_type, data=None):
-        msg = str(msg_type)
+        msg = str(msg_type).lower()
         if data:
-            msg += ':' + json.dumps(data)
+            msg += '=' + json.dumps(data)
+        log.debug('Sending ' + msg)
         if self.connected():
-            self.dh.send(msg)
+            self.ws_dh.send(msg)
         else:  ## fallback to PHP
-            log.debug('Server at @@{SERVER} not available.')
-            hndlr = PHPHandler(self)
-            HTTPRequest().asyncGet(self.php_script + '?' + msg, hndlr)
+            log.info('Server at ' + self.server + ' not available.')
+            HTTPRequest().asyncPost(self.php_script, msg, self.php_dh)
 
 
     def onWindowClosed(self):
@@ -111,16 +116,3 @@ class WebUI(object):
 
     def onWindowClosing(self):
         pass
-
-    def onTabSelected(self, sender, tabIndex):
-        pass
-
-    def onBeforeTabSelected(self, sender, idx):
-        return True
-
-    def onFocus(self, sender):
-        pass
-
-    def onLostFocus(self, sender):
-        pass
-

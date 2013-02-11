@@ -25,6 +25,27 @@ class Query(object):
     def __init__(self):
         self.log = logging.getLogger(self.__class__.__name__)
 
+    @property
+    def max_steps(self):
+        step_num = 1
+        while True:
+            try:
+                func_name = getattr(self, 'step' + str(step_num))
+                valid.append(func_name)
+                step_num += 1
+            except AttributeError:
+                break
+        return step_num - 1
+
+    def validate_parameters(self, parameters):
+        valid = ['list_steps', 'last_step',]
+        for num in range(1, self.max_steps+1):
+            valid.append('step' + str(num))
+        for param in parameters.keys():
+            if not param in valid:
+                return False
+        return True
+
     def list_steps(self, parameters):
         raise NotImplementedError
 
@@ -55,7 +76,8 @@ class Query(object):
         try:
             ## example: ./query.py --web some_json_encoded_string
             web_idx = args.index('--web')
-            json_str = ' '.join(args[web_idx+1:])
+            step = args[web_idx+1]
+            json_str = ' '.join(args[web_idx+2:])
             try:
                 import json
             except ImportError:
@@ -87,3 +109,11 @@ class Query(object):
                     continue  ## ignore bare values
 
             self.show(self.query(kwargs))
+
+
+
+## singleton
+query = Query()
+
+if __name__ == "__main__":
+    query.main()

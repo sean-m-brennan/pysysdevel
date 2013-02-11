@@ -19,7 +19,11 @@
 # 
 #**************************************************************************
 
-import os, sys, shutil, glob, subprocess
+import os
+import sys
+import shutil
+import glob
+import subprocess
 from numpy.distutils.command.build_src import build_src as _build_src
 
 import util
@@ -31,15 +35,31 @@ class build_src(_build_src):
     '''
     def initialize_options(self):
         _build_src.initialize_options(self)
+        self.devel_support = []
         self.antlr_modules = []
 
     def finalize_options(self):
         _build_src.finalize_options(self)
+        self.devel_support = self.distribution.devel_support
         self.antlr_modules = self.distribution.antlr_modules
   
 
     def run(self):
         environ = self.distribution.environment
+
+        if self.devel_support:
+            for tpl in self.devel_support:
+                if self.distribution.verbose:
+                    print 'adding pydevel support to ' + tpl[0]
+                target = os.path.abspath(os.path.join(self.build_lib,
+                                                      *tpl[0].split('.')))
+                util.mkdir(target)
+                source_dir = os.path.abspath(os.path.join(
+                        os.path.dirname(__file__), 'support'))
+                for mod in tpl[1]:
+                    src_file = os.path.join(source_dir, mod + '.py')
+                    util.configure_file(environ, src_file, target)
+
 
         if self.antlr_modules:
             here = os.getcwd()

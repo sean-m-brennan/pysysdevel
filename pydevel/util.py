@@ -20,16 +20,28 @@ Utilities for finding prerequisities
 # 
 #**************************************************************************
 
-import os, sys
+import os
+import sys
+import platform
+import fnmatch
+import warnings
+import glob
+import struct
+import time
+import shutil
+import urllib
+import socket
+import tempfile
+import tarfile
+import zipfile
+import subprocess
 
 ## Prefer local implementations (urllib2, httplib) over global
 here = os.path.dirname(__file__)
 sys.path.insert(0, os.path.abspath(here))
 
-import platform, fnmatch, warnings, glob, struct, time, shutil
 import urllib2, httplib
-import urllib, socket, tempfile
-import tarfile, zipfile, subprocess
+
 
 
 default_path_prefixes = ['/usr','/usr/local','/opt/local','C:\\MinGW'] + glob.glob('C:\\Python*')
@@ -56,6 +68,10 @@ def set_verbose(b):
 def set_debug(b):
     global DEBUG
     DEBUG = b
+
+
+def pydevel_support_path(filename):
+    return os.path.join(os.path.dirname(__file__), 'support', filename)
 
 
 def uniquify(seq, id_fctn=None):
@@ -338,7 +354,7 @@ def install_pypkg_locally(name, website, archive, build_dir,
                 (key, value) = e.split('=')
                 os.environ[key] = value
         os.environ['PYTHONPATH'] = os.path.join(target_dir, local_lib_dir)
-        cmd_line = ['python', 'setup.py', 'build', 'install',
+        cmd_line = [sys.executable, 'setup.py', 'build', 'install',
                     '--home=' + target_dir,
                     '--install-lib=' + os.path.join(target_dir, local_lib_dir),
                     ]
@@ -829,6 +845,10 @@ def get_options(pkg_config, options):
             dll_excludes += ['libgdk-win32-2.0-0.dll', 'libgobject-2.0-0.dll',]
 
 
+        file_bundling = 1
+        if 'app_type' in options and options['app_type'] == 'console':
+            file_bundling = 3
+
         exe_opts = {'py2exe': {
                     'unbuffered': False,
                     'optimize': 2,
@@ -843,7 +863,7 @@ def get_options(pkg_config, options):
                     'typelibs': [],
                     'compressed': False,
                     'xref': False,
-                    'bundle_files': 1,
+                    'bundle_files': file_bundling,
                     'skip_archive': False,
                     'ascii': False,
                     'custom_boot_script': '',
@@ -868,15 +888,26 @@ def get_options(pkg_config, options):
             if p is None:
                 break
 
-        specific_options = dict(
-            windows = exe_target,
-            package_dir = {pkg_config.PACKAGE: pkg_config.PACKAGE},
-            packages = pkgs,
-            package_data = pkg_data,
-            data_files = addtnl_files + pkg_config.extra_libraries,
-            options = exe_opts,
-            zipfile = options['ziplib'],
-            )
+        if 'app_type' in options and options['app_type'] == 'console':
+            specific_options = dict(
+                console = exe_target,
+                package_dir = {pkg_config.PACKAGE: pkg_config.PACKAGE},
+                packages = pkgs,
+                package_data = pkg_data,
+                data_files = addtnl_files + pkg_config.extra_libraries,
+                options = exe_opts,
+                zipfile = options['ziplib'],
+                )
+        else:
+            specific_options = dict(
+                windows = exe_target,
+                package_dir = {pkg_config.PACKAGE: pkg_config.PACKAGE},
+                packages = pkgs,
+                package_data = pkg_data,
+                data_files = addtnl_files + pkg_config.extra_libraries,
+                options = exe_opts,
+                zipfile = options['ziplib'],
+                )
 
         return specific_options
 

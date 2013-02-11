@@ -19,7 +19,8 @@
 # 
 #**************************************************************************
 
-import os, struct
+import os
+import struct
 
 from distutils.command import install_lib
 from distutils.util import change_root, convert_path

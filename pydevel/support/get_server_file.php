@@ -1,20 +1,5 @@
 <?php
 //**************************************************************************
-//
-// OFFICIAL USE ONLY, EXPORT CONTROLLED INFORMATION
-// 
-// This software includes technical information, the export of which is  
-// restricted by the Arms Export Control Act (22 U.S.C. 2751, et seq.),  
-// the Atomic Energy Act of 1954, as amended (42 U.S.C. 2077), or the  
-// Export Administration Act of 1979, as amended (50 U.S.C. 2401, et  
-// seq.). Violations of these laws may result in severe administrative,  
-// civil, or criminal penalties.
-// 
-// Distribution authorized to U.S. Government agencies and their  
-// contractors; other requests shall be approved by the cognizant DOE  
-// Departmental Element.
-// 
-//**************************************************************************
 // 
 // This material was prepared by the Los Alamos National Security, LLC 
 // (LANS), under Contract DE-AC52-06NA25396 with the U.S. Department of 
@@ -30,7 +15,7 @@
 // PRIVATELY OWNED RIGHTS.
 // 
 //**************************************************************************
-// Download a given zipfile (requires symbolic link to directory in webroot)
+// Download a given file relative to webroot.
 
 if (php_sapi_name() === 'cli') {
   $input = getopt("", array("filename:"));

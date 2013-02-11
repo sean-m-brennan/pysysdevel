@@ -19,7 +19,11 @@
 # 
 #**************************************************************************
 
-import os, sys, shutil, glob, subprocess, string
+import os
+import sys
+import shutil
+import glob
+import subprocess
 from numpy.distutils.command.build_py import build_py as _build_py
 from types import *
 
@@ -34,7 +38,7 @@ class build_py(_build_py):
         environ = self.distribution.environment
 
         if type(package) is StringType:
-            package = string.split(package, '.')
+            package = package.split('.')
         elif type(package) not in (ListType, TupleType):
             raise TypeError, \
                   "'package' must be a string (dot-separated), list, or tuple"

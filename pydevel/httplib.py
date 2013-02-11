@@ -78,8 +78,9 @@ except ImportError:
 
 try:
     import ssl
+    HAVE_SSL = True
 except ImportError:
-    import OpenSSL.SSL as ssl
+    HAVE_SSL = False
 
 
 __all__ = ["HTTP", "HTTPResponse", "HTTPConnection", "HTTPSConnection",
@@ -1161,8 +1162,10 @@ class HTTPSConnection(HTTPConnection):
         if self._tunnel_host:
             self.sock = sock
             self._tunnel()
-        #ssl_con = socket.ssl(sock, self.key_file, self.cert_file)
-        ssl_con = ssl.wrap_socket(sock, self.key_file, self.cert_file)
+        if HAVE_SSL:
+            ssl_con = ssl.wrap_socket(sock, self.key_file, self.cert_file)
+        else:
+            ssl_con = socket.ssl(sock, self.key_file, self.cert_file)
         self.sock = FakeSocket(sock, ssl_con)
 
 

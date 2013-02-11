@@ -108,7 +108,7 @@ def install(target='build', version=None):
 
             log_file = 'pyjamas.log'
             log = open(log_file, 'w')
-            cmd_line = ['python', 'bootstrap.py',]
+            cmd_line = [sys.executable, 'bootstrap.py',]
             sys.stdout.write('PREREQUISITE pyjamas ')
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
@@ -123,7 +123,7 @@ def install(target='build', version=None):
                 raise Exception('Pyjamas is required, but could not be ' +
                                 'installed locally; See ' + log_file)
 
-            cmd_line = ['python', 'run_bootstrap_first_then_setup.py', 'build']
+            cmd_line = [sys.executable, 'run_bootstrap_first_then_setup.py', 'build']
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
                 status = process_progress(p)

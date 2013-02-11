@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-WebSocket handling
+WebSocket standalone server
 """
 #**************************************************************************
 # 
@@ -25,7 +25,6 @@ import SimpleHTTPServer
 import SocketServer
 import httplib
 import logging
-import logging.handlers
 import socket
 import select
 import threading
@@ -43,7 +42,7 @@ except ImportError:
         pass
 
 from mod_pywebsocket import common, dispatch, util, handshake, standalone
-from mod_pywebsocket import http_header_util, memorizingfile
+from mod_pywebsocket import http_header_util, memorizingfile, extensions
 
 ## derived partially from mod_pywebsocket.standalone
 
@@ -57,154 +56,20 @@ _DEFAULT_REQUEST_QUEUE_SIZE = 128
 _MAX_MEMORIZED_LINES        = 1024  ## for WebSocket handshake lines.
 
 
-class WebHandlerService(threading.Thread):
-    '''
-    Abstract class for handling messages from a web client
-    '''
-    def __init__(self, name):
-        threading.Thread.__init__(self, name=name)
 
-    def closing(self):
-        raise NotImplementedError('WebHandlerService must be subclassed.')
-
-    def quit(self):
-        raise NotImplementedError('WebHandlerService must be subclassed.')
-
-    def handle_message(self, message):
-        raise NotImplementedError('WebHandlerService must be subclassed.')
-
-
-
-class WebResourceFactory(object):
-    '''
-    Abstract callable factory class for creating WebHandlerServices
-    Takes a dispatch.Dispatcher instance and a web resource string
-    Returns a WebHandlerService instance
-    '''
-    def __call__(self, dispatcher, resource):
-        raise NotImplementedError('WebResourceFactory must be subclassed.')
-
-
-
-class WebsocketDispatch(dispatch.Dispatcher):
-    def __init__(self, res_hndlr, log, origin=None, permissive=False):
-        self.resource_handler = res_hndlr
-        self.log = log
-        self.origin = origin
-        self.permissive = permissive
-        self.clients = []
-        dispatch.Dispatcher.__init__(self, './', None, False)
-
-    def do_extra_handshake(self, request):
-        if (not self.permissive and (self.origin is None or
-                                     request.ws_origin == 'null' or
-                                     request.ws_origin.startswith('file://') or
-                                     request.ws_origin != self.origin)) or \
-              (self.permissive and (self.origin is not None and
-                                    request.ws_origin != 'null' and
-                                    not request.ws_origin.startswith('file://') and
-                                    request.ws_origin != self.origin)):
-            ## this causes a 400 Bad Request
-            raise handshake.AbortedByUserException('Invalid origin: ' +
-                                                   str(request.ws_origin) + 
-                                                   ' should be ' +
-                                                   str(self.origin))
-        return
-
-    def receive_data(self, request, resource):
-        self.clients.append(request.ws_stream)
-        handler_factory = self.resource_handler()
-        service = handler_factory(self, resource)
-        if service is None:
-            return
-        while not service.closing():
-            try:
-                msg = request.ws_stream.receive_message()
-                service.handle_message(msg)
-            except Exception,e:
-                self.log.debug('WS receive: ' + str(e))
-                break
-        try:
-            self.clients.remove(request.ws_stream)
-        except ValueError:
-            pass
-        service.quit()
-
-    def send_data(self, data):
-        if len(self.clients) > 0:
-            for s in self.clients:
-                try:
-                    s.send_message(data, binary=False)
-                except Exception, e:
-                    self.log.debug('WS send: ' + str(e))
-                    try:
-                        self.clients.remove(s)
-                    except ValueError:
-                        pass
-
-
-    ## overrides for CGI based methods
-    def add_resource_path_alias(self, alias_path, existing_path):
-        pass
-
-    def get_handler_suite(self, resource):
-        return None
-
-    def _source_handler_files_in_dir(self, root_dir, scan_dir, allow):
-        pass
-
-
-class FlashDispatch(dispatch.Dispatcher):
-    def __init__(self, res_hndlr, log, origin=None):
-        self.resource_handler = res_hndlr
-        self.log = log
-        self.origin = origin
-        self.clients = []
-        dispatch.Dispatcher.__init__(self, './', None, False)
-
-    def do_extra_handshake(self, request):
-        pass
-
-    def receive_data(self, request, resource):
-        self.clients.append(request.ws_stream)
-        handler_factory = self.resource_handler()
-        service = handler_factory(self, resource)
-        while service != None:
-            try:
-                msg = request.receive_message() ## TODO: Flash implementation
-                service.handle_message(msg)
-            except Exception,e:
-                self.log.debug('Flash receive: ' + str(e))
-                break
-        try:
-            self.clients.remove(request.ws_stream)
-        except ValueError:
-            pass
-        service.quit()
-
-    def send_data(self, data):
-        if len(self.clients) > 0:
-            for s in self.clients:
-                try:
-                    s.send_message(data, binary=False) ## TODO: Flash implementation
-                except Exception, e:
-                    self.log.debug('Flash send: ' + str(e))
-                    try:
-                        self.clients.remove(s)
-                    except ValueError:
-                        pass
-
-    ## overrides for CGI based methods
-    def add_resource_path_alias(self, alias_path, existing_path):
-        pass
-
-    def get_handler_suite(self, resource):
-        return None
-
-    def _source_handler_files_in_dir(self, root_dir, scan_dir, allow):
-        pass
-
-
+def get_ws_logger(cls, debug=False):
+    if cls.__class__.__name__ == 'type':
+        logname = '%s.%s' % (cls.__module__, cls.__name__)
+    elif cls.__class__.__name__ == 'module':
+        logname = cls.__name__
+    else:
+        logname = '%s.%s' % (cls.__class__.__module__, cls.__class__.__name__)
+    log = logging.getLogger(logname)
+    if debug:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.WARNING)
+    return log
 
 
 
@@ -217,8 +82,22 @@ class WebSocketServer(threading.Thread,
     def __init__(self, resource_handler,
                  host=_WEBSOCKET_HOST, port=_WEBSOCKET_PORT,
                  origin=_WEBSOCKET_HOST,
-                 tls_pkey=None, tls_cert=None, permissive=False):
-        self._logger = util.get_class_logger(self)
+                 tls_pkey=None, tls_cert=None, permissive=False,
+                 debug=False):
+        '''
+        Create a standalone websocket server given
+        a websockethandler.WebResourceFactory derived class.
+        Use with SSL requires the files 'tls_pkey' and 'tls_cert'.
+        '''
+        ## Unify mod_pywebsocket logs
+        self._logger = get_ws_logger(self, debug)
+        for cls in [util._Inflater, util._Deflater,
+                    handshake, handshake.hybi.Handshaker,
+                    handshake.hybi00.Handshaker, handshake.draft75.Handshaker,
+                    extensions.DeflateFrameExtensionProcessor,
+                    ]:
+            get_ws_logger(cls, debug)
+
         threading.Thread.__init__(self, name='Websocket server')
 
         self.origin = origin
@@ -240,8 +119,6 @@ class WebSocketServer(threading.Thread,
                                          WebSocketRequestHandler)
         self.wsdispatcher = WebsocketDispatch(resource_handler,
                                               self._logger, origin, permissive)
-        self.flashdispatcher = FlashDispatch(resource_handler,
-                                             self._logger, origin)
         self._create_sockets()
         self.server_bind()
         self.server_activate()
@@ -385,6 +262,76 @@ class WebSocketServer(threading.Thread,
 
 
 
+class WebsocketDispatch(dispatch.Dispatcher):
+    def __init__(self, res_hndlr, log, origin=None, permissive=False):
+        self.resource_handler = res_hndlr
+        self.log = log
+        self.origin = origin
+        self.permissive = permissive
+        self.clients = []
+        dispatch.Dispatcher.__init__(self, './', None, False)
+
+    def do_extra_handshake(self, request):
+        if (not self.permissive and (self.origin is None or
+                                     request.ws_origin == 'null' or
+                                     request.ws_origin.startswith('file://') or
+                                     request.ws_origin != self.origin)) or \
+              (self.permissive and (self.origin is not None and
+                                    request.ws_origin != 'null' and
+                                    not request.ws_origin.startswith('file://') and
+                                    request.ws_origin != self.origin)):
+            ## this causes a 400 Bad Request
+            raise handshake.AbortedByUserException('Invalid origin: ' +
+                                                   str(request.ws_origin) + 
+                                                   ' should be ' +
+                                                   str(self.origin))
+        return
+
+    def receive_data(self, request, resource):
+        self.clients.append(request.ws_stream)
+        handler_factory = self.resource_handler()
+        service = handler_factory(self, resource)
+        if service is None:
+            return
+        while not service.closing():
+            try:
+                msg = request.ws_stream.receive_message()
+                service.handle_message(msg)
+            except Exception,e:
+                self.log.debug('WS receive: ' + str(e))
+                break
+        try:
+            self.clients.remove(request.ws_stream)
+        except ValueError:
+            pass
+        service.quit()
+
+    def send_data(self, data):
+        if len(self.clients) > 0:
+            for s in self.clients:
+                try:
+                    s.send_message(data, binary=False)
+                except Exception, e:
+                    self.log.debug('WS send: ' + str(e))
+                    try:
+                        self.clients.remove(s)
+                    except ValueError:
+                        pass
+
+
+    ## overrides for CGI based methods
+    def add_resource_path_alias(self, alias_path, existing_path):
+        pass
+
+    def get_handler_suite(self, resource):
+        return None
+
+    def _source_handler_files_in_dir(self, root_dir, scan_dir, allow):
+        pass
+
+
+
+
 class WebSocketRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     MessageClass = httplib.HTTPMessage
 
@@ -409,7 +356,7 @@ class WebSocketRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 
     def __init__(self, request, client_address, server):
-        self._logger = util.get_class_logger(self)
+        self._logger = get_ws_logger(self)
         self.origin = server.origin
         self.port = server.port
         self.permissive = server.permissive
@@ -442,11 +389,7 @@ class WebSocketRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             return True
         
         self.path = resource
-        if 'flashsocket' in resource:
-            return self.handle_flash(resource)
-        else:
-            return self.handle_ws(resource)
-        return False
+        return self.handle_ws(resource)
 
 
     def handle_ws(self, resource):
@@ -477,13 +420,6 @@ class WebSocketRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self._logger.info('WS handshake aborted: %s', e)
         return False
 
-
-    def handle_flash(self, resource):
-        request = None ## TODO: Flash implementation
-        #request._dispatcher = self.server.flashdispatcher
-        #self.server.flashdispatcher.receive_data(request, resource)
-        return False
-        
 
     def log_request(self, code='-', size='-'):
         pass

@@ -15,73 +15,74 @@
 // PRIVATELY OWNED RIGHTS.
 // 
 //**************************************************************************
+// Replacement for WebSockets
+// Given 'cmd=parameters',
+//   where cmd is 'list-steps', 'last_step', or 'stepN' with N a step number,
+//   and parameters is json encoded.
+// Outputs json encoded results of query for step N.
 
-$PYTHON_PATH = ''; //FIXME set PYTHONPATH
-$MODULE_PATH = '.'; //FIXME set path to impact_query.py
+$MAX_STEPS = @@{NUM_SERVICE_STEPS};
+$SERVICE = "@@{SERVICE_SCRIPT}";
+
+$sep = $DIRECTORY_SEPARATOR;
+$DISTRIB_PATH = '.' . $sep . 'bin';  //FIXME
+
+$steps = array("list_steps", "last_step",);
+foreach (range(1, $MAX_STEPS) as $number) {
+  $steps[] = "step" . $number;
+}
 
 if (php_sapi_name() === 'cli') {
-  $input = getopt("", array("init",
-			    "param:", //required
-			    "param2::", //optional
-			    )); // FIXME list parameters
+  $input = getopt("", $steps);
 }
 else {
   $input =& $_REQUEST;
 }
 
-if (isset($input["init"])) {
-  // get_available_satellites
-  header('HTTP/1.1 200 Ok');
-  if (file_exists($MODULE_PATH . '/impact_query.py')) {
-    echo exec('python ' . $MODULE_PATH . '/impact_query.py --init');
-  }
-  else {  // default list
-    echo json_encode(array(array(26405,'CHAMP'), array(27391,'Grace A'),
-			   array(27392,'Grace B'), array(24946,'Iridium 33'),
-			   array(22675,'Cosmos 2251')));
-  }
-  exit(0);
-}
+$service_path = pathinfo($SERVICE);
+$service_ext = $service_path["extension"];
 
-if (!file_exists($MODULE_PATH . '/impact_query.py')) {
+if (!file_exists($DISTRIB_PATH . $sep . $SERVICE)) {
   header('HTTP/1.1 500 Internal Server Error');
   echo '<b>IMPACT Python service not properly set up:</b><br/>';
-  echo '<pre>    Looking for modules in "' . $MODULE_PATH . '".</pre>';
-  echo '<pre>    Using PYTHONPATH "' . $PYTHON_PATH . '".</pre>';
+  echo '<pre>    Looking for service in "' . $DISTRIB_PATH . '".</pre>';
+  echo '<pre>    Using PYTHONPATH "' . $_ENV['PYTHONPATH'] . '".</pre>';
   echo '<pre>    Given parameters:  </pre>';
   foreach ($input as $k => $p) {
     echo '<pre>        ' . $k . ' = ' . $p . '</pre>';
   }
-  exit(1);
+  exit;
 }
 
 $args = '';
-$errors = array();
-//FIXME parse/compile parameters, eg.
-
-// required parameters
-if (isset($input["file"])) {
-  $args .= " --file=" . $input["file"];
-}
-else {
-  array_push($errors, "No filename given.");
-}
-
-// optional parameters
-if (isset($input["opt"])) {
-  $args = $args . " --opt=" . $input["opt"];
-}
-
-if (count($errors) > 0) {
-  header('HTTP/1.1 500 Internal Server Error');
-  echo '<b>IMPACT parameter errors:</b><br/>';
-  foreach ($errors as $e) {
-    echo '<pre>    ' . $e . '</pre>';
+$step_method = '';
+// Only run the first listed step
+foreach ($steps as $step) {
+  if (isset($input[$step])) {
+    $step_method = strtoupper($step)
+    $args = $input[$step];
+    break;
   }
-  exit(1);
+}
+
+if ($args == '' || $step_method == '') {
+  header('HTTP/1.1 400 Bad Request');
+  echo '<b>IMPACT Python service not given correct arguments:</b><br/>';
+  echo '<pre>    Given parameters:  </pre>';
+  foreach ($input as $k => $p) {
+    echo '<pre>        ' . $k . ' = ' . $p . '</pre>';
+  }
+  exit;
 }
 
 header('HTTP/1.1 200 Ok');
-echo exec('python ' . $MODULE_PATH . '/impact_query.py --web ' . $args);
+if ($service_ext == 'py') {
+  echo exec('python ' . $DISTRIB_PATH . $sep . $SERVICE .
+	    ' --web ' . $step_method . ' ' . $args);
+} else if ($service_ext == 'sh' || $service_ext == 'bat') {
+  echo exec($DISTRIB_PATH . $sep . $SERVICE .
+	    ' --web ' . $step_method . ' ' . $args);
+}
+exit;
 
 ?>

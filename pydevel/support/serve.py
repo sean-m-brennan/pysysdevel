@@ -35,17 +35,17 @@ import websocketserver
 import websockethandler
 import daemon
 
-from query import query  ## user defined
+from query import query  ## user defined, see generic_query.py
 
 
-WEBSOCKET_HOST = socket.getfqdn()
-WEBSOCKET_PORT = 9876
-WEBSOCKET_ORIGIN = 'http://dev.impact.lanl.gov' #FIXME configure?
-WEBSOCKET_TLS_PKEY = None
-WEBSOCKET_TLS_CERT = None
+WEBSOCKET_HOST     = socket.getfqdn()
+WEBSOCKET_PORT     = 9876
+WEBSOCKET_ORIGIN   = "@@{WEBSOCKET_ORIGIN}"
+WEBSOCKET_TLS_PKEY = @@{WEBSOCKET_TLS_PKEY}
+WEBSOCKET_TLS_CERT = @@{WEBSOCKET_TLS_CERT}
 
-RESOURCE     = 'impact' #FIXME configure?
-SERVICE_NAME = RESOURCE.upper()
+RESOURCE           = "@@{WEBSOCKET_RESOURCE}"
+SERVICE_NAME       = RESOURCE.upper()
 
 
 def json_handler(obj):
@@ -59,7 +59,7 @@ def json_handler(obj):
 
 
 class ServiceQuery(websockethandler.WebHandlerService):
-    def __init__(self, dispatcher, param_dict):
+    def __init__(self, dispatcher):
         websockethandler.WebHandlerService.__init__(self, SERVICE_NAME +
                                                     ' query service')
         self.socket_dispatch = dispatcher
@@ -75,6 +75,14 @@ class ServiceQuery(websockethandler.WebHandlerService):
                             self.socket_dispatch.send_data(
                                 'STEP' + str(m[0]) + 
                                 json.dumps(m[1]), default=json_handler)
+
+            elif message.lower().startswith('last_step'):
+                if self.socket_dispatch != None:
+                    msg = query.last_step(json.loads(message[10:]))
+                    if msg != None:
+                        self.socket_dispatch.send_data(
+                            'STEP' + str(query.max_steps+1) + 
+                            json.dumps(msg), default=json_handler)
 
             elif message.lower().startswith('step'):
                 if self.socket_dispatch != None:
@@ -113,6 +121,8 @@ class ServiceBatch(websockethandler.WebHandlerService):
         self.socket_dispatch = dispatcher
         self.parameters = dict()
         try:
+            if isinstance(param_dict, basestring):
+                param_dict = json.loads(param_dict)
             if query.validate_parameters(param_dict):
                 self.parameters = param_dict
             else:
@@ -154,15 +164,8 @@ class ServiceSpawn(websockethandler.WebResourceFactory):
         service = None
         res = resource
         if resource.startswith('/' + RESOURCE + '/'):
-            res = resource[8:]
-            subs = res.split('/')
-            params = dict()
-            for sub in subs:
-                if sub == '':
-                    continue
-                key_val = sub.split('=')
-                params[key_val[0]] = key_val[1]
-            service = ServiceQuery(dispatcher, params)
+            ## ignore further resource specification
+            service = ServiceQuery(dispatcher)
             service.start()
         elif resource.startswith('/' + RESOURCE + '_batch/'):
             res = resource[14:]

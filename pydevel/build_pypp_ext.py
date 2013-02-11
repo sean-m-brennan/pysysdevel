@@ -19,7 +19,8 @@ Utilities for finding prerequisities
 # 
 #**************************************************************************
 
-import os, sys
+import os
+import sys
 from numpy.distutils.command.build_ext import build_ext
 
 import util

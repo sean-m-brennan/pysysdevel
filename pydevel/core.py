@@ -19,7 +19,11 @@ Custom extensions and setup
 # 
 #**************************************************************************
 
-import sys, shutil, os, platform, subprocess
+import sys
+import shutil
+import os
+import platform
+import subprocess
 
 from numpy.distutils import extension
 from numpy.distutils.numpy_distribution import NumpyDistribution
@@ -35,13 +39,14 @@ import util
 
 class WebExtension(extension.Extension):
     def __init__(self, name, sources, source_dir,
-                 public_subdir='', extra_compile_args=[], compiler=None):
+                 public_subdir='', extra_public_files=[],
+                 extra_compile_args=[], compiler=None):
         extension.Extension.__init__(self, name, sources)
         self.source_directory = source_dir
         self.public_subdir = public_subdir
+        self.extra_public_files = extra_public_files
         self.compiler = compiler
         self.extra_compile_args = extra_compile_args
-
 
 
 class DocExtension(extension.Extension):
@@ -132,44 +137,61 @@ class CustomDistribution(NumpyDistribution):
     '''
     def __init__(self, attrs=None):
         old_attrs = attrs
+        ## setup the environment for custom commands
         self.environment = attrs.get('environment')
         if self.environment != None:
             del old_attrs['environment']
         else:
             self.environment = dict()
+        ## PYJS web extensions
         self.web_ext_modules = attrs.get('web_ext_modules')
         if self.web_ext_modules != None:
             del old_attrs['web_ext_modules']
+        ## Sphinx documentation
         self.doc_modules = attrs.get('doc_modules')
         if self.doc_modules != None:
             del old_attrs['doc_modules']
+        ## Py++ extensions
         self.pypp_ext_modules = attrs.get('pypp_ext_modules')
         if self.pypp_ext_modules != None:
             del old_attrs['pypp_ext_modules']
+        ## Shared libraries
         self.sh_libraries = attrs.get('sh_libraries')
         if self.sh_libraries != None:
             del old_attrs['sh_libraries']
+        ## ANTLR parser/lexers
         self.antlr_modules = attrs.get('antlr_modules')
         if self.antlr_modules != None:
             del old_attrs['antlr_modules']
+        ## Native executables
         self.native_executables = attrs.get('native_executables')
         if self.native_executables != None:
             del old_attrs['native_executables']
+        ## Data to install to 'share'
         self.data_dirs = attrs.get('data_dirs')
         if self.data_dirs != None:
             del old_attrs['data_dirs']
+        ## Non-stock libraries to install to 'lib' or 'lib64'
         self.extra_install_libraries = attrs.get('extra_install_libraries')
         if self.extra_install_libraries != None:
             del old_attrs['extra_install_libraries']
+        ## Non-stock python packages to co-install
         self.extra_install_modules = attrs.get('extra_install_modules')
         if self.extra_install_modules != None:
             del old_attrs['extra_install_modules']
-        self.subpackages = attrs.get('subpackages')
-        if self.subpackages != None:
-            del old_attrs['subpackages']
+        ## Pydevel support modules
+        self.devel_support = attrs.get('devel_support')
+        if self.devel_support != None:
+            del old_attrs['devel_support']
+        ## Files to delete upon 'clean'
         self.generated_files = attrs.get('generated_files')
         if self.generated_files != None:
             del old_attrs['generated_files']
+        ## Separate packages with their own setup.py
+        self.subpackages = attrs.get('subpackages')
+        if self.subpackages != None:
+            del old_attrs['subpackages']
+        ## Whether to quit if a subpackage build fails
         self.quit_on_error = attrs.get('quit_on_error')
         if self.quit_on_error != None:
             del old_attrs['quit_on_error']
@@ -195,6 +217,9 @@ class CustomDistribution(NumpyDistribution):
 
     def has_antlr_extensions(self):
         return self.antlr_modules != None and len(self.antlr_modules) > 0
+
+    def has_pydevel_support(self):
+        return self.devel_support != None and len(self.devel_support) > 0
 
     def has_pypp_extensions(self):
         return self.pypp_ext_modules != None and \
@@ -225,7 +250,8 @@ class build(old_build):
     '''
     def has_pure_modules(self):
         return self.distribution.has_pure_modules() or \
-            self.distribution.has_antlr_extensions()
+            self.distribution.has_antlr_extensions() or \
+            self.distribution.has_pydevel_support()
 
     def has_c_libraries(self):
         return self.distribution.has_c_libraries()
@@ -296,7 +322,7 @@ class build(old_build):
                     addtnl_args = []
                 log = open(log_file, 'w')
                 try:
-                    p = subprocess.Popen(['python',
+                    p = subprocess.Popen([sys.executable,
                                           os.path.join(sub[1], 'setup.py'),
                                           ] +  argv + addtnl_args,
                                          stdout=log, stderr=log)
@@ -368,7 +394,7 @@ class install(old_install):
                                         sub[0] + '_install.log')
                 log = open(log_file, 'w')
                 try:
-                    p = subprocess.Popen(['python',
+                    p = subprocess.Popen([sys.executable,
                                           os.path.join(sub[1], 'setup.py'),
                                           ] +  argv, stdout=log, stderr=log)
                     status = util.process_progress(p)
@@ -449,7 +475,7 @@ class clean(old_clean):
                 idx = sys.argv.index('setup.py') + 1
                 argv = list(sys.argv[idx:])
                 print "CLEANING " + str(sub[0]) + ' in ' + str(sub[1])
-                subprocess.call(['python',
+                subprocess.call([sys.executable,
                                  os.path.join(sub[1], 'setup.py'),
                                  ] +  argv)
 
@@ -499,9 +525,17 @@ from numpy.distutils.command import config, build_src, build_ext, \
 from numpy.distutils.core import _exit_interactive_session, _command_line_ok, \
     _dict_append
 
-import build_doc, build_js, build_py, build_pypp_ext, build_src, install_data
-import build_clib, build_shlib, install_lib
-import build_exe, install_exe
+import build_doc
+import build_js
+import build_py
+import build_pypp_ext
+import build_src
+import install_data
+import build_clib
+import build_shlib
+import install_lib
+import build_exe
+import install_exe
 
 my_cmdclass = {'build':            build,
                'build_src':        build_src.build_src,

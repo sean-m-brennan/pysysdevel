@@ -20,7 +20,8 @@ Build and install pydevel
 # 
 #**************************************************************************
 
-import os, sys
+import os
+import sys
 from distutils.core import setup
 
 

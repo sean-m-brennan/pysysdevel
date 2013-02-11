@@ -25,3 +25,15 @@ __all__ = ['pkg_config', 'core',
            'build_pypp_ext', 'build_py', 'build_shlib', 'build_src',
            'install_data', 'install_exe', 'install_lib',
            'util', 'httplib', 'urllib2', 'sys_cfg',]
+
+import os
+import sys
+
+class FatalError(SystemExit):
+    """
+    Uncatchable error, exits uncleanly.
+    """
+    def __init__(self, what):
+        sys.stderr.write('FatalError: ' + what + '\n')
+        sys.stderr.flush()
+        os._exit(-1)

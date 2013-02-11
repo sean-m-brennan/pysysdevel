@@ -19,7 +19,13 @@
 # 
 #**************************************************************************
 
-import os, sys, fnmatch, glob, shutil, platform, subprocess
+import os
+import sys
+import fnmatch
+import glob
+import shutil
+import platform
+import subprocess
 from numpy.distutils.command.build_ext import build_ext
 from distutils import dir_util
 

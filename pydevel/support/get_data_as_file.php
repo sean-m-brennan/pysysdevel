@@ -15,6 +15,7 @@
 // PRIVATELY OWNED RIGHTS.
 // 
 //**************************************************************************
+// Download POSTed data string as a file.
 
 if (php_sapi_name() === 'cli') {
   $input = getopt("", array("filename:", "data:",));

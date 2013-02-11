@@ -27,7 +27,11 @@ __all__ = ['antlr', 'archive', 'basemap_py', 'boost', 'cdf', 'ctypesgen',
            'shapely_py', 'sqlite3', 'wxglade_py', 'wxwidgets',]
 
 
-import os, sys, platform
+import os
+import sys
+import platform
+
+from pydevel import FatalError
 
 
 def __run_helper__(short_name, long_name, version, skip, install, quiet):
@@ -48,6 +52,14 @@ def __run_helper__(short_name, long_name, version, skip, install, quiet):
     return helper.environment.items()
 
 
+def simplify_version(version):
+    if isinstance(version, float):
+        return str(version)
+    elif isinstance(version, str):
+        ver_tpl = version.split('.')
+        return ver_tpl[0] + '.' + ver_tpl[1]
+
+
 def configure_system(prerequisite_list, version, required_python_version='2.4',
                      install=True, quiet=False):
     '''
@@ -62,10 +74,11 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
             skip = True
             quiet = True
 
-    pyver = platform.python_version() 
-    if pyver < required_python_version:
-        raise Exception('Python version > ' + required_python_version +
-                        ' is required.  Running ' + pyver)
+    pyver = simplify_version(platform.python_version())
+    reqver = simplify_version(required_python_version)
+    if pyver < reqver:
+        raise FatalError('Python version >= ' + reqver + ' is required.  ' +
+                         'You are running version ' + pyver)
 
     if not quiet:
         sys.stdout.write('CONFIGURE \n')

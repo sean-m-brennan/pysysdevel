@@ -23,6 +23,8 @@ Find/install Matplotlib Basemap toolkit
 import os, platform, glob
 from pydevel.util import *
 
+## NB: Basemap documentation lies! It requires Python version > 2.4
+
 environment = dict()
 basemap_found = False
 

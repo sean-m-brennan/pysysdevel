@@ -19,7 +19,11 @@
 # 
 #**************************************************************************
 
-import os, sys, struct, glob, platform
+import os
+import sys
+import struct
+import glob
+import platform
 
 from distutils.command.install_lib import install_lib as old_install_lib
 from distutils.util import change_root, convert_path

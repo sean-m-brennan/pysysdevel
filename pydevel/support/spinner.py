@@ -19,6 +19,7 @@ import math
 
 from pyjamas.Timer import Timer
 from pyjamas import Window
+from pyjamas.ui.RootPanel import RootPanel
 from pyjamas.ui.PopupPanel import PopupPanel
 from pyjamas.ui.VerticalPanel import VerticalPanel
 from pyjamas.raphael.raphael import Raphael
@@ -80,3 +81,23 @@ class Spinner(PopupPanel):
         self.opacity.insert(0, self.opacity.pop())
         for i in range(self.numSectors):
             self.sectors[i].setAttr("opacity", self.opacity[i])
+
+
+__spinner = None
+
+def start_spinner(container, run_str='Processing<br>Please wait...'):
+    global __spinner
+    __spinner = Spinner(run_str)
+    RootPanel().add(__spinner)
+    center = (Window.getClientWidth() - __spinner.size) / 2
+    middle = Window.getClientHeight() / 3
+    __spinner.setPopupPosition(center, middle)
+    __spinner.show()
+    __spinner.draw()
+    container.setStyleAttribute('opacity', '0.3')
+
+
+def quit_spinner(container):
+    if __spinner:
+        __spinner.hide()
+    container.setStyleAttribute('opacity', '1.0')
