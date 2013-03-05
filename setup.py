@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Build and install pydevel
+Build and install sysdevel
 """
 #**************************************************************************
 # 
@@ -37,11 +37,11 @@ def main(argv=None):
 
     #FIXME documentation
 
-    setup(name        = 'pydevel',
+    setup(name        = 'sysdevel',
           version     = '0.5.2',
           description = 'Enhanced Python build options (based on distutils)',
           requires    = ['numpy',],
-          packages    = ['pydevel', 'pydevel.config',],
+          packages    = ['sysdevel', 'sysdevel.config',],
           classifiers = [
             'Development Status :: 4 - Beta',
             'Environment :: Console',
