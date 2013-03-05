@@ -53,6 +53,14 @@ download_dir  = 'third_party'
 
 default_py2exe_library = 'library.zip'
 
+environment_defaults = dict({
+        'WX_ENABLED'   : False,
+        'GTK_ENABLED'  : False,
+        'QT4_ENABLED'  : False,
+        'QT3_ENABLED'  : False,
+        'FLTK_ENABLED' : False,
+        'TK_ENABLED'   : False,
+        })
 
 _sep_ = ':'
 if 'windows' in platform.system().lower():
@@ -385,6 +393,69 @@ def install_pypkg_locally(name, website, archive, build_dir,
         raise Exception('Unable to install ' + name + ' locally: ' + str(e))
 
 
+def create_script_wrapper(pyscript, target_dir):
+    dst_file = os.path.join(target_dir, )
+    if not os.path.exists(dst_file):
+        f = open(dst_file, 'w')
+        if 'windows' in platform.system().lower():
+            wexe = os.path.join(os.path.dirname(sys.executable), 'pythonw')
+            exe = os.path.join(os.path.dirname(sys.executable), 'python')
+            f.write('@echo off\n' +
+                    exe + ' "%~dp0' + pyscript + '" %*')
+        else:
+            f.write('#!/bin/bash\n\n' + 
+                    'loc=`dirname "$0"`\n' + 
+                    'path=`cd "$loc/.."; pwd`\n' + 
+                    'export LD_LIBRARY_PATH=$path/lib:$path/lib64:' +
+                    '$LD_LIBRARY_PATH\n' +
+                    sys.executable + ' $path/bin/' + pyscript + ' $@\n')
+        f.close()
+
+def create_runscript(pkg, mod, target):
+    if not os.path.exists(target):
+        if DEBUG:
+            print 'Creating runscript ' + target
+        f = open(target, 'w')
+        f.write("#!/usr/bin/env python\n" +
+                "# -*- coding: utf-8 -*-\n\n" +
+                "## In case the app is not installed in the standard location\n" + 
+                "import sys\n" +
+                "import os\n" +
+                "import platform\n" + 
+                "import struct\n\n" + 
+                "if hasattr(sys, 'frozen'):\n" + 
+                "    here = os.path.dirname(unicode(sys.executable,\n" +
+                "                                   sys.getfilesystemencoding()))\n" + 
+                "else:\n" +
+                "    here = os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))\n" +
+                "ver = 'python'+ str(sys.version_info[0]) +'.'+ str(sys.version_info[1])\n" +
+                "bases = [here]\n" +
+                "if 'windows' in platform.system().lower():\n" +
+                "    bases.append(os.path.join(here, '..', 'Lib', 'site-packages'))\n" +
+                "else:\n" +
+                "    lib = 'lib'\n" +
+                "    bases.append(os.path.join(here, '..', lib, ver, 'site-packages'))\n" +
+                "    if struct.calcsize('P') == 8:\n" +
+                "        lib = 'lib64'\n" +
+                "        bases.append(os.path.join(here, '..', lib, ver, 'site-packages'))\n" +
+                "for base in bases:\n" +
+                "    sys.path.insert(0, os.path.abspath(base))\n\n" +
+                "##############################\n\n"
+                "from " + pkg + " import " + mod + "\n" +
+                mod + ".main()\n")
+        f.close()
+
+def symlink(original, target):
+    if not os.path.lexists(target):
+        if not os.path.isabs(original):
+            levels = len(target.split(os.sep))-1
+            for l in range(levels):
+                original = os.path.join('..', original)
+        try:
+            os.symlink(original, target)
+        except:
+            shutil.copyfile(original, target)
+
 
 def is_out_of_date(target, source, additional=[]):
     extra = False
@@ -506,6 +577,8 @@ def copy_tree(src, dst, preserve_mode=1, preserve_times=1, preserve_symlinks=0,
 (DEFAULT_STYLE, AUTOMAKE_STYLE, AUTOCONF_STYLE) = range(3)
 
 def nested_values(line, var_dict, d=0, style=DEFAULT_STYLE):
+    var_dict = dict(environment_defaults, **var_dict)
+
     fr_delim = '@@{'
     bk_delim = '}'
     cmt_delim = '#'

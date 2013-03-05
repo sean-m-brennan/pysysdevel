@@ -1,4 +1,4 @@
-# Model factories and base classes
+# Model-View-Controller base classes
 #**************************************************************************
 # 
 # This material was prepared by the Los Alamos National Security, LLC 
@@ -17,6 +17,8 @@
 #**************************************************************************
 
 import math
+import types
+
 
 class UnknownModelException(Exception):
     def __init(self, what):
@@ -27,40 +29,121 @@ class UnknownModelException(Exception):
 
 
 
-class MVC(object):
-    def __init__(self, **kwargs):
-        pass
-
-    @staticmethod
-    def validate(kwargs):
-        raise NotImplementedError()
-
-
-
 ##############################
 
-class DataModel(MVC):
+class DataModel(dict):
+    '''
+    Model of Model-View-Controller pattern. Container for data updates by
+    multiple controllers, read by viewer for display.
+    '''
+
     date_format = '%Y/%m/%d'
     time_format = '%H:%M:%S'
     datetime_sep = ' '
     datetime_format = date_format + datetime_sep + time_format
 
-    #FIXME
+    def __init__(self):
+        self._pipeline = dict()
+        self._index = 0
+
+    def __getattr__(self, attr):
+        return self[attr]
+
+    def __setattr__(self, attr, value):
+        self[attr] = value
+
+
+    def add_step(self, controller):
+        '''
+        Add a producer/consumer to the pipeline.
+        '''
+        self._pipeline[self._index] = controller
+        self._index += 1
+
+
+    def validate(self):
+        '''
+        Check if the producer/consumer pipeline operating on this data model
+        fulfills the requirements at each step.
+        '''
+        prev = None
+        for idx in range(len(self._pipeline)):
+            ctrlr = self._pipeline[idx]
+            if prev:
+                reqs = list(ctrlr.requires())
+                for p in prev.provides():
+                    reqs.remove(p)
+                if len(reqs) > 0:
+                    return False
+            prev = ctrlr
+        return True
+
 
 
 ##############################
 
-class DataController(MVC):
+class DataController(object):
+    '''
+    Controller of Model-View-Controller pattern. Manipulates the attributes
+    of a model to reflect computation.
+    '''
+
+    def provides(self):
+        '''
+        Outputs; relevant attributes and properties.
+        '''
+        MethodWrapperType = type(object().__hash__)
+        everything = list(dir(self))
+        for slot in dir(self):
+            attr = getattr(self, slot)
+            if slot.startswith('_') or \
+                    isinstance(attr, types.BuiltinMethodType) or \
+                    isinstance(attr, MethodWrapperType) or \
+                    isinstance(attr, types.MethodType) or \
+                    isinstance(attr, types.FunctionType) or \
+                    isinstance(attr, types.TypeType):
+                everything.remove(slot)
+        return everything
+
+
+    def requires(self):
+        '''
+        Necessary inputs; may be an empty list (for data acquisition objects).
+        '''
+        return []
+
+
     def control(self, data_model):
+        '''
+        Exerts control on the given data model, using the data_model attributes
+        listed by 'requires()' and adding attributes listed by 'provides()'
+        to the data_model object.
+        '''
         raise NotImplementedError()
 
 
 
 ##############################
 
-class DataViewer(MVC):
-    def view(self, data_model):
+class DataViewer(object):
+    '''
+    View of Model-View-Controller pattern. Passively reads model attributes
+    to produce a display.
+    '''
+
+    def requires(self):
+        '''
+        Necessary inputs.
+        '''
         raise NotImplementedError()
+
+
+    def view(self, data_model):
+        '''
+        Using the data_model attributes listed by 'requires()'
+        '''
+        raise NotImplementedError()
+
 
 
 
@@ -81,8 +164,7 @@ class GenericPlot(DataViewer):
         self.series = []
 
 
-    @property
-    def __dict__(self):
+    def __dir__(self):
         return {
             'chart_title': self.chart_title,
             'series': [s.__dict__ for s in self.series],
@@ -132,6 +214,7 @@ class PlotSeries(DataViewer):
         self.z_values = []
         self.labels = ['', '', '']
 
+
     def view(self, data_model):
         '''
         Given a DataModel, compute the plot values.
@@ -139,8 +222,7 @@ class PlotSeries(DataViewer):
         raise NotImplementedError()
 
 
-    @property
-    def __dict__(self):
+    def __dir__(self):
         if self.axes == 3:
             return {
                 'name': self.name,

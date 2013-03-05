@@ -19,8 +19,6 @@ WebSockets support for pyjamas
 # 
 #**************************************************************************
 
-SOCKET_IO_SUPPORTED = False  ## TODO: Socket.io support in the websocket server
-
 import sys
 
 from __pyjamas__ import JS
@@ -55,19 +53,13 @@ class WebSocketClient(object):
         self.handler = handler
         self.handler.sender = self
         self._ws = None
-        self._io = None
         self._socket_type = 'unsupported'
         self.has_fallback = fallback
 
 
     def _detect_socket_support(self):
-        self._socket_type = 'unsupported'
         loc = JS("""$wnd.location.href""")
-        if not loc.startswith('file://') and SOCKET_IO_SUPPORTED:
-            if JS("""typeof $wnd.io != 'undefined'""") and \
-                    JS("""typeof $wnd.io.Socket != 'undefined'"""):
-                self._socket_type = 'io'
-        elif JS("""typeof $wnd.WebSocket != 'undefined'"""):
+        if JS("""typeof $wnd.WebSocket != 'undefined'"""):
             self._socket_type = 'ws'
 
 
@@ -83,18 +75,6 @@ class WebSocketClient(object):
             self._ws.onclose = self.onClose
             self._ws.onerror = self.onError
             self._ws.onmessage = self.onMessage
-        elif self._socket_type == 'io':
-            server = host + ':' + str(port) + '/cxd_gse'
-            JS("""@{{self}}._io = new $wnd.io.Socket(@{{host}},{
-                         port:@{{port}},
-                         transports:['websocket','flashsocket'],
-                         resource:@{{self}}.resource })""")
-            self._io.connect()
-            self.uri = server
-            self._io.on('connect', self.onOpen)
-            self._io.on('disconnect', self.onClose)
-            self._io.on('error', self.onError)
-            self._io.on('message', self.onMessage)
         else:
             self.unsupported()
 
@@ -109,10 +89,7 @@ class WebSocketClient(object):
 
     def send(self, message):
         try:
-            if self._ws != None:
-                self._ws.send(message)
-            else:
-                self._io.emit('message', message)
+            self._ws.send(message)
         except Exception,e:
             log.debug(str(e))
 
@@ -121,17 +98,14 @@ class WebSocketClient(object):
         log.debug('WS closing')
         if self._ws != None:
             self._ws.close()
-        else:
-            self._io.disconnect()
         self._opened = False
 
 
     def isOpen(self):
         if self._ws != None:
             return self._ws.readyState == 1
-        else:
-            return self._opened
- 
+        return False
+
 
     def onError(self, evt):
         log.error('WebSocket error: ' + evt)
@@ -140,8 +114,6 @@ class WebSocketClient(object):
     def onOpen(self, evt):
         if self._ws != None:
             log.debug('WS connected to ' + self.uri)
-        else:
-            log.debug('Socket.IO connected to ' + self.uri)
         self._opened = True
 
 
@@ -160,9 +132,6 @@ class WebSocketClient(object):
 
     def onMessage(self, evt):
         try:
-            if self._ws != None:
-                self.handler.receive(evt.data)
-            else:
-                self.handler.receive(evt)
+            self.handler.receive(evt.data)
         except Exception,e:
             log.debug(str(e))

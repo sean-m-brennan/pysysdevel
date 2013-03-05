@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<resource>
+  <component class="Component" name="BitmapToggleButton" provider="Sean M. Brennan &lt;brennan@lanl.gov&gt;">
+    <groups>
+      <item>control</item>
+    </groups>
+    <attributes>
+      <item>pos</item>
+      <item>size</item>
+      <item>value</item>
+    </attributes>
+    <has-name>1</has-name>
+    <styles>
+      <item>wxBU_LEFT</item>
+      <item>wxBU_RIGHT</item>
+      <item>wxBU_TOP</item>
+      <item>wxBU_BOTTOM</item>
+      <item>wxBU_EXACT</item>
+    </styles>
+    <module>bmptoggle</module>
+    <handler>BitmapToggleButtonXmlHandler</handler>
+    <menu>button</menu>
+    <label>Bitmap Toggle Button</label>
+    <help>A toggle button that has a bitmapped image on it</help>
+    <panel>Controls</panel>
+  </component>
+</resource>

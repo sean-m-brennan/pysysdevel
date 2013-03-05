@@ -179,6 +179,10 @@ class CustomDistribution(NumpyDistribution):
         self.extra_install_modules = attrs.get('extra_install_modules')
         if self.extra_install_modules != None:
             del old_attrs['extra_install_modules']
+        ## Boilerplate scripts to create
+        self.create_scripts = attrs.get('create_scripts')
+        if self.create_scripts != None:
+            del old_attrs['create_scripts']
         ## Pydevel support modules
         self.devel_support = attrs.get('devel_support')
         if self.devel_support != None:
@@ -206,6 +210,10 @@ class CustomDistribution(NumpyDistribution):
         self.zipfile = attrs.pop("zipfile", util.default_py2exe_library)
 
         NumpyDistribution.__init__(self, old_attrs)
+
+    def has_scripts(self):
+        return NumpyDistribution.has_scripts(self) or \
+            (self.create_scripts != None and len(self.create_scripts) > 0)
 
     def has_c_libraries(self):
         return NumpyDistribution.has_c_libraries(self) or self.has_shared_libs()
@@ -253,6 +261,9 @@ class build(old_build):
             self.distribution.has_antlr_extensions() or \
             self.distribution.has_pydevel_support()
 
+    def has_scripts(self):
+        return self.distribution.has_scripts()
+
     def has_c_libraries(self):
         return self.distribution.has_c_libraries()
 
@@ -286,13 +297,13 @@ class build(old_build):
         ('config_cc',      lambda *args: True),
         ('config_fc',      lambda *args: True),
         ('build_src',      old_build.has_ext_modules),
-        ('build_py',       old_build.has_pure_modules),
+        ('build_py',       has_pure_modules),
         ('build_js',       has_web_extensions),
-        ('build_clib',     old_build.has_c_libraries),
+        ('build_clib',     has_c_libraries),
         ('build_shlib',    has_shared_libraries),
-        ('build_ext',      old_build. has_ext_modules),
+        ('build_ext',      old_build.has_ext_modules),
         ('build_pypp_ext', has_pypp_extensions),
-        ('build_scripts',  old_build.has_scripts),
+        ('build_scripts',  has_scripts),
         ('build_doc',      has_documents),
         ('build_exe',      has_executables),
         ]
@@ -520,21 +531,22 @@ import warnings
 import distutils.core
 import distutils.dist
 from numpy.distutils.misc_util import get_data_files, is_sequence, is_string
-from numpy.distutils.command import config, build_src, build_ext, \
-    build_scripts, sdist, install_headers, bdist_rpm, scons
+from numpy.distutils.command import config, build_ext, sdist, \
+    install_headers, bdist_rpm, scons
 from numpy.distutils.core import _exit_interactive_session, _command_line_ok, \
     _dict_append
 
 import build_doc
 import build_js
 import build_py
+import build_scripts
 import build_pypp_ext
 import build_src
-import install_data
 import build_clib
 import build_shlib
-import install_lib
 import build_exe
+import install_data
+import install_lib
 import install_exe
 
 my_cmdclass = {'build':            build,
