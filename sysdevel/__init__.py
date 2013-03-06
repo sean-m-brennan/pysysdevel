@@ -28,13 +28,8 @@ __all__ = ['pkg_config', 'core',
            'configure',]
 
 import os
-import sys
 
-class FatalError(SystemExit):
-    """
-    Uncatchable error, exits uncleanly.
-    """
-    def __init__(self, what):
-        sys.stderr.write('FatalError: ' + what + '\n')
-        sys.stderr.flush()
-        os._exit(-1)
+config_dir = os.path.join(os.path.dirname(__file__), 'configure')
+support_dir = os.path.join(os.path.dirname(__file__), 'support')
+
+from configure import configure_system, FatalError

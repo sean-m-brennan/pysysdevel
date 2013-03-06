@@ -41,7 +41,7 @@ def main(argv=None):
           version     = '0.5.2',
           description = 'Enhanced Python build options (based on distutils)',
           requires    = ['numpy',],
-          packages    = ['sysdevel', 'sysdevel.config',],
+          packages    = ['sysdevel', 'sysdevel.configure',],
           classifiers = [
             'Development Status :: 4 - Beta',
             'Environment :: Console',

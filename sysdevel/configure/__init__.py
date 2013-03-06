@@ -31,7 +31,15 @@ import os
 import sys
 import platform
 
-from sysdevel import FatalError
+
+class FatalError(SystemExit):
+    """
+    Uncatchable error, exits uncleanly.
+    """
+    def __init__(self, what):
+        sys.stderr.write('FatalError: ' + what + '\n')
+        sys.stderr.flush()
+        os._exit(-1)
 
 
 def __run_helper__(short_name, long_name, version, skip, install, quiet):

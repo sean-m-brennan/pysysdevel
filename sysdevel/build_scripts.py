@@ -44,10 +44,10 @@ class build_scripts(_build_scripts):
     def run(self):
         environ = self.distribution.environment
 
+        util.mkdir(self.build_dir)
         if self.create_scripts:
             if not self.scripts:
                 self.scripts = []
-            self.mkpath(self.build_dir)
             for tpl in self.create_scripts:
                 outfile = os.path.join(self.build_dir, os.path.basename(tpl[0]))
                 util.create_runscript(tpl[1], tpl[2], outfile)
