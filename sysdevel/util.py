@@ -362,7 +362,7 @@ def install_pypkg_locally(name, website, archive, build_dir,
         os.chdir(target_dir)
         sys.stdout.write('PREREQUISITE ' + name + ' ')
         sys.stdout.flush()
-        unarchive(os.path.join(here, download_dir, archive), src_dir)
+        unarchive(os.path.join(here, download_dir, archive), build_dir, src_dir)
         os.chdir(src_dir)
         if env:
             for e in env:

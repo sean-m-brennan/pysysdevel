@@ -81,16 +81,17 @@ def install(environ, version, target='build'):
             src_dir = 'cdf' + str(version) + '-dist'
             archive = src_dir + '-cdf.tar.gz'
             fetch(''.join(website), archive, archive)
-            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            unarchive(os.path.join(here, download_dir, archive),
+                      target, src_dir)
             build_dir = os.path.join(src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
             if 'windows' in platform.system().lower():
                 ## assumes MinGW installed and detected
-                subprocess.check_call([environ['MSYS_SHELL'],
-                                       'make',  'OS=mingw', 'ENV=gnu', 'all'])
-                subprocess.check_call([environ['MSYS_SHELL'],
-                                       'make', 'INSTALLDIR=/', 'install'])
+                mingw_check_call(environ,
+                                 ['make',  'OS=mingw', 'ENV=gnu', 'all'])
+                mingw_check_call(environ,
+                                 ['make', 'INSTALLDIR=/', 'install'])
             else:
                 sudo_prefix = []
                 if not as_admin():

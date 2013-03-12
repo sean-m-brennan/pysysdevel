@@ -64,18 +64,18 @@ def install(environ, version, target='build'):
             src_dir = 'gccxml'
             os.chdir(download_dir)
             gitsite = 'https://github.com/gccxml/gccxml.git'
-            subprocess.check_call([environ['GIT'],
-                                   'clone', gitsite, src_dir])
+            mingw_check_call(environ, [environ['GIT'],
+                                       'clone', gitsite, src_dir])
             build_dir = os.path.join(download_dir, src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            subprocess.check_call([environ['MSYS_SHELL'], 
-                                   environ['CMAKE'], '..',
-                                   '-G', '"MSYS Makefiles"',
-                                   '-DCMAKE_INSTALL_PREFIX=' + environ['MSYS_DIR'],
-                                   '-DCMAKE_MAKE_PROGRAM=/bin/make.exe'])
-            subprocess.check_call([environ['MSYS_SHELL'], 'make'])
-            subprocess.check_call([environ['MSYS_SHELL'], 'make', 'install'])
+            mingw_check_call(environ, [environ['CMAKE'], '..',
+                                       '-G', '"MSYS Makefiles"',
+                                       '-DCMAKE_INSTALL_PREFIX=' + \
+                                           environ['MSYS_PREFIX'],
+                                       '-DCMAKE_MAKE_PROGRAM=/bin/make.exe'])
+            mingw_check_call(environ, ['make'])
+            mingw_check_call(environ, ['make', 'install'])
             os.chdir(here)
         else:
             if version is None:

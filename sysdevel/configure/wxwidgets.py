@@ -20,7 +20,7 @@ Find wxWidgets library
 # 
 #**************************************************************************
 
-import os, subprocess
+import os
 
 from sysdevel.util import *
 
@@ -73,14 +73,15 @@ def install(environ, version, target='build'):
             src_dir = 'wxMSW-' + str(version)
             archive = src_dir + '.zip'
             fetch(''.join(website), archive, archive)
-            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            unarchive(os.path.join(here, download_dir, archive),
+                      target, src_dir)
             build_dir = os.path.join(src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            subprocess.check_call([environ['MSYS_SHELL'], '../configure',
-                                   '--prefix=' + environ['MSYS_PREFIX']])
-            subprocess.check_call([environ['MSYS_SHELL'], 'make'])
-            subprocess.check_call([environ['MSYS_SHELL'], 'make', 'install'])
+            mingw_check_call(environ, ['../configure',
+                                       '--prefix=' + environ['MSYS_PREFIX']])
+            mingw_check_call([environ, ['make'])
+            mingw_check_call([environ, ['make', 'install'])
             os.chdir(here)
         else:
             global_install('wxWidgets', website,

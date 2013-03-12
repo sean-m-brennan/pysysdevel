@@ -108,12 +108,14 @@ def install(environ, version, target='build'):
         src_dir = 'gmat-src-' + str(version) + '-Beta'
         archive = src_dir + '.zip'
         fetch(''.join(website), archive, archive)
-        unarchive(os.path.join(here, download_dir, archive), src_dir)
+        unarchive(os.path.join(here, download_dir, archive),
+                  target, src_dir)
 
         data_dir = 'gmat-datafiles-' + str(version) + '-Beta'
         data_archive = data_dir + '.zip'
         fetch(''.join(website), data_archive, data_archive)
-        unarchive(os.path.join(here, download_dir, data_archive), data_dir)
+        unarchive(os.path.join(here, download_dir, data_archive),
+                  target, data_dir)
 
     environment['GMAT_VERSION'] = ver
     environment['GMAT_ROOT'] = src_dir

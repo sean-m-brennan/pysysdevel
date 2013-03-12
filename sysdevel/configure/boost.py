@@ -102,7 +102,8 @@ def install(environ, version, target='build'):
             src_dir = 'boost_' + str(version)
             archive = src_dir + '.tar.bz2'
             fetch(''.join(website), archive, archive)
-            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            unarchive(os.path.join(here, download_dir, archive),
+                      target, src_dir)
             os.chdir(src_dir)
             subprocess.check_call(['bootstrap.sh', 'mingw'])
             subprocess.check_call(['bjam', 'install', '--toolset=gcc',

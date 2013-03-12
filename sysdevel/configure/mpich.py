@@ -87,14 +87,15 @@ def install(environ, version, target='build'):
             src_dir = 'mpich-' + str(version)
             archive = src_dir + '.tar.gz'
             fetch(''.join(website), archive, archive)
-            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            unarchive(os.path.join(here, download_dir, archive),
+                      target, src_dir)
             build_dir = os.path.join(src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            subprocess.check_call([environ['MSYS_SHELL'], '../configure',
-                                   '--prefix=' + environ['MSYS_DIR']])
-            subprocess.check_call([environ['MSYS_SHELL'], 'make'])
-            subprocess.check_call([environ['MSYS_SHELL'], 'make', 'install'])
+            mingw_check_call(environ, ['../configure',
+                                       '--prefix=' + environ['MSYS_PREFIX']])
+            mingw_check_call(environ, ['make'])
+            mingw_check_call(environ, ['make', 'install'])
             os.chdir(here)
         else:
             global_install('MPICH', website,
