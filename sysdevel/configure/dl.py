@@ -44,7 +44,7 @@ def is_installed(version=None):
     except:
         pass
     try:
-        incl_dir = find_header('dl.h', locations)
+        incl_dir = find_header('dlfcn.h', locations)
         lib_dir, lib = find_library('dl', locations)
         libdl_found = True
     except:

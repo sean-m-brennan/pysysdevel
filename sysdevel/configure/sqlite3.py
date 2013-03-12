@@ -53,7 +53,7 @@ def is_installed(version=None):
     environment['SQLITE3_INCLUDE_DIR'] = incl_dir
     environment['SQLITE3_LIB_DIR'] = lib_dir
     environment['SQLITE3_LIBS'] = [lib]
-    environment['SQLITE3_LIBRARY'] = ['sqlite3']
+    environment['SQLITE3_LIBRARIES'] = ['sqlite3']
     return sqlite_found
 
 
