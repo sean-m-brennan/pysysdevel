@@ -32,7 +32,7 @@ def null():
     environment['F2C_INCLUDE_DIR'] = None
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, f2c_found
     try:
         incl_dir = find_header('f2c.h')
@@ -44,7 +44,7 @@ def is_installed(version=None):
     return f2c_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     global environment
     if not f2c_found:
         website = 'http://www.netlib.org/f2c/'

@@ -33,16 +33,16 @@ def null():
     environment['GCCXML'] = None
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, gccxml_found
     base_dirs = []
     try:
-        progfiles = os.environ['ProgramFiles']
-        base_dirs.append(os.path.join(progfiles, 'GCC_XML', 'bin'))
+        base_dirs.append(os.path.join(os.environ['ProgramFiles'],
+                                      'GCC_XML', 'bin'))
     except:
         pass
     try:
-        base_dirs.append(os.path.join(environment['MSYS_DIR'], 'bin'))
+        base_dirs.append(environ['MSYS_DIR'])
     except:
         pass
     try:
@@ -53,31 +53,29 @@ def is_installed(version=None):
     return gccxml_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not gccxml_found:
         if compare_versions(version, '0.6') == 1 and \
-                'GIT' in environment.keys() and \
-                'CMAKE' in environment.keys() and \
+                'GIT' in environ.keys() and \
+                'CMAKE' in environ.keys() and \
                 'windows' in platform.system().lower():
             ## assumes MinGW, git, and cmake are installed and detected
             here = os.path.abspath(os.getcwd())
             src_dir = 'gccxml'
             os.chdir(download_dir)
             gitsite = 'https://github.com/gccxml/gccxml.git'
-            subprocess.check_call([environment['GIT'],
+            subprocess.check_call([environ['GIT'],
                                    'clone', gitsite, src_dir])
             build_dir = os.path.join(download_dir, src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            subprocess.check_call([environment['MSYS_SHELL'], 
-                                   environment['CMAKE'], '..',
+            subprocess.check_call([environ['MSYS_SHELL'], 
+                                   environ['CMAKE'], '..',
                                    '-G', '"MSYS Makefiles"',
-                                   '-DCMAKE_INSTALL_PREFIX=' + \
-                                       environment['MSYS_DIR'],
+                                   '-DCMAKE_INSTALL_PREFIX=' + environ['MSYS_DIR'],
                                    '-DCMAKE_MAKE_PROGRAM=/bin/make.exe'])
-            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
-            subprocess.check_call([environment['MSYS_SHELL'],
-                                   'make', 'install'])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make', 'install'])
             os.chdir(here)
         else:
             if version is None:

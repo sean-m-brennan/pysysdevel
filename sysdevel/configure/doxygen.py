@@ -20,8 +20,6 @@ Find Doxygen
 # 
 #**************************************************************************
 
-import os, platform
-
 from sysdevel.util import *
 
 environment = dict()
@@ -33,7 +31,7 @@ def null():
     environment['DOXYGEN'] = None
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, doxygen_found
     try:
         environment['DOXYGEN'] = find_program('doxygen')
@@ -43,14 +41,13 @@ def is_installed(version=None):
     return doxygen_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not doxygen_found:
         if version is None:
             version = '1.8.3.1'
         website = ('http://ftp.stack.nl/pub/users/dimitri/',)
-        installer = 'doxygen-' + str(version) + '-setup.exe'
         global_install('Doxygen', website,
-                       installer,
+                       'doxygen-' + str(version) + '-setup.exe',
                        'doxygen',
                        'doxygen',
                        'doxygen')

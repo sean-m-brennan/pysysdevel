@@ -34,7 +34,7 @@ def null():
     environment['GOMP_LIBRARY'] = ''
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, gomp_found
     try:
         gomp_lib_dir, gomp_lib  = find_library('gomp')
@@ -47,6 +47,6 @@ def is_installed(version=None):
     return gomp_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     raise Exception('GOMP is part of GCC; Your development environment ' +
                     'is seriously screwed up. Look for libgomp.so.')

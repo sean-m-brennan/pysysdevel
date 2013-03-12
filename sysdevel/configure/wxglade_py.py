@@ -31,12 +31,12 @@ def null():
     environment['WXGLADE'] = None
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, wxglade_found
     try:
         import wxglade.common
         ver = wxglade.common.version
-        if not version is None and ver < version:
+        if compare_versions(ver, version) == -1:
             return wxglade_found
         environment['WXGLADE'] = find_program('wxglade')
         wxglade_found = True
@@ -45,13 +45,14 @@ def is_installed(version=None):
     return wxglade_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     global environment
     if not wxglade_found:
         if version is None:
             version = '0.6.5'
         website = 'http://downloads.sourceforge.net/project/wxglade/wxglade/' + version + '/'
-        archive = 'wxGlade-' + version + '.tar.gz'
-        install_pypkg_locally('wxGlade-' + version, website, archive, target)
+        src_dir = 'wxGlade-' + version
+        archive = src_dir + '.tar.gz'
+        install_pypkg_locally(src_dir, website, archive, target)
         environment['WXGLADE'] = find_program('wxglade.py',
                                               [os.path.join(target, 'python', 'wxglade')])

@@ -32,7 +32,7 @@ def null():
     pass
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global pywebsocket_found
     try:
         import mod_pywebsocket
@@ -42,13 +42,14 @@ def is_installed(version=None):
     return pywebsocket_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     global environment
     if not pywebsocket_found:
         website = 'http://pywebsocket.googlecode.com/files/'
         if version is None:
             version = '0.7.6'
-        archive = 'mod_pywebsocket-' + version + '.tar.gz'
-        pkg_dir = os.path.join('pywebsocket-' + version, 'src')
-        install_pypkg_locally('pywebsocket-' + version, website,
-                              archive, target, src_dir=pkg_dir)
+        src_dir = 'mod_pywebsocket-' + str(version)
+        archive = src_dir + '.tar.gz'
+        pkg_dir = os.path.join(src_dir, 'src')
+        install_pypkg_locally(src_dir, website, archive,
+                              target, src_dir=pkg_dir)

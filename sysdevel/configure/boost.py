@@ -36,7 +36,7 @@ def null():
     environment['BOOST_LIBRARIES'] = []
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, boost_found
     if version is None:
         required_version = '1_33'
@@ -59,7 +59,7 @@ def is_installed(version=None):
     if 'windows' in platform.system().lower():
         base_dirs.append(os.path.normpath(os.path.join('C:', os.sep, 'Boost')))
         try:
-            base_dirs.append(environment['MSYS_DIR'])
+            base_dirs.append(environ['MSYS_DIR'])
         except:
             pass
     try:
@@ -91,7 +91,7 @@ def is_installed(version=None):
     return boost_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not boost_found:
         if version is None:
             version = '1_44_0'
@@ -106,7 +106,7 @@ def install(target='build', version=None):
             os.chdir(src_dir)
             subprocess.check_call(['bootstrap.sh', 'mingw'])
             subprocess.check_call(['bjam', 'install', '--toolset=gcc',
-                                   '--prefix=' + environment['MSYS_DIR']])
+                                   '--prefix=' + environ['MSYS_DIR']])
             os.chdir(here)
         else:
             global_install('Boost', website,

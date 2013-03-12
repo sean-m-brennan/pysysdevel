@@ -36,11 +36,11 @@ def null():
     environment['SQLITE3_LIBRARIES'] = []
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, sqlite_found
     locations = []
     try:
-        locations.append(os.environ['MSYS_DIR'])
+        locations.append(environ['MSYS_DIR'])
     except:
         pass
     try:
@@ -57,7 +57,7 @@ def is_installed(version=None):
     return sqlite_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not sqlite_found:
         if version is None:
             version = '3071502'
@@ -71,11 +71,10 @@ def install(target='build', version=None):
             build_dir = os.path.join(src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
-                                   '--prefix=' + environment['MSYS_PREFIX']])
-            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
-            subprocess.check_call([environment['MSYS_SHELL'],
-                                   'make', 'install'])
+            subprocess.check_call([environ['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environ['MSYS_PREFIX']])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make', 'install'])
             os.chdir(here)
         else:
             global_install('SQLite3', website,

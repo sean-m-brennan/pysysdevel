@@ -36,7 +36,7 @@ def null():
     environment['CDF_LIBRARIES'] = []
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, cdf_found
     lib_name = 'cdf'
     if 'windows' in platform.system().lower():
@@ -46,7 +46,7 @@ def is_installed(version=None):
         base_dirs.append(os.path.join('C:', os.sep, 'CDF Distribution',
                                       'cdf' + version + '-dist'))
         try:
-            base_dirs.append(environment['MSYS_DIR'])
+            base_dirs.append(environ['MSYS_DIR'])
         except:
             pass
     try:
@@ -63,7 +63,7 @@ def is_installed(version=None):
     return cdf_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not cdf_found:
         if version is None:
             version = '34_1'
@@ -87,9 +87,9 @@ def install(target='build', version=None):
             os.chdir(build_dir)
             if 'windows' in platform.system().lower():
                 ## assumes MinGW installed and detected
-                subprocess.check_call([environment['MSYS_SHELL'],
+                subprocess.check_call([environ['MSYS_SHELL'],
                                        'make',  'OS=mingw', 'ENV=gnu', 'all'])
-                subprocess.check_call([environment['MSYS_SHELL'],
+                subprocess.check_call([environ['MSYS_SHELL'],
                                        'make', 'INSTALLDIR=/', 'install'])
             else:
                 sudo_prefix = []

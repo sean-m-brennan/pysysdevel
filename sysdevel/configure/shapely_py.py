@@ -25,31 +25,31 @@ from sysdevel.util import *
 environment = dict()
 shapely_found = False
 
+DEPENDECIES = ['geos']
 
 def null():
     pass
 
 
-def is_installed(version=None):
-    global environment, shapely_found
+def is_installed(environ, version):
+    global shapely_found
     try:
         import shapely
         ver = shapely.__version__
         if not version is None and ver < version:
             return shapely_found
-        environment['SHAPELY_DEPENDENCIES'] = ['geos_c']
         shapely_found = True
     except Exception,e:
-        print 'Shapely not found: ' + str(e)
+        pass
     return shapely_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     global environment
     if not shapely_found:
         website = 'http://pypi.python.org/packages/source/S/Shapely/'
         if version is None:
             version = '1.2.16'
-        archive = 'Shapely-' + str(version) + '.tar.gz'
-        install_pypkg_locally('Shapely-' + str(version), website, archive, target)
-        environment['SHAPELY_DEPENDENCIES'] = ['geos_c']
+        src_dir = 'Shapely-' + str(version)
+        archive = src_dir + '.tar.gz'
+        install_pypkg_locally(src_dir, website, archive, target)

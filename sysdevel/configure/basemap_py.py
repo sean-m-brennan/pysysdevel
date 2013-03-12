@@ -28,8 +28,8 @@ from sysdevel.util import *
 environment = dict()
 basemap_found = False
 
-geos_min = '3.1.1'
-geos_found = False
+DEPENDENCIES = ['geos']
+
 
 basemap_data_pathlist = ['mpl-data', 'basemap-data']
 basemap_data_dir = os.path.join(*basemap_data_pathlist)
@@ -43,36 +43,36 @@ def null():
     environment['BASEMAP_DEPENDENCIES'] = []
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, basemap_found, geos_found
     try:
         from mpl_toolkits import basemap
         ver = basemap.__version__
-        if not version is None and ver < version:
-            print 'Found basemap v.' + ver
+        if compare_versions(ver, version) == -1:
             return basemap_found
-        environment['BASEMAP_DATA_PATHLIST'] = basemap_data_pathlist
-        basemap_dir = os.path.dirname(basemap.__file__)
-        environment['BASEMAP_DIR'] = basemap_dir
-        environment['BASEMAP_DATA_FILES'] = \
-            [(basemap_data_dir,
-              glob.glob(os.path.join(basemap_dir, 'data', '*.*')))]
-        environment['BASEMAP_DEPENDENCIES'] = ['geos_c']
         basemap_found = True
     except Exception, e:
-        print e
+        return basemap_found
+
+    environment['BASEMAP_DATA_PATHLIST'] = basemap_data_pathlist
+    basemap_dir = os.path.dirname(basemap.__file__)
+    environment['BASEMAP_DIR'] = basemap_dir
+    environment['BASEMAP_DATA_FILES'] = \
+        [(basemap_data_dir,
+          glob.glob(os.path.join(basemap_dir, 'data', '*.*')))]
     return basemap_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     global environment
     if not basemap_found:
         if version is None:
             version = '1.0.5'
         website = 'http://downloads.sourceforge.net/project/matplotlib/' + \
             'matplotlib-toolkits/basemap-' + version + '/'
-        archive = 'basemap-' + version + '.tar.gz'
-        install_pypkg_locally('basemap-' + version, website, archive, target)
+        src_dir = 'basemap-' + str(version)
+        archive =  src_dir + '.tar.gz'
+        install_pypkg_locally(src_dir, website, archive, target)
         environment['BASEMAP_DATA_PATHLIST'] = basemap_data_pathlist
         basemap_dir = os.path.abspath(os.path.join(target, local_lib_dir,
                                                    'mpl_toolkits', 'basemap'))
@@ -80,11 +80,10 @@ def install(target='build', version=None):
         environment['BASEMAP_DATA_FILES'] = \
             [(basemap_data_dir,
               glob.glob(os.path.join(basemap_dir, 'data', '*.*')))]
-        environment['BASEMAP_DEPENDENCIES'] = ['geos_c']
-        patch(basemap_dir)
+        __patch(basemap_dir)
 
 
-def patch(basemap_dir):
+def __patch(basemap_dir):
     ## modify faulty pyproj data location
     problem_file = os.path.join(basemap_dir, 'pyproj.py')
     print 'PATCH ' + problem_file

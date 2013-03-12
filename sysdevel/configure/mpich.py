@@ -36,7 +36,7 @@ def null():
     environment['MPICH_LIBS'] = []
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, mpich_found
     base_dirs = []
     mpich_lib_list = ['mpich', 'mpichcxx', 'mpichf90']
@@ -50,16 +50,14 @@ def is_installed(version=None):
         base_dirs.append(os.environ['MPICH_ROOT'])
     except:
         pass
-    if 'windows' in platform.system().lower():
-        try:
-            progfiles = os.environ['PROGRAMFILES']
-            base_dirs.append(os.path.join(progfiles, 'MPICH2'))
-        except:
-            pass
-        try:
-            base_dirs.append(environment['MSYS_DIR'])
-        except:
-            pass
+    try:
+        base_dirs.append(os.path.join(os.environ['PROGRAMFILES'], 'MPICH2'))
+    except:
+        pass
+    try:
+        base_dirs.append(environ['MSYS_DIR'])
+    except:
+        pass
 
     try:
         mpich_lib_dir, mpich_libs  = find_libraries(mpich_lib_list[0],
@@ -77,7 +75,7 @@ def is_installed(version=None):
     return mpich_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not gsl_found:
         if version is None:
             version = '3.0.2'
@@ -93,11 +91,10 @@ def install(target='build', version=None):
             build_dir = os.path.join(src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
-                                   '--prefix=' + environment['MSYS_DIR']])
-            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
-            subprocess.check_call([environment['MSYS_SHELL'],
-                                   'make', 'install'])
+            subprocess.check_call([environ['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environ['MSYS_DIR']])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make', 'install'])
             os.chdir(here)
         else:
             global_install('MPICH', website,

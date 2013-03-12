@@ -30,12 +30,12 @@ def null():
     pass
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, euclid_found
     try:
         import euclid
         ver = euclid.__revision__.split()[1]
-        if not version is None and ver < version:
+        if compare_versions(ver, version) == -1:
             return euclid_found
         euclid_found = True
     except Exception,e:
@@ -43,10 +43,11 @@ def is_installed(version=None):
     return euclid_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not euclid_found:
         website = 'https://pypi.python.org/packages/source/e/euclid/'
         if version is None:
             version = '0.01'
-        archive ='euclid-' + str(version) + '.tar.gz' 
-        install_pypkg_locally('euclid-' + str(version), website, archive, target)
+        src_dir = 'euclid-' + str(version)
+        archive = src_dir + '.tar.gz' 
+        install_pypkg_locally(src_dir, website, archive, target)

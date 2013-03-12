@@ -30,12 +30,12 @@ def null():
     pass
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global pyserial_found
     try:
         import serial
         ver = serial.VERSION
-        if not version is None and ver < version:
+        if compare_versions(ver, version) == -1:
             return pyserial_found
         pyserial_found = True
     except:
@@ -43,11 +43,12 @@ def is_installed(version=None):
     return pyserial_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     global environment
     if not pyserial_found:
         website = 'http://pypi.python.org/packages/source/p/pyserial/'
         if version is None:
             version = '2.6'
-        archive = 'pyserial-' + version + '.tar.gz'
-        install_pypkg_locally('pyserial-' + version, website, archive, target)
+        src_dir = 'pyserial-' + version
+        archive = src_dir + '.tar.gz'
+        install_pypkg_locally(src_dir, website, archive, target)

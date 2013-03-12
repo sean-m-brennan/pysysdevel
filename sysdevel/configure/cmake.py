@@ -33,18 +33,18 @@ def null():
     environment['CMAKE'] = None
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, cmake_found
     if version is None:
         version = '2.8'
     base_dirs = []
     try:
-        progfiles = os.environ['ProgramFiles']
-        base_dirs.append(os.path.join(progfiles, 'CMake ' + version, 'bin'))
+        base_dirs.append(os.path.join(os.environ['ProgramFiles'],
+                                      'CMake ' + version, 'bin'))
     except:
         pass
     try:
-        base_dirs.append(os.path.join(environment['MSYS_DIR'], 'bin'))
+        base_dirs.append(os.path.join(environ['MSYS_DIR'], 'bin'))
     except:
         pass
     try:
@@ -55,7 +55,7 @@ def is_installed(version=None):
     return cmake_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not cmake_found:
         if version is None:
             version = '2.8.10.2'

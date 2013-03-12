@@ -25,17 +25,18 @@ from sysdevel.util import *
 environment = dict()
 ffnet_found = False
 
+DEPENDENCIES = ['networkx']
 
 def null():
     pass
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global ffnet_found
     try:
         import ffnet
         ver = ffnet.version
-        if not version is None and ver < version:
+        if compare_versions(ver, version) == -1:
             return ffnet_found
         ffnet_found = True
     except Exception,e:
@@ -43,18 +44,11 @@ def is_installed(version=None):
     return ffnet_found
 
 
-def install(target='build', version=None):
-    global environment
+def install(environ, version, target='build'):
     if not ffnet_found:
         if version is None:
             version = '0.7.1'
         website = 'http://prdownloads.sourceforge.net/ffnet/'
-        archive = 'ffnet-' + str(version) + '.tar.gz'
-        install_pypkg_locally('ffnet-' + version, website, archive, target)
-        environment['FFNET_VERSION'] = version
-
-        ## also requires networkx
-        website = 'http://networkx.lanl.gov/download/networkx/'
-        ver = '1.7'
-        archive = 'networkx-' + ver + '.tar.gz'
-        install_pypkg_locally('networkx-' + ver, website, archive, target)
+        src_dir = 'ffnet-' + str(version)
+        archive = src_dir + '.tar.gz'
+        install_pypkg_locally(src_dir, website, archive, target)

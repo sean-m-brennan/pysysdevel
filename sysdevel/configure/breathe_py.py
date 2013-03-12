@@ -20,9 +20,9 @@ Find Breathe
 # 
 #**************************************************************************
 
-import os, platform
-
 from sysdevel.util import *
+
+DEPENDENCIES = ['sphinx']
 
 environment = dict()
 breathe_found = False
@@ -32,12 +32,12 @@ def null():
     pass
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, breathe_found
     try:
         import breathe
         ver = breathe.__version__
-        if not version is None and ver < version:
+        if compare_versions(ver, version) == -1:
             return breathe_found
         breathe_found = True
     except:
@@ -45,10 +45,11 @@ def is_installed(version=None):
     return breathe_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not breathe_found:
         website = 'https://pypi.python.org/packages/source/b/breathe/'
         if version is None:
             version = '0.7.5'
-        archive ='breathe-' + str(version) + '.tar.gz' 
-        install_pypkg_locally('breathe-' + str(version), website, archive, target)
+        src_dir = 'breathe-' + str(version)
+        archive = src_dir + '.tar.gz' 
+        install_pypkg_locally(src_dir, website, archive, target)

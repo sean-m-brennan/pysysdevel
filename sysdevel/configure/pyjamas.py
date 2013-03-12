@@ -31,7 +31,7 @@ def null():
     environment['PYJSBUILD'] = None
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, pyjamas_found
     try:
         pyjamas_root = os.environ['PYJAMAS_ROOT']
@@ -50,7 +50,7 @@ def is_installed(version=None):
     return pyjamas_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     global environment
     if not pyjamas_found:
         if not os.path.exists(download_dir):

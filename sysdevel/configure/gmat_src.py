@@ -58,7 +58,7 @@ def null():
     environment['GMAT_FORTRAN_SRCS'] = []
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, gmat_found
     try:
         gmat_root = os.environ['GMAT_ROOT']
@@ -88,9 +88,11 @@ def is_installed(version=None):
     return gmat_found
 
 
-def install(target='build', version=SVN):
+def install(environ, version, target='build'):
     global environment
-    if version == SVN:
+    if version is None:
+        version = version_strs[VERSION]
+    if version.lower().startswith('svn'):
         import pysvn
         svn_repo = 'https://gmat.svn.sourceforge.net/svnroot/gmat/trunk'
         client = pysvn.Client()
@@ -101,8 +103,6 @@ def install(target='build', version=SVN):
         rev_num = client.info(src_dir).revision.number
         ver = version_strs[version] +'-'+ str(rev_num).zfill(version_zfill)
     else:
-        if version is None:
-            version = version_strs[VERSION]
         website = ('http://prdownloads.sourceforge.net/gmat/',)
         here = os.path.abspath(os.getcwd())
         src_dir = 'gmat-src-' + str(version) + '-Beta'

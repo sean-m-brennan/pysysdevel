@@ -30,23 +30,24 @@ def null():
     pass
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global pil_found
     try:
         import PIL.Image
         ver = PIL.Image.VERSION
-        if not version is None and ver < version:
+        if compare_versions(ver, version) == -1:
             return pil_found
         pil_found = True
     except Exception,e:
-        print 'PIL not found: ' + str(e)
+        pass
     return pil_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not pil_found:
         website = 'http://effbot.org/downloads/'
         if version is None:
             version = '1.1.7'
-        archive = 'Imaging-' + version + '.tar.gz'
-        install_pypkg_locally('Imaging-' + version, website, archive, target)
+        src_dir = 'Imaging-' + str(version)
+        archive = src_dir + '.tar.gz'
+        install_pypkg_locally(src_dir, website, archive, target)

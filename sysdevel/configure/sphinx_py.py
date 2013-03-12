@@ -32,12 +32,12 @@ def null():
     pass
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global sphinx_found
     try:
         import sphinx
         ver = sphinx.__version__
-        if not version is None and ver < version:
+        if compare_versions(ver, version) == -1:
             return sphinx_found
         sphinx_found = True
     except:
@@ -45,10 +45,11 @@ def is_installed(version=None):
     return sphinx_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not sphinx_found:
         website = 'https://pypi.python.org/packages/source/S/Sphinx/'
         if version is None:
             version = '1.1.3'
-        archive ='Sphinx-' + str(version) + '.tar.gz' 
-        install_pypkg_locally('Sphinx-' + str(version), website, archive, target)
+        src_dir = 'Sphinx-' + str(version)
+        archive = src_dir + '.tar.gz' 
+        install_pypkg_locally(src_dir, website, archive, target)

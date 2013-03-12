@@ -30,24 +30,24 @@ def null():
     pass
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global pyephem_found
     try:
         import ephem
         ver = ephem.__version__
-        if not version is None and ver < version:
-            print 'Found pyephem v.' + ver
+        if compare_versions(ver, version) == -1:
             return pyephem_found
         pyephem_found = True
     except Exception,e:
-        print 'Pyephem not found: ' + str(e)
+        pass
     return pyephem_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not pyephem_found:
         website = 'http://pypi.python.org/packages/source/p/pyephem/'
         if version is None:
             version = '3.7.5.1'
-        archive = 'pyephem-' + version + '.tar.gz'
-        install_pypkg_locally('pyephem-' + version, website, archive, target)
+        src_dir = 'pyephem-' + str(version)
+        archive = src_dir + '.tar.gz'
+        install_pypkg_locally(src_dir, website, archive, target)

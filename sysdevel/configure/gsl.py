@@ -36,23 +36,21 @@ def null():
     environment['GSL_LIBS'] = []
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, gsl_found
     base_dirs = []
     try:
         base_dirs.append(os.environ['GSL_ROOT'])
     except:
         pass
-    if 'windows' in platform.system().lower():
-        try:
-            progfiles = os.environ['ProgramFiles']
-            base_dirs.append(os.path.join(progfiles, 'GnuWin32'))
-        except:
-            pass
-        try:
-            base_dirs.append(environment['MSYS_DIR'])
-        except:
-            pass
+    try:
+        base_dirs.append(os.path.join(os.environ['ProgramFiles'], 'GnuWin32'))
+    except:
+        pass
+    try:
+        base_dirs.append(environ['MSYS_DIR'])
+    except:
+        pass
     try:
         inc_dir = find_header('gsl_types.h', base_dirs, ['gsl'])
         lib_dir, libs  = find_libraries('gsl', base_dirs)
@@ -67,7 +65,7 @@ def is_installed(version=None):
     return gsl_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not gsl_found:
         if version is None:
             version = '1.15'
@@ -82,11 +80,10 @@ def install(target='build', version=None):
             build_dir = os.path.join(src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
-                                   '--prefix=' + environment['MSYS_DIR']])
-            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
-            subprocess.check_call([environment['MSYS_SHELL'],
-                                   'make', 'install'])
+            subprocess.check_call([environ['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environ['MSYS_DIR']])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make', 'install'])
             os.chdir(here)
         else:
             global_install('GSL', website,

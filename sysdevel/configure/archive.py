@@ -36,7 +36,7 @@ def null():
     environment['ARCHIVE_LIBRARIES'] = []
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, archive_found
     locations = []
     try:
@@ -48,7 +48,7 @@ def is_installed(version=None):
     except:
         pass
     try:
-        locations.append(environment['MSYS_DIR'])
+        locations.append(environ['MSYS_DIR'])
     except:
         pass
     try:
@@ -65,7 +65,7 @@ def is_installed(version=None):
     return archive_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not archive_found:
         if version is None:
             version = '3.1.2'
@@ -81,11 +81,10 @@ def install(target='build', version=None):
             build_dir = os.path.join(src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
-                                   '--prefix=' + environment['MSYS_PREFIX']])
-            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
-            subprocess.check_call([environment['MSYS_SHELL'],
-                                   'make', 'install'])
+            subprocess.check_call([environ['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environ['MSYS_DIR']])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make', 'install'])
             os.chdir(here)
         else:
             global_install('Archive', website,

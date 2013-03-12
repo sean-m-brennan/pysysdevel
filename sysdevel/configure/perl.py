@@ -37,7 +37,7 @@ def null():
     environment['PERL_LIBS'] = []
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, perl_found
     if version is None:
         ver = '5'
@@ -60,7 +60,7 @@ def is_installed(version=None):
         ## Strawberry Perl from http://strawberryperl.com
         base_dirs.append(os.path.join('c:', os.sep, 'strawberry', 'perl'))
         try:
-            base_dirs.append(environment['MSYS_DIR'])
+            base_dirs.append(environ['MSYS_DIR'])
         except:
             pass
 
@@ -84,7 +84,7 @@ def is_installed(version=None):
     return perl_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not perl_found:
         if version is None:
             version = '5'

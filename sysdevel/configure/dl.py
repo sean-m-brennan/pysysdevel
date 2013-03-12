@@ -36,7 +36,7 @@ def null():
     environment['DL_LIBRARIES'] = None
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, libdl_found
     locations = []
     try:
@@ -57,7 +57,7 @@ def is_installed(version=None):
     return libdl_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not libdl_found:
         if 'windows' in platform.system().lower():
             website = ('http://dlfcn-win32.googlecode.com/files/',)
@@ -71,11 +71,10 @@ def install(target='build', version=None):
             build_dir = os.path.join(src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
-                                   '--prefix=' + environment['MSYS_PREFIX']])
-            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
-            subprocess.check_call([environment['MSYS_SHELL'],
-                                   'make', 'install'])
+            subprocess.check_call([environ['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environ['MSYS_PREFIX']])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make', 'install'])
             os.chdir(here)
         else:
             raise Exception('Non-Windows platform with missing libdl.')

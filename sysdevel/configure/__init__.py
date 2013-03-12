@@ -19,14 +19,6 @@ Entry point for finding/installing required libraries
 # 
 #**************************************************************************
 
-__all__ = ['antlr', 'archive', 'basemap_py', 'boost', 'cdf', 'ctypesgen',
-           'euclid_py', 'f2c', 'ffnet_py', 'gccxml', 'geos', 'gmat',
-           'gomp', 'graphviz', 'gsl', 'hdf5', 'hypre', 'matplotlib_py',
-           'mingw', 'mpich', 'perl', 'pil_py', 'proj4', 'pyephem_py',
-           'pyjamas', 'pyplusplus', 'pyserial', 'pywebsocket',
-           'shapely_py', 'sqlite3', 'wxglade_py', 'wxwidgets',]
-
-
 import os
 import sys
 import platform
@@ -40,24 +32,6 @@ class FatalError(SystemExit):
         sys.stderr.write('FatalError: ' + what + '\n')
         sys.stderr.flush()
         os._exit(-1)
-
-
-def __run_helper__(short_name, long_name, version, skip, install, quiet):
-    helper = sys.modules[long_name]
-    if not quiet:
-        sys.stdout.write('Checking for ' + short_name + '  ')
-        if not version is None:
-            sys.stdout.write('v.' + version + '  ')
-        sys.stdout.flush()
-    if skip:
-        helper.null()
-    elif not helper.is_installed(version):
-        if not install:
-            raise Exception(help_name + ' cannot be found.')
-        helper.install(version=version)
-    elif not quiet:
-        sys.stdout.write('\n')
-    return helper.environment.items()
 
 
 def simplify_version(version):
@@ -91,30 +65,53 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     if not quiet:
         sys.stdout.write('CONFIGURE \n')
     environment = dict()
-    for help_name in prerequisite_list:
-        req_version = None
-        if not isinstance(help_name, str) and \
-                not isinstance(help_name, unicode):
-            req_version = help_name[1]
-            help_name = help_name[0]
-        full_name = 'sysdevel.configure.' + help_name
-        try:
-            __import__(full_name)
-            environment = dict(__run_helper__(help_name, full_name, req_version,
-                                              skip, install, quiet) + 
-                               environment.items())
-        except ImportError, e:
-            full_name = 'sysdevel.configure.' + help_name + '_py'
-            try:
-                __import__(full_name)
-                environment = dict(__run_helper__(help_name, full_name,
-                                                  req_version,
-                                                  skip, install, quiet) + 
-                                   environment.items())
-            except ImportError, e:
-                sys.stderr.write('No setup helper module ' + help_name + '\n')
-                raise e
-
     environment['PACKAGE_VERSION'] = version
 
-    return environment
+    if 'windows' in platform.system().lower():
+        prerequisite_list.insert(0, 'mingw')
+    for help_name in prerequisite_list:
+        environment = __configure_package(help_name, environment)
+
+
+def __configure_package(help_name, environment):
+    req_version = None
+    if not isinstance(help_name, basestring):
+        req_version = help_name[1]
+        help_name = help_name[0]
+    full_name = 'sysdevel.configure.' + help_name
+    try:
+        __import__(full_name)
+        return __run_helper__(environment, help_name, full_name, req_version,
+                              skip, install, quiet)
+    except ImportError, e:
+        full_name = 'sysdevel.configure.' + help_name + '_py'
+        try:
+            __import__(full_name)
+            return __run_helper__(environment, help_name, full_name,
+                                  req_version, skip, install, quiet)
+        except ImportError, e:
+            sys.stderr.write('No setup helper module ' + help_name + '\n')
+            raise e
+
+
+def __run_helper__(environment, short_name, long_name, version,
+                   skip, install, quiet):
+    helper = sys.modules[long_name]
+    for dep in helper.DEPENDENCIES:
+        environment = __configure_package(dep, environment)
+    if not quiet:
+        sys.stdout.write('Checking for ' + short_name + '  ')
+        if not version is None:
+            sys.stdout.write('v.' + version + '  ')
+        sys.stdout.flush()
+    if skip:
+        helper.null()
+    elif not helper.is_installed(environment, version):
+        if not install:
+            raise Exception(help_name + ' cannot be found.')
+        helper.install(environment, version)
+    elif not quiet:
+        sys.stdout.write('\n')
+    return dict(helper.environment.items() + environment.items())
+
+

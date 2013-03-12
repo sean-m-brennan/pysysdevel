@@ -32,12 +32,12 @@ def null():
     pass
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, wx_found
     try:
         import wx
         ver = wx.__version__
-        if not version is None and ver < version:
+        if compare_versions(ver, version) == -1:
             return wxpy_found
         wxpy_found = True
     except:
@@ -45,7 +45,7 @@ def is_installed(version=None):
     return wxpy_found
     
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not wx_found:
         if version is None:
             version = '2.9.4.0'

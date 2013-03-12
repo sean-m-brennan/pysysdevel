@@ -22,6 +22,8 @@ Find/install Py++/PyGCCXML
 
 from sysdevel.util import *
 
+DEPENDENCIES = ['gccxml']
+
 environment = dict()
 pyplusplus_found = False
 
@@ -30,7 +32,7 @@ def null():
     pass
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global pyplusplus_found
     try:
         import pyplusplus
@@ -40,15 +42,18 @@ def is_installed(version=None):
     return pyplusplus_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     global environment
     if not pyplusplus_found:
         if version is None:
             version = '1.0.0'
-        website = 'http://downloads.sourceforge.net/project/pygccxml/pygccxml/pygccxml-' + version[:-2] + '/'
-        archive = 'pygccxml-' + version + '.zip'
-        install_pypkg_locally('pygccxml-' + version, website, archive, target)
+        mainsite = 'http://downloads.sourceforge.net/project/pygccxml/'
+        website = mainsite + 'pygccxml/pygccxml-' + version[:-2] + '/'
+        src_dir = 'pygccxml-' + str(version)
+        archive = src_dir + '.zip'
+        install_pypkg_locally(src_dir, website, archive, target)
 
-        website = 'http://downloads.sourceforge.net/project/pygccxml/pyplusplus/pyplusplus-' + version[:-2] + '/'
-        archive = 'pyplusplus-' + version + '.zip'
-        install_pypkg_locally('pyplusplus-' + version, website, archive, target)
+        website = mainsite + 'pyplusplus/pyplusplus-' + version[:-2] + '/'
+        src_dir = 'pyplusplus-' + str(version) + '.zip'
+        archive = src_dir + '.zip'
+        install_pypkg_locally(src_dir, website, archive, target)

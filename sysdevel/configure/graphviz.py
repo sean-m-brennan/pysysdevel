@@ -36,7 +36,7 @@ def null():
     environment['GRAPHVIZ_LIBS'] = []
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, graphviz_found
     base_dirs = []
     try:
@@ -50,7 +50,7 @@ def is_installed(version=None):
         except:
             pass
         try:
-            base_dirs.append(environment['MSYS_DIR'])
+            base_dirs.append(environ['MSYS_DIR'])
         except:
             pass
     try:
@@ -67,7 +67,7 @@ def is_installed(version=None):
     return graphviz_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not graphviz_found:
         if version is None:
             version = '2.30.1'
@@ -83,11 +83,10 @@ def install(target='build', version=None):
             build_dir = os.path.join(src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
-                                   '--prefix=' + environment['MSYS_DIR']])
-            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
-            subprocess.check_call([environment['MSYS_SHELL'],
-                                   'make', 'install'])
+            subprocess.check_call([environ['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environ['MSYS_DIR']])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environ['MSYS_SHELL'], 'make', 'install'])
             os.chdir(here)
         else:
             global_install('Graphviz', website,

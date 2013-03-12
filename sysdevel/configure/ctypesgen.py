@@ -34,7 +34,7 @@ def null():
     environment['CTYPESGEN_PATH'] = None
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, ctypesgen_found
     try:
         environment['CTYPESGEN'] = find_program('ctypesgen.py')
@@ -46,7 +46,7 @@ def is_installed(version=None):
     return ctypesgen_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     global environment
     if not ctypesgen_found:
         website = 'http://pypi.python.org/packages/source/c/ctypesgen/'

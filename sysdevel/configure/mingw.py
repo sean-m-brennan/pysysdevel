@@ -41,26 +41,28 @@ def null():
     environment['MINGW_FORTRAN'] = None
 
 
-def is_installed(version=None):
+def is_installed(environ, version):
     global environment, mingw_found
     ## Python was (most likely) built with msvcr90.dll, thus it's a dependency
     ## FIXME detect
     environment['MSYS_PREFIX'] = '/'
     environment['MINGW_PREFIX'] = '/mingw'
+    environment['MSVCRT_DIR'] = None
     try:
-        ## the easy/sure way
         environment['MSVCRT_DIR'] = os.environ['MSVCRT_DIR']
     except:
-        msvcrt_dirs = [os.path.join(os.environ['ProgramFiles'],
-                                    'Microsoft Visual Studio 9.0',
-                                    'VC', 'redist', 'x86',
-                                    'Microsoft.VC90.CRT'),
-                       os.environ['ProgramFiles'],
-                       ]
-        environment['MSVCRT_DIR'], _ = find_library('msvcr90', msvcrt_dirs)
+        try:
+            msvcrt_dirs = [os.path.join(os.environ['ProgramFiles'],
+                                        'Microsoft Visual Studio 9.0',
+                                        'VC', 'redist', 'x86',
+                                        'Microsoft.VC90.CRT'),
+                           os.environ['ProgramFiles'],
+                           ]
+            environment['MSVCRT_DIR'], _ = find_library('msvcr90', msvcrt_dirs)
+        except:
+            pass
 
     try:
-        ## the easy way
         mingw_root                   = os.environ['MINGW_ROOT']
         msys_root                    = os.path.join(mingw_root, 'msys', '1.0')
         environment['MINGW_DIR']     = mingw_root
@@ -74,7 +76,6 @@ def is_installed(version=None):
                                              os.path.join(mingw_root, 'bin'))
         mingw_found = True
     except:
-        ## look for it
         primary_loc = os.path.join('C:', os.sep, 'MinGW', 'bin')
         try:
             alt_loc = os.path.join(os.environ['ProgramFiles'], 'MinGW', 'bin')
@@ -96,7 +97,7 @@ def is_installed(version=None):
     return mingw_found
 
 
-def install(target='build', version=None):
+def install(environ, version, target='build'):
     if not mingw_found:
         if version is None:
             version = '20120426'
