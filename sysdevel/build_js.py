@@ -110,8 +110,7 @@ class build_js(build_ext):
                                excludes=['.svn', 'CVS'])
 
                 compiler = wext.compiler or \
-                    environ['PYJSBUILD_EXECUTABLE'] or \
-                    self.pyjscompiler
+                    environ['PYJSBUILD'] or self.pyjscompiler
                 if compiler is None:
                     raise DistutilsExecError, \
                         "no value pyjsbuild executable found or given"

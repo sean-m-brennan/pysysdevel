@@ -27,18 +27,13 @@ pyplusplus_found = False
 
 
 def null():
-    global environment
-    environment['PYPLUSPLUS_VERSION'] = None
+    pass
 
 
 def is_installed(version=None):
-    global environment, pyplusplus_found
+    global pyplusplus_found
     try:
         import pyplusplus
-        try:
-            environment['PYPLUSPLUS_VERSION'] = pyplusplus.__version__
-        except:
-            pass
         pyplusplus_found = True
     except Exception,e:
         print 'Py++ not found: ' + str(e)
@@ -57,4 +52,3 @@ def install(target='build', version=None):
         website = 'http://downloads.sourceforge.net/project/pygccxml/pyplusplus/pyplusplus-' + version[:-2] + '/'
         archive = 'pyplusplus-' + version + '.zip'
         install_pypkg_locally('pyplusplus-' + version, website, archive, target)
-        environment['PYPLUSPLUS_VERSIONSION'] = version

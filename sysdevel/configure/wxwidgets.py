@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find Boost
+Find wxWidgets library
 """
 #**************************************************************************
 # 
@@ -42,19 +42,46 @@ def is_installed(version=None):
         try:
             wx_config = find_program('wx-config')
         except:
-            return False
-    cppflags_cmd = [wx_config, '--cppflags']
-    process = subprocess.Popen(cppflags_cmd, stdout=subprocess.PIPE)
-    environment['WX_CPP_FLAGS'] = process.communicate()[0].split()
+            wx_found = False
+            return wx_found
+    try:
+        cppflags_cmd = [wx_config, '--cppflags']
+        process = subprocess.Popen(cppflags_cmd, stdout=subprocess.PIPE)
+        environment['WX_CPP_FLAGS'] = process.communicate()[0].split()
 
-    ldflags_cmd = [wx_config, '--libs', '--gl-libs', '--static=no']
-    process = subprocess.Popen(ldflags_cmd, stdout=subprocess.PIPE)
-    environment['WX_LD_FLAGS'] = process.communicate()[0].split()
-    return True
+        ldflags_cmd = [wx_config, '--libs', '--gl-libs', '--static=no']
+        process = subprocess.Popen(ldflags_cmd, stdout=subprocess.PIPE)
+        environment['WX_LD_FLAGS'] = process.communicate()[0].split()
+        wx_found = True
+    except:
+        pass
+    return wx_found
     
 
 def install(target='build', version=None):
     if not wx_found:
-        raise Exception('WxWidgets not found. (include=' +
-                        str(environment['WX_CPP_FLAGS']) + ', library=' +
-                        str(environment['WX_LD_FLAGS']) + ')')
+        if version is None:
+            version = '2.8.12'
+        website = ('http://prdownloads.sourceforge.net/wxwindows/',)
+        if 'windows' in platform.system().lower():
+            here = os.path.abspath(os.getcwd())
+            src_dir = 'wxMSW-' + str(version)
+            archive = src_dir + '.zip'
+            fetch(''.join(website), archive, archive)
+            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            build_dir = os.path.join(src_dir, '_build')
+            mkdir(build_dir)
+            os.chdir(build_dir)
+            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environment['MSYS_PREFIX']])
+            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environment['MSYS_SHELL'],
+                                   'make', 'install'])
+            os.chdir(here)
+        else:
+            global_install('wxWidgets', website,
+                           None,
+                           'wxgtk',
+                           'libwxbase-dev libwxgtk-dev',
+                           'wxBase wxGTK-devel')
+        is_installed()

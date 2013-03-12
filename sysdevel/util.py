@@ -35,12 +35,13 @@ import tempfile
 import tarfile
 import zipfile
 import subprocess
+import ctypes
 
 ## Prefer local implementations (urllib2, httplib) over global
 here = os.path.dirname(__file__)
 sys.path.insert(0, os.path.abspath(here))
 
-import urllib2, httplib
+import urllib2, httplib  ## Corrected for proper SSL handling
 
 
 
@@ -302,6 +303,31 @@ def download_progress(count, block_size, total_size):
         sys.stdout.flush()
 
 
+def fetch(website, remote, local):
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
+    set_downloading_file(remote)
+    if not os.path.exists(os.path.join(download_dir, local)):
+        urlretrieve(website + remote, os.path.join(download_dir, local),
+                    download_progress)
+        sys.stdout.write('\n')
+
+
+def unarchive(archive, target):
+    if not os.path.exists(target):
+        if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
+            z = tarfile.open(archive, 'r:gz')
+            z.extractall()
+        elif archive.endswith('.tar.bz2'):
+            z = tarfile.open(archive, 'r:bz2')
+            z.extractall()
+        elif archive.endswith('.zip'):
+            z = zipfile.ZipFile(archive, 'r')
+            z.extractall()
+        else:
+            raise Exception('Unrecognized archive compression: ' + archive)
+
+
 def install_pyscript_locally(website, name, build_dir):
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
@@ -310,11 +336,7 @@ def install_pyscript_locally(website, name, build_dir):
         os.makedirs(target_dir)
     try:
         sys.stdout.write('PREREQUISITE ' + name + ' ')
-        set_downloading_file(name)
-        if not os.path.exists(name):
-            urlretrieve(website + name, os.path.join(download_dir, name),
-                        download_progress)
-            sys.stdout.write('\n')
+        fetch(website, name, name)
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
         shutil.copy(os.path.join(download_dir, name), target_dir)
@@ -326,36 +348,16 @@ def install_pypkg_locally(name, website, archive, build_dir,
                           env=None, src_dir=None):
     if src_dir is None:
         src_dir = name
-    if not os.path.exists(download_dir):
-        os.makedirs(download_dir)
     here = os.path.abspath(os.getcwd())
     target_dir = os.path.abspath(build_dir)
     try:
-        set_downloading_file(archive)
-        if not os.path.exists(os.path.join(download_dir, archive)):
-            urlretrieve(website + archive, os.path.join(download_dir, archive),
-                        download_progress)
-            sys.stdout.write('\n')
+        fetch(website, archive, archive)
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
         os.chdir(target_dir)
         sys.stdout.write('PREREQUISITE ' + name + ' ')
         sys.stdout.flush()
-        if not os.path.exists(src_dir):
-            if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
-                z = tarfile.open(os.path.join(here, download_dir, archive),
-                                 'r:gz')
-                z.extractall()
-            elif archive.endswith('.tar.bz2'):
-                z = tarfile.open(os.path.join(here, download_dir, archive),
-                                 'r:bz2')
-                z.extractall()
-            elif archive.endswith('.zip'):
-                z = zipfile.ZipFile(os.path.join(here, download_dir, archive),
-                                    'r')
-                z.extractall()
-            else:
-                raise Exception('Unrecognized archive compression: ' + archive)
+        unarchive(os.path.join(here, download_dir, archive), src_dir)
         os.chdir(src_dir)
         if env:
             for e in env:
@@ -659,8 +661,97 @@ def clean_generated_files():
             pass
 
 
+def get_python_version():
+    return (str(sys.version_info[0]), str(sys.version_info[1]))
+
+
+def major_minor_version(ver):
+    sver = str(ver)
+    tpl = sver.split('.')
+    return '.'.join(tpl[0], tpl[1])
+
+
+def compare_versions(actual, requested):
+    if isinstance(actual, float):
+        actual = str(actual)
+    if isinstance(requested, float):
+        requested = str(requested)
+    actual.replace('_', '.')
+    requested.replace('_', '.')
+    if isinstance(actual, basestring):
+        ver1 = tuple(actual.split('.'))
+    else:
+        ver1 = actual
+    if isinstance(requested, basestring):
+        ver2 = tuple(requested.split('.'))
+    else:
+        ver2 = requested
+    if ver2 is None:
+        if ver1 is None:
+            return 0
+        return 1  ## None == latest
+    while len(ver1) < len(ver2):
+        ver1 = ver1 + (0,)
+    while len(ver1) > len(ver2):
+        ver2 = ver2 + (0,)
+    if ver1 < ver2:
+        return -1
+    if ver1 > ver2:
+        return 1
+    return 0
+
+
+class PrerequisiteError(Exception):
+    pass
+
+
+def as_admin():
+    try:
+        return os.geteuid() == 0
+    except AttributeError:
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+
+
+def global_install(what, website_tpl, winstaller, port, apt, yum):
+    sudo_prefix = []
+    if not as_admin():
+        sudo_prefix = ['sudo']
+
+    if 'windows' in platform.system().lower() and winstaller:
+        fetch(''.join(website_tpl), winstaller, winstaller)
+        installer = os.path.join(download_dir, winstaller)
+        if not as_admin:
+            import win32com.shell.shell as shell
+            ret = shell.ShellExecuteEx(lpVerb='runas', lpFile=installer)
+            if ret['hInstApp'] <= 32:
+                raise subprocess.CalledProcessError(ret['hInstApp'], installer)
+        else:
+            subprocess.check_call([installer])
+
+    elif 'darwin' in platform.system().lower() and port:
+        ## assumes macports installed
+        cmd_line = sudo_prefix + ['port', 'install',] + port.split()
+        subprocess.check_call(cmd_line)
+
+    elif 'linux' in platform.system().lower():
+        if _uses_apt_get() and apt:
+            cmd_line = sudo_prefix + ['apt-get', 'install',] + apt.split()
+            subprocess.check_call(cmd_line)
+
+        elif _uses_yum() and yum:
+            cmd_line = sudo_prefix + ['yum', 'install',] + yum.split()
+            subprocess.check_call(cmd_line)
+
+        else:
+            raise PrerequisiteError('Unsupported Linux flavor. Install ' +
+                                    what + 'by hand. See ' + website_tpl[0])
+    else:
+        raise PrerequisiteError('Unsupported platform. Install ' + what +
+                                'by hand. See ' + website_tpl[0])
+
+
 def get_script_relative_rpath(pkg_name, argv):
-    py_ver = 'python' + str(sys.version_info[0]) +'.'+ str(sys.version_info[1])
+    py_ver = 'python' + '.'.join(get_python_version())
     packages = 'site-packages'
     lib_dir = 'lib'
     if 'windows' in platform.system().lower():
@@ -669,8 +760,7 @@ def get_script_relative_rpath(pkg_name, argv):
         for arg in argv:
             if arg.startswith('--user'):
                 lib_dir = ''
-                py_ver = 'Python' + str(sys.version_info[0]) + \
-                    str(sys.version_info[1])
+                py_ver = 'Python' + ''.join(get_python_version())
             elif arg.startswith('--home'):
                 lib_dir = 'lib'
                 py_ver = 'python'
@@ -685,7 +775,7 @@ def get_script_relative_rpath(pkg_name, argv):
 
 
 def get_installed_base(loc):
-    ver = 'python'+ str(sys.version_info[0]) +'.'+ str(sys.version_info[1])
+    ver = 'python'+ '.'.join(get_python_version())
     if loc is None:
         loc = sys.prefix
     else:

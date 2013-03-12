@@ -28,7 +28,6 @@ matplotlib_found = False
 
 def null():
     global environment
-    environment['MATPLOTLIB_VERSION'] = None
     environment['MATPLOTLIB_DATA_FILES'] = []
 
 
@@ -38,13 +37,11 @@ def is_installed(version=None):
         import matplotlib
         ver = matplotlib.__version__
         if not version is None and ver < version:
-            print 'Found matplotlib v.' + ver
             return matplotlib_found
-        environment['MATPLOTLIB_VERSION'] = ver
         environment['MATPLOTLIB_DATA_FILES'] = matplotlib.get_py2exe_datafiles()
         matplotlib_found = True
     except Exception,e:
-        print 'Matplotlib not found: ' + str(e)
+        pass
     return matplotlib_found
 
 
@@ -57,7 +54,6 @@ def install(target='build', version=None):
             version = '1.2.0'
         archive = 'matplotlib-' + version + '.tar.gz'
         install_pypkg_locally('matplotlib-' + version, website, archive, target)
-        environment['MATPLOTLIB_VERSION'] = version
 
         ## matplotlib.get_py2exe_datafiles (can't re-import properly here)
         datapath = os.path.abspath(os.path.join(target, local_lib_dir,

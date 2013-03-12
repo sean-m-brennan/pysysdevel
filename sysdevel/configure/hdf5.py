@@ -31,48 +31,73 @@ hdf5_found = False
 def null():
     global environment
     environment['HDF5_INCLUDE_DIR'] = None
-    environment['HDF5_LIBRARY_DIR'] = None
+    environment['HDF5_LIB_DIR'] = None
     environment['HDF5_LIBRARIES'] = []
     environment['HDF5_LIBS'] = []
 
 
 def is_installed(version=None):
     global environment, hdf5_found
-    hdf5_dev_dir = ''
+    base_dirs = []
     try:
-        hdf5_lib_list = ['hdf5', 'hdf5_fortran', 'hdf5_cpp',
-                         'hdf5_hl', 'hdf5hl_fortran', 'hdf5_hl_cpp',]
-        if 'windows' in platform.system().lower():
-            hdf5_lib_list = ['hdf5dll', 'hdf5_fortrandll', 'hdf5_cppdll',
-                             'hdf5_hldll', 'hdf5_hl_fortrandll', 'hdf5_hl_cppdll',]
+        base_dirs.append(os.environ['HDF5_ROOT'])
+    except:
+        pass
+    if 'windows' in platform.system().lower():
         try:
-            hdf5_dev_dir = os.environ['HDF5_ROOT']
+            progfiles = os.environ['ProgramFiles']
+            base_dirs.append(os.path.join(progfiles, 'HDF_Group', 'HDF5'))
         except:
             pass
-        if hdf5_dev_dir != '':
-            hdf5_lib_dir, hdf5_libs  = find_libraries('hdf5', [hdf5_dev_dir])
-            hdf5_inc_dir = find_header('hdf5.h', [hdf5_dev_dir])
-        else:
-            base_dirs = []
-            if 'windows' in platform.system().lower():
-                progfiles = os.environ['ProgramFiles']
-                base_dirs += [os.path.join(progfiles, 'HDF_Group', 'HDF5')]
-            hdf5_lib_dir, hdf5_libs  = find_libraries('hdf5', base_dirs)
-            hdf5_inc_dir = find_header('hdf5.h', base_dirs)
-        environment['HDF5_INCLUDE_DIR'] = hdf5_inc_dir
-        environment['HDF5_LIBRARY_DIR'] = hdf5_lib_dir
-        environment['HDF5_LIBRARIES'] = hdf5_libs
-        environment['HDF5_LIBS'] = hdf5_lib_list
-        ## FIXME derive from found libs
+        try:
+            base_dirs.append(environment['MSYS_DIR'])
+        except:
+            pass
+    try:
+        hdf5_lib_dir, hdf5_libs  = find_libraries('hdf5', base_dirs)
+        hdf5_inc_dir = find_header('hdf5.h', base_dirs)
         hdf5_found = True
-    except Exception,e:
-        print e
-        hdf5_found = False
+    except:
+        return hdf5_found
+
+    hdf5_lib_list = ['hdf5', 'hdf5_fortran', 'hdf5_cpp',
+                     'hdf5_hl', 'hdf5hl_fortran', 'hdf5_hl_cpp',]
+    if 'windows' in platform.system().lower():
+        hdf5_lib_list = ['hdf5dll', 'hdf5_fortrandll', 'hdf5_cppdll',
+                         'hdf5_hldll', 'hdf5_hl_fortrandll', 'hdf5_hl_cppdll',]
+    environment['HDF5_INCLUDE_DIR'] = hdf5_inc_dir
+    environment['HDF5_LIB_DIR'] = hdf5_lib_dir
+    environment['HDF5_LIBS'] = hdf5_libs
+    environment['HDF5_LIBRARIES'] = hdf5_lib_list
     return hdf5_found
 
 
 def install(target='build', version=None):
-    ## User must install
-    raise Exception('HDF5 development library required, but not installed.' +
-                    '\nTry http://www.hdfgroup.org/HDF5/release/obtain5.html;' +
-                    ' or yum install hdf5-devel')
+    if not hdf5_found:
+        if version is None:
+            version = '1.8.10'
+        website = ('http://www.hdfgroup.org/',
+                   'ftp/HDF5/releases/hdf5-1.8.10/src-' + str(version) + '/')
+        if 'windows' in platform.system().lower():
+            ## assumes MinGW installed and detected
+            here = os.path.abspath(os.getcwd())
+            src_dir = 'hdf5-' + str(version)
+            archive = src_dir + '.tar.bz2'
+            fetch(''.join(website), archive, archive)
+            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            build_dir = os.path.join(src_dir, '_build')
+            mkdir(build_dir)
+            os.chdir(build_dir)
+            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environment['MSYS_DIR']])
+            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environment['MSYS_SHELL'],
+                                   'make', 'install'])
+            os.chdir(here)
+        else:
+            global_install('HDF5', website,
+                           None,
+                           'hdf5',
+                           'hdf5-devel',
+                           'libhdf5-dev')
+        is_installed()

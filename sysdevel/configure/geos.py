@@ -38,40 +38,62 @@ def null():
 
 def is_installed(version=None):
     global environment, geos_found
-    geos_dev_dir = ''
+    base_dirs = []
     try:
+        base_dirs.append(os.environ['GEOS_ROOT'])
+    except:
+        pass
+    if 'windows' in platform.system().lower():
+        base_dirs.append(os.path.join('C:', os.sep, 'OSGeo4W'))
         try:
-            geos_dev_dir = os.environ['GEOS_ROOT']
+            base_dirs.append(environment['MSYS_DIR'])
         except:
             pass
-        if geos_dev_dir != '':
-            geos_lib_dir, geos_libs  = find_libraries('geos_c', [geos_dev_dir])
-            geos_inc_dir = find_header('geos_c.h', [geos_dev_dir])
-        else:
-            base_dirs = []
-            if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('C:', os.sep, 'OSGeo4W')]
-            geos_lib_dir, geos_libs  = find_libraries('geos_c', base_dirs)
-            geos_inc_dir = find_header('geos_c.h', base_dirs)
-        quoted_ver = get_header_version(os.path.join(geos_inc_dir, 'geos_c.h'),
+    try:
+        lib_dir, libs  = find_libraries('geos_c', base_dirs)
+        inc_dir = find_header('geos_c.h', base_dirs)
+        quoted_ver = get_header_version(os.path.join(inc_dir, 'geos_c.h'),
                                         'GEOS_VERSION ')
         ver = quoted_ver[1:-1]
         if not version is None and ver < version:
-            print 'Found libgeos_c v.' + ver
             return geos_found
-        environment['GEOS_INCLUDE_DIR'] = geos_inc_dir
-        environment['GEOS_LIBRARY_DIR'] = geos_lib_dir
-        environment['GEOS_LIBRARIES'] = geos_libs
-        environment['GEOS_LIBS'] = ['geos', ' geos_c',]
         geos_found = True
-    except Exception,e:
-        print e
-        geos_found = False
+    except:
+        return geos_found
+
+    environment['GEOS_INCLUDE_DIR'] = inc_dir
+    environment['GEOS_LIBRARY_DIR'] = lib_dir
+    environment['GEOS_LIBRARIES'] = libs
+    environment['GEOS_LIBS'] = ['geos', ' geos_c',]
     return geos_found
 
 
 def install(target='build', version=None):
-    ## User must install
-    raise Exception('GEOS development library required, but not installed.' +
-                    '\nTry http://trac.osgeo.org/geos/;' +
-                    ' or yum install geos-devel')
+    if not geos_found:
+        if version is None:
+            version = '3.3.8'
+        website = ('http://trac.osgeo.org/geos/',)
+        if 'windows' in platform.system().lower():
+            ## assumes MinGW installed and detected
+            website = ('http://download.osgeo.org/geos/',)
+            here = os.path.abspath(os.getcwd())
+            src_dir = 'geos-' + str(version)
+            archive = src_dir + '.tar.bz2'
+            fetch(''.join(website), archive, archive)
+            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            build_dir = os.path.join(src_dir, '_build')
+            mkdir(build_dir)
+            os.chdir(build_dir)
+            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environment['MSYS_DIR']])
+            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environment['MSYS_SHELL'],
+                                   'make', 'install'])
+            os.chdir(here)
+        else:
+            global_install('Geos', website,
+                           None,
+                           'geos',
+                           'libgeos-dev',
+                           'geos-devel')
+        is_installed()

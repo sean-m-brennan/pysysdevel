@@ -86,7 +86,7 @@ class build_src(_build_src):
                     for src in grammar.sources:
                         ## ANTLR cannot parse from a separate directory
                         shutil.copy(os.path.join(source_dir, src), '.')
-                        cmd_line = list(environ['ANTLR_COMMAND'])
+                        cmd_line = list(environ['ANTLR'])
                         cmd_line.append(src)
                         status = subprocess.call(cmd_line)
                         if status != 0:

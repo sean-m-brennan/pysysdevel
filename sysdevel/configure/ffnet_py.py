@@ -27,31 +27,29 @@ ffnet_found = False
 
 
 def null():
-    global environment
-    environment['FFNET_VERSION'] = None
+    pass
 
 
 def is_installed(version=None):
-    global environment, ffnet_found
+    global ffnet_found
     try:
         import ffnet
-        environment['FFNET_VERSION'] = ffnet.version
+        ver = ffnet.version
+        if not version is None and ver < version:
+            return ffnet_found
         ffnet_found = True
     except Exception,e:
-        print e
+        pass
     return ffnet_found
 
 
 def install(target='build', version=None):
     global environment
     if not ffnet_found:
-        if 'windows' in platform.system().lower():
-            raise Exception('Install networkx and ffnet from ' + 
-                            'http://www.lfd.uci.edu/~gohlke/pythonlibs')
-        website = 'http://prdownloads.sourceforge.net/ffnet/'
         if version is None:
             version = '0.7.1'
-        archive = 'ffnet-' + version + '.tar.gz'
+        website = 'http://prdownloads.sourceforge.net/ffnet/'
+        archive = 'ffnet-' + str(version) + '.tar.gz'
         install_pypkg_locally('ffnet-' + version, website, archive, target)
         environment['FFNET_VERSION'] = version
 

@@ -38,37 +38,61 @@ def null():
 
 def is_installed(version=None):
     global environment, graphviz_found
-    graphviz_dev_dir = ''
+    base_dirs = []
     try:
+        base_dirs.append(os.environ['GRAPHVIZ_ROOT'])
+    except:
+        pass
+    if 'windows' in platform.system().lower():
         try:
-            graphviz_dev_dir = os.environ['GRAPHVIZ_ROOT']
+            progfiles = os.environ['ProgramFiles']
+            base_dirs += glob.glob(os.path.join(progfiles, 'Graphviz*'))
         except:
             pass
-        if graphviz_dev_dir != '':
-            graphviz_lib_dir, graphviz_lib  = find_library('graph',
-                                                           [graphviz_dev_dir])
-            graphviz_inc_dir = find_header('graph.h',
-                                           [graphviz_dev_dir], ['graphviz'])
-        else:
-            base_dirs = []
-            if 'windows' in platform.system().lower():
-                progfiles = os.environ['ProgramFiles']
-                base_dirs += glob.glob(os.path.join(progfiles, 'Graphviz*'))
-            graphviz_lib_dir, graphviz_lib = find_library('graph', base_dirs)
-            graphviz_inc_dir = find_header('graph.h', base_dirs, ['graphviz'])
-        environment['GRAPHVIZ_INCLUDE_DIR'] = graphviz_inc_dir
-        environment['GRAPHVIZ_LIBRARY_DIR'] = graphviz_lib_dir
-        environment['GRAPHVIZ_LIBRARIES'] = [graphviz_lib]
-        environment['GRAPHVIZ_LIBS'] = ['graph']
+        try:
+            base_dirs.append(environment['MSYS_DIR'])
+        except:
+            pass
+    try:
+        inc_dir = find_header('graph.h', base_dirs, ['graphviz'])
+        lib_dir, lib = find_library('graph', base_dirs)
         graphviz_found = True
-    except Exception,e:
-        print e
-        graphviz_found = False
+    except:
+        return graphviz_found
+
+    environment['GRAPHVIZ_INCLUDE_DIR'] = inc_dir
+    environment['GRAPHVIZ_LIBRARY_DIR'] = lib_dir
+    environment['GRAPHVIZ_LIBRARIES'] = [lib]
+    environment['GRAPHVIZ_LIBS'] = ['graph']
     return graphviz_found
 
 
 def install(target='build', version=None):
-    ## User must install
-    raise Exception('Graphviz library required, but not installed.' +
-                    '\nTry http://www.graphviz.org/Download.php;' +
-                    ' or yum install graphviz-devel')
+    if not graphviz_found:
+        if version is None:
+            version = '2.30.1'
+        website = ('http://www.graphviz.org/',
+                   'pub/graphviz/stable/SOURCES/')
+        if 'windows' in platform.system().lower():
+            ## assumes MinGW installed and detected
+            here = os.path.abspath(os.getcwd())
+            src_dir = 'graphviz-' + str(version)
+            archive = src_dir + '.tar.gz'
+            fetch(''.join(website), archive, archive)
+            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            build_dir = os.path.join(src_dir, '_build')
+            mkdir(build_dir)
+            os.chdir(build_dir)
+            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environment['MSYS_DIR']])
+            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environment['MSYS_SHELL'],
+                                   'make', 'install'])
+            os.chdir(here)
+        else:
+            global_install('Graphviz', website,
+                           None,
+                           'graphviz-devel',
+                           'graphviz-dev',
+                           'graphviz-devel')
+        is_installed()

@@ -38,35 +38,58 @@ def null():
 
 def is_installed(version=None):
     global environment, proj4_found
-    proj4_dev_dir = ''
+    base_dirs = []
     try:
+        base_dirs.append(os.environ['PROJ4_ROOT'])
+    except:
+        pass
+    if 'windows' in platform.system().lower():
+        base_dirs.append(os.path.join('C:', os.sep, 'OSGeo4W'))
         try:
-            proj4_dev_dir = os.environ['PROJ4_ROOT']
+            base_dirs.apeend(environment['MSYS_DIR'])
         except:
             pass
-        if proj4_dev_dir != '':
-            proj4_lib_dir, proj4_libs  = find_libraries('proj', [proj4_dev_dir])
-            proj4_inc_dir = find_header('proj_api.h', [proj4_dev_dir])
-        else:
-            base_dirs = []
-            if 'windows' in platform.system().lower():
-                base_dirs += [os.path.join('C:', os.sep, 'OSGeo4W')]
-            proj4_lib_dir, proj4_libs  = find_libraries('proj', base_dirs)
-            proj4_inc_dir = find_header('proj_api.h', base_dirs)
-        environment['PROJ4_INCLUDE_DIR'] = proj4_inc_dir
-        environment['PROJ4_LIBRARY_DIR'] = proj4_lib_dir
-        environment['PROJ4_LIBRARIES'] = proj4_libs
-        environment['PROJ4_LIBS'] = ['proj',]
-        ## FIXME derive from found libs
+    try:
+        proj4_inc_dir = find_header('proj_api.h', base_dirs)
+        proj4_lib_dir, proj4_libs  = find_libraries('proj', base_dirs)
         proj4_found = True
-    except Exception,e:
-        print e
-        proj4_found = False
+    except:
+        return proj4_found
+
+    environment['PROJ4_INCLUDE_DIR'] = proj4_inc_dir
+    environment['PROJ4_LIBRARY_DIR'] = proj4_lib_dir
+    environment['PROJ4_LIBRARIES'] = proj4_libs
+    environment['PROJ4_LIBS'] = ['proj',]
     return proj4_found
 
 
 def install(target='build', version=None):
-    ## User must install
-    raise Exception('PROJ4 development library required, but not installed.' +
-                    '\nTry http://trac.osgeo.org/proj/;' +
-                    ' or yum install proj-devel')
+    if not proj4_found:
+        if version is None:
+            version = '4.8.0'
+        website = ('http://trac.osgeo.org/proj/',)
+        if 'windows' in platform.system().lower():
+            ## assumes MinGW installed and detected
+            website = ('http://download.osgeo.org/proj/',)
+            here = os.path.abspath(os.getcwd())
+            src_dir = 'proj-' + str(version)
+            archive = src_dir + '.tar.gz'
+            fetch(''.join(website), archive, archive)
+            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            build_dir = os.path.join(src_dir, '_build')
+            mkdir(build_dir)
+            os.chdir(build_dir)
+            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environment['MSYS_DIR']])
+            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environment['MSYS_SHELL'],
+                                   'make', 'install'])
+            os.chdir(here)
+        else:
+            global_install('PROJ4', website,
+                           None,
+                           'libproj4',
+                           'libproj-dev',
+                           'proj-devel')
+        is_installed()
+

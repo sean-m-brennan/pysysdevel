@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find/install Euclid
+Find Breathe
 """
 #**************************************************************************
 # 
@@ -20,10 +20,12 @@ Find/install Euclid
 # 
 #**************************************************************************
 
+import os, platform
+
 from sysdevel.util import *
 
 environment = dict()
-euclid_found = False
+breathe_found = False
 
 
 def null():
@@ -31,22 +33,22 @@ def null():
 
 
 def is_installed(version=None):
-    global environment, euclid_found
+    global environment, breathe_found
     try:
-        import euclid
-        ver = euclid.__revision__.split()[1]
+        import breathe
+        ver = breathe.__version__
         if not version is None and ver < version:
-            return euclid_found
-        euclid_found = True
-    except Exception,e:
+            return breathe_found
+        breathe_found = True
+    except:
         pass
-    return euclid_found
+    return breathe_found
 
 
 def install(target='build', version=None):
-    if not euclid_found:
-        website = 'https://pypi.python.org/packages/source/e/euclid/'
+    if not breathe_found:
+        website = 'https://pypi.python.org/packages/source/b/breathe/'
         if version is None:
-            version = '0.01'
-        archive ='euclid-' + str(version) + '.tar.gz' 
-        install_pypkg_locally('euclid-' + str(version), website, archive, target)
+            version = '0.7.5'
+        archive ='breathe-' + str(version) + '.tar.gz' 
+        install_pypkg_locally('breathe-' + str(version), website, archive, target)

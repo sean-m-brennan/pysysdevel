@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find/install Euclid
+Find Doxygen
 """
 #**************************************************************************
 # 
@@ -20,33 +20,38 @@ Find/install Euclid
 # 
 #**************************************************************************
 
+import os, platform
+
 from sysdevel.util import *
 
 environment = dict()
-euclid_found = False
+doxygen_found = False
 
 
 def null():
-    pass
+    global environment
+    environment['DOXYGEN'] = None
 
 
 def is_installed(version=None):
-    global environment, euclid_found
+    global environment, doxygen_found
     try:
-        import euclid
-        ver = euclid.__revision__.split()[1]
-        if not version is None and ver < version:
-            return euclid_found
-        euclid_found = True
-    except Exception,e:
+        environment['DOXYGEN'] = find_program('doxygen')
+        doxygen_found = True
+    except:
         pass
-    return euclid_found
+    return doxygen_found
 
 
 def install(target='build', version=None):
-    if not euclid_found:
-        website = 'https://pypi.python.org/packages/source/e/euclid/'
+    if not doxygen_found:
         if version is None:
-            version = '0.01'
-        archive ='euclid-' + str(version) + '.tar.gz' 
-        install_pypkg_locally('euclid-' + str(version), website, archive, target)
+            version = '1.8.3.1'
+        website = ('http://ftp.stack.nl/pub/users/dimitri/',)
+        installer = 'doxygen-' + str(version) + '-setup.exe'
+        global_install('Doxygen', website,
+                       installer,
+                       'doxygen',
+                       'doxygen',
+                       'doxygen')
+        is_installed()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find/install Euclid
+Find wxPython
 """
 #**************************************************************************
 # 
@@ -20,10 +20,12 @@ Find/install Euclid
 # 
 #**************************************************************************
 
+import os, subprocess
+
 from sysdevel.util import *
 
 environment = dict()
-euclid_found = False
+wxpy_found = False
 
 
 def null():
@@ -31,22 +33,30 @@ def null():
 
 
 def is_installed(version=None):
-    global environment, euclid_found
+    global environment, wx_found
     try:
-        import euclid
-        ver = euclid.__revision__.split()[1]
+        import wx
+        ver = wx.__version__
         if not version is None and ver < version:
-            return euclid_found
-        euclid_found = True
-    except Exception,e:
+            return wxpy_found
+        wxpy_found = True
+    except:
         pass
-    return euclid_found
-
+    return wxpy_found
+    
 
 def install(target='build', version=None):
-    if not euclid_found:
-        website = 'https://pypi.python.org/packages/source/e/euclid/'
+    if not wx_found:
         if version is None:
-            version = '0.01'
-        archive ='euclid-' + str(version) + '.tar.gz' 
-        install_pypkg_locally('euclid-' + str(version), website, archive, target)
+            version = '2.9.4.0'
+        short_ver = '.'.join(version.split('.')[:2])
+        py_ver = ''.join(get_python_version())
+        website = ('http://sourceforge.net/projects/wxpython/',
+                   'files/wxPython/' + str(version) + '/')
+        global_install('wxPython', website,
+                       'wxPython' + short_ver + '-win32-' + str(version) + \
+                           '-py' + py_ver + '.exe',
+                       'py' + py_ver + '-wxpython-devel',
+                       'python-wxgtk python-wxtools',
+                       'wxPython-devel')
+        is_installed()

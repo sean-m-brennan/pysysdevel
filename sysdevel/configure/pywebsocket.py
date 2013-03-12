@@ -20,6 +20,8 @@ Find/install mod_pywebsocket
 # 
 #**************************************************************************
 
+import os
+
 from sysdevel.util import *
 
 environment = dict()
@@ -27,23 +29,16 @@ pywebsocket_found = False
 
 
 def null():
-    global environment
-    environment['PYWEBSOCKET_ROOT'] = None
+    pass
 
 
 def is_installed(version=None):
-    global environment, pywebsocket_found
+    global pywebsocket_found
     try:
-        pywebsocket_root = os.environ['PYWEBSOCKET_ROOT']
-        environment['PYWEBSOCKET_ROOT'] = pywebsocket_root
-        sys.path.insert(0, os.path.join(pywebsocket_root, 'build', 'lib'))
+        import mod_pywebsocket
         pywebsocket_found = True
     except:
-        try:
-            import mod_pywebsocket
-            pywebsocket_found = True
-        except:
-            pass
+        pass
     return pywebsocket_found
 
 

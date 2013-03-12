@@ -32,34 +32,65 @@ def null():
     global environment
     environment['ARCHIVE_INCLUDE_DIR'] = None
     environment['ARCHIVE_LIB_DIR'] = None
+    environment['ARCHIVE_LIBS'] = []
+    environment['ARCHIVE_LIBRARIES'] = []
 
 
 def is_installed(version=None):
     global environment, archive_found
+    locations = []
     try:
-        ## the easy way
-        archive_root = os.environ['ARCHIVE_ROOT']
-        environment['ARCHIVE_INCLUDE_DIR'] = os.path.join(archive_root,
-                                                          'include')
-        environment['ARCHIVE_LIB_DIR'] = os.path.join(archive_root, 'lib')
+        locations.append(os.environ['ARCHIVE_ROOT'])
+    except:
+        pass
+    try:
+        locations.append(os.path.join(os.environ['ProgramFiles'], 'GnuWin32'))
+    except:
+        pass
+    try:
+        locations.append(environment['MSYS_DIR'])
+    except:
+        pass
+    try:
+        incl_dir = find_header('archive.h', locations)
+        lib_dir, lib = find_library('archive', locations)
         archive_found = True
     except:
-        ## look for it
-        try:
-            win_loc = os.path.join(os.environ['ProgramFiles'], 'GnuWin32')
-        except:
-            win_loc = None
-        incl_dir = find_header('archive.h', [win_loc,])
-        environment['ARCHIVE_INCLUDE_DIR'] = incl_dir
-        environment['ARCHIVE_LIB_DIR'], _ = find_library('archive',
-                                                         [win_loc,])
-        archive_found = True
+        return archive_found
+
+    environment['ARCHIVE_INCLUDE_DIR'] = incl_dir
+    environment['ARCHIVE_LIB_DIR'] = lib_dir
+    environment['ARCHIVE_LIBS'] = [lib]
+    environment['ARCHIVE_LIBRARIES'] = ['archive']
     return archive_found
 
 
 def install(target='build', version=None):
     if not archive_found:
-        raise Exception('Archive not found. (ARCHIVE_ROOT=' +
-                        str(environment['ARCHIVE_ROOT']) + ', include=' +
-                        str(environment['ARCHIVE_INCLUDE_DIR']) + ', library=' +
-                        str(environment['ARCHIVE_LIB_DIR']) + ')')
+        if version is None:
+            version = '3.1.2'
+        website = ('http://libarchive.org/',
+                   'downloads/')
+        if 'windows' in platform.system().lower():
+            ## assumes MinGW installed and detected
+            here = os.path.abspath(os.getcwd())
+            src_dir = 'libarchive-' + str(version)
+            archive = src_dir + '.tar.gz'
+            fetch(''.join(website), archive, archive)
+            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            build_dir = os.path.join(src_dir, '_build')
+            mkdir(build_dir)
+            os.chdir(build_dir)
+            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environment['MSYS_PREFIX']])
+            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environment['MSYS_SHELL'],
+                                   'make', 'install'])
+            os.chdir(here)
+        else:
+            global_install('Archive', website,
+                           None,
+                           'libarchive',
+                           'libarchive-dev',
+                           'libarchive-devel')
+        is_installed()

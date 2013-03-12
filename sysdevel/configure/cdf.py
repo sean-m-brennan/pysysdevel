@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find NASA CDF library
+Find NASA Common Data Format library
 """
 #**************************************************************************
 # 
@@ -32,96 +32,77 @@ def null():
     global environment
     environment['CDF_INCLUDE_DIR'] = None
     environment['CDF_LIB_DIR'] = None
-    environment['CDF_LIBRARY'] = None
+    environment['CDF_LIBS'] = []
+    environment['CDF_LIBRARIES'] = []
 
 
 def is_installed(version=None):
     global environment, cdf_found
-    if version is None:
-        version = '34_1'
+    lib_name = 'cdf'
+    if 'windows' in platform.system().lower():
+        lib_name += 'NativeLibrary'
+    base_dirs = []
+    if 'windows' in platform.system().lower():
+        base_dirs.append(os.path.join('C:', os.sep, 'CDF Distribution',
+                                      'cdf' + version + '-dist'))
+        try:
+            base_dirs.append(environment['MSYS_DIR'])
+        except:
+            pass
     try:
-        base_dirs = []
-        if 'windows' in platform.system().lower():
-            base_dirs += [os.path.join('C:', os.sep, 'CDF Distribution',
-                                       'cdf' + version + '-dist')]
         incl_dir = find_header('cdf.h', base_dirs)
-        environment['CDF_INCLUDE_DIR'] = incl_dir
-        lib_name = 'cdf'
-        if 'windows' in platform.system().lower():
-            lib_name += 'NativeLibrary'
-        environment['CDF_LIB_DIR'], lib = find_library('cdf', base_dirs)
-        environment['CDF_LIBRARY'] = lib
+        lib_dir, lib = find_library('cdf', base_dirs)
         cdf_found = True
     except Exception,e:
-        cdf_found = False
+        return cdf_found
+
+    environment['CDF_INCLUDE_DIR'] = incl_dir
+    environment['CDF_LIB_DIR'] = lib_dir
+    environment['CDF_LIBS'] = [lib]
+    environment['CDF_LIBRARIES'] = [lib_name]
     return cdf_found
 
 
 def install(target='build', version=None):
-    global environment
-    if version is None:
-        version = '34_1'
-    website = 'http://cdaweb.gsfc.nasa.gov/pub/software/cdf/dist/cdf' + version
-    if 'windows' in platform.system().lower():
-        os_dir = 'w32'
-        oper_sys = 'mingw'
-    elif 'darwin' in platform.system().lower():
-        oper_sys = os_dir = 'macosx'
-    else:
-        oper_sys = os_dir = 'linux'
-    website += '/' + os_dir + '/'
-    if 'windows' in platform.system().lower():
-        raise Exception('Install CDF maually from ' + website)
-    here = os.path.abspath(os.getcwd())
-    abs_target = os.path.abspath(target)
-    if not os.path.exists(download_dir):
-        os.makedirs(download_dir)
     if not cdf_found:
-        try:
-            import tarfile, subprocess
-            download_file = 'cdf' + version + '-dist-cdf.tar.gz'
-            set_downloading_file(download_file)
-            if not os.path.exists(os.path.join(download_dir, download_file)):
-                urlretrieve(website + download_file,
-                            os.path.join(download_dir, download_file),
-                            download_progress)
-                sys.stdout.write('\n')
-            if not os.path.exists(target):
-                os.makedirs(target)
-            os.chdir(target)
-            pkg_dir = 'cdf' + version + '-dist'
-            src_dir = os.path.abspath(os.path.join(pkg_dir, 'src'))
-            if not os.path.exists(pkg_dir):
-                z = tarfile.open(os.path.join(here, download_dir,
-                                              download_file), 'r:gz')
-                z.extractall()
-            os.chdir(pkg_dir)
-            log_file = pkg_dir + '.log'
-            log = open(log_file, 'w')
-            cmd_line = ['make', 'OS=' + oper_sys, 'ENV=gnu', 'all']
-            try:
-                sys.stdout.write('PREREQUISITE cdf ')
-                p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = process_progress(p)
-                log.close()
-            except KeyboardInterrupt,e:
-                p.terminate()
-                log.close()
-                raise e
-            if status != 0:
-                sys.stdout.write(' failed; See ' + log_file + '\n')
-                raise Exception("Command '" + cmd_line + "' failed: " +
-                                str(status))
+        if version is None:
+            version = '34_1'
+        website = ('http://cdf.gsfc.nasa.gov/',)
+        if not 'darwin' in platform.system().lower():
+            website = ('http://cdaweb.gsfc.nasa.gov/',
+                       'pub/software/cdf/dist/cdf' + str(version))
+            if 'windows' in platform.system().lower():
+                os_dir = 'w32'
+                oper_sys = 'mingw'
+            elif 'linux' in platform.system().lower():
+                oper_sys = os_dir = 'linux'
+            website += '/' + os_dir + '/'
+            here = os.path.abspath(os.getcwd())
+            src_dir = 'cdf' + str(version) + '-dist'
+            archive = src_dir + '-cdf.tar.gz'
+            fetch(''.join(website), archive, archive)
+            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            build_dir = os.path.join(src_dir, '_build')
+            mkdir(build_dir)
+            os.chdir(build_dir)
+            if 'windows' in platform.system().lower():
+                ## assumes MinGW installed and detected
+                subprocess.check_call([environment['MSYS_SHELL'],
+                                       'make',  'OS=mingw', 'ENV=gnu', 'all'])
+                subprocess.check_call([environment['MSYS_SHELL'],
+                                       'make', 'INSTALLDIR=/', 'install'])
             else:
-                sys.stdout.write(' done\n')
-            environment['CDF_INCLUDE_DIR'] = os.path.join(src_dir, 'include')
-            environment['CDF_LIB_DIR'], lib = find_library('cdf', [src_dir],
-                                                           limit=True)
-            environment['CDF_LIBRARY'] = lib
+                sudo_prefix = []
+                if not as_admin():
+                    sudo_prefix = ['sudo']
+                subprocess.check_call(['make', 'OS=linux', 'ENV=gnu', 'all'])
+                subprocess.check_call(sudo_prefix + 
+                                      ['make', 'INSTALLDIR=/usr', 'install'])
             os.chdir(here)
-        except Exception, e:
-            os.chdir(here)
-            print e
-            raise Exception('CDF not found. (include=' +
-                            str(environment['CDF_INCLUDE_DIR']) + ' library=' +
-                            str(environment['CDF_LIB_DIR']) + ')')
+        else:
+            global_install('CDF', website,
+                           None,
+                           'cdf',
+                           None,
+                           None)
+        is_installed()

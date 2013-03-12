@@ -32,26 +32,55 @@ def null():
     global environment
     environment['SQLITE3_INCLUDE_DIR'] = None
     environment['SQLITE3_LIB_DIR'] = None
-    environment['SQLITE3_LIBRARY'] = None
+    environment['SQLITE3_LIBS'] = []
+    environment['SQLITE3_LIBRARIES'] = []
 
 
 def is_installed(version=None):
     global environment, sqlite_found
-    ## look for it
+    locations = []
     try:
-        win_loc = os.path.join(os.environ['ProgramFiles'], 'SQLite3')
+        locations.append(os.environ['MSYS_DIR'])
     except:
-        win_loc = None
-    incl_dir = find_header('sqlite3.h', [win_loc,])
+        pass
+    try:
+        incl_dir = find_header('sqlite3.h', locations)
+        lib_dir, lib = find_library('sqlite3', locations)
+        sqlite_found = True
+    except:
+        return sqlite_found
+
     environment['SQLITE3_INCLUDE_DIR'] = incl_dir
-    environment['SQLITE3_LIB_DIR'], lib = find_library('sqlite3', [win_loc,])
-    environment['SQLITE3_LIBRARY'] = 'sqlite3'
-    sqlite_found = True
+    environment['SQLITE3_LIB_DIR'] = lib_dir
+    environment['SQLITE3_LIBS'] = [lib]
+    environment['SQLITE3_LIBRARY'] = ['sqlite3']
     return sqlite_found
 
 
 def install(target='build', version=None):
     if not sqlite_found:
-        raise Exception('SQLite3 not found. (include=' +
-                        str(environment['SQLITE3_INCLUDE_DIR']) + ', library=' +
-                        str(environment['SQLITE3_LIB_DIR']) + ')')
+        if version is None:
+            version = '3071502'
+        website = ('http://sqlite.org/', )
+        if 'windows' in platform.system().lower():
+            here = os.path.abspath(os.getcwd())
+            src_dir = 'sqlite-autoconf-' + str(version)
+            archive = src_dir + '.tar.gz'
+            fetch(''.join(website), archive, archive)
+            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            build_dir = os.path.join(src_dir, '_build')
+            mkdir(build_dir)
+            os.chdir(build_dir)
+            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environment['MSYS_PREFIX']])
+            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environment['MSYS_SHELL'],
+                                   'make', 'install'])
+            os.chdir(here)
+        else:
+            global_install('SQLite3', website,
+                           None,
+                           'sqlite3',
+                           'libsqlite-dev',
+                           'sqlite-devel')
+        is_installed()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find/install Euclid
+Find Sphinx
 """
 #**************************************************************************
 # 
@@ -20,10 +20,12 @@ Find/install Euclid
 # 
 #**************************************************************************
 
+import os, platform
+
 from sysdevel.util import *
 
 environment = dict()
-euclid_found = False
+sphinx_found = False
 
 
 def null():
@@ -31,22 +33,22 @@ def null():
 
 
 def is_installed(version=None):
-    global environment, euclid_found
+    global sphinx_found
     try:
-        import euclid
-        ver = euclid.__revision__.split()[1]
+        import sphinx
+        ver = sphinx.__version__
         if not version is None and ver < version:
-            return euclid_found
-        euclid_found = True
-    except Exception,e:
+            return sphinx_found
+        sphinx_found = True
+    except:
         pass
-    return euclid_found
+    return sphinx_found
 
 
 def install(target='build', version=None):
-    if not euclid_found:
-        website = 'https://pypi.python.org/packages/source/e/euclid/'
+    if not sphinx_found:
+        website = 'https://pypi.python.org/packages/source/S/Sphinx/'
         if version is None:
-            version = '0.01'
-        archive ='euclid-' + str(version) + '.tar.gz' 
-        install_pypkg_locally('euclid-' + str(version), website, archive, target)
+            version = '1.1.3'
+        archive ='Sphinx-' + str(version) + '.tar.gz' 
+        install_pypkg_locally('Sphinx-' + str(version), website, archive, target)

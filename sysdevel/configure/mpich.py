@@ -38,46 +38,71 @@ def null():
 
 def is_installed(version=None):
     global environment, mpich_found
-    mpich_dev_dir = ''
+    base_dirs = []
+    mpich_lib_list = ['mpich', 'mpichcxx', 'mpichf90']
+    if 'windows' in platform.system().lower():
+        mpich_lib_list = ['mpi', 'mpicxx', 'fmpich2g']
+    arch = 'i686'
+    if struct.calcsize('P') == 8:
+        arch = 'x86_64'
+
     try:
-        mpich_lib_list = ['mpich', 'mpichcxx', 'mpichf90']
-        if 'windows' in platform.system().lower():
-            mpich_lib_list = ['mpi', 'mpicxx', 'fmpich2g']
-        arch = 'i686'
-        if struct.calcsize('P') == 8:
-            arch = 'x86_64'
+        base_dirs.append(os.environ['MPICH_ROOT'])
+    except:
+        pass
+    if 'windows' in platform.system().lower():
         try:
-            mpich_dev_dir = os.environ['MPICH_ROOT']
+            progfiles = os.environ['PROGRAMFILES']
+            base_dirs.append(os.path.join(progfiles, 'MPICH2'))
         except:
             pass
-        if mpich_dev_dir != '':
-            mpich_lib_dir, mpich_lib  = find_library(mpich_lib_list[0],
-                                                     [mpich_dev_dir])
-            mpich_inc_dir = find_header('mpi.h', [mpich_dev_dir],
-                                        ['mpich2', 'mpich2-' + arch,])
-        else:
-            base_dirs = []
-            if 'windows' in platform.system().lower():
-                progfiles = os.environ['PROGRAMFILES']
-                base_dirs += [os.path.join(progfiles, 'MPICH2')]
-            mpich_lib_dir, mpich_libs  = find_libraries(mpich_lib_list[0],
-                                                        base_dirs)
-            mpich_inc_dir = find_header('mpi.h', base_dirs,
-                                        ['mpich2', 'mpich2-' + arch,])
-        environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir
-        environment['MPICH_LIBRARY_DIR'] = mpich_lib_dir
-        environment['MPICH_LIBRARIES'] = mpich_libs
-        environment['MPICH_LIBS'] = mpich_lib_list
-        ## FIXME derive from found libs
+        try:
+            base_dirs.append(environment['MSYS_DIR'])
+        except:
+            pass
+
+    try:
+        mpich_lib_dir, mpich_libs  = find_libraries(mpich_lib_list[0],
+                                                    base_dirs)
+        mpich_inc_dir = find_header('mpi.h', base_dirs,
+                                    ['mpich2', 'mpich2-' + arch,])
         mpich_found = True
     except Exception,e:
-        print e
-        mpich_found = False
+        return mpich_found
+
+    environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir
+    environment['MPICH_LIBRARY_DIR'] = mpich_lib_dir
+    environment['MPICH_LIBRARIES'] = mpich_libs
+    environment['MPICH_LIBS'] = mpich_lib_list
     return mpich_found
 
 
 def install(target='build', version=None):
-    ## User must install
-    raise Exception('MPICH development library required, but not installed.' +
-                    '\nTry http://www.mpich.org/downloads/;' +
-                    ' or yum install mpich2-devel')
+    if not gsl_found:
+        if version is None:
+            version = '3.0.2'
+        website = ('http://www.mpich.org/',
+                   'static/tarballs/' + str(version) + '/')
+        if 'windows' in platform.system().lower():
+            ## assumes MinGW installed and detected
+            here = os.path.abspath(os.getcwd())
+            src_dir = 'mpich-' + str(version)
+            archive = src_dir + '.tar.gz'
+            fetch(''.join(website), archive, archive)
+            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            build_dir = os.path.join(src_dir, '_build')
+            mkdir(build_dir)
+            os.chdir(build_dir)
+            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environment['MSYS_DIR']])
+            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environment['MSYS_SHELL'],
+                                   'make', 'install'])
+            os.chdir(here)
+        else:
+            global_install('MPICH', website,
+                           None,
+                           'mpich-devel',
+                           'libmpich2-dev',
+                           'mpich2-devel')
+        is_installed()

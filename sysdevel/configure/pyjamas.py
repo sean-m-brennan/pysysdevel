@@ -25,30 +25,25 @@ from sysdevel.util import *
 environment = dict()
 pyjamas_found = False
 
-NEWEST = True
-
 
 def null():
     global environment
-    environment['PYJAMAS_ROOT'] = None
-    environment['PYJSBUILD_EXECUTABLE'] = None
+    environment['PYJSBUILD'] = None
 
 
 def is_installed(version=None):
     global environment, pyjamas_found
     try:
         pyjamas_root = os.environ['PYJAMAS_ROOT']
-        environment['PYJAMAS_ROOT'] = pyjamas_root
         pyjs_bin = os.path.join(pyjamas_root, 'bin')
         pyjs_lib = os.path.join(pyjamas_root, 'build', 'lib')
-        environment['PYJSBUILD_EXECUTABLE'] = find_program('pyjsbuild',
-                                                           [pyjs_bin])
+        environment['PYJSBUILD'] = find_program('pyjsbuild', [pyjs_bin])
         sys.path.insert(0, pyjs_lib)
         pyjamas_found = True
     except:
         try:
             import pyjs
-            environment['PYJSBUILD_EXECUTABLE'] = find_program('pyjsbuild')
+            environment['PYJSBUILD'] = find_program('pyjsbuild')
             pyjamas_found = True
         except:
             pass
@@ -62,19 +57,11 @@ def install(target='build', version=None):
             os.makedirs(download_dir)
         try:
             import tarfile, zipfile, subprocess
-            if NEWEST:
-                if version is None:
-                    version = '0.8.1a'
-                website = 'https://github.com/pyjs/pyjs/zipball/0.8.1a'
-                download_file = ''
-                archive = 'pyjs-' + version + '.zip'
-            else:
-                if version is None:
-                    version = '0.8.1~+alpha'
-                website = 'http://downloads.sourceforge.net/project/pyjamas/pyjamas/' + version[:5] + '/'
-                download_file = 'pyjamas-' + version + '.tar.gz'
-                archive = download_file
-            environment['PYJAMAS_VERSION'] = version
+            if version is None:
+                version = '0.8.1a'
+            website = 'https://github.com/pyjs/pyjs/zipball/0.8.1a'
+            download_file = ''
+            archive = 'pyjs-' + version + '.zip'
             here = os.path.abspath(os.getcwd())
             set_downloading_file(archive)
             if not os.path.exists(target):
@@ -138,9 +125,7 @@ def install(target='build', version=None):
                                 'installed locally; See ' + log_file)
             sys.stdout.write(' done\n')
             os.chdir(here)
-            environment['PYJAMAS_ROOT'] = working_dir
-            environment['PYJSBUILD_EXECUTABLE'] = find_program('pyjsbuild',
-                                                               [working_dir])
+            environment['PYJSBUILD'] = find_program('pyjsbuild', [working_dir])
             sys.path.insert(0, os.path.join(working_dir, 'build', 'lib'))
         except Exception,e:
             raise Exception('Unable to install Pyjamas: ' + str(e))

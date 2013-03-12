@@ -32,8 +32,7 @@ python_antlr_found = False
 def null():
     global environment
     environment['JAVA_RUNTIME'] = None
-    environment['ANTLR_JARFILE'] = None
-    environment['ANTLR_COMMAND'] = None
+    environment['ANTLR'] = None
 
 
 def is_installed(version=None):
@@ -42,9 +41,9 @@ def is_installed(version=None):
         _sep_ = ':'
         if 'windows' in platform.system().lower():
             _sep_ = ';'
-        ## Sun Java is required
-        environment['JAVA_RUNTIME'] = find_program('java')
-        _check_java_version(environment['JAVA_RUNTIME'], 'Sun', 'HotSpot')
+        ## Sun/Oracle Java is required
+        environment['JAVA_RUNTIME'] = java_runtime = find_program('java')
+        _check_java_version(java_runtime, 'Sun', 'HotSpot')
         classpaths = []
         try:
             pathlist = os.environ['CLASSPATH'].split(_sep_)
@@ -63,11 +62,9 @@ def is_installed(version=None):
         jarfile = find_file('antlr*3*.jar', ['/usr/share/java',
                                              '/opt/local/share/java',
                                              win_loc, antlr_root,] + classpaths)
-        environment['ANTLR_JARFILE'] = os.path.abspath(jarfile)
-        environment['ANTLR_COMMAND'] = [
-                environment['JAVA_RUNTIME'],
-                "-classpath", environment['ANTLR_JARFILE'],
-                "org.antlr.Tool",]
+        environment['ANTLR'] = [java_runtime,
+                                "-classpath", os.path.abspath(jarfile),
+                                "org.antlr.Tool",]
         java_antlr_found = True
     except Exception,e:
         print 'ANTLR not found: ' + str(e)
@@ -110,11 +107,9 @@ def install(target='build', version=None):
             z.extractall()
             jarfile = os.path.join('antlr-' + ver, 'lib',
                                    'antlr-' + ver + '.jar')
-            environment['ANTLR_JARFILE'] = os.path.abspath(jarfile)
-            environment['ANTLR_COMMAND'] = [
-                environment['JAVA_RUNTIME'],
-                "-classpath", environment['ANTLR_JARFILE'],
-                "org.antlr.Tool",]
+            environment['ANTLR'] = [environment['JAVA_RUNTIME'],
+                                    "-classpath", os.path.abspath(jarfile),
+                                    "org.antlr.Tool",]
             os.chdir(here)
         except Exception,e:
             os.chdir(here)

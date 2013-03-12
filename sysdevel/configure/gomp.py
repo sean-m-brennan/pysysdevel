@@ -48,7 +48,5 @@ def is_installed(version=None):
 
 
 def install(target='build', version=None):
-    ## User must install
-    raise Exception('GOMP development library required, but not installed.' +
-                    '\nlibgomp is part of GCC, your development environment ' +
-                    'may be messed up. Try yum install libgomp, at a minimum.')
+    raise Exception('GOMP is part of GCC; Your development environment ' +
+                    'is seriously screwed up. Look for libgomp.so.')

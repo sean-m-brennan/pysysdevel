@@ -25,30 +25,58 @@ import os
 from sysdevel.util import *
 
 environment = dict()
-dl_found = False
+libdl_found = False
 
 
 def null():
     global environment
     environment['DL_INCLUDE_DIR'] = None
     environment['DL_LIB_DIR'] = None
+    environment['DL_LIBS'] = None
+    environment['DL_LIBRARIES'] = None
 
 
 def is_installed(version=None):
-    global environment, dl_found
+    global environment, libdl_found
+    locations = []
     try:
-        extra_loc = os.environ['DL_ROOT']
+        locations.append(os.environ['MSYS_DIR'])
     except:
-        extra_loc = None
-    environment['DL_INCLUDE_DIR'] = find_header('dlfcn.h', [extra_loc,])
-    environment['DL_LIB_DIR'], _ = find_library('dl', [extra_loc,])
-    dl_found = True
-    return dl_found
+        pass
+    try:
+        incl_dir = find_header('dl.h', locations)
+        lib_dir, lib = find_library('dl', locations)
+        libdl_found = True
+    except:
+        return libdl_found
+
+    environment['DL_INCLUDE_DIR'] = incl_dir
+    environment['DL_LIB_DIR'] = lib_dir
+    environment['DL_LIB'] = [lib]
+    environment['DL_LIBRARIES'] = ['dl']
+    return libdl_found
 
 
 def install(target='build', version=None):
-    if not dl_found:
-        raise Exception('libdl not found. (DL_ROOT=' +
-                        str(environment['DL_ROOT']) + ', include=' +
-                        str(environment['DL_INCLUDE_DIR']) + ', library=' +
-                        str(environment['DL_LIB_DIR']) + ')')
+    if not libdl_found:
+        if 'windows' in platform.system().lower():
+            website = ('http://dlfcn-win32.googlecode.com/files/',)
+            if version is None:
+                version = 'r19'
+            here = os.path.abspath(os.getcwd())
+            src_dir = 'dlfcn-win32-' + str(version)
+            archive = src_dir + '.tar.bz2'
+            fetch(''.join(website), archive, archive)
+            unarchive(os.path.join(here, download_dir, archive), src_dir)
+            build_dir = os.path.join(src_dir, '_build')
+            mkdir(build_dir)
+            os.chdir(build_dir)
+            subprocess.check_call([environment['MSYS_SHELL'], '../configure',
+                                   '--prefix=' + environment['MSYS_PREFIX']])
+            subprocess.check_call([environment['MSYS_SHELL'], 'make'])
+            subprocess.check_call([environment['MSYS_SHELL'],
+                                   'make', 'install'])
+            os.chdir(here)
+        else:
+            raise Exception('Non-Windows platform with missing libdl.')
+        is_installed()

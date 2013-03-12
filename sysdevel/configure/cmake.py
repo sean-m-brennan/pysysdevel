@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find/install Euclid
+Find CMake
 """
 #**************************************************************************
 # 
@@ -20,33 +20,50 @@ Find/install Euclid
 # 
 #**************************************************************************
 
+import os, subprocess
+
 from sysdevel.util import *
 
 environment = dict()
-euclid_found = False
+cmake_found = False
 
 
 def null():
-    pass
+    global environment
+    environment['CMAKE'] = None
 
 
 def is_installed(version=None):
-    global environment, euclid_found
+    global environment, cmake_found
+    if version is None:
+        version = '2.8'
+    base_dirs = []
     try:
-        import euclid
-        ver = euclid.__revision__.split()[1]
-        if not version is None and ver < version:
-            return euclid_found
-        euclid_found = True
-    except Exception,e:
+        progfiles = os.environ['ProgramFiles']
+        base_dirs.append(os.path.join(progfiles, 'CMake ' + version, 'bin'))
+    except:
         pass
-    return euclid_found
+    try:
+        base_dirs.append(os.path.join(environment['MSYS_DIR'], 'bin'))
+    except:
+        pass
+    try:
+        environment['CMAKE'] = find_program('cmake', base_dirs)
+        cmake_found = True
+    except:
+        pass
+    return cmake_found
 
 
 def install(target='build', version=None):
-    if not euclid_found:
-        website = 'https://pypi.python.org/packages/source/e/euclid/'
+    if not cmake_found:
         if version is None:
-            version = '0.01'
-        archive ='euclid-' + str(version) + '.tar.gz' 
-        install_pypkg_locally('euclid-' + str(version), website, archive, target)
+            version = '2.8.10.2'
+        website = ('http://www.cmake.org/',
+                   'files/v' + major_minor_version(version) + '/')
+        global_install('CMake', website,
+                       'cmake-' + str(version) + '-win32-x86.exe',
+                       'cmake',
+                       'cmake',
+                       'cmake')
+        is_installed()

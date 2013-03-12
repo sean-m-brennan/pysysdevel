@@ -71,8 +71,7 @@ def is_installed(version=None):
                 gmat_version = 'svn-' + str(rev_num).zfill(version_zfill)
             except:
                 gmat_version = 'R2012a'
-        if not version is None and gmat_version < version:
-            gmat_found = False
+        if compare_versions(gmat_version, version) == -1:
             return gmat_found
         environment['GMAT_ROOT'] = gmat_root
         environment['GMAT_VERSION'] = gmat_version
@@ -81,92 +80,45 @@ def is_installed(version=None):
         except:
             ## WARNING: enforcing the svn convention on release data location
             environment['GMAT_DATA'] = os.path.join(gmat_root, 'application')
-        _set_environment(gmat_root, gmat_version)
-        gmat_found = True
+        if os.path.exists(gmat_root):
+            _set_environment(gmat_root, gmat_version)
+            gmat_found = True
     except Exception, e:
-        gmat_found = False
+        pass
     return gmat_found
 
 
 def install(target='build', version=SVN):
     global environment
-    if not os.path.exists(download_dir):
-        os.makedirs(download_dir)
-    try:
-        if version == SVN:
-            import pysvn
-            svn_repo = 'https://gmat.svn.sourceforge.net/svnroot/gmat/trunk'
-            client = pysvn.Client()
-            src_dir = os.path.join(target, 'gmat-svn-src')
-            data_dir = os.path.join(src_dir, 'application')
-            if not os.path.exists(src_dir):
-                client.checkout(svn_repo, src_dir)
-            rev_num = client.info(src_dir).revision.number
-            ver = version_strs[version] +'-'+ str(rev_num).zfill(version_zfill)
-        else:
-            import tarfile, zipfile
-            here = os.path.abspath(os.getcwd())
-            website = 'http://prdownloads.sourceforge.net/gmat/'
-            if version is None:
-                ver = version_strs[VERSION]
-            else:
-                ver = version
-            archive = '.zip'
-            archive_dir = 'gmat-src-' + ver + '-Beta'
-            data_archive_dir = 'gmat-datafiles-' + ver + '-Beta'
-            src_dir = os.path.join(target, archive_dir)
-            data_dir = os.path.join(target, data_archive_dir)
+    if version == SVN:
+        import pysvn
+        svn_repo = 'https://gmat.svn.sourceforge.net/svnroot/gmat/trunk'
+        client = pysvn.Client()
+        src_dir = os.path.join(target, 'gmat-svn-src')
+        data_dir = os.path.join(src_dir, 'application')
+        if not os.path.exists(src_dir):
+            client.checkout(svn_repo, src_dir)
+        rev_num = client.info(src_dir).revision.number
+        ver = version_strs[version] +'-'+ str(rev_num).zfill(version_zfill)
+    else:
+        if version is None:
+            version = version_strs[VERSION]
+        website = ('http://prdownloads.sourceforge.net/gmat/',)
+        here = os.path.abspath(os.getcwd())
+        src_dir = 'gmat-src-' + str(version) + '-Beta'
+        archive = src_dir + '.zip'
+        fetch(''.join(website), archive, archive)
+        unarchive(os.path.join(here, download_dir, archive), src_dir)
 
-            download_file = archive_dir + archive
-            set_downloading_file(download_file)
-            if not os.path.exists(os.path.join(download_dir, download_file)):
-                urlretrieve(website + download_file,
-                            os.path.join(download_dir, download_file),
-                            download_progress)
-                sys.stdout.write('\n')
-            if not os.path.isdir(target):
-                os.makedirs(target)
-            os.chdir(target)
-            if not os.path.exists(archive_dir):
-                if archive == '.zip':
-                    z = zipfile.ZipFile(os.path.join(here, download_dir, 
-                                                     download_file), 'r')
-                    z.extractall()
-                else:
-                    tgz = tarfile.open(os.path.join(here, download_dir, 
-                                                    download_file), 'r:gz')
-                    tgz.extractall()
-            os.chdir(here)
+        data_dir = 'gmat-datafiles-' + str(version) + '-Beta'
+        data_archive = data_dir + '.zip'
+        fetch(''.join(website), data_archive, data_archive)
+        unarchive(os.path.join(here, download_dir, data_archive), data_dir)
 
-            download_file = data_archive_dir + archive
-            set_downloading_file(download_file)
-            if not os.path.exists(os.path.join(download_dir, download_file)):
-                urlretrieve(website + download_file,
-                            os.path.join(download_dir, download_file),
-                            download_progress)
-                sys.stdout.write('\n')
-            if not os.path.exists(target):
-                os.makedirs(target)
-            os.chdir(target)
-            if not os.path.exists(data_archive_dir):
-                if archive == '.zip':
-                    z = zipfile.ZipFile(os.path.join(here, download_dir,
-                                                     download_file), 'r')
-                    z.extractall()
-                else:
-                    tgz = tarfile.open(os.path.join(here, download_dir,
-                                                    download_file), 'r:gz')
-                    tgz.extractall()
-            os.chdir(here)
-        environment['GMAT_VERSION'] = ver
-        environment['GMAT_ROOT'] = src_dir
-        environment['GMAT_DATA'] = data_dir
-        _set_environment(src_dir, ver)
-        print 'Using GMAT version ' + ver
-    except Exception,e:
-        print 'Unable to install GMAT sources: ' + str(e)
-        traceback.print_exc(file=sys.stderr)
-
+    environment['GMAT_VERSION'] = ver
+    environment['GMAT_ROOT'] = src_dir
+    environment['GMAT_DATA'] = data_dir
+    _set_environment(src_dir, ver)
 
 
 def _do_patching(gmat_root, gmat_version):

@@ -27,8 +27,7 @@ shapely_found = False
 
 
 def null():
-    global environment
-    environment['SHAPELY_VERSION'] = None
+    pass
 
 
 def is_installed(version=None):
@@ -38,7 +37,6 @@ def is_installed(version=None):
         ver = shapely.__version__
         if not version is None and ver < version:
             return shapely_found
-        environment['SHAPELY_VERSION'] = ver
         environment['SHAPELY_DEPENDENCIES'] = ['geos_c']
         shapely_found = True
     except Exception,e:
@@ -49,13 +47,9 @@ def is_installed(version=None):
 def install(target='build', version=None):
     global environment
     if not shapely_found:
-        if 'windows' in platform.system().lower():
-            raise Exception('Install shapely from ' + 
-                            'http://www.lfd.uci.edu/~gohlke/pythonlibs/#shapely')
         website = 'http://pypi.python.org/packages/source/S/Shapely/'
         if version is None:
             version = '1.2.16'
-        archive = 'Shapely-' + version + '.tar.gz'
-        install_pypkg_locally('Shapely-' + version, website, archive, target)
-        environment['SHAPELY_VERSION'] = version
+        archive = 'Shapely-' + str(version) + '.tar.gz'
+        install_pypkg_locally('Shapely-' + str(version), website, archive, target)
         environment['SHAPELY_DEPENDENCIES'] = ['geos_c']

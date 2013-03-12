@@ -32,14 +32,21 @@ def null():
     global environment
     environment['MSVCRT_DIR'] = None
     environment['MINGW_DIR'] = None
+    environment['MINGW_PREFIX'] = '/mingw'
+    environment['MSYS_DIR'] = None
+    environment['MSYS_SHELL'] = None
+    environment['MSYS_PREFIX'] = '/'
     environment['MINGW_CC'] = None
-    environment['MINGW_FORTRAN'] = None
     environment['MINGW_CXX'] = None
+    environment['MINGW_FORTRAN'] = None
 
 
 def is_installed(version=None):
     global environment, mingw_found
     ## Python was (most likely) built with msvcr90.dll, thus it's a dependency
+    ## FIXME detect
+    environment['MSYS_PREFIX'] = '/'
+    environment['MINGW_PREFIX'] = '/mingw'
     try:
         ## the easy/sure way
         environment['MSVCRT_DIR'] = os.environ['MSVCRT_DIR']
@@ -56,11 +63,14 @@ def is_installed(version=None):
         ## the easy way
         mingw_root = os.environ['MINGW_ROOT']
         environment['MINGW_DIR']     = mingw_root
-        environment['MINGW_CC']      = find_program('mingw32-gcc.exe',
+        environment['MSYS_DIR']      = os.path.join(mingw_root, 'msys', '1.0')
+        environment['MSYS_SHELL']    = find_program('msys.bat',
+                                                    environment['MSYS_DIR'])
+        environment['MINGW_CC']      = find_program('mingw32-gcc',
                                              os.path.join(mingw_root, 'bin'))
-        environment['MINGW_FORTRAN'] = find_program('mingw32-gfortran.exe',
+        environment['MINGW_CXX']     = find_program('mingw32-g++',
                                              os.path.join(mingw_root, 'bin'))
-        environment['MINGW_CXX']     = find_program('mingw32-g++.exe',
+        environment['MINGW_FORTRAN'] = find_program('mingw32-gfortran',
                                              os.path.join(mingw_root, 'bin'))
         mingw_found = True
     except:
@@ -70,17 +80,31 @@ def is_installed(version=None):
             alt_loc = os.path.join(os.environ['ProgramFiles'], 'MinGW', 'bin')
         except:
             alt_loc = None
-        environment['MINGW_CC']      = find_program('mingw32-gcc.exe',
+        environment['MINGW_CC']  = m = find_program('mingw32-gcc',
                                                     [primary_loc, alt_loc,])
-        environment['MINGW_FORTRAN'] = find_program('mingw32-gfortran.exe',
+        environment['MINGW_CXX']     = find_program('mingw32-g++',
                                                     [primary_loc, alt_loc,])
-        environment['MINGW_CXX'] = m = find_program('mingw32-g++.exe',
+        environment['MINGW_FORTRAN'] = find_program('mingw32-gfortran',
                                                     [primary_loc, alt_loc,])
         environment['MINGW_DIR']     = os.path.split(m)[0]
+        environment['MSYS_DIR']      = os.path.join(os.path.split(m)[0],
+                                                    'msys', '1.0')
+        environment['MSYS_SHELL']    = find_program('msys.bat',
+                                                    environment['MSYS_DIR'])
         mingw_found = True
     return mingw_found
 
 
 def install(target='build', version=None):
     if not mingw_found:
-        raise Exception('MinGW required, but not found.')
+        if version is None:
+            version = '20120426'
+        website = ('http://sourceforge.net/projects/mingw/',
+                   'files/Installer/mingw-get-inst/mingw-get-inst-' +
+                   str(version) + '/')
+        global_install('MinGW', website,
+                       'mingw-get-inst-' + str(version) + '.exe',
+                       'i386-mingw32-binutils i386-mingw32-gcc i386-mingw32-runtime i386-mingw32-w32api',
+                       'mingw32-binutils gcc-mingw32 mingw32-runtime',
+                       'mingw32-gcc-c++ mingw32-gcc mingw32-pthreads mingw32-w32api mingw32-binutils mingw32-runtime mingw32-filesystem mingw32-cpp mingw32-dlfcn-static')
+        is_installed()
