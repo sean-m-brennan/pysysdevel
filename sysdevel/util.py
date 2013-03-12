@@ -313,19 +313,24 @@ def fetch(website, remote, local):
         sys.stdout.write('\n')
 
 
-def unarchive(archive, target):
-    if not os.path.exists(target):
+def unarchive(archive, dest, target):
+    here = os.path.abspath(os.getcwd())
+    if not os.path.exists(os.path.join(dest, target)):
+        if not os.path.exists(dest):
+            mkdir(dest)
+        os.chdir(dest)
         if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
-            z = tarfile.open(archive, 'r:gz')
+            z = tarfile.open(os.path.join(here, archive), 'r:gz')
             z.extractall()
         elif archive.endswith('.tar.bz2'):
-            z = tarfile.open(archive, 'r:bz2')
+            z = tarfile.open(os.path.join(here, archive), 'r:bz2')
             z.extractall()
         elif archive.endswith('.zip'):
-            z = zipfile.ZipFile(archive, 'r')
+            z = zipfile.ZipFile(os.path.join(here, archive), 'r')
             z.extractall()
         else:
             raise Exception('Unrecognized archive compression: ' + archive)
+        os.chdir(here)
 
 
 def install_pyscript_locally(website, name, build_dir):
@@ -748,6 +753,24 @@ def global_install(what, website_tpl, winstaller, port, apt, yum):
     else:
         raise PrerequisiteError('Unsupported platform. Install ' + what +
                                 'by hand. See ' + website_tpl[0])
+
+
+def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None):
+    path = os.path.join(environ['MSYS_DIR'], 'bin') + ';' + \
+        os.path.join(environ['MINGW_DIR'], 'bin') + ';'
+    os_environ = os.environ.copy()
+    old_path = os_environ.get('PATH', '')
+    os_environ['PATH'] = path #+ old_path
+    shell = os.path.join(environ['MSYS_DIR'], 'bin', 'bash.exe')
+    if not isinstance(cmd_line, basestring):
+        cmd_line = ' '.join(cmd_line)
+    full_cmd_line = shell + ' -c "' + cmd_line + '"'
+    print 'Running ' + repr(full_cmd_line)
+    p = subprocess.Popen(full_cmd_line,
+                         env=os_environ)
+    status = p.wait()
+    if status != 0:
+        raise subprocess.CalledProcessError(status, cmd_line)
 
 
 def get_script_relative_rpath(pkg_name, argv):

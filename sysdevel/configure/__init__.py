@@ -70,10 +70,11 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     if 'windows' in platform.system().lower():
         prerequisite_list.insert(0, 'mingw')
     for help_name in prerequisite_list:
-        environment = __configure_package(help_name, environment)
+        environment = __configure_package(environment, help_name,
+                                          skip, install, quiet)
 
 
-def __configure_package(help_name, environment):
+def __configure_package(environment, help_name, skip, install, quiet):
     req_version = None
     if not isinstance(help_name, basestring):
         req_version = help_name[1]
@@ -81,8 +82,8 @@ def __configure_package(help_name, environment):
     full_name = 'sysdevel.configure.' + help_name
     try:
         __import__(full_name)
-        return __run_helper__(environment, help_name, full_name, req_version,
-                              skip, install, quiet)
+        return __run_helper__(environment, help_name, full_name,
+                              req_version, skip, install, quiet)
     except ImportError, e:
         full_name = 'sysdevel.configure.' + help_name + '_py'
         try:
@@ -97,8 +98,11 @@ def __configure_package(help_name, environment):
 def __run_helper__(environment, short_name, long_name, version,
                    skip, install, quiet):
     helper = sys.modules[long_name]
-    for dep in helper.DEPENDENCIES:
-        environment = __configure_package(dep, environment)
+    dependencies = []
+    if hasattr(helper, 'DEPENDENCIES'):
+        dependencies = helper.DEPENDENCIES
+    for dep in dependencies:
+        environment = __configure_package(environment, dep, skip, install, quiet)
     if not quiet:
         sys.stdout.write('Checking for ' + short_name + '  ')
         if not version is None:

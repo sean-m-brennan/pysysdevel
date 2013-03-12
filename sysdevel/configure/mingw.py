@@ -63,37 +63,30 @@ def is_installed(environ, version):
             pass
 
     try:
-        mingw_root                   = os.environ['MINGW_ROOT']
-        msys_root                    = os.path.join(mingw_root, 'msys', '1.0')
-        environment['MINGW_DIR']     = mingw_root
-        environment['MSYS_DIR']      = msys_root
-        environment['MSYS_SHELL']    = find_program('msys.bat', [msys_root])
-        environment['MINGW_CC']      = find_program('mingw32-gcc',
-                                             os.path.join(mingw_root, 'bin'))
-        environment['MINGW_CXX']     = find_program('mingw32-g++',
-                                             os.path.join(mingw_root, 'bin'))
-        environment['MINGW_FORTRAN'] = find_program('mingw32-gfortran',
-                                             os.path.join(mingw_root, 'bin'))
+        mingw_root = os.environ['MINGW_ROOT']
+    except:
+        locations = [os.path.join('C:', os.sep, 'MinGW')]
+        try:
+            locations.append(os.path.join(os.environ['ProgramFiles'], 'MinGW'))
+        except:
+            pass
+        gcc = find_program('mingw32-gcc', locations)
+        mingw_root = os.path.abspath(os.path.join(os.path.dirname(gcc), '..'))
+
+    msys_root = os.path.join(mingw_root, 'msys', '1.0')
+    try:
+        gcc = find_program('mingw32-gcc', [mingw_root])
+        gxx = find_program('mingw32-g++', [mingw_root])
+        gfort = find_program('mingw32-gfortran', [mingw_root])
         mingw_found = True
     except:
-        primary_loc = os.path.join('C:', os.sep, 'MinGW', 'bin')
-        try:
-            alt_loc = os.path.join(os.environ['ProgramFiles'], 'MinGW', 'bin')
-        except:
-            alt_loc = None
-        environment['MINGW_CC']  = m = find_program('mingw32-gcc',
-                                                    [primary_loc, alt_loc,])
-        environment['MINGW_CXX']     = find_program('mingw32-g++',
-                                                    [primary_loc, alt_loc,])
-        environment['MINGW_FORTRAN'] = find_program('mingw32-gfortran',
-                                                    [primary_loc, alt_loc,])
-        mingw_root                   = os.path.abspath(
-            os.path.join(os.path.split(m)[0], '..'))
-        msys_root                    = os.path.join(mingw_root, 'msys', '1.0')
-        environment['MINGW_DIR']     = mingw_root
-        environment['MSYS_DIR']      = msys_root
-        environment['MSYS_SHELL']    = find_program('msys.bat', [msys_root])
-        mingw_found = True
+        return mingw_found
+
+    environment['MINGW_DIR']     = mingw_root
+    environment['MSYS_DIR']      = msys_root
+    environment['MINGW_CC']      = gcc
+    environment['MINGW_CXX']     = gxx
+    environment['MINGW_FORTRAN'] = gfort
     return mingw_found
 
 

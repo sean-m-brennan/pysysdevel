@@ -42,6 +42,8 @@ def is_installed(environ, version):
         locations = []
         try:
             locations.append(environ['MSYS_DIR'])
+        except:
+            pass
         try:
             wx_config = find_program('wx-config', locations)
         except:
