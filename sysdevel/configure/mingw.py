@@ -61,11 +61,11 @@ def is_installed(version=None):
 
     try:
         ## the easy way
-        mingw_root = os.environ['MINGW_ROOT']
+        mingw_root                   = os.environ['MINGW_ROOT']
+        msys_root                    = os.path.join(mingw_root, 'msys', '1.0')
         environment['MINGW_DIR']     = mingw_root
-        environment['MSYS_DIR']      = os.path.join(mingw_root, 'msys', '1.0')
-        environment['MSYS_SHELL']    = find_program('msys.bat',
-                                                    environment['MSYS_DIR'])
+        environment['MSYS_DIR']      = msys_root
+        environment['MSYS_SHELL']    = find_program('msys.bat', [msys_root])
         environment['MINGW_CC']      = find_program('mingw32-gcc',
                                              os.path.join(mingw_root, 'bin'))
         environment['MINGW_CXX']     = find_program('mingw32-g++',
@@ -86,11 +86,12 @@ def is_installed(version=None):
                                                     [primary_loc, alt_loc,])
         environment['MINGW_FORTRAN'] = find_program('mingw32-gfortran',
                                                     [primary_loc, alt_loc,])
-        environment['MINGW_DIR']     = os.path.split(m)[0]
-        environment['MSYS_DIR']      = os.path.join(os.path.split(m)[0],
-                                                    'msys', '1.0')
-        environment['MSYS_SHELL']    = find_program('msys.bat',
-                                                    environment['MSYS_DIR'])
+        mingw_root                   = os.path.abspath(
+            os.path.join(os.path.split(m)[0], '..'))
+        msys_root                    = os.path.join(mingw_root, 'msys', '1.0')
+        environment['MINGW_DIR']     = mingw_root
+        environment['MSYS_DIR']      = msys_root
+        environment['MSYS_SHELL']    = find_program('msys.bat', [msys_root])
         mingw_found = True
     return mingw_found
 
