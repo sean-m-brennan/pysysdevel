@@ -56,3 +56,5 @@ def install(environ, version, target='build'):
         install_pypkg_locally(src_dir, website, archive, target)
         environment['WXGLADE'] = find_program('wxglade.py',
                                               [os.path.join(target, 'python', 'wxglade')])
+        if not is_installed(environ, version):
+            raise Exception('WxGlade installation failed.')

@@ -22,6 +22,7 @@ Utilities for finding prerequisities
 
 import os
 import sys
+import site
 import platform
 import fnmatch
 import warnings
@@ -355,31 +356,33 @@ def install_pypkg_locally(name, website, archive, build_dir,
         src_dir = name
     here = os.path.abspath(os.getcwd())
     target_dir = os.path.abspath(build_dir)
-    try:
+    if True: #try:
         fetch(website, archive, archive)
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
-        os.chdir(target_dir)
         sys.stdout.write('PREREQUISITE ' + name + ' ')
         sys.stdout.flush()
-        unarchive(os.path.join(here, download_dir, archive), build_dir, src_dir)
-        os.chdir(src_dir)
+        unarchive(os.path.join(here, download_dir, archive),
+                  target_dir, src_dir)
+        os.chdir(os.path.join(target_dir, src_dir))
         if env:
             for e in env:
                 (key, value) = e.split('=')
                 os.environ[key] = value
-        os.environ['PYTHONPATH'] = os.path.join(target_dir, local_lib_dir)
+        if not os.path.exists(os.path.join(target_dir, local_lib_dir)):
+            os.makedirs(os.path.join(target_dir, local_lib_dir))
+        environ = os.environ.copy()
+        environ['PYTHONPATH'] = os.path.join(target_dir, local_lib_dir)
         cmd_line = [sys.executable, 'setup.py', 'build', 'install',
                     '--home=' + target_dir,
                     '--install-lib=' + os.path.join(target_dir, local_lib_dir),
                     ]
-        os.environ['PYTHONPATH'] = ''
-        log_file = name + '.log'
+        log_file = os.path.join(target_dir, name + '.log')
         log = open(log_file, 'w')
         log.write(str(cmd_line) + '\n\n')
         log.flush()
         try:
-            p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
+            p = subprocess.Popen(cmd_line, env=environ, stdout=log, stderr=log)
             status = process_progress(p)
             log.close()
         except KeyboardInterrupt,e:
@@ -392,12 +395,13 @@ def install_pypkg_locally(name, website, archive, build_dir,
                             'installed locally; See ' + log_file)
         else:
             sys.stdout.write(' done\n')
+        site.addsitedir(os.path.join(target_dir, local_lib_dir))
         if not os.path.join(target_dir, local_lib_dir) in sys.path:
             sys.path.insert(0, os.path.join(target_dir, local_lib_dir))
         os.chdir(here)
-    except Exception,e:
-        os.chdir(here)
-        raise Exception('Unable to install ' + name + ' locally: ' + str(e))
+    #except Exception,e:
+    #    os.chdir(here)
+    #    raise Exception('Unable to install ' + name + ' locally: ' + str(e))
 
 
 def create_script_wrapper(pyscript, target_dir):
@@ -710,12 +714,6 @@ class PrerequisiteError(Exception):
     pass
 
 
-def as_admin():
-    try:
-        return os.geteuid() == 0
-    except AttributeError:
-        return ctypes.windll.shell32.IsUserAnAdmin() != 0
-
 
 def global_install(what, website_tpl, winstaller, port, apt, yum):
     sudo_prefix = []
@@ -725,27 +723,18 @@ def global_install(what, website_tpl, winstaller, port, apt, yum):
     if 'windows' in platform.system().lower() and winstaller:
         fetch(''.join(website_tpl), winstaller, winstaller)
         installer = os.path.join(download_dir, winstaller)
-        if not as_admin:
-            import win32com.shell.shell as shell
-            ret = shell.ShellExecuteEx(lpVerb='runas', lpFile=installer)
-            if ret['hInstApp'] <= 32:
-                raise subprocess.CalledProcessError(ret['hInstApp'], installer)
-        else:
-            subprocess.check_call([installer])
+        admin_check_call(installer)
 
     elif 'darwin' in platform.system().lower() and port:
         ## assumes macports installed
-        cmd_line = sudo_prefix + ['port', 'install',] + port.split()
-        subprocess.check_call(cmd_line)
+        admin_check_call(['port', 'install',] + port.split())
 
     elif 'linux' in platform.system().lower():
         if _uses_apt_get() and apt:
-            cmd_line = sudo_prefix + ['apt-get', 'install',] + apt.split()
-            subprocess.check_call(cmd_line)
+            admin_check_call(['apt-get', 'install',] + apt.split())
 
         elif _uses_yum() and yum:
-            cmd_line = sudo_prefix + ['yum', 'install',] + yum.split()
-            subprocess.check_call(cmd_line)
+            admin_check_call(['yum', 'install',] + yum.split())
 
         else:
             raise PrerequisiteError('Unsupported Linux flavor. Install ' +
@@ -753,6 +742,37 @@ def global_install(what, website_tpl, winstaller, port, apt, yum):
     else:
         raise PrerequisiteError('Unsupported platform. Install ' + what +
                                 'by hand. See ' + website_tpl[0])
+
+
+def as_admin():
+    try:
+        return os.geteuid() == 0
+    except AttributeError:
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+
+
+def admin_check_call(cmd_line):
+    if 'windows' in platform.system().lower():
+        if not isinstance(cmd_line, basestring):
+            cmd_line = ' '.join(cmd_line)
+        if not as_admin():
+            from win32com.shell.shell import ShellExecuteEx
+            from win32event import WaitForSingleObject, INFINITE
+            from win32process import GetExitCodeProcess
+            handle = ShellExecuteEx(lpVerb='runas', lpFile=cmd_line)['hProcess']
+            WaitForSingleObject(handle, INFINITE)
+            status = GetExitCodeProcess(handle)
+            if status != 0:
+                raise subprocess.CalledProcessError(status, cmd_line)
+        else:
+            subprocess.check_call([cmd_line])
+    else:
+        if isinstance(cmd_line, basestring):
+            cmd_line = cmd_line.split()
+        sudo_prefix = []
+        if not as_admin():
+            sudo_prefix = ['sudo']
+        subprocess.check_call(sudo_prefix + cmd_line)
 
 
 def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None):
@@ -764,9 +784,7 @@ def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None):
     shell = os.path.join(environ['MSYS_DIR'], 'bin', 'bash.exe')
     if not isinstance(cmd_line, basestring):
         cmd_line = ' '.join(cmd_line)
-    full_cmd_line = shell + ' -c "' + cmd_line + '"'
-    print 'Running ' + repr(full_cmd_line)
-    p = subprocess.Popen(full_cmd_line,
+    p = subprocess.Popen(shell + ' -c "' + cmd_line + '"',
                          env=os_environ)
     status = p.wait()
     if status != 0:

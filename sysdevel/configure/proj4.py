@@ -91,5 +91,6 @@ def install(environ, version, target='build'):
                            'libproj4',
                            'libproj-dev',
                            'proj-devel')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('Proj4 installation failed.')
 

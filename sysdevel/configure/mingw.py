@@ -35,7 +35,7 @@ def null():
     environment['MINGW_PREFIX'] = '/mingw'
     environment['MSYS_DIR'] = None
     environment['MSYS_SHELL'] = None
-    environment['MSYS_PREFIX'] = '/'
+    environment['MSYS_PREFIX'] = '/usr'
     environment['MINGW_CC'] = None
     environment['MINGW_CXX'] = None
     environment['MINGW_FORTRAN'] = None
@@ -45,7 +45,7 @@ def is_installed(environ, version):
     global environment, mingw_found
     ## Python was (most likely) built with msvcr90.dll, thus it's a dependency
     ## FIXME detect
-    environment['MSYS_PREFIX'] = '/'
+    environment['MSYS_PREFIX'] = '/usr'
     environment['MINGW_PREFIX'] = '/mingw'
     environment['MSVCRT_DIR'] = None
     try:
@@ -102,4 +102,5 @@ def install(environ, version, target='build'):
                        'i386-mingw32-binutils i386-mingw32-gcc i386-mingw32-runtime i386-mingw32-w32api',
                        'mingw32-binutils gcc-mingw32 mingw32-runtime',
                        'mingw32-gcc-c++ mingw32-gcc mingw32-pthreads mingw32-w32api mingw32-binutils mingw32-runtime mingw32-filesystem mingw32-cpp mingw32-dlfcn-static')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('MinGW installation failed.')

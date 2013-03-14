@@ -93,4 +93,5 @@ def install(environ, version, target='build'):
                            'libarchive',
                            'libarchive-dev',
                            'libarchive-devel')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('libarchive installation failed.')

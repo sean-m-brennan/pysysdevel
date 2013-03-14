@@ -92,4 +92,5 @@ def install(environ, version, target='build'):
                            'gsl-devel',
                            'libgsl-dev',
                            'gsl-devel')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('GSL installation failed.')

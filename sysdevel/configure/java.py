@@ -26,8 +26,6 @@ from sysdevel.util import *
 environment = dict()
 java_found = False
 
-DEPENDENCIES = ['java']
-
 
 def null():
     global environment
@@ -40,9 +38,11 @@ def null():
 def is_installed(environ, version):
     global environment, java_found
     try:
-        java_runtime = find_program('java')
-        java_compiler = find_program('javac')
-        jar_archiver = find_program('jar')
+        locations = glob.glob(os.path.join('C:' + os.sep + 'OpenSCG',
+                                           'openjdk*'))
+        java_runtime = find_program('java', locations)
+        java_compiler = find_program('javac', locations)
+        jar_archiver = find_program('jar', locations)
 
         if not __check_java_version(java_runtime, [version]):
             return java_found
@@ -82,6 +82,8 @@ def install(environ, version, target='build'):
                    'openjdk' + sub,
                    'openjdk-' + sub + '-jdk',
                    'java-1.' + str(version) + '-openjdk-devel')
+    if not is_installed(environ, version):
+        raise Exception('Java installation failed.')
 
 
 def __check_java_version(java_cmd, version_list):

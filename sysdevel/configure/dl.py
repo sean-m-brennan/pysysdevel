@@ -79,4 +79,5 @@ def install(environ, version, target='build'):
             os.chdir(here)
         else:
             raise Exception('Non-Windows platform with missing libdl.')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('libdl installation failed.')

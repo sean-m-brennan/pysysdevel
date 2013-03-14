@@ -72,3 +72,5 @@ def install(environ, version, target='build'):
             root = root[root.index('mpl-data'):]
             d[root] = files
         environment['MATPLOTLIB_DATA_FILES'] = d.items()
+        if not is_installed(environ, version):
+            raise Exception('matplotlib installation failed.')

@@ -48,8 +48,10 @@ def install(environ, version, target='build'):
         website = 'http://pywebsocket.googlecode.com/files/'
         if version is None:
             version = '0.7.6'
-        src_dir = 'mod_pywebsocket-' + str(version)
-        archive = src_dir + '.tar.gz'
+        src_dir = 'pywebsocket-' + str(version)
+        archive = 'mod_' + src_dir + '.tar.gz'
         pkg_dir = os.path.join(src_dir, 'src')
         install_pypkg_locally(src_dir, website, archive,
                               target, src_dir=pkg_dir)
+        if not is_installed(environ, version):
+            raise Exception('pywebsocket installation failed.')

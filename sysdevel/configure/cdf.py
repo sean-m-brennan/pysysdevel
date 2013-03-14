@@ -106,4 +106,5 @@ def install(environ, version, target='build'):
                            'cdf',
                            None,
                            None)
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('CDF installation failed.')

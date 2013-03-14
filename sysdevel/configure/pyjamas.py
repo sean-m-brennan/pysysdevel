@@ -53,6 +53,10 @@ def is_installed(environ, version):
 def install(environ, version, target='build'):
     global environment
     if not pyjamas_found:
+
+
+        # FIXME!!!!
+
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
         try:
@@ -129,3 +133,5 @@ def install(environ, version, target='build'):
             sys.path.insert(0, os.path.join(working_dir, 'build', 'lib'))
         except Exception,e:
             raise Exception('Unable to install Pyjamas: ' + str(e))
+        #if not is_installed(environ, version):
+        #    raise Exception('Pyjamas installation failed.')

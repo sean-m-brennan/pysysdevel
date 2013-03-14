@@ -100,4 +100,5 @@ def install(environ, version, target='build'):
                            'hdf5',
                            'hdf5-devel',
                            'libhdf5-dev')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('HDF5 installation failed.')

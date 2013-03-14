@@ -87,4 +87,5 @@ def install(environ, version, target='build'):
                            'gccxml-devel',
                            'gccxml',
                            'gccxml')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('GCC-XML installation failed.')

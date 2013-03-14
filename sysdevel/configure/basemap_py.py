@@ -81,6 +81,8 @@ def install(environ, version, target='build'):
             [(basemap_data_dir,
               glob.glob(os.path.join(basemap_dir, 'data', '*.*')))]
         __patch(basemap_dir)
+        if not is_installed(environ, version):
+            raise Exception('basemap installation failed.')
 
 
 def __patch(basemap_dir):

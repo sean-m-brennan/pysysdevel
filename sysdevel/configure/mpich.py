@@ -103,4 +103,5 @@ def install(environ, version, target='build'):
                            'mpich-devel',
                            'libmpich2-dev',
                            'mpich2-devel')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('MPICH2 installation failed.')

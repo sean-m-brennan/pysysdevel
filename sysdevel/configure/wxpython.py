@@ -59,4 +59,5 @@ def install(environ, version, target='build'):
                        'py' + py_ver + '-wxpython-devel',
                        'python-wxgtk python-wxtools',
                        'wxPython-devel')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('wxpython installation failed.')

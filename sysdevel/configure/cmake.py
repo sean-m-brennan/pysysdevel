@@ -66,4 +66,5 @@ def install(environ, version, target='build'):
                        'cmake',
                        'cmake',
                        'cmake')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('CMake installation failed.')

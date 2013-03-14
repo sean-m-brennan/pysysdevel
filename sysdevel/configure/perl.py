@@ -98,4 +98,5 @@ def install(environ, version, target='build'):
                        'perl' + str(version),
                        'libperl-dev',
                        'perl-devel')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('Perl installation failed.')

@@ -57,3 +57,5 @@ def install(environ, version, target='build'):
         src_dir = 'pyplusplus-' + str(version) + '.zip'
         archive = src_dir + '.zip'
         install_pypkg_locally(src_dir, website, archive, target)
+        if not is_installed(environ, version):
+            raise Exception('Py++ installation failed.')

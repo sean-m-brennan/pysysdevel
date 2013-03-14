@@ -53,3 +53,5 @@ def install(environ, version, target='build'):
         src_dir = 'breathe-' + str(version)
         archive = src_dir + '.tar.gz' 
         install_pypkg_locally(src_dir, website, archive, target)
+        if not is_installed(environ, version):
+            raise Exception('Breathe installation failed.')

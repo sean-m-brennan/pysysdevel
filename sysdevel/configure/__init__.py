@@ -72,6 +72,7 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     for help_name in prerequisite_list:
         environment = __configure_package(environment, help_name,
                                           skip, install, quiet)
+    return environment
 
 
 def __configure_package(environment, help_name, skip, install, quiet):
@@ -82,17 +83,15 @@ def __configure_package(environment, help_name, skip, install, quiet):
     full_name = 'sysdevel.configure.' + help_name
     try:
         __import__(full_name)
-        return __run_helper__(environment, help_name, full_name,
-                              req_version, skip, install, quiet)
     except ImportError, e:
         full_name = 'sysdevel.configure.' + help_name + '_py'
         try:
             __import__(full_name)
-            return __run_helper__(environment, help_name, full_name,
-                                  req_version, skip, install, quiet)
         except ImportError, e:
             sys.stderr.write('No setup helper module ' + help_name + '\n')
             raise e
+    return __run_helper__(environment, help_name, full_name,
+                          req_version, skip, install, quiet)
 
 
 def __run_helper__(environment, short_name, long_name, version,
@@ -102,6 +101,9 @@ def __run_helper__(environment, short_name, long_name, version,
     if hasattr(helper, 'DEPENDENCIES'):
         dependencies = helper.DEPENDENCIES
     for dep in dependencies:
+        if dep == short_name:
+            print 'Error in configuration: self-dependency.'
+            continue
         environment = __configure_package(environment, dep, skip, install, quiet)
     if not quiet:
         sys.stdout.write('Checking for ' + short_name + '  ')

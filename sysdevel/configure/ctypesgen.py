@@ -57,3 +57,5 @@ def install(environ, version, target='build'):
         environment['CTYPESGEN'] = \
             find_program('ctypesgen.py', [os.path.join(target, 'bin')])
         environment['CTYPESGEN_PATH'] = os.path.join(target, local_lib_dir)
+        if not is_installed(environ, version):
+            raise Exception('ctypesgen installation failed.')

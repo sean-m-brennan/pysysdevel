@@ -96,4 +96,5 @@ def install(environ, version, target='build'):
                            'geos',
                            'libgeos-dev',
                            'geos-devel')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('Geos installation failed.')

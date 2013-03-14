@@ -78,9 +78,9 @@ def install(environ, version, target='build'):
     global environment
     website = 'http://www.antlr.org/download/'
     if version is None:
-        ver = '3.1.2'
-    else:
-        ver = version
+        version = '3.1.2'
+    if version.startswith('3'):
+        website = 'http://www.antlr3.org/download/'
     here = os.path.abspath(os.getcwd())
     if not java_antlr_found:
         src_dir = 'antlr-' + str(version)
@@ -98,3 +98,5 @@ def install(environ, version, target='build'):
         src_dir = 'antlr_python_runtime-' + str(version)
         archive = src_dir + '.tar.gz' 
         install_pypkg_locally(src_dir, website + 'Python/', archive, target)
+        if not is_installed(environ, version):
+            raise Exception('ANTLR installation failed.')

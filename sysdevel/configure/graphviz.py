@@ -95,4 +95,5 @@ def install(environ, version, target='build'):
                            'graphviz-devel',
                            'graphviz-dev',
                            'graphviz-devel')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('Graphviz installation failed.')

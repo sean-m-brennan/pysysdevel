@@ -80,8 +80,8 @@ def install(environ, version, target='build'):
             os.chdir(build_dir)
             mingw_check_call(environ, ['../configure',
                                        '--prefix=' + environ['MSYS_PREFIX']])
-            mingw_check_call([environ, ['make'])
-            mingw_check_call([environ, ['make', 'install'])
+            mingw_check_call(environ, ['make'])
+            mingw_check_call(environ, ['make', 'install'])
             os.chdir(here)
         else:
             global_install('wxWidgets', website,
@@ -89,4 +89,5 @@ def install(environ, version, target='build'):
                            'wxgtk',
                            'libwxbase-dev libwxgtk-dev',
                            'wxBase wxGTK-devel')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('WxGTK installation failed.')

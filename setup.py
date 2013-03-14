@@ -37,20 +37,27 @@ def main(argv=None):
 
     #FIXME documentation
 
-    setup(name        = 'sysdevel',
-          version     = '0.5.2',
-          description = 'Enhanced Python build options (based on distutils)',
-          requires    = ['numpy',],
-          packages    = ['sysdevel', 'sysdevel.configure',],
-          classifiers = [
+    setup(name         = 'sysdevel',
+          version      = '0.5.2',
+          description  = 'Enhanced Python build options (based on distutils)',
+          requires     = ['numpy',],
+          packages     = ['sysdevel', 'sysdevel.configure',],
+          package_data = {'sysdevel': ['win_postinstall.py.in']},
+          classifiers  = [
             'Development Status :: 4 - Beta',
             'Environment :: Console',
             'Intended Audience :: Developers',
+            'Intended Audience :: Science/Research',
+            #'License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)
             'License :: Other/Proprietary License :: Official Use Only',
             'Operating System :: MacOS :: MacOS X',
             'Operating System :: Microsoft :: Windows',
             'Operating System :: POSIX',
             'Programming Language :: Python',
+            'Programming Language :: C',
+            'Programming Language :: C++',
+            'Programming Language :: Fortran',
+            'Topic :: Scientific/Engineering',
             'Topic :: Software Development :: Build Tools',
             ],
           )

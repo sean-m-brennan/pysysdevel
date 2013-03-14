@@ -51,4 +51,5 @@ def install(environ, version, target='build'):
                        'doxygen',
                        'doxygen',
                        'doxygen')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('Doxygen installation failed.')

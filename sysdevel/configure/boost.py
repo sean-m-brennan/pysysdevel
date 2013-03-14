@@ -115,4 +115,5 @@ def install(environ, version, target='build'):
                            'boost +python' + ''.join(get_python_version()),
                            'libboost-dev',
                            'boost-devel')
-        is_installed()
+        if not is_installed(environ, version):
+            raise Exception('Boost installation failed.')
