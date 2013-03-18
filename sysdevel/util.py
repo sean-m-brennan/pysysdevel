@@ -176,7 +176,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
     of the given library. For Windows, it is important to not have a
     trailing path separator.
     '''
-    default_lib_paths = ['', 'lib', 'lib64']
+    default_lib_paths = ['lib64', 'lib', '']
     suffixes = ['.so', '.a']
     prefixes = ['', 'lib']
     if 'windows' in platform.system().lower():

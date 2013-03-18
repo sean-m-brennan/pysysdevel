@@ -101,7 +101,10 @@ def __run_helper__(environment, short_name, long_name, version,
     if hasattr(helper, 'DEPENDENCIES'):
         dependencies = helper.DEPENDENCIES
     for dep in dependencies:
-        if dep == short_name:
+        dep_name = dep
+        if not isinstance(dep, basestring):
+            dep_name = dep[0]
+        if dep_name == short_name:
             print 'Error in configuration: self-dependency.'
             continue
         environment = __configure_package(environment, dep, skip, install, quiet)
