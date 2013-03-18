@@ -31,7 +31,7 @@ graphviz_found = False
 def null():
     global environment
     environment['GRAPHVIZ_INCLUDE_DIR'] = None
-    environment['GRAPHVIZ_LIBRARY_DIR'] = None
+    environment['GRAPHVIZ_LIB_DIR'] = None
     environment['GRAPHVIZ_LIBRARIES'] = []
     environment['GRAPHVIZ_LIBS'] = []
 
@@ -61,7 +61,7 @@ def is_installed(environ, version):
         return graphviz_found
 
     environment['GRAPHVIZ_INCLUDE_DIR'] = inc_dir
-    environment['GRAPHVIZ_LIBRARY_DIR'] = lib_dir
+    environment['GRAPHVIZ_LIB_DIR'] = lib_dir
     environment['GRAPHVIZ_LIBRARIES'] = [lib]
     environment['GRAPHVIZ_LIBS'] = ['graph']
     return graphviz_found

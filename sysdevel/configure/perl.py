@@ -32,7 +32,7 @@ def null():
     global environment
     environment['PERL'] = None
     environment['PERL_INCLUDE_DIR'] = None
-    environment['PERL_LIBRARY_DIR'] = None
+    environment['PERL_LIB_DIR'] = None
     environment['PERL_LIBRARIES'] = []
     environment['PERL_LIBS'] = []
 
@@ -78,7 +78,7 @@ def is_installed(environ, version):
 
     environment['PERL'] = perl_exe
     environment['PERL_INCLUDE_DIR'] = core_dir
-    environment['PERL_LIBRARY_DIR'] = core_dir
+    environment['PERL_LIB_DIR'] = core_dir
     environment['PERL_LIBRARIES'] = [perl_lib]
     environment['PERL_LIBS'] = ['perl' + lib_ver]
     return perl_found

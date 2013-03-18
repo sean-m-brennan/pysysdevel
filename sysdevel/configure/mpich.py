@@ -31,7 +31,7 @@ mpich_found = False
 def null():
     global environment
     environment['MPICH_INCLUDE_DIR'] = None
-    environment['MPICH_LIBRARY_DIR'] = None
+    environment['MPICH_LIB_DIR'] = None
     environment['MPICH_LIBRARIES'] = []
     environment['MPICH_LIBS'] = []
 
@@ -69,7 +69,7 @@ def is_installed(environ, version):
         return mpich_found
 
     environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir
-    environment['MPICH_LIBRARY_DIR'] = mpich_lib_dir
+    environment['MPICH_LIB_DIR'] = mpich_lib_dir
     environment['MPICH_LIBRARIES'] = mpich_libs
     environment['MPICH_LIBS'] = mpich_lib_list
     return mpich_found

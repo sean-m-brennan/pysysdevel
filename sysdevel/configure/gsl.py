@@ -31,7 +31,7 @@ gsl_found = False
 def null():
     global environment
     environment['GSL_INCLUDE_DIR'] = ''
-    environment['GSL_LIBRARY_DIR'] = None
+    environment['GSL_LIB_DIR'] = None
     environment['GSL_LIBRARIES'] = []
     environment['GSL_LIBS'] = []
 
@@ -59,7 +59,7 @@ def is_installed(environ, version):
         return gsl_found
 
     environment['GSL_INCLUDE_DIR'] = inc_dir
-    environment['GSL_LIBRARY_DIR'] = lib_dir
+    environment['GSL_LIB_DIR'] = lib_dir
     environment['GSL_LIBRARIES'] = libs
     environment['GSL_LIBS'] = ['gsl', 'gslcblas',]
     return gsl_found

@@ -101,7 +101,7 @@ def install(environ, version, target='build'):
         if not os.path.exists(src_dir):
             client.checkout(svn_repo, src_dir)
         rev_num = client.info(src_dir).revision.number
-        ver = version_strs[version] +'-'+ str(rev_num).zfill(version_zfill)
+        version = version_strs[version] +'-'+ str(rev_num).zfill(version_zfill)
     else:
         website = ('http://prdownloads.sourceforge.net/gmat/',)
         here = os.path.abspath(os.getcwd())
@@ -117,10 +117,10 @@ def install(environ, version, target='build'):
         unarchive(os.path.join(here, download_dir, data_archive),
                   target, data_dir)
 
-    environment['GMAT_VERSION'] = ver
+    environment['GMAT_VERSION'] = version
     environment['GMAT_ROOT'] = src_dir
     environment['GMAT_DATA'] = data_dir
-    _set_environment(src_dir, ver)
+    _set_environment(src_dir, version)
 
 
 def _do_patching(gmat_root, gmat_version):
