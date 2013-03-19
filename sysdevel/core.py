@@ -39,11 +39,13 @@ import util
 
 class WebExtension(extension.Extension):
     def __init__(self, name, sources, source_dir,
-                 public_subdir='', extra_public_files=[],
-                 extra_compile_args=[], compiler=None):
+                 public_subdir='', extra_support_files=[],
+                 extra_public_files=[], extra_compile_args=[],
+                 compiler=None):
         extension.Extension.__init__(self, name, sources)
         self.source_directory = source_dir
         self.public_subdir = public_subdir
+        self.extra_support_files = extra_support_files
         self.extra_public_files = extra_public_files
         self.compiler = compiler
         self.extra_compile_args = extra_compile_args

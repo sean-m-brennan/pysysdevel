@@ -91,6 +91,13 @@ class build_js(build_ext):
                                                        'web', wext.name))
             util.mkdir(working_dir)
 
+            for support in wext.extra_support_files:
+                src_file = util.sysdevel_support_path(support + '.in')
+                if not os.path.exists(src_file):
+                    src_file = src_file[:-3]
+                dst_file = os.path.join(working_dir, support)
+                util.configure_file(environ, src_file, dst_file)
+
             reprocess = True
             ref = os.path.join(target, wext.name + '.html')
             if os.path.exists(ref) and not self.force:
@@ -139,8 +146,11 @@ class build_js(build_ext):
                                     "' returned non-zero exit status "
                                     + str(status))
                 os.chdir(here)
-            for filepath in wext.extra_public_files:
-                targetfile = os.path.join(target, os.path.basename(filepath))
+            for filename in wext.extra_public_files:
+                filepath = util.sysdevel_support_path(filename + '.in')
+                if not os.path.exists(filepath):
+                    filepath = filepath[:-3]
+                targetfile = os.path.join(target, filename)
                 if not os.path.exists(targetfile):
                     util.configure_file(environ, filepath, targetfile)
             if not os.path.lexists(os.path.join(target, 'index.html')):

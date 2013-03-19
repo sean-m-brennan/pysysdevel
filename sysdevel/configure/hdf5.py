@@ -67,8 +67,8 @@ def is_installed(environ, version):
                          'hdf5_hldll', 'hdf5_hl_fortrandll', 'hdf5_hl_cppdll',]
     environment['HDF5_INCLUDE_DIR'] = hdf5_inc_dir
     environment['HDF5_LIB_DIR'] = hdf5_lib_dir
-    environment['HDF5_LIBS'] = hdf5_libs
-    environment['HDF5_LIBRARIES'] = hdf5_lib_list
+    environment['HDF5_LIBS'] = hdf5_lib_list
+    environment['HDF5_LIBRARIES'] = hdf5_libs
     return hdf5_found
 
 

@@ -1,0 +1,8 @@
+# Byte-compiled python
+*.pyc
+
+# emacs backups
+*~
+
+# Build directory
+/build

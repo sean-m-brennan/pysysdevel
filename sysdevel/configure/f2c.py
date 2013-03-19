@@ -52,5 +52,3 @@ def install(environ, version, target='build'):
         fetch(''.join(website), header_file, header_file)
         shutil.copy(os.path.join(download_dir, header_file), target)
         environment['F2C_INCLUDE_DIR'] = target
-        if not is_installed(environ, version):
-            raise Exception('f2c installation failed.')

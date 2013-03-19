@@ -116,10 +116,12 @@ def install(environ, version, target='build'):
         fetch(''.join(website), data_archive, data_archive)
         unarchive(os.path.join(here, download_dir, data_archive),
                   target, data_dir)
+        src_dir = os.path.join(target, src_dir)
+        data_dir = os.path.join(target, data_dir)
 
     environment['GMAT_VERSION'] = version
-    environment['GMAT_ROOT'] = src_dir
-    environment['GMAT_DATA'] = data_dir
+    environment['GMAT_ROOT'] = os.path.abspath(src_dir)
+    environment['GMAT_DATA'] = os.path.abspath(data_dir)
     _set_environment(src_dir, version)
 
 
@@ -127,6 +129,7 @@ def _do_patching(gmat_root, gmat_version):
     ## modify faulty MessageReceiver.hpp
     msg_rcvr = os.path.join(gmat_root, 'src', 'base', 'util',
                             'MessageReceiver.hpp')
+    print 'Patch ' + msg_rcvr
     if not os.path.exists(msg_rcvr + '.orig'):
         old_file = msg_rcvr + '.orig'
         os.rename(msg_rcvr, old_file)

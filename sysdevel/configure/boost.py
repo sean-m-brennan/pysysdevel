@@ -105,9 +105,20 @@ def install(environ, version, target='build'):
             unarchive(os.path.join(here, download_dir, archive),
                       target, src_dir)
             os.chdir(os.path.join(target, src_dir))
-            subprocess.check_call(['bootstrap.bat', 'mingw'])
-            subprocess.check_call(['bjam', 'install', '--toolset=gcc',
-                                   '--prefix=' + environ['MSYS_DIR']])
+            os_environ = os.environ.copy()
+            os_environ['PATH'] += os.path.join(environ['MINGW_DIR'], 'bin') + ';'
+            os_environ['PATH'] += os.path.join(environ['MSYS_DIR'], 'bin') + ';'
+            cmd_line = 'bootstrap.bat mingw'
+            p = subprocess.Popen(cmd_line, env=os_environ)
+            status = p.wait()
+            if status != 0:
+                raise subprocess.CalledProcessError(status, cmd_line)
+            cmd_line = 'bjam install --toolset=gcc --prefix=' + \
+                environ['MSYS_DIR']
+            p = subprocess.Popen(cmd_line, env=os_environ)
+            status = p.wait()
+            if status != 0:
+                raise subprocess.CalledProcessError(status, cmd_line)
             os.chdir(here)
         else:
             global_install('Boost', website,

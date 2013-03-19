@@ -57,8 +57,11 @@ class build_src(_build_src):
                 source_dir = os.path.abspath(os.path.join(
                         os.path.dirname(__file__), 'support'))
                 for mod in tpl[1]:
-                    src_file = os.path.join(source_dir, mod + '.py')
-                    util.configure_file(environ, src_file, target)
+                    src_file = os.path.join(source_dir, mod + '.py.in')
+                    if not os.path.exists(src_file):
+                        src_file = src_file[:-3]
+                    dst_file = os.path.join(target, mod + '.py')
+                    util.configure_file(environ, src_file, dst_file)
 
 
         if self.antlr_modules:
