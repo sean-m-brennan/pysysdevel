@@ -88,7 +88,7 @@ def install(environ, version, target='build'):
         fetch(website, archive, archive)
         unarchive(os.path.join(here, download_dir, archive),
                   target, src_dir)
-        jarfile = os.path.join(src_dir, 'lib', src_dir + '.jar')
+        jarfile = os.path.join(target, src_dir, 'lib', src_dir + '.jar')
         environment['ANTLR'] = [environ['JAVA'],
                                 "-classpath", os.path.abspath(jarfile),
                                 "org.antlr.Tool",]
