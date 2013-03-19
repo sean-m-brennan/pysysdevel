@@ -104,7 +104,7 @@ def install(environ, version, target='build'):
             fetch(''.join(website), archive, archive)
             unarchive(os.path.join(here, download_dir, archive),
                       target, src_dir)
-            os.chdir(src_dir)
+            os.chdir(os.path.join(target, src_dir))
             subprocess.check_call(['bootstrap.sh', 'mingw'])
             subprocess.check_call(['bjam', 'install', '--toolset=gcc',
                                    '--prefix=' + environ['MSYS_DIR']])
