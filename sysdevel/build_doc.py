@@ -111,10 +111,12 @@ class build_doc(build_ext):
                 environ['RELATIVE_SOURCE_DIR'] = os.path.relpath(src_dir,
                                                                  doc_bld_dir)
 
-                dir_util.copy_tree(doc_dir, working_dir, True)
+                util.copy_tree(doc_dir, working_dir, True,
+                                excludes=['.svn', 'CVS', '.git', '.hg*'])
                 for d in extra_dirs:
                     subdir = os.path.basename(os.path.normpath(d))
-                    dir_util.copy_tree(d, os.path.join(target, subdir), True)
+                    util.copy_tree(d, os.path.join(target, subdir), True,
+                                   excludes=['.svn', 'CVS', '.git', '.hg*'])
 
                 ## Configure rst files
                 util.configure_files(environ, doc_dir, '*.rst', working_dir)
@@ -166,7 +168,8 @@ class build_doc(build_ext):
 
                         if not self.distribution.verbose:
                             out.close()
-                        dir_util.copy_tree('html', os.path.join(target, 'html'))
+                        util.copy_tree('html', os.path.join(target, 'html'), True,
+                                       excludes=['.svn', 'CVS', '.git', '.hg*'])
                         os.chdir(here)
                         create_breathe_stylesheet(target)
 
