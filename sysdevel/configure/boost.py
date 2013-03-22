@@ -57,7 +57,6 @@ def is_installed(environ, version):
     except:
         pass
     if 'windows' in platform.system().lower():
-        base_dirs.append(os.path.normpath(os.path.join('C:', os.sep, 'Boost')))
         try:
             base_dirs.append(environ['MSYS_DIR'])
         except:

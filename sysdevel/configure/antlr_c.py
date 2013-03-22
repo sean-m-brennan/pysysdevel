@@ -86,4 +86,4 @@ def install(environ, version, target='build'):
             subprocess.check_call(sudo_prefix + ['make', 'install'])
         os.chdir(here)
         if not is_installed(environ, version):
-            raise Exception('ANTLR-C installation failed.')
+            raise Exception('ANTLR-C runtime installation failed.')

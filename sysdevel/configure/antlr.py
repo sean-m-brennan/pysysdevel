@@ -36,6 +36,8 @@ def null():
 
 def is_installed(environ, version):
     global environment, antlr_found
+    if version is None:
+        version = '3.1.2'
     try:
         classpaths = []
         try:
@@ -52,7 +54,7 @@ def is_installed(environ, version):
             win_loc = os.path.join(os.environ['ProgramFiles'], 'ANTLR', 'lib')
         except:
             win_loc = None
-        jarfile = find_file('antlr*3*.jar', ['/usr/share/java',
+        jarfile = find_file('antlr*' + version[0] + '*.jar', ['/usr/share/java',
                                              '/opt/local/share/java',
                                              win_loc, antlr_root,] + classpaths)
         environment['ANTLR'] = [environ['JAVA'],
