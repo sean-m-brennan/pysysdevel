@@ -113,8 +113,8 @@ def install(environ, version, target='build'):
             status = p.wait()
             if status != 0:
                 raise subprocess.CalledProcessError(status, cmd_line)
-            cmd_line = 'bjam install --toolset=gcc --prefix=' + \
-                environ['MSYS_DIR']
+            cmd_line = 'bjam install --build-type=complete --toolset=gcc ' + \
+                '--prefix=' + environ['MSYS_DIR']
             p = subprocess.Popen(cmd_line, env=os_environ)
             status = p.wait()
             if status != 0:
