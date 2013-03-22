@@ -20,15 +20,13 @@ Find/install Antlr
 # 
 #**************************************************************************
 
-import platform, shutil, os
+import os
 from sysdevel.util import *
 
 DEPENDENCIES = ['java']
 
 environment = dict()
 antlr_found = False
-java_antlr_found = False
-python_antlr_found = False
 
 
 def null():
@@ -37,7 +35,7 @@ def null():
 
 
 def is_installed(environ, version):
-    global environment, antlr_found, java_antlr_found, python_antlr_found
+    global environment, antlr_found
     try:
         classpaths = []
         try:
@@ -60,29 +58,21 @@ def is_installed(environ, version):
         environment['ANTLR'] = [environ['JAVA'],
                                 "-classpath", os.path.abspath(jarfile),
                                 "org.antlr.Tool",]
-        java_antlr_found = True
+        antlr_found = True
     except Exception,e:
-        return java_antlr_found
-
-    try:
-        import antlr3
-        python_antlr_found = True
-    except Exception,e:
-        return python_antlr_found
-
-    antlr_found = python_antlr_found and java_antlr_found
+        pass
     return antlr_found
 
 
 def install(environ, version, target='build'):
     global environment
-    website = 'http://www.antlr.org/download/'
-    if version is None:
-        version = '3.1.2'
-    if version.startswith('3'):
-        website = 'http://www.antlr3.org/download/'
-    here = os.path.abspath(os.getcwd())
-    if not java_antlr_found:
+    if not antlr_found:
+        website = 'http://www.antlr.org/download/'
+        if version is None:
+            version = '3.1.2'
+        if version.startswith('3'):
+            website = 'http://www.antlr3.org/download/'
+        here = os.path.abspath(os.getcwd())
         src_dir = 'antlr-' + str(version)
         archive = src_dir + '.tar.gz'
         fetch(website, archive, archive)
@@ -92,11 +82,3 @@ def install(environ, version, target='build'):
         environment['ANTLR'] = [environ['JAVA'],
                                 "-classpath", os.path.abspath(jarfile),
                                 "org.antlr.Tool",]
-    if not python_antlr_found:
-        if version is None:
-            version = '0.7.5'
-        src_dir = 'antlr_python_runtime-' + str(version)
-        archive = src_dir + '.tar.gz' 
-        install_pypkg_locally(src_dir, website + 'Python/', archive, target)
-        if not is_installed(environ, version):
-            raise Exception('ANTLR installation failed.')

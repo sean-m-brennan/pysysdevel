@@ -139,7 +139,6 @@ class build_js(build_ext):
                 cmd_line.append(wext.name)
 
                 os.chdir(working_dir)
-                print "Running cmd_line"
                 status = subprocess.call(cmd_line)
                 if status != 0:
                     raise Exception("Command '" + str(cmd_line) +

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Build and install sysdevel
-"""
+"""Build and install sysdevel"""
 #**************************************************************************
 # 
 # This material was prepared by the Los Alamos National Security, LLC 
@@ -35,8 +33,6 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    #FIXME documentation
-
     setup(name         = 'sysdevel',
           version      = '0.5.2',
           description  = 'Enhanced Python build options (based on distutils)',
@@ -44,6 +40,7 @@ def main(argv=None):
           packages     = ['sysdevel', 'sysdevel.configure',],
           package_data = {'sysdevel': ['sphinx_conf.py.in',
                                        'win_postinstall.py.in',
+                                       #os.path.join('doc', 'sysdevel_manual.pdf'),
                                        os.path.join('support', '*.in'),
                                        os.path.join('support', '*.sh'),
                                        os.path.join('support', '*.php'),

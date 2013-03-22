@@ -1,9 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-sysdevel package
-
-The sysdevel package facilitates multi-model simulation development in three
-areas: model coupling, data visualization, and collaboration & distribution.
+Find/install Antlr Python runtime
 """
 #**************************************************************************
 # 
@@ -22,17 +20,36 @@ areas: model coupling, data visualization, and collaboration & distribution.
 # 
 #**************************************************************************
 
-
-__all__ = ['pkg_config', 'core',
-           'build_clib', 'build_doc', 'build_exe', 'build_js',
-           'build_pypp_ext', 'build_py', 'build_shlib', 'build_src',
-           'install_data', 'install_exe', 'install_lib',
-           'util', 'httplib', 'urllib2',
-           'configure',]
-
 import os
+from sysdevel.util import *
 
-config_dir = os.path.join(os.path.dirname(__file__), 'configure')
-support_dir = os.path.join(os.path.dirname(__file__), 'support')
 
-from configure import configure_system, FatalError
+environment = dict()
+antlr_python_found = False
+
+
+def null():
+    pass
+
+
+def is_installed(environ, version):
+    global environment, antlr_python_found
+    try:
+        import antlr3
+        antlr_python_found = True
+    except Exception,e:
+        pass
+    return antlr_python_found
+
+
+def install(environ, version, target='build'):
+    global environment
+    if not antlr_python_found:
+        website = 'http://www.antlr3.org/download/'
+        if version is None:
+            version = '3.1.2'
+        src_dir = 'antlr_python_runtime-' + str(version)
+        archive = src_dir + '.tar.gz' 
+        install_pypkg_locally(src_dir, website + 'Python/', archive, target)
+        if not is_installed(environ, version):
+            raise Exception('ANTLR Python runtime installation failed.')

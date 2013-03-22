@@ -250,6 +250,29 @@ class CustomDistribution(NumpyDistribution):
 
 
 
+
+def process_package(fnctn, build_base, pyexe, argv,
+                    pkg_name, pkg_dir, addtnl_args=[]):
+    sys.stdout.write(fnctn.upper() + 'ING ' + pkg_name + ' in ' + pkg_dir + ' ')
+    log_file = os.path.join(build_base, pkg_name + '_' + fnctn + '.log')
+    log = open(log_file, 'w')
+    try:
+        p = subprocess.Popen([pyexe, os.path.join(pkg_dir, 'setup.py'),
+                              ] + argv + addtnl_args,
+                             stdout=log, stderr=log)
+        status = util.process_progress(p)
+        log.close()
+    except KeyboardInterrupt:
+        p.terminate()
+        log.close()
+        status = 1
+    if status != 0:
+        sys.stdout.write(' failed; See ' + log_file + '\n')
+    else:
+        sys.stdout.write(' done\n')
+    return pkg_name, status
+
+
 class build(old_build):
     '''
     Subclass numpy build command to support new commands.
@@ -310,6 +333,7 @@ class build(old_build):
         ('build_exe',      has_executables),
         ]
 
+
     def run(self):
         if self.distribution.subpackages != None:
             if self.get_finalized_command('install').ran:
@@ -318,39 +342,37 @@ class build(old_build):
                 os.makedirs(self.build_base)
             except:
                 pass
-            for sub in self.distribution.subpackages:
-                idx = sys.argv.index('setup.py') + 1
-                argv = list(sys.argv[idx:])
-                if 'install' in argv:
-                    argv.remove('install')
-                if 'clean' in argv:
-                    argv.remove('clean')
-                sys.stdout.write("BUILDING " + str(sub[0]) +
-                                 ' in ' + str(sub[1]) + ' ')
-                log_file = os.path.join(self.build_base,
-                                        sub[0] + '_build.log')
-                try:
-                    addtnl_args = sub[2]
-                except:
-                    addtnl_args = []
-                log = open(log_file, 'w')
-                try:
-                    p = subprocess.Popen([sys.executable,
-                                          os.path.join(sub[1], 'setup.py'),
-                                          ] +  argv + addtnl_args,
-                                         stdout=log, stderr=log)
-                    status = util.process_progress(p)
-                    log.close()
-                except KeyboardInterrupt,e:
-                    p.terminate()
-                    log.close()
-                    raise e
-                if status != 0:
-                    sys.stdout.write(' failed; See ' + log_file + '\n')
-                    if self.quit_on_error():
+            idx = sys.argv.index('setup.py') + 1
+            argv = list(sys.argv[idx:])
+            if 'install' in argv:
+                argv.remove('install')
+            if 'clean' in argv:
+                argv.remove('clean')
+            try:  ## parallel
+                import pp
+                job_server = pp.Server()
+                results = [
+                    job_server.submit(process_package,
+                                      ('build', self.build_base,
+                                       sys.executable, argv,) + sub,
+                                      (),
+                                      ('os', 'subprocess', 'util',))
+                    for sub in self.distribution.subpackages]
+                has_failed = False
+                for result in results:
+                    pkg_name, status = result()
+                    if status != 0 and self.quit_on_error():
+                        has_failed = True
+                if has_failed:
+                    sys.exit(status)
+            except ImportError: ## serial
+                for sub in self.distribution.subpackages:
+                    args = ('build', self.build_base,
+                            sys.executable, argv,) + sub
+                    pkg_name, status = process_package(*args)
+                    if status != 0 and self.quit_on_error():
                         sys.exit(status)
-                else:
-                    sys.stdout.write(' done\n')
+
             if self.has_pure_modules() or self.has_c_libraries() or \
                     self.has_ext_modules() or self.has_shared_libraries() or \
                     self.has_pypp_extensions() or self.has_web_extensions() or \
@@ -394,34 +416,31 @@ class install(old_install):
                 os.makedirs(build.build_base)
             except:
                 pass
-            for sub in self.distribution.subpackages:
-                idx = sys.argv.index('setup.py') + 1
-                argv = list(sys.argv[idx:])
-                if 'build' in argv:
-                    argv.remove('build')
-                if 'clean' in argv:
-                    argv.remove('clean')
-                sys.stdout.write("INSTALLING " + str(sub[0]) +
-                                 ' from ' + str(sub[1]) + ' ')
-                log_file = os.path.join(build.build_base,
-                                        sub[0] + '_install.log')
-                log = open(log_file, 'w')
-                try:
-                    p = subprocess.Popen([sys.executable,
-                                          os.path.join(sub[1], 'setup.py'),
-                                          ] +  argv, stdout=log, stderr=log)
-                    status = util.process_progress(p)
-                    log.close()
-                except KeyboardInterrupt,e:
-                    p.terminate()
-                    log.close()
-                    raise e
-                if status != 0:
-                    sys.stdout.write(' failed; See ' + log_file + '\n')
-                    if build.quit_on_error():
+            try:  ## parallel
+                import pp
+                job_server = pp.Server()
+                results = [
+                    job_server.submit(process_package,
+                                      ('install', self.build_base,
+                                       sys.executable, argv,) + sub,
+                                      (),
+                                      ('os', 'subprocess', 'util',))
+                    for sub in self.distribution.subpackages]
+                has_failed = False
+                for result in results:
+                    pkg_name, status = result()
+                    if status != 0 and self.quit_on_error():
+                        has_failed = True
+                if has_failed:
+                    sys.exit(status)
+            except ImportError: ## serial
+                for sub in self.distribution.subpackages:
+                    args = ('install', build.build_base,
+                            sys.executable, argv,) + sub
+                    pkg_name, status = process_package(*args)
+                    if status != 0 and self.quit_on_error():
                         sys.exit(status)
-                else:
-                    sys.stdout.write(' done\n')
+
             if build.has_pure_modules() or build.has_c_libraries() or \
                     build.has_ext_modules() or build.has_shared_libraries() or \
                     build.has_pypp_extensions() or \
