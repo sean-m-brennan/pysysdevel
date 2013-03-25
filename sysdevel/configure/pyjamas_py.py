@@ -50,88 +50,62 @@ def is_installed(environ, version):
     return pyjamas_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     global environment
     if not pyjamas_found:
+        here = os.path.abspath(os.getcwd())
+        if version is None:
+            version = '0.8.1a'
+        website = 'https://github.com/pyjs/pyjs/zipball/0.8.1a'
+        archive = 'pyjs-' + version + '.zip'
+        src_dir = 'pyjamas-' + version
+        fetch(website, '', archive)
+        unarchive(os.path.join(here, download_dir, archive), target, src_dir)
 
+        ## Unique two-step installation
+        log_file = 'pyjamas.log'
+        log = open(log_file, 'w')
+        sys.stdout.write('PREREQUISITE pyjamas ')
 
-        # FIXME!!!!
-
-        if not os.path.exists(download_dir):
-            os.makedirs(download_dir)
+        cmd_line = [sys.executable, 'bootstrap.py',]
         try:
-            import tarfile, zipfile, subprocess
-            if version is None:
-                version = '0.8.1a'
-            website = 'https://github.com/pyjs/pyjs/zipball/0.8.1a'
-            download_file = ''
-            archive = 'pyjs-' + version + '.zip'
-            here = os.path.abspath(os.getcwd())
-            set_downloading_file(archive)
-            if not os.path.exists(target):
-                os.makedirs(target)
-            download_path = os.path.abspath(os.path.join(download_dir, archive))
-            if not os.path.exists(download_path):
-                urlretrieve(website + download_file, download_path,
-                            download_progress)
-            working_dir = os.path.abspath(os.path.join(target,
-                                                       'pyjamas-' + version))
-            if not os.path.exists(working_dir):
-                os.chdir(target)
-                if download_path[-3:] == 'zip':
-                    z = zipfile.ZipFile(download_path, 'r')
-                    z.extractall()
-                    os.rename(z.namelist()[0], 'pyjamas-' + version)
-                else:
-                    z = tarfile.open(download_path, 'r:gz')
-                    z.extractall()
+            p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
+            status = process_progress(p)
+        except KeyboardInterrupt,e:
+            p.terminate()
+            log.close()
+            raise e
+        check_install(status, log, log_file)
 
-            os.chdir(working_dir)
-            if os.path.exists(os.path.join('library',
-                                           'HTTPRequest.browser.py')):
-                patch_file(os.path.join('library', 'HTTPRequest.browser.py'),
-                           'onProgress', 'localHandler', 'handler')
-            elif os.path.exists(os.path.join('library', 'pyjamas', 
-                                           'HTTPRequest.browser.py')):
-                patch_file(os.path.join('library', 'pyjamas', 
-                                        'HTTPRequest.browser.py'),
-                           'onProgress', 'localHandler', 'handler')
+        cmd_line = [sys.executable, 'run_bootstrap_first_then_setup.py', 'build']
+        if not locally:
+            sudo_prefix = []
+            if not as_admin():
+                sudo_prefix = ['sudo']
+            cmd_line = sudo_prefix + cmd_line + ['install']
+         try:
+            p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
+            status = process_progress(p)
+            log.close()
+        except KeyboardInterrupt,e:
+            p.terminate()
+            log.close()
+            raise e
+        check_install(status, log, log_file)
 
-            log_file = 'pyjamas.log'
-            log = open(log_file, 'w')
-            cmd_line = [sys.executable, 'bootstrap.py',]
-            sys.stdout.write('PREREQUISITE pyjamas ')
-            try:
-                p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = process_progress(p)
-            except KeyboardInterrupt,e:
-                p.terminate()
-                log.close()
-                raise e
-            if status != 0:
-                log.close()
-                sys.stdout.write(' failed; See ' + log_file + '\n')
-                raise Exception('Pyjamas is required, but could not be ' +
-                                'installed locally; See ' + log_file)
-
-            cmd_line = [sys.executable, 'run_bootstrap_first_then_setup.py', 'build']
-            try:
-                p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = process_progress(p)
-                log.close()
-            except KeyboardInterrupt,e:
-                p.terminate()
-                log.close()
-                raise e
-            if status != 0:
-                sys.stdout.write(' failed; See ' + log_file + '\n')
-                raise Exception('Pyjamas is required, but could not be ' +
-                                'installed locally; See ' + log_file)
-            sys.stdout.write(' done\n')
-            os.chdir(here)
-            environment['PYJSBUILD'] = find_program('pyjsbuild', [working_dir])
+        sys.stdout.write(' done\n')
+        os.chdir(here)
+        search_path = []
+        if locally:
+            search_path.append(working_dir)
             sys.path.insert(0, os.path.join(working_dir, 'build', 'lib'))
-        except Exception,e:
-            raise Exception('Unable to install Pyjamas: ' + str(e))
-        #if not is_installed(environ, version):
-        #    raise Exception('Pyjamas installation failed.')
+        environment['PYJSBUILD'] = find_program('pyjsbuild', search_path)
+
+
+
+def check_install(status, log, log_file):
+    if status != 0:
+        log.close()
+        sys.stdout.write(' failed; See ' + log_file + '\n')
+        raise Exception('Pyjamas is required, but could not be ' +
+                        'installed; See ' + log_file)

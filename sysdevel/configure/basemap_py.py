@@ -63,7 +63,7 @@ def is_installed(environ, version):
     return basemap_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     global environment
     if not basemap_found:
         if version is None:
@@ -72,10 +72,9 @@ def install(environ, version, target='build'):
             'matplotlib-toolkits/basemap-' + version + '/'
         src_dir = 'basemap-' + str(version)
         archive =  src_dir + '.tar.gz'
-        install_pypkg_locally(src_dir, website, archive, target)
+        pth = install_pypkg(src_dir, website, archive, target, locally=locally)
         environment['BASEMAP_DATA_PATHLIST'] = basemap_data_pathlist
-        basemap_dir = os.path.abspath(os.path.join(target, local_lib_dir,
-                                                   'mpl_toolkits', 'basemap'))
+        basemap_dir = os.path.join(pth, 'mpl_toolkits', 'basemap')
         environment['BASEMAP_DIR'] = basemap_dir
         environment['BASEMAP_DATA_FILES'] = \
             [(basemap_data_dir,

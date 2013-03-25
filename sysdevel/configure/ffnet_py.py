@@ -44,13 +44,13 @@ def is_installed(environ, version):
     return ffnet_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not ffnet_found:
         if version is None:
             version = '0.7.1'
         website = 'http://prdownloads.sourceforge.net/ffnet/'
         src_dir = 'ffnet-' + str(version)
         archive = src_dir + '.tar.gz'
-        install_pypkg_locally(src_dir, website, archive, target)
+        install_pypkg(src_dir, website, archive, target, locally=locally)
         if not is_installed(environ, version):
             raise Exception('ffnet installation failed.')

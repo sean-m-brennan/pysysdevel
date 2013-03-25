@@ -63,42 +63,50 @@ def is_installed(environ, version):
     return cdf_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
+    global local_search_paths
     if not cdf_found:
         if version is None:
             version = '34_1'
         website = ('http://cdf.gsfc.nasa.gov/',)
-        if not 'darwin' in platform.system().lower():
+        if locally or not 'darwin' in platform.system().lower():
+            here = os.path.abspath(os.getcwd())
+            if locally:
+                prefix = os.path.abspath(dst_dir)
+                if not prefix in local_search_paths:
+                    local_search_paths.append(prefix)
+            else:
+                prefix = global_prefix
+
             website = ('http://cdaweb.gsfc.nasa.gov/',
                        'pub/software/cdf/dist/cdf' + str(version))
             if 'windows' in platform.system().lower():
-                os_dir = 'w32'
+                os_dir = 'windows/src_distribution'
                 oper_sys = 'mingw'
+            elif 'darwin' in platform.system().lower():
+                oper_sys = os_dir = 'macosx'
+                os_dir += '/src_distribution'
             elif 'linux' in platform.system().lower():
                 oper_sys = os_dir = 'linux'
-            website += '/' + os_dir + '/'
-            here = os.path.abspath(os.getcwd())
+            website += '/' + os_dir
             src_dir = 'cdf' + str(version) + '-dist'
             archive = src_dir + '-cdf.tar.gz'
             fetch(''.join(website), archive, archive)
             unarchive(os.path.join(here, download_dir, archive),
                       target, src_dir)
-            build_dir = os.path.join(src_dir, '_build')
+
+            build_dir = os.path.join(target, src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
             if 'windows' in platform.system().lower():
-                ## assumes MinGW installed and detected
-                mingw_check_call(environ,
-                                 ['make',  'OS=mingw', 'ENV=gnu', 'all'])
-                mingw_check_call(environ,
-                                 ['make', 'INSTALLDIR=/', 'install'])
+                mingw_check_call(environ, ['make',
+                                           'OS=mingw', 'ENV=gnu', 'all'])
+                mingw_check_call(environ, ['make',
+                                           'INSTALLDIR=' + prefix, 'install'])
             else:
-                sudo_prefix = []
-                if not as_admin():
-                    sudo_prefix = ['sudo']
-                subprocess.check_call(['make', 'OS=linux', 'ENV=gnu', 'all'])
-                subprocess.check_call(sudo_prefix + 
-                                      ['make', 'INSTALLDIR=/usr', 'install'])
+                subprocess.check_call(['make',
+                                       'OS=' + oper_sys, 'ENV=gnu', 'all'])
+                admin_check_call(['make', 'INSTALLDIR=' + prefix, 'install'])
             os.chdir(here)
         else:
             global_install('CDF', website,

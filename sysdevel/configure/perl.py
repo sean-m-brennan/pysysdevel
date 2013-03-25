@@ -84,7 +84,7 @@ def is_installed(environ, version):
     return perl_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not perl_found:
         if version is None:
             version = '5'

@@ -67,7 +67,7 @@ def is_installed(environ, version):
     return java_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     global environment
     if version is None:
         version = '1.6.0'

@@ -67,28 +67,16 @@ def is_installed(environ, version):
     return graphviz_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not graphviz_found:
         if version is None:
             version = '2.30.1'
         website = ('http://www.graphviz.org/',
                    'pub/graphviz/stable/SOURCES/')
-        if 'windows' in platform.system().lower():
-            ## assumes MinGW installed and detected
-            here = os.path.abspath(os.getcwd())
+        if locally or 'windows' in platform.system().lower():
             src_dir = 'graphviz-' + str(version)
             archive = src_dir + '.tar.gz'
-            fetch(''.join(website), archive, archive)
-            unarchive(os.path.join(here, download_dir, archive),
-                      target, src_dir)
-            build_dir = os.path.join(src_dir, '_build')
-            mkdir(build_dir)
-            os.chdir(build_dir)
-            mingw_check_call(environ, ['../configure',
-                                       '--prefix=' + environ['MSYS_PREFIX']])
-            mingw_check_call(environ, ['make'])
-            mingw_check_call(environ, ['make', 'install'])
-            os.chdir(here)
+            autotools_install(environ, website, archive, src_dir, target, locally)
         else:
             global_install('Graphviz', website,
                            None,

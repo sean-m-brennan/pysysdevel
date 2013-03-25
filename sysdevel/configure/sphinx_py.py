@@ -45,13 +45,13 @@ def is_installed(environ, version):
     return sphinx_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not sphinx_found:
         website = 'https://pypi.python.org/packages/source/S/Sphinx/'
         if version is None:
             version = '1.1.3'
         src_dir = 'Sphinx-' + str(version)
         archive = src_dir + '.tar.gz' 
-        install_pypkg_locally(src_dir, website, archive, target)
+        install_pypkg(src_dir, website, archive, target, locally=locally)
         if not is_installed(environ, version):
             raise Exception('sphinx installation failed.')

@@ -47,6 +47,6 @@ def is_installed(environ, version):
     return gomp_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     raise Exception('GOMP is part of GCC; Your development environment ' +
                     'is seriously screwed up. Look for libgomp.so.')

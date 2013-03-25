@@ -56,34 +56,14 @@ def is_installed(environ, version):
     return antlr_c_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     global environment
     if not antlr_c_found:
         website = 'http://www.antlr3.org/download/'
         if version is None:
             version = '3.1.2'
-        here = os.path.abspath(os.getcwd())
         src_dir = 'libantlr3c-' + str(version)
         archive = src_dir + '.tar.gz'
-        fetch(''.join(website), archive, archive)
-        unarchive(os.path.join(here, download_dir, archive), target, src_dir)
-        build_dir = os.path.join(src_dir, '_build')
-        mkdir(build_dir)
-        os.chdir(build_dir)
-        if 'windows' in platform.system().lower():
-            ## assumes MinGW installed and detected
-            mingw_check_call(environ, ['../configure',
-                                       '--prefix=' + environ['MSYS_PREFIX']])
-            mingw_check_call(environ, ['make'])
-            mingw_check_call(environ, ['make', 'install'])
-            os.chdir(here)
-        else:
-            sudo_prefix = []
-            if not as_admin():
-                sudo_prefix = ['sudo']
-            subprocess.check_call(['../configure', '--prefix=/usr'])
-            subprocess.check_call(['make'])
-            subprocess.check_call(sudo_prefix + ['make', 'install'])
-        os.chdir(here)
+        autotools_install(environ, website, archive, src_dir, target, locally)
         if not is_installed(environ, version):
             raise Exception('ANTLR-C runtime installation failed.')

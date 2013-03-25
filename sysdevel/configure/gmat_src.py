@@ -88,7 +88,7 @@ def is_installed(environ, version):
     return gmat_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     global environment
     if version is None:
         version = version_strs[VERSION]

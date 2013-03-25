@@ -45,7 +45,7 @@ def is_installed(environ, version):
     return wxpy_found
     
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not wx_found:
         if version is None:
             version = '2.9.4.0'

@@ -46,7 +46,7 @@ def is_installed(environ, version):
     return matplotlib_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     global environment
     if not matplotlib_found:
         import matplotlib
@@ -55,22 +55,26 @@ def install(environ, version, target='build'):
             version = '1.2.0'
         src_dir = 'matplotlib-' + str(version)
         archive = src_dir + '.tar.gz'
-        install_pypkg_locally(src_dir, website, archive, target)
+        pth = install_pypkg(src_dir, website, archive, target, locally=locally)
 
-        ## matplotlib.get_py2exe_datafiles (can't re-import properly here)
-        datapath = os.path.abspath(os.path.join(target, local_lib_dir,
-                                                'matplotlib', 'mpl-data'))
-        head, tail = os.path.split(datapath)
-        d = {}
-        for root, dirs, files in os.walk(datapath):
-            # Need to explicitly remove cocoa_agg files or py2exe complains
-            # NOTE I dont know why, but do as previous version
-            if 'Matplotlib.nib' in files:
-                files.remove('Matplotlib.nib')
-            files = [os.path.join(root, filename) for filename in files]
-            root = root.replace(tail, 'mpl-data')
-            root = root[root.index('mpl-data'):]
-            d[root] = files
-        environment['MATPLOTLIB_DATA_FILES'] = d.items()
+        mpl = sys.modules.get('matplotlib', None)
+        if mpl:
+            environment['MATPLOTLIB_DATA_FILES'] = mpl.get_py2exe_datafiles()
+        else:
+            ## matplotlib.get_py2exe_datafiles (can't re-import properly here)
+            datapath = os.path.abspath(os.path.join(pth,
+                                                    'matplotlib', 'mpl-data'))
+            head, tail = os.path.split(datapath)
+            d = {}
+            for root, dirs, files in os.walk(datapath):
+                # Need to explicitly remove cocoa_agg files or py2exe complains
+                # NOTE I dont know why, but do as previous version
+                if 'Matplotlib.nib' in files:
+                    files.remove('Matplotlib.nib')
+                files = [os.path.join(root, filename) for filename in files]
+                root = root.replace(tail, 'mpl-data')
+                root = root[root.index('mpl-data'):]
+                d[root] = files
+            environment['MATPLOTLIB_DATA_FILES'] = d.items()
         if not is_installed(environ, version):
             raise Exception('matplotlib installation failed.')

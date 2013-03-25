@@ -44,7 +44,7 @@ def is_installed(environ, version):
     return shapely_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=):
     global environment
     if not shapely_found:
         website = 'http://pypi.python.org/packages/source/S/Shapely/'
@@ -52,6 +52,6 @@ def install(environ, version, target='build'):
             version = '1.2.16'
         src_dir = 'Shapely-' + str(version)
         archive = src_dir + '.tar.gz'
-        install_pypkg_locally(src_dir, website, archive, target)
+        install_pypkg(src_dir, website, archive, target, locally=locally)
         if not is_installed(environ, version):
             raise Exception('shapely installation failed.')

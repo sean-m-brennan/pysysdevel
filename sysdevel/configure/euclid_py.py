@@ -43,13 +43,13 @@ def is_installed(environ, version):
     return euclid_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not euclid_found:
         website = 'https://pypi.python.org/packages/source/e/euclid/'
         if version is None:
             version = '0.01'
         src_dir = 'euclid-' + str(version)
         archive = src_dir + '.tar.gz' 
-        install_pypkg_locally(src_dir, website, archive, target)
+        install_pypkg(src_dir, website, archive, target, locally=locally)
         if not is_installed(environ, version):
             raise Exception('euclid installation failed.')

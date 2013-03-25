@@ -53,7 +53,7 @@ def is_installed(environ, version):
     return gccxml_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not gccxml_found:
         if compare_versions(version, '0.6') == 1 and \
                 'GIT' in environ.keys() and \
@@ -78,6 +78,7 @@ def install(environ, version, target='build'):
             mingw_check_call(environ, ['make', 'install'])
             os.chdir(here)
         else:
+            ## TODO: No local-only installation
             if version is None:
                 version = '0.6.0'
             website = ('http://www.gccxml.org/',

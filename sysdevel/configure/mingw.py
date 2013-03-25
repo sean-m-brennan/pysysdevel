@@ -32,10 +32,8 @@ def null():
     global environment
     environment['MSVCRT_DIR'] = None
     environment['MINGW_DIR'] = None
-    environment['MINGW_PREFIX'] = '/mingw'
     environment['MSYS_DIR'] = None
     environment['MSYS_SHELL'] = None
-    environment['MSYS_PREFIX'] = '/usr'
     environment['MINGW_CC'] = None
     environment['MINGW_CXX'] = None
     environment['MINGW_FORTRAN'] = None
@@ -45,8 +43,6 @@ def is_installed(environ, version):
     global environment, mingw_found
     ## Python was (most likely) built with msvcr90.dll, thus it's a dependency
     ## FIXME detect
-    environment['MSYS_PREFIX'] = '/usr'
-    environment['MINGW_PREFIX'] = '/mingw'
     environment['MSVCRT_DIR'] = None
     try:
         environment['MSVCRT_DIR'] = os.environ['MSVCRT_DIR']
@@ -90,7 +86,7 @@ def is_installed(environ, version):
     return mingw_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not mingw_found:
         if version is None:
             version = '20120426'

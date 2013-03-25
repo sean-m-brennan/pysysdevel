@@ -43,13 +43,13 @@ def is_installed(environ, version):
     return networkx_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not networkx_found:
         if version is None:
             version = '1.7'
         website = 'http://networkx.lanl.gov/download/networkx/'
         src_dir = 'networkx-' + str(version)
         archive = src_dir + '.tar.gz'
-        install_pypkg_locally(src_dir, website, archive, target)
+        install_pypkg(src_dir, website, archive, target, locally=locally)
         if not is_installed(environ, version):
             raise Exception('networkx installation failed.')

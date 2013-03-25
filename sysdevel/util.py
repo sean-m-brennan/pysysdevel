@@ -37,6 +37,8 @@ import tarfile
 import zipfile
 import subprocess
 import ctypes
+import distutils.sysconfig
+
 
 ## Prefer local implementations (urllib2, httplib) over global
 here = os.path.dirname(__file__)
@@ -51,7 +53,9 @@ default_path_prefixes = ['/usr','/usr/local','/opt/local','C:\\MinGW'] + glob.gl
 download_file = ''
 
 local_lib_dir = 'python'
+global_prefix = '/usr'
 download_dir  = 'third_party'
+local_search_paths = []
 
 default_py2exe_library = 'library.zip'
 
@@ -113,7 +117,7 @@ def find_program(name, pathlist=[]):
         path_env = os.environ['PATH'].split(_sep_)
     except:
         path_env = []
-    for path in pathlist + path_env:
+    for path in pathlist + path_env + local_search_paths:
         if path != None and os.path.exists(path):
             if DEBUG:
                 print 'Searching ' + path + ' for ' + name
@@ -142,7 +146,7 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
     pathlist = extra_paths
     if not limit:
         pathlist += default_path_prefixes
-    for path in pathlist:
+    for path in pathlist + local_search_paths:
         if path != None and os.path.exists(path):
             for sub in subdirs:
                 ext_path = os.path.join(path, sub)
@@ -190,7 +194,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
     pathlist = extra_paths
     if not limit:
         pathlist += default_path_prefixes
-    for path in pathlist:
+    for path in pathlist + local_search_paths:
         if path != None and os.path.exists(path):
             for subpath in default_lib_paths:
                 for sub in subdirs:
@@ -231,7 +235,7 @@ def find_file(filepattern, pathlist=[]):
     '''
     Find the full path of the specified file.
     '''
-    for path in pathlist:
+    for path in pathlist + local_search_paths:
         if path != None and os.path.exists(path):
             if DEBUG:
                 print 'Searching ' + path + ' for ' + filepattern
@@ -242,15 +246,16 @@ def find_file(filepattern, pathlist=[]):
 
 
 def patch_file(filepath, match, original, replacement):
-    orig = open(filepath, 'r')
-    lines = orig.readlines()
-    orig.close()
-    shutil.move(filepath, filepath + '.orig')
-    fixed = open(filepath, 'w')
-    for line in lines:
-        if match in line:
-            line = line.replace(original, replacement)
-        fixed.write(line)
+    if os.path.exists(filepath):
+        orig = open(filepath, 'r')
+        lines = orig.readlines()
+        orig.close()
+        shutil.move(filepath, filepath + '.orig')
+        fixed = open(filepath, 'w')
+        for line in lines:
+            if match in line:
+                line = line.replace(original, replacement)
+            fixed.write(line)
     
 
 def process_progress(p):
@@ -332,76 +337,6 @@ def unarchive(archive, dest, target):
         else:
             raise Exception('Unrecognized archive compression: ' + archive)
         os.chdir(here)
-
-
-def install_pyscript_locally(website, name, build_dir):
-    if not os.path.exists(download_dir):
-        os.makedirs(download_dir)
-    target_dir = os.path.join(build_dir, local_lib_dir)
-    if not os.path.exists(target_dir):
-        os.makedirs(target_dir)
-    try:
-        sys.stdout.write('PREREQUISITE ' + name + ' ')
-        fetch(website, name, name)
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir)
-        shutil.copy(os.path.join(download_dir, name), target_dir)
-    except Exception,e:
-        raise Exception('Unable to install ' + name + ' locally: ' + str(e))
-
-
-def install_pypkg_locally(name, website, archive, build_dir,
-                          env=None, src_dir=None):
-    if src_dir is None:
-        src_dir = name
-    here = os.path.abspath(os.getcwd())
-    target_dir = os.path.abspath(build_dir)
-    if True: #try:
-        fetch(website, archive, archive)
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir)
-        sys.stdout.write('PREREQUISITE ' + name + ' ')
-        sys.stdout.flush()
-        unarchive(os.path.join(here, download_dir, archive),
-                  target_dir, src_dir)
-        os.chdir(os.path.join(target_dir, src_dir))
-        if env:
-            for e in env:
-                (key, value) = e.split('=')
-                os.environ[key] = value
-        if not os.path.exists(os.path.join(target_dir, local_lib_dir)):
-            os.makedirs(os.path.join(target_dir, local_lib_dir))
-        environ = os.environ.copy()
-        environ['PYTHONPATH'] = os.path.join(target_dir, local_lib_dir)
-        cmd_line = [sys.executable, 'setup.py', 'build', 'install',
-                    '--home=' + target_dir,
-                    '--install-lib=' + os.path.join(target_dir, local_lib_dir),
-                    ]
-        log_file = os.path.join(target_dir, name + '.log')
-        log = open(log_file, 'w')
-        log.write(str(cmd_line) + '\n\n')
-        log.flush()
-        try:
-            p = subprocess.Popen(cmd_line, env=environ, stdout=log, stderr=log)
-            status = process_progress(p)
-            log.close()
-        except KeyboardInterrupt,e:
-            p.terminate()
-            log.close()
-            raise e
-        if status != 0:
-            sys.stdout.write(' failed; See ' + log_file + '\n')
-            raise Exception(name + ' is required, but could not be ' +
-                            'installed locally; See ' + log_file)
-        else:
-            sys.stdout.write(' done\n')
-        site.addsitedir(os.path.join(target_dir, local_lib_dir))
-        if not os.path.join(target_dir, local_lib_dir) in sys.path:
-            sys.path.insert(0, os.path.join(target_dir, local_lib_dir))
-        os.chdir(here)
-    #except Exception,e:
-    #    os.chdir(here)
-    #    raise Exception('Unable to install ' + name + ' locally: ' + str(e))
 
 
 def create_script_wrapper(pyscript, target_dir):
@@ -714,12 +649,126 @@ class PrerequisiteError(Exception):
     pass
 
 
+def install_pyscript(website, name, build_dir, locally=True):
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
+    if locally:
+        target_dir = os.path.join(os.path.abspath(build_dir), local_lib_dir)
+    else:
+        target_dir = distutils.sysconfig.get_python_lib()
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+
+    sys.stdout.write('PREREQUISITE ' + name + ' ')
+    fetch(website, name, name)
+    try:
+        shutil.copy(os.path.join(download_dir, name), target_dir)
+    except Exception,e:
+        raise Exception('Unable to install ' + name + ': ' + str(e))
+
+
+def install_pypkg(name, website, archive, build_dir,
+                  env=None, src_dir=None, locally=True):
+    if src_dir is None:
+        src_dir = name
+    here = os.path.abspath(os.getcwd())
+    target_dir = os.path.abspath(build_dir)
+    target_lib_dir = os.path.join(target_dir, local_lib_dir)
+
+    sys.stdout.write('PREREQUISITE ' + name + ' ')
+    sys.stdout.flush()
+    fetch(website, archive, archive)
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    unarchive(os.path.join(here, download_dir, archive), target_dir, src_dir)
+    if not os.path.exists(target_lib_dir):
+        os.makedirs(target_lib_dir)
+
+    try:
+        os.chdir(os.path.join(target_dir, src_dir))
+        environ = os.environ.copy()
+        if env:
+            for e in env:
+                (key, value) = e.split('=')
+                environ[key] = value
+        if locally:
+            environ['PYTHONPATH'] = target_lib_dir
+            cmd_line = [sys.executable, 'setup.py', 'build', 'install',
+                        '--home=' + target_dir,
+                        '--install-lib=' + target_lib_dir]
+        else:
+            sudo_prefix = []
+            if not as_admin():
+                sudo_prefix = ['sudo']
+            cmd_line = sudo_prefix + [sys.executable,
+                                      'setup.py', 'build', 'install']
+        log_file = os.path.join(target_dir, name + '.log')
+        log = open(log_file, 'w')
+        log.write(str(cmd_line) + '\n\n')
+        log.flush()
+        try:
+            p = subprocess.Popen(cmd_line, env=environ, stdout=log, stderr=log)
+            status = process_progress(p)
+            log.close()
+        except KeyboardInterrupt,e:
+            p.terminate()
+            log.close()
+            raise e
+        if status != 0:
+            sys.stdout.write(' failed; See ' + log_file + '\n')
+            raise Exception(name + ' is required, but could not be ' +
+                            'installed; See ' + log_file)
+        else:
+            sys.stdout.write(' done\n')
+        if locally:
+            site.addsitedir(target_lib_dir)
+            if not target_lib_dir in sys.path:
+                sys.path.insert(0, target_lib_dir)
+        os.chdir(here)
+    except Exception,e:
+        os.chdir(here)
+        raise Exception('Unable to install ' + name + ': ' + str(e))
+
+    if locally:
+        return target_lib_dir
+    try:
+        __import__(name)
+        module = sys.modules[name]
+        return os.path.dirname(module.__file__)
+    except:
+        return distutils.sysconfig.get_python_lib()
+
+
+def autotools_install(environ, website, archive, src_dir, dst_dir, locally=True):
+    global local_search_paths
+    here = os.path.abspath(os.getcwd())
+    fetch(''.join(website), archive, archive)
+    unarchive(os.path.join(here, download_dir, archive), dst_dir, src_dir)
+
+    if locally:
+        prefix = os.path.abspath(dst_dir)
+        if not prefix in local_search_paths:
+            local_search_paths.append(prefix)
+    else:
+        prefix = global_prefix
+
+    build_dir = os.path.join(src_dir, '_build')
+    mkdir(build_dir)
+    os.chdir(build_dir)
+    if 'windows' in platform.system().lower():
+        ## Assumes MinGW present, detected, and loaded in environment
+        mingw_check_call(environ, ['../configure', '--prefix=' + prefix])
+        mingw_check_call(environ, ['make'])
+        mingw_check_call(environ, ['make', 'install'])
+    else:
+        subprocess.check_call(['../configure', '--prefix=' + prefix])
+        subprocess.check_call(['make'])
+        admin_check_call(['make', 'install'])
+    os.chdir(here)
+
+
 
 def global_install(what, website_tpl, winstaller, port, apt, yum):
-    sudo_prefix = []
-    if not as_admin():
-        sudo_prefix = ['sudo']
-
     if 'windows' in platform.system().lower() and winstaller:
         fetch(''.join(website_tpl), winstaller, winstaller)
         installer = os.path.join(download_dir, winstaller)

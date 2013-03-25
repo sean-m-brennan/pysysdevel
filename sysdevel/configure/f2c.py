@@ -44,7 +44,7 @@ def is_installed(environ, version):
     return f2c_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     global environment
     if not f2c_found:
         website = 'http://www.netlib.org/f2c/'

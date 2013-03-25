@@ -41,7 +41,7 @@ def is_installed(environ, version):
     return doxygen_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not doxygen_found:
         if version is None:
             version = '1.8.3.1'

@@ -90,35 +90,15 @@ def is_installed(environ, version):
     return boost_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not boost_found:
         if version is None:
             version = '1_44_0'
         website = ('http://prdownloads.sourceforge.net/boost/',)
-        if 'windows' in platform.system().lower():
-            ## assumes MinGW installed and detected
-            here = os.path.abspath(os.getcwd())
+        if locally or 'windows' in platform.system().lower():
             src_dir = 'boost_' + str(version)
             archive = src_dir + '.tar.bz2'
-            fetch(''.join(website), archive, archive)
-            unarchive(os.path.join(here, download_dir, archive),
-                      target, src_dir)
-            os.chdir(os.path.join(target, src_dir))
-            os_environ = os.environ.copy()
-            os_environ['PATH'] += os.path.join(environ['MINGW_DIR'], 'bin') + ';'
-            os_environ['PATH'] += os.path.join(environ['MSYS_DIR'], 'bin') + ';'
-            cmd_line = 'bootstrap.bat mingw'
-            p = subprocess.Popen(cmd_line, env=os_environ)
-            status = p.wait()
-            if status != 0:
-                raise subprocess.CalledProcessError(status, cmd_line)
-            cmd_line = 'bjam install --build-type=complete --toolset=gcc ' + \
-                '--prefix=' + environ['MSYS_DIR']
-            p = subprocess.Popen(cmd_line, env=os_environ)
-            status = p.wait()
-            if status != 0:
-                raise subprocess.CalledProcessError(status, cmd_line)
-            os.chdir(here)
+            autotools_install(environ, website, archive, src_dir, target, locally)
         else:
             global_install('Boost', website,
                            None,

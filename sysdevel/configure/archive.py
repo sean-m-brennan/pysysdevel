@@ -65,28 +65,16 @@ def is_installed(environ, version):
     return archive_found
 
 
-def install(environ, version, target='build'):
+def install(environ, version, target='build', locally=True):
     if not archive_found:
         if version is None:
             version = '3.1.2'
         website = ('http://libarchive.org/',
                    'downloads/')
-        if 'windows' in platform.system().lower():
-            ## assumes MinGW installed and detected
-            here = os.path.abspath(os.getcwd())
+        if locally or 'windows' in platform.system().lower():
             src_dir = 'libarchive-' + str(version)
             archive = src_dir + '.tar.gz'
-            fetch(''.join(website), archive, archive)
-            unarchive(os.path.join(here, download_dir, archive),
-                      target, src_dir)
-            build_dir = os.path.join(src_dir, '_build')
-            mkdir(build_dir)
-            os.chdir(build_dir)
-            mingw_check_call(environ, ['../configure',
-                                       '--prefix=' + environ['MSYS_PREFIX']])
-            mingw_check_call(environ, ['make'])
-            mingw_check_call(environ, ['make', 'install'])
-            os.chdir(here)
+            autotools_install(environ, website, archvie, src_dir, target, locally)
         else:
             global_install('Archive', website,
                            None,
