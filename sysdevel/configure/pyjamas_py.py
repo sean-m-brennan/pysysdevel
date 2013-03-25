@@ -53,19 +53,26 @@ def is_installed(environ, version):
 def install(environ, version, target='build', locally=True):
     global environment
     if not pyjamas_found:
-        here = os.path.abspath(os.getcwd())
         if version is None:
             version = '0.8.1a'
         website = 'https://github.com/pyjs/pyjs/zipball/0.8.1a'
         archive = 'pyjs-' + version + '.zip'
         src_dir = 'pyjamas-' + version
         fetch(website, '', archive)
-        unarchive(os.path.join(here, download_dir, archive), target, src_dir)
+
+        here = os.path.abspath(os.getcwd())
+        working_dir = os.path.join(target, src_dir)
+        if not os.path.exists(working_dir):
+            unarchive(os.path.join(here, download_dir, archive),
+                      target, src_dir)
+            os.rename(glob.glob(os.path.join(here, target, '*pyjs*'))[0],
+                      working_dir)
 
         ## Unique two-step installation
-        log_file = 'pyjamas.log'
+        log_file = os.path.join(here, target, 'pyjamas.log')
         log = open(log_file, 'w')
         sys.stdout.write('PREREQUISITE pyjamas ')
+        os.chdir(os.path.join(here, target, src_dir))
 
         cmd_line = [sys.executable, 'bootstrap.py',]
         try:
