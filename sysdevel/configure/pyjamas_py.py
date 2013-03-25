@@ -83,7 +83,7 @@ def install(environ, version, target='build', locally=True):
             if not as_admin():
                 sudo_prefix = ['sudo']
             cmd_line = sudo_prefix + cmd_line + ['install']
-         try:
+        try:
             p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
             status = process_progress(p)
             log.close()

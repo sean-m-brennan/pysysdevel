@@ -44,7 +44,7 @@ def is_installed(environ, version):
     return shapely_found
 
 
-def install(environ, version, target='build', locally=):
+def install(environ, version, target='build', locally=locally):
     global environment
     if not shapely_found:
         website = 'http://pypi.python.org/packages/source/S/Shapely/'
