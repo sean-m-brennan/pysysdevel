@@ -995,7 +995,7 @@ def get_options(pkg_config, options):
 
         INCLUDE_GTK_WIN = False
         INCLUDE_TCLTK_WIN = False
-        os.environ['PATH'] += _sep_ + 'gtk/lib' + _sep_ + 'gtk/bin'
+        #os.environ['PATH'] += _sep_ + 'gtk/lib' + _sep_ + 'gtk/bin'
 
         msvc_version = '9.0'  ## boost-python requires MSVC 9.0
         msvc_path = os.path.join(os.environ['ProgramFiles(x86)'],
@@ -1092,13 +1092,17 @@ def get_options(pkg_config, options):
             if p is None:
                 break
 
+        for lib in pkg_config.extra_libraries:
+            os.environ['PATH'] += os.pathsep + lib[0]
+            os.environ['PATH'] += os.pathsep + os.path.join(lib[0], '..', 'bin')
+
         if 'app_type' in options and options['app_type'] == 'console':
             specific_options = dict(
                 console = exe_target,
                 package_dir = {pkg_config.PACKAGE: pkg_config.PACKAGE},
                 packages = pkgs,
                 package_data = pkg_data,
-                data_files = addtnl_files + pkg_config.extra_libraries,
+                data_files = addtnl_files,
                 options = exe_opts,
                 zipfile = options['ziplib'],
                 )
@@ -1108,7 +1112,7 @@ def get_options(pkg_config, options):
                 package_dir = {pkg_config.PACKAGE: pkg_config.PACKAGE},
                 packages = pkgs,
                 package_data = pkg_data,
-                data_files = addtnl_files + pkg_config.extra_libraries,
+                data_files = addtnl_files,
                 options = exe_opts,
                 zipfile = options['ziplib'],
                 )
