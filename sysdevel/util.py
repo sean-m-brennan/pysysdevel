@@ -31,6 +31,8 @@ import struct
 import time
 import shutil
 import urllib
+import urllib2
+import httplib
 import socket
 import tempfile
 import tarfile
@@ -38,13 +40,6 @@ import zipfile
 import subprocess
 import ctypes
 import distutils.sysconfig
-
-
-## Prefer local implementations (urllib2, httplib) over global
-here = os.path.dirname(__file__)
-sys.path.insert(0, os.path.abspath(here))
-
-import urllib2, httplib  ## Corrected for proper SSL handling ??
 
 
 
@@ -766,6 +761,22 @@ def autotools_install(environ, website, archive, src_dir, dst_dir, locally=True)
         admin_check_call(['make', 'install'])
     os.chdir(here)
 
+
+def _uses_apt_get():
+    try:
+        find_program('apt-get')
+        return os.path.exists('/etc/apt/sources.list')
+    except:
+        pass
+    return False
+
+def _uses_yum():
+    try:
+        find_program('yum')
+        return os.path.exists('/etc/yum.conf')
+    except:
+        pass
+    return False
 
 
 def global_install(what, website_tpl, winstaller, port, apt, yum):
