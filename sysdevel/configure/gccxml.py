@@ -61,6 +61,13 @@ def install(environ, version, target='build', locally=True):
                 'windows' in platform.system().lower():
             ## assumes MinGW, git, and cmake are installed and detected
             here = os.path.abspath(os.getcwd())
+            if locally:
+                prefix = os.path.abspath(dst_dir)
+                if not prefix in local_search_paths:
+                    local_search_paths.append(prefix)
+            else:
+                prefix = global_prefix
+
             src_dir = 'gccxml'
             os.chdir(download_dir)
             gitsite = 'https://github.com/gccxml/gccxml.git'
@@ -71,8 +78,7 @@ def install(environ, version, target='build', locally=True):
             os.chdir(build_dir)
             mingw_check_call(environ, [environ['CMAKE'], '..',
                                        '-G', '"MSYS Makefiles"',
-                                       '-DCMAKE_INSTALL_PREFIX=' + \
-                                           environ['MSYS_PREFIX'],
+                                       '-DCMAKE_INSTALL_PREFIX=' + prefix,
                                        '-DCMAKE_MAKE_PROGRAM=/bin/make.exe'])
             mingw_check_call(environ, ['make'])
             mingw_check_call(environ, ['make', 'install'])
