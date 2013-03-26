@@ -44,7 +44,7 @@ import distutils.sysconfig
 here = os.path.dirname(__file__)
 sys.path.insert(0, os.path.abspath(here))
 
-import urllib2, httplib  ## Corrected for proper SSL handling
+import urllib2, httplib  ## Corrected for proper SSL handling ??
 
 
 
