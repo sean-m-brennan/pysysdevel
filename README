@@ -4,10 +4,10 @@ sysdevel
 sysdevel is a Python package that assists software development in
 three related areas: model development, data visualization, and
 collaboration & distribution. This package facilitates multi-model
-simulation development by implementing a generic Modle-View-Controller
+simulation development by implementing a generic Model-View-Controller
 interface. The View portion of this interface handles data
 visualization by unifying both web-based and desktop UI tools. For
-package distribution, sysdevel extends the distutils pacage to handle
+package distribution, sysdevel extends the distutils package to handle
 external libraries and application freezing.
 
 All code in sysdevel is released under the Mozilla Public License 2.0

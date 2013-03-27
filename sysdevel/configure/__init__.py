@@ -88,15 +88,21 @@ def __configure_package(environment, help_name, skip, install, quiet):
         try:
             __import__(full_name)
         except ImportError, e:
-            sys.stderr.write('No setup helper module ' + help_name + '\n')
-            raise e
+            full_name = 'sysdevel.configure.' + help_name + '_js'
+            try:
+                __import__(full_name)
+            except ImportError, e:
+                sys.stderr.write('No setup helper module ' + help_name + '\n')
+                raise e
     return __run_helper__(environment, help_name, full_name,
                           req_version, skip, install, quiet)
 
+configured = []
 
 def __run_helper__(environment, short_name, long_name, version,
                    skip, install, quiet):
     helper = sys.modules[long_name]
+    configured.append(short_name)
     dependencies = []
     if hasattr(helper, 'DEPENDENCIES'):
         dependencies = helper.DEPENDENCIES
@@ -104,10 +110,10 @@ def __run_helper__(environment, short_name, long_name, version,
         dep_name = dep
         if not isinstance(dep, basestring):
             dep_name = dep[0]
-        if dep_name == short_name:
-            print 'Error in configuration: self-dependency.'
+        if dep_name in configured:
             continue
-        environment = __configure_package(environment, dep, skip, install, quiet)
+        environment = __configure_package(environment, dep,
+                                          skip, install, quiet)
     if not quiet:
         sys.stdout.write('Checking for ' + short_name + '  ')
         if not version is None:
@@ -119,7 +125,7 @@ def __run_helper__(environment, short_name, long_name, version,
         if not install:
             raise Exception(help_name + ' cannot be found.')
         helper.install(environment, version)
-    elif not quiet:
+    if not quiet:
         sys.stdout.write('\n')
     return dict(helper.environment.items() + environment.items())
 

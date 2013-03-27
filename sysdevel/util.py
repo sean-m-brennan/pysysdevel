@@ -54,6 +54,7 @@ local_lib_dir = 'python'
 global_prefix = '/usr'
 download_dir  = 'third_party'
 local_search_paths = []
+javascript_dir = 'javascript'
 
 default_py2exe_library = 'library.zip'
 

@@ -24,6 +24,7 @@ import sys
 import logging
 import subprocess
 import shutil
+import glob
 from numpy.distutils.command.build_ext import build_ext
 from distutils.errors import DistutilsExecError
 
@@ -145,6 +146,7 @@ class build_js(build_ext):
                                     "' returned non-zero exit status "
                                     + str(status))
                 os.chdir(here)
+
             for filename in wext.extra_public_files:
                 filepath = util.sysdevel_support_path(filename + '.in')
                 if not os.path.exists(filepath):
@@ -152,6 +154,12 @@ class build_js(build_ext):
                 targetfile = os.path.join(target, filename)
                 if not os.path.exists(targetfile):
                     util.configure_file(environ, filepath, targetfile)
+
+            js_dnld_dir = os.path.join(build.build_base, util.javascript_dir)
+            if os.path.exists(js_dnld_dir):
+                for js in glob.glob(os.path.join(js_dnld_dir, '*.js')):
+                    shutil.copy(js, target)
+
             if not os.path.lexists(os.path.join(target, 'index.html')):
                 shutil.copyfile(os.path.join(target, wext.name + '.html'),
                                 os.path.join(target, 'index.html'))
