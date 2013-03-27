@@ -43,7 +43,10 @@ import distutils.sysconfig
 
 
 
-default_path_prefixes = ['/usr','/usr/local','/opt/local','C:\\MinGW'] + glob.glob('C:\\Python*')
+default_path_prefixes = ['/usr', '/usr/local',
+                         '/opt/local',
+                         'C:\\MinGW', 'C:\\MinGW\\msy\1.0'] + \
+                         glob.glob('C:\\Python*\\')
 
 download_file = ''
 
@@ -112,17 +115,23 @@ def find_program(name, pathlist=[]):
         path_env = os.environ['PATH'].split(_sep_)
     except:
         path_env = []
-    for path in pathlist + path_env + local_search_paths:
+    for path in local_search_paths + pathlist + path_env:
         if path != None and os.path.exists(path):
             if DEBUG:
                 print 'Searching ' + path + ' for ' + name
             for p in [path, os.path.join(path, 'bin')]:
                 full = os.path.join(p, name)
                 if os.path.exists(full):
+                    if DEBUG:
+                        print 'Found ' + full
                     return full
                 if os.path.exists(full + '.exe'):
+                    if DEBUG:
+                        print 'Found ' + full + '.exe'
                     return full + '.exe'
                 if os.path.exists(full + '.bat'):
+                    if DEBUG:
+                        print 'Found ' + full + '.bat'
                     return full + '.bat'
     raise Exception(name + ' not found.')
 
@@ -141,22 +150,27 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
     pathlist = extra_paths
     if not limit:
         pathlist += default_path_prefixes
-    for path in pathlist + local_search_paths:
+    for path in local_search_paths + pathlist:
         if path != None and os.path.exists(path):
             for sub in subdirs:
-                ext_path = os.path.join(path, sub)
-                if DEBUG:
-                    print 'Searching ' + ext_path + ' for ' + filepath
-                filename = os.path.basename(filepath)
-                dirname = os.path.dirname(filepath)
-                for root, dirnames, filenames in os.walk(ext_path):
-                    rt = os.path.normpath(root)
-                    for fn in filenames:
-                        if dirname == ''and fnmatch.fnmatch(fn, filename):
-                            return root.rstrip(os.sep)
-                        elif fnmatch.fnmatch(os.path.basename(rt), dirname) \
-                                and fnmatch.fnmatch(fn, filename):
-                            return os.path.dirname(rt).rstrip(os.sep)
+                ext_paths = glob.glob(os.path.join(path, sub))
+                for ext_path in extpaths:
+                    if DEBUG:
+                        print 'Searching ' + ext_path + ' for ' + filepath
+                    filename = os.path.basename(filepath)
+                    dirname = os.path.dirname(filepath)
+                    for root, dirnames, filenames in os.walk(ext_path):
+                        rt = os.path.normpath(root)
+                        for fn in filenames:
+                            if dirname == '' and fnmatch.fnmatch(fn, filename):
+                                if DEBUG:
+                                    print 'Found ' + os.path.join(root, filename)
+                                return root.rstrip(os.sep)
+                            elif fnmatch.fnmatch(os.path.basename(rt), dirname) \
+                                    and fnmatch.fnmatch(fn, filename):
+                                if DEBUG:
+                                    print 'Found ' + os.path.join(rt, filename)
+                                return os.path.dirname(rt).rstrip(os.sep)
     raise Exception(filename + ' not found.')
 
 
@@ -189,7 +203,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
     pathlist = extra_paths
     if not limit:
         pathlist += default_path_prefixes
-    for path in pathlist + local_search_paths:
+    for path in local_search_paths + pathlist:
         if path != None and os.path.exists(path):
             for subpath in default_lib_paths:
                 for sub in subdirs:
@@ -205,10 +219,14 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                 for fn in filenames:
                                     if fnmatch.fnmatch(fn, filename):
                                         if single:
+                                            if DEBUG:
+                                                print 'Found at ' + root
                                             return root.rstrip(os.sep), fn
                                         else:
                                             libs.append(fn)
                                 if len(libs) > 0:
+                                    if DEBUG:
+                                        print 'Found at ' + root
                                     return root.rstrip(os.sep), libs
     raise Exception(name + ' library not found.')
 
@@ -230,12 +248,14 @@ def find_file(filepattern, pathlist=[]):
     '''
     Find the full path of the specified file.
     '''
-    for path in pathlist + local_search_paths:
+    for path in local_search_paths + pathlist:
         if path != None and os.path.exists(path):
             if DEBUG:
                 print 'Searching ' + path + ' for ' + filepattern
             for fn in os.listdir(path):
                 if fnmatch.fnmatch(fn, filepattern):
+                    if DEBUG:
+                        print 'Found ' + os.path.join(path, fn)
                     return os.path.join(path, fn)
     raise Exception(filepattern + ' not found.')
 
@@ -615,8 +635,8 @@ def compare_versions(actual, requested):
         actual = str(actual)
     if isinstance(requested, float):
         requested = str(requested)
-    actual.replace('_', '.')
-    requested.replace('_', '.')
+    actual = actual.replace('_', '.')
+    requested = requested.replace('_', '.')
     if isinstance(actual, basestring):
         ver1 = tuple(actual.split('.'))
     else:
@@ -630,9 +650,9 @@ def compare_versions(actual, requested):
             return 0
         return 1  ## None == latest
     while len(ver1) < len(ver2):
-        ver1 = ver1 + (0,)
+        ver1 = ver1 + ('0',)
     while len(ver1) > len(ver2):
-        ver2 = ver2 + (0,)
+        ver2 = ver2 + ('0',)
     if ver1 < ver2:
         return -1
     if ver1 > ver2:
@@ -758,7 +778,10 @@ def autotools_install(environ, website, archive, src_dir, dst_dir, locally=True)
     else:
         subprocess.check_call(['../configure', '--prefix=' + prefix])
         subprocess.check_call(['make'])
-        admin_check_call(['make', 'install'])
+        if locally:
+            subprocess.check_call(['make'])
+        else:
+            admin_check_call(['make', 'install'])
     os.chdir(here)
 
 
