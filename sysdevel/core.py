@@ -360,7 +360,10 @@ class build(old_build):
                     for sub in self.distribution.subpackages]
                 has_failed = False
                 for result in results:
-                    pkg_name, status = result()
+                    res_tpl = result()
+                    if res_tpl is None:
+                        raise Exception("Parallel build failed.")
+                    pkg_name, status = res_tpl
                     if status != 0 and self.quit_on_error():
                         has_failed = True
                 if has_failed:
@@ -416,6 +419,12 @@ class install(old_install):
                 os.makedirs(build.build_base)
             except:
                 pass
+            idx = sys.argv.index('setup.py') + 1
+            argv = list(sys.argv[idx:])
+            if 'build' in argv:
+                argv.remove('build')
+            if 'clean' in argv:
+                argv.remove('clean')
             try:  ## parallel
                 import pp
                 job_server = pp.Server()
@@ -428,6 +437,9 @@ class install(old_install):
                     for sub in self.distribution.subpackages]
                 has_failed = False
                 for result in results:
+                    res_tpl = result()
+                    if res_tpl is None:
+                        raise Exception("Parallel build failed.")
                     pkg_name, status = result()
                     if status != 0 and self.quit_on_error():
                         has_failed = True
@@ -526,6 +538,7 @@ class clean(old_clean):
                         pass
 
         old_clean.run(self)
+        util.delete_cache()
 
 
 

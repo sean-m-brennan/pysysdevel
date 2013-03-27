@@ -39,6 +39,7 @@ import tarfile
 import zipfile
 import subprocess
 import ctypes
+import shelve
 import distutils.sysconfig
 
 
@@ -55,6 +56,7 @@ global_prefix = '/usr'
 download_dir  = 'third_party'
 local_search_paths = []
 javascript_dir = 'javascript'
+target_build_dir = 'build'
 
 default_py2exe_library = 'library.zip'
 
@@ -81,6 +83,26 @@ def set_verbose(b):
 def set_debug(b):
     global DEBUG
     DEBUG = b
+
+
+def read_cache():
+    global local_search_paths
+    cache_file = os.path.join(target_build_dir, '.cache')
+    if os.path.exists(cache_file):
+        cache = shelve.open(cache_file)
+        local_search_paths += cache['local_search_paths']
+        cache.close()
+
+def save_cache():
+    cache_file = os.path.join(target_build_dir, '.cache')
+    cache = shelve.open(cache_file)
+    cache['local_search_paths'] = local_search_paths
+    cache.close()
+
+def delete_cache():
+    cache = os.path.join(target_build_dir, '.cache')
+    if os.path.exists(cache):
+        os.remove(cache)
 
 
 def sysdevel_support_path(filename):
@@ -335,11 +357,13 @@ def fetch(website, remote, local):
         sys.stdout.write('\n')
 
 
-def unarchive(archive, dest, target):
+def unarchive(archive, dest, target):  #FIXME change signature
     here = os.path.abspath(os.getcwd())
     if not os.path.exists(os.path.join(dest, target)):
         if not os.path.exists(dest):
             mkdir(dest)
+        if not os.path.exists(target_build_dir):
+            mkdir(target_build_dir)
         os.chdir(dest)
         if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
             z = tarfile.open(os.path.join(here, archive), 'r:gz')
