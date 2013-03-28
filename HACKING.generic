@@ -75,6 +75,5 @@ Required software:
 	        MinGW Developer Toolkit
 
      * Mac OSX:
-       gcc and g++ are part of Macports
-       - Gfortran (http://r.research.att.com/tools/)
+       gcc, g++, and gfortran are all part of Xcode
 
