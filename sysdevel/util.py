@@ -667,13 +667,13 @@ def compare_versions(actual, requested):
         actual = str(actual)
     if isinstance(requested, float):
         requested = str(requested)
-    actual = actual.replace('_', '.')
-    requested = requested.replace('_', '.')
     if isinstance(actual, basestring):
+        actual = actual.replace('_', '.')
         ver1 = tuple(actual.split('.'))
     else:
         ver1 = actual
     if isinstance(requested, basestring):
+        requested = requested.replace('_', '.')
         ver2 = tuple(requested.split('.'))
     else:
         ver2 = requested

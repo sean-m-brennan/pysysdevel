@@ -33,7 +33,7 @@ def null():
 
 
 def is_installed(environ, version):
-    global environment, wxpy_found
+    global wxpy_found
     try:
         import wx
         ver = wx.__version__
