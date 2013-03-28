@@ -48,7 +48,7 @@ def is_installed(environ, version):
     return wxglade_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global environment
     if not wxglade_found:
         if version is None:
@@ -56,6 +56,6 @@ def install(environ, version, target='build', locally=True):
         website = 'http://downloads.sourceforge.net/project/wxglade/wxglade/' + version + '/'
         src_dir = 'wxGlade-' + version
         archive = src_dir + '.tar.gz'
-        install_pypkg(src_dir, website, archive, target, locally=locally)
-        environment['WXGLADE'] = find_program('wxglade.py',
-                                              [os.path.join(target, 'python', 'wxglade')])
+        install_pypkg(src_dir, website, archive, locally=locally)
+        if not is_installed(environ, version):
+            raise Exception('wxGlade installation failed.')

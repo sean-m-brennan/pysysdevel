@@ -54,7 +54,7 @@ def is_installed(environ, version):
     except:
         pass
     try:
-        inc_dir = find_header('gsl_types.h', base_dirs, ['gsl'])
+        inc_dir = find_header(os.path.join('gsl', 'gsl_types.h'), base_dirs)
         lib_dir, libs  = find_libraries('gsl', base_dirs)
         gsl_found = True
     except Exception, e:
@@ -69,7 +69,7 @@ def is_installed(environ, version):
     return gsl_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not gsl_found:
         if version is None:
             version = '1.15'
@@ -77,7 +77,7 @@ def install(environ, version, target='build', locally=True):
         if locally or 'windows' in platform.system().lower():
             src_dir = 'gsl-' + str(version)
             archive = src_dir + '.tar.gz'
-            autotools_install(environ, website, archive, src_dir, target, locally)
+            autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('GSL', website,
                            None,

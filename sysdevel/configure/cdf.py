@@ -67,7 +67,7 @@ def is_installed(environ, version):
     return cdf_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global local_search_paths
     if not cdf_found:
         if version is None:
@@ -96,10 +96,9 @@ def install(environ, version, target='build', locally=True):
             src_dir = 'cdf' + str(version) + '-dist'
             archive = src_dir + '-cdf.tar.gz'
             fetch(''.join(website), archive, archive)
-            unarchive(os.path.join(here, download_dir, archive),
-                      target, src_dir)
+            unarchive(archive, src_dir)
 
-            build_dir = os.path.join(target, src_dir, '_build')
+            build_dir = os.path.join(target_build_dir, src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
             if 'windows' in platform.system().lower():

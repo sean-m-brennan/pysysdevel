@@ -28,6 +28,7 @@ environment = dict()
 graphviz_found = False
 DEBUG = False
 
+DEPENDENCIES = [] #FIXME losts of dependencies
 
 def null():
     global environment
@@ -71,7 +72,7 @@ def is_installed(environ, version):
     return graphviz_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not graphviz_found:
         if version is None:
             version = '2.30.1'
@@ -80,7 +81,7 @@ def install(environ, version, target='build', locally=True):
         if locally or 'windows' in platform.system().lower():
             src_dir = 'graphviz-' + str(version)
             archive = src_dir + '.tar.gz'
-            autotools_install(environ, website, archive, src_dir, target, locally)
+            autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('Graphviz', website,
                            None,

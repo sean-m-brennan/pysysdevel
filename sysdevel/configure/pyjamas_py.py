@@ -55,7 +55,7 @@ def is_installed(environ, version):
     return pyjamas_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global environment
     if not pyjamas_found:
         if version is None:
@@ -64,20 +64,19 @@ def install(environ, version, target='build', locally=True):
         archive = 'pyjs-' + version + '.zip'
         src_dir = 'pyjamas-' + version
         fetch(website, '', archive)
+        unarchive(archive, src_dir)
 
-        here = os.path.abspath(os.getcwd())
-        working_dir = os.path.join(target, src_dir)
+        working_dir = os.path.join(target_build_dir, src_dir)
         if not os.path.exists(working_dir):
-            unarchive(os.path.join(here, download_dir, archive),
-                      target, src_dir)
-            os.rename(glob.glob(os.path.join(here, target, '*pyjs*'))[0],
+            os.rename(glob.glob(os.path.join(target_build_dir, '*pyjs*'))[0],
                       working_dir)
 
         ## Unique two-step installation
-        log_file = os.path.join(here, target, 'pyjamas.log')
+        log_file = os.path.join(target_build_dir, 'pyjamas.log')
         log = open(log_file, 'w')
         sys.stdout.write('PREREQUISITE pyjamas ')
-        os.chdir(os.path.join(here, target, src_dir))
+        here = os.path.abspath(os.getcwd())
+        os.chdir(working_dir)
 
         cmd_line = [sys.executable, 'bootstrap.py',]
         try:

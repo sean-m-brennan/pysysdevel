@@ -84,6 +84,9 @@ def set_debug(b):
     global DEBUG
     DEBUG = b
 
+def set_build_dir(dir):
+    global target_build_dir
+    target_build_dir = dir
 
 def read_cache():
     global local_search_paths
@@ -174,7 +177,9 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
     for sub in extra_subdirs:
         subdirs += [os.path.join('include', sub), sub]
     subdirs += ['']  ## lastly, widen search
-    pathlist = extra_paths
+    pathlist = []
+    for path_expr in extra_paths:
+        pathlist += glob.glob(path_expr)
     if not limit:
         pathlist += default_path_prefixes
     for path in local_search_paths + pathlist:
@@ -227,7 +232,9 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
     for sub in extra_subdirs:
         subdirs += [sub]
     subdirs += ['']  ## lastly, widen search
-    pathlist = extra_paths
+    pathlist = []
+    for path_expr in extra_paths:
+        pathlist += glob.glob(path_expr)
     if not limit:
         pathlist += default_path_prefixes
     for path in local_search_paths + pathlist:
@@ -352,8 +359,7 @@ def download_progress(count, block_size, total_size):
 
 
 def fetch(website, remote, local):
-    if not os.path.exists(download_dir):
-        os.makedirs(download_dir)
+    mkdir(download_dir)
     set_downloading_file(remote)
     if not os.path.exists(os.path.join(download_dir, local)):
         urlretrieve(website + remote, os.path.join(download_dir, local),
@@ -361,22 +367,19 @@ def fetch(website, remote, local):
         sys.stdout.write('\n')
 
 
-def unarchive(archive, dest, target):  #FIXME change signature
+def unarchive(archive, target, archive_dir=download_dir):
     here = os.path.abspath(os.getcwd())
-    if not os.path.exists(os.path.join(dest, target)):
-        if not os.path.exists(dest):
-            mkdir(dest)
-        if not os.path.exists(target_build_dir):
-            mkdir(target_build_dir)
-        os.chdir(dest)
+    if not os.path.exists(os.path.join(target_build_dir, target)):
+        mkdir(target_build_dir)
+        os.chdir(target_build_dir)
         if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
-            z = tarfile.open(os.path.join(here, archive), 'r:gz')
+            z = tarfile.open(os.path.join(here, archive_dir, archive), 'r:gz')
             z.extractall()
         elif archive.endswith('.tar.bz2'):
-            z = tarfile.open(os.path.join(here, archive), 'r:bz2')
+            z = tarfile.open(os.path.join(here, archive_dir, archive), 'r:bz2')
             z.extractall()
         elif archive.endswith('.zip'):
-            z = zipfile.ZipFile(os.path.join(here, archive), 'r')
+            z = zipfile.ZipFile(os.path.join(here, archive_dir, archive), 'r')
             z.extractall()
         else:
             raise Exception('Unrecognized archive compression: ' + archive)
@@ -693,11 +696,11 @@ class PrerequisiteError(Exception):
     pass
 
 
-def install_pyscript(website, name, build_dir, locally=True):
+def install_pyscript(website, name, locally=True):
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
     if locally:
-        target_dir = os.path.join(os.path.abspath(build_dir), local_lib_dir)
+        target_dir = os.path.join(os.path.abspath(target_build_dir), local_lib_dir)
     else:
         target_dir = distutils.sysconfig.get_python_lib()
     if not os.path.exists(target_dir):
@@ -711,23 +714,19 @@ def install_pyscript(website, name, build_dir, locally=True):
         raise Exception('Unable to install ' + name + ': ' + str(e))
 
 
-def install_pypkg(name, website, archive, build_dir,
-                  env=None, src_dir=None, locally=True):
+def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True):
     if src_dir is None:
         src_dir = name
     here = os.path.abspath(os.getcwd())
-    target_dir = os.path.abspath(build_dir)
+    target_dir = os.path.abspath(target_build_dir)
     target_lib_dir = os.path.join(target_dir, local_lib_dir)
 
     sys.stdout.write('PREREQUISITE ' + name + ' ')
     sys.stdout.flush()
     fetch(website, archive, archive)
-    if not os.path.exists(target_dir):
-        os.makedirs(target_dir)
-    unarchive(os.path.join(here, download_dir, archive), target_dir, src_dir)
+    unarchive(archive, src_dir)
     if not os.path.exists(target_lib_dir):
         os.makedirs(target_lib_dir)
-
     try:
         os.chdir(os.path.join(target_dir, src_dir))
         environ = os.environ.copy()
@@ -783,32 +782,35 @@ def install_pypkg(name, website, archive, build_dir,
         return distutils.sysconfig.get_python_lib()
 
 
-def autotools_install(environ, website, archive, src_dir, dst_dir, locally=True):
+def autotools_install(environ, website, archive, src_dir, locally=True,
+                      extra_cfg=[]):
     global local_search_paths
     here = os.path.abspath(os.getcwd())
     fetch(''.join(website), archive, archive)
-    unarchive(os.path.join(here, download_dir, archive), dst_dir, src_dir)
+    unarchive(archive, src_dir)
 
     if locally:
-        prefix = os.path.abspath(dst_dir)
+        prefix = os.path.abspath(target_build_dir)
         if not prefix in local_search_paths:
             local_search_paths.append(prefix)
     else:
         prefix = global_prefix
 
-    build_dir = os.path.join(src_dir, '_build')
+    build_dir = os.path.join(target_build_dir, src_dir, '_build')
     mkdir(build_dir)
     os.chdir(build_dir)
     if 'windows' in platform.system().lower():
         ## Assumes MinGW present, detected, and loaded in environment
-        mingw_check_call(environ, ['../configure', '--prefix=' + prefix])
+        mingw_check_call(environ, ['../configure', '--prefix=' + prefix] +
+                         extra_cfg)
         mingw_check_call(environ, ['make'])
         mingw_check_call(environ, ['make', 'install'])
     else:
-        subprocess.check_call(['../configure', '--prefix=' + prefix])
+        subprocess.check_call(['../configure', '--prefix=' + prefix] +
+                              extra_cfg)
         subprocess.check_call(['make'])
         if locally:
-            subprocess.check_call(['make'])
+            subprocess.check_call(['make', 'install'])
         else:
             admin_check_call(['make', 'install'])
     os.chdir(here)
@@ -839,13 +841,16 @@ def global_install(what, website_tpl, winstaller, port, apt, yum):
 
     elif 'darwin' in platform.system().lower() and port:
         ## assumes macports installed
+        print '\nInstalling ' + ', '.join(port.split()) + ' in the system:'
         admin_check_call(['port', 'install',] + port.split())
 
     elif 'linux' in platform.system().lower():
         if _uses_apt_get() and apt:
+            print '\nInstalling ' + ', '.join(apt.split()) + ' in the system:'
             admin_check_call(['apt-get', 'install',] + apt.split())
 
         elif _uses_yum() and yum:
+            print '\nInstalling ' + ', '.join(yum.split()) + ' in the system:'
             admin_check_call(['yum', 'install',] + yum.split())
 
         else:
@@ -863,7 +868,7 @@ def as_admin():
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
 
 
-def admin_check_call(cmd_line):
+def admin_check_call(cmd_line, quiet=False):
     if 'windows' in platform.system().lower():
         if not isinstance(cmd_line, basestring):
             cmd_line = ' '.join(cmd_line)
@@ -884,7 +889,11 @@ def admin_check_call(cmd_line):
         sudo_prefix = []
         if not as_admin():
             sudo_prefix = ['sudo']
-        subprocess.check_call(sudo_prefix + cmd_line)
+        if quiet:
+            subprocess.check_call(sudo_prefix + cmd_line)
+        else:
+            subprocess.check_call(sudo_prefix + cmd_line,
+                                  stdout=sys.stdout, stderr=sys.stderr)
 
 
 def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None):
@@ -1012,6 +1021,10 @@ def handle_arguments(argv, option_list=[]):
     app = ''
     runscript = ''
     for arg in argv:
+        if arg == '-b' or arg == '--build_base':
+            idx = argv.index(arg)
+            set_build_dir(argv[idx+1])
+
         if arg.startswith('--app='):
             app = runscript = arg[6:].lower()
             runscript = arg[6:].lower()

@@ -48,11 +48,14 @@ def is_installed(environ, version):
     return f2c_found
 
 
-def install(environ, version, target='build', locally=True):
-    global environment
+def install(environ, version, locally=True):
+    global environment, local_search_paths
     if not f2c_found:
         website = 'http://www.netlib.org/f2c/'
         header_file = 'f2c.h'        
         fetch(''.join(website), header_file, header_file)
-        shutil.copy(os.path.join(download_dir, header_file), target)
-        environment['F2C_INCLUDE_DIR'] = target
+        shutil.copy(os.path.join(download_dir, header_file), target_build_dir)
+        environment['F2C_INCLUDE_DIR'] = target_build_dir
+        prefix = os.path.abspath(target_build_dir)
+        if not prefix in local_search_paths:
+            local_search_paths.append(prefix)

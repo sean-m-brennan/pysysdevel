@@ -43,13 +43,13 @@ def is_installed(environ, version):
     return pyephem_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not pyephem_found:
         website = 'http://pypi.python.org/packages/source/p/pyephem/'
         if version is None:
             version = '3.7.5.1'
         src_dir = 'pyephem-' + str(version)
         archive = src_dir + '.tar.gz'
-        install_pypkg(src_dir, website, archive, target, locally=locally)
+        install_pypkg(src_dir, website, archive, locally=locally)
         if not is_installed(environ, version):
             raise Exception('ephem installation failed.')

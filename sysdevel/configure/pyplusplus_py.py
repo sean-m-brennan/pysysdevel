@@ -42,7 +42,7 @@ def is_installed(environ, version):
     return pyplusplus_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global environment
     if not pyplusplus_found:
         if version is None:
@@ -51,11 +51,11 @@ def install(environ, version, target='build', locally=True):
         website = mainsite + 'pygccxml/pygccxml-' + version[:-2] + '/'
         src_dir = 'pygccxml-' + str(version)
         archive = src_dir + '.zip'
-        install_pypkg(src_dir, website, archive, target, locally=locally)
+        install_pypkg(src_dir, website, archive, locally=locally)
 
         website = mainsite + 'pyplusplus/pyplusplus-' + version[:-2] + '/'
         src_dir = 'pyplusplus-' + str(version) + '.zip'
         archive = src_dir + '.zip'
-        install_pypkg(src_dir, website, archive, target, locally=locally)
+        install_pypkg(src_dir, website, archive, locally=locally)
         if not is_installed(environ, version):
             raise Exception('Py++ installation failed.')

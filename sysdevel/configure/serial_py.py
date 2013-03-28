@@ -43,7 +43,7 @@ def is_installed(environ, version):
     return pyserial_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global environment
     if not pyserial_found:
         website = 'http://pypi.python.org/packages/source/p/pyserial/'
@@ -51,6 +51,6 @@ def install(environ, version, target='build', locally=True):
             version = '2.6'
         src_dir = 'pyserial-' + version
         archive = src_dir + '.tar.gz'
-        install_pypkg(src_dir, website, archive, target, locally=locally)
+        install_pypkg(src_dir, website, archive, locally=locally)
         if not is_installed(environ, version):
             raise Exception('pyserial installation failed.')

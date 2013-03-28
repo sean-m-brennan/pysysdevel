@@ -42,7 +42,7 @@ def is_installed(environ, version):
     return antlr_python_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global environment
     if not antlr_python_found:
         website = 'http://www.antlr3.org/download/Python/'
@@ -50,6 +50,6 @@ def install(environ, version, target='build', locally=True):
             version = '3.1.2'
         src_dir = 'antlr_python_runtime-' + str(version)
         archive = src_dir + '.tar.gz' 
-        install_pypkg(src_dir, website, archive, target, locally=locally)
+        install_pypkg(src_dir, website, archive, locally=locally)
         if not is_installed(environ, version):
             raise Exception('ANTLR-Python runtime installation failed.')

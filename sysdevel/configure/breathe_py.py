@@ -45,13 +45,13 @@ def is_installed(environ, version):
     return breathe_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not breathe_found:
         website = 'https://pypi.python.org/packages/source/b/breathe/'
         if version is None:
             version = '0.7.5'
         src_dir = 'breathe-' + str(version)
         archive = src_dir + '.tar.gz' 
-        install_pypkg(src_dir, website, archive, target, locally=locally)
+        install_pypkg(src_dir, website, archive, locally=locally)
         if not is_installed(environ, version):
             raise Exception('Breathe installation failed.')

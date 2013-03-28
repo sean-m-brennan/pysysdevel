@@ -60,7 +60,7 @@ def is_installed(environ, version):
     return antlr_c_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global environment
     if not antlr_c_found:
         website = 'http://www.antlr3.org/download/'
@@ -68,6 +68,6 @@ def install(environ, version, target='build', locally=True):
             version = '3.1.2'
         src_dir = 'libantlr3c-' + str(version)
         archive = src_dir + '.tar.gz'
-        autotools_install(environ, website, archive, src_dir, target, locally)
+        autotools_install(environ, website, archive, src_dir, locally)
         if not is_installed(environ, version):
             raise Exception('ANTLR-C runtime installation failed.')

@@ -49,16 +49,17 @@ def is_installed(environ, version):
     return ctypesgen_found
 
 
-def install(environ, version, target='build', locally=True):
-    global environment
+def install(environ, version, locally=True):
+    global environment, local_search_paths
     if not ctypesgen_found:
         website = 'http://pypi.python.org/packages/source/c/ctypesgen/'
         if version is None:
             version = '0.r125'
         archive = 'ctypesgen-' + version + '.tar.gz'
-        pth = install_pypkg('ctypesgen-' + version, website, archive, target, locally=locally)
-        environment['CTYPESGEN'] = \
-            find_program('ctypesgen.py', [os.path.join(target, 'bin')])
-        environment['CTYPESGEN_PATH'] = pth
+        pth = install_pypkg('ctypesgen-' + version, website, archive, locally=locally)
+        if locally:
+            prefix = os.path.abspath(target_build_dir)
+            if not prefix in local_search_paths:
+                local_search_paths.append(prefix)
         if not is_installed(environ, version):
             raise Exception('ctypesgen installation failed.')

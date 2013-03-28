@@ -95,7 +95,7 @@ def is_installed(environ, version):
     return perl_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not perl_found:
         if version is None:
             version = '5.16.3'
@@ -110,10 +110,9 @@ def install(environ, version, target='build', locally=True):
             src_dir = 'perl-' + str(version)
             archive = src_dir + '.tar.gz'
             fetch(''.join(website), archive, archive)
-            here = os.path.abspath(os.getcwd())
-            unarchive(os.path.join(here, download_dir, archive),
-                      target, src_dir)
+            unarchive(archive, src_dir)
 
+            here = os.path.abspath(os.getcwd())
             os.chdir(build_dir)
             subprocess.check_call(['./Configure', '-des', '-Dprefix=' + prefix])
             subprocess.check_call(['make'])

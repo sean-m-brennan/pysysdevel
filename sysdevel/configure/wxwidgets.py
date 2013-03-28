@@ -67,7 +67,7 @@ def is_installed(environ, version):
     return wx_found
     
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not wx_found:
         if version is None:
             version = '2.8.12'
@@ -75,7 +75,7 @@ def install(environ, version, target='build', locally=True):
         if locally or 'windows' in platform.system().lower():
             src_dir = 'wxMSW-' + str(version)
             archive = src_dir + '.zip'
-            autotools_install(environ, website, archive, src_dir, target, locally)
+            autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('wxWidgets', website,
                            None,

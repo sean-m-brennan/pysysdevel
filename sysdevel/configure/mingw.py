@@ -97,7 +97,7 @@ def is_installed(environ, version):
     return mingw_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not mingw_found:
         if version is None:
             version = '20120426'

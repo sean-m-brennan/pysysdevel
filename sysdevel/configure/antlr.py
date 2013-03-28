@@ -69,7 +69,7 @@ def is_installed(environ, version):
     return antlr_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global environment
     if not antlr_found:
         website = 'http://www.antlr.org/download/'
@@ -81,9 +81,9 @@ def install(environ, version, target='build', locally=True):
         src_dir = 'antlr-' + str(version)
         archive = src_dir + '.tar.gz'
         fetch(website, archive, archive)
-        unarchive(os.path.join(here, download_dir, archive),
-                  target, src_dir)
-        jarfile = os.path.join(target, src_dir, 'lib', src_dir + '.jar')
+        unarchive( archive, src_dir)
+        jarfile = os.path.join(target_build_dir, src_dir,
+                               'lib', src_dir + '.jar')
         ## TODO: global install not implemented
         environment['ANTLR'] = [environ['JAVA'],
                                 "-classpath", os.path.abspath(jarfile),

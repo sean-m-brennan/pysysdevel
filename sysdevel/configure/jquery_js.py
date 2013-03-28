@@ -12,12 +12,12 @@ def null():
 def is_installed(environ, version):
     return False
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if version is None:
         version = '1.9.1'
     website = 'http://code.jquery.com/'
     js_file = 'jquery-' + version + '.min.js'
-    js_dir = os.path.join(target, javascript_dir)
+    js_dir = os.path.join(target_build_dir, javascript_dir)
     js_target = 'jquery.min.js'
     if not os.path.exists(js_dir):
         os.makedirs(js_dir)

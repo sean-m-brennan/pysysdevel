@@ -44,13 +44,13 @@ def is_installed(environ, version):
     return h5py_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not h5py_found:
         website = 'http://h5py.googlecode.com/files/'
         if version is None:
             version = '2.1.2'
         src_dir = 'h5py-' + str(version)
         archive = src_dir + '.tar.gz'
-        install_pypkg(src_dir, website, archive, target, locally=locally)
+        install_pypkg(src_dir, website, archive, locally=locally)
         if not is_installed(environ, version):
             raise Exception('h5py installation failed.')

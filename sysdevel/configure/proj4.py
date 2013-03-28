@@ -67,7 +67,7 @@ def is_installed(environ, version):
     return proj4_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not proj4_found:
         if version is None:
             version = '4.8.0'
@@ -76,7 +76,7 @@ def install(environ, version, target='build', locally=True):
             website = ('http://download.osgeo.org/proj/',)
             src_dir = 'proj-' + str(version)
             archive = src_dir + '.tar.gz'
-            autotools_install(environ, website, archive, src_dir, target, locally)
+            autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('PROJ4', website,
                            None,

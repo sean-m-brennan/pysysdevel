@@ -33,7 +33,7 @@ def null():
 
 
 def is_installed(environ, version):
-    global environment, wx_found
+    global environment, wxpy_found
     try:
         import wx
         ver = wx.__version__
@@ -45,19 +45,19 @@ def is_installed(environ, version):
     return wxpy_found
     
 
-def install(environ, version, target='build', locally=True):
-    if not wx_found:
+def install(environ, version, locally=True):
+    if not wxpy_found:
         if version is None:
             version = '2.9.4.0'
         short_ver = '.'.join(version.split('.')[:2])
         py_ver = ''.join(get_python_version())
         website = ('http://sourceforge.net/projects/wxpython/',
                    'files/wxPython/' + str(version) + '/')
-        ## FIXME local install
+        ## FIXME no local install
         global_install('wxPython', website,
                        'wxPython' + short_ver + '-win32-' + str(version) + \
                            '-py' + py_ver + '.exe',
-                       'py' + py_ver + '-wxpython-devel',
+                       'py' + py_ver + '-wxpython',
                        'python-wxgtk python-wxtools',
                        'wxPython-devel')
         if not is_installed(environ, version):

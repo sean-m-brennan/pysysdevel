@@ -94,7 +94,7 @@ def is_installed(environ, version):
     return boost_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global local_search_paths
     if not boost_found:
         if version is None:
@@ -106,17 +106,16 @@ def install(environ, version, target='build', locally=True):
 
             here = os.path.abspath(os.getcwd())
             fetch(''.join(website), archive, archive)
-            unarchive(os.path.join(here, download_dir, archive),
-                      target, src_dir)
+            unarchive(archive, src_dir)
 
             if locally:
-                prefix = os.path.abspath(target)
+                prefix = os.path.abspath(target_build_dir)
                 if not prefix in local_search_paths:
                     local_search_paths.append(prefix)
             else:
                 prefix = global_prefix
 
-            os.chdir(os.path.join(target, src_dir))
+            os.chdir(os.path.join(target_build_dir, src_dir))
             ## unique build process
             if 'windows' in platform.system().lower():
                 os_environ = os.environ.copy()

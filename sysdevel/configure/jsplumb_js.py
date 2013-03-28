@@ -14,13 +14,12 @@ def null():
 def is_installed(environ, version):
     return False
 
-def install(environ, version, target='build', locally=True):
-    #FIXME
+def install(environ, version, locally=True):
     if version is None:
         version = '1.3.16'
     website = 'http://jsplumb.googlecode.com/files/'
     js_file = 'jquery.jsPlumb-' + version + '-all-min.js'
-    js_dir = os.path.join(target, javascript_dir)
+    js_dir = os.path.join(target_build_dir, javascript_dir)
     js_target = 'jquery.jsPlumb-all-min.js'
     if not os.path.exists(js_dir):
         os.makedirs(js_dir)

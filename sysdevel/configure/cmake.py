@@ -59,12 +59,13 @@ def is_installed(environ, version):
     return cmake_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not cmake_found:
         if version is None:
             version = '2.8.10.2'
         website = ('http://www.cmake.org/',
                    'files/v' + major_minor_version(version) + '/')
+        #FIXME no local install
         global_install('CMake', website,
                        'cmake-' + str(version) + '-win32-x86.exe',
                        'cmake',

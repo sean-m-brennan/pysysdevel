@@ -89,7 +89,7 @@ def is_installed(environ, version):
     return gmat_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global environment
     if version is None:
         version = version_strs[VERSION]
@@ -97,7 +97,7 @@ def install(environ, version, target='build', locally=True):
         import pysvn
         svn_repo = 'https://gmat.svn.sourceforge.net/svnroot/gmat/trunk'
         client = pysvn.Client()
-        src_dir = os.path.join(target, 'gmat-svn-src')
+        src_dir = os.path.join(target_build_dir, 'gmat-svn-src')
         data_dir = os.path.join(src_dir, 'application')
         if not os.path.exists(src_dir):
             client.checkout(svn_repo, src_dir)
@@ -109,16 +109,14 @@ def install(environ, version, target='build', locally=True):
         src_dir = 'gmat-src-' + str(version) + '-Beta'
         archive = src_dir + '.zip'
         fetch(''.join(website), archive, archive)
-        unarchive(os.path.join(here, download_dir, archive),
-                  target, src_dir)
+        unarchive(archive, src_dir)
 
         data_dir = 'gmat-datafiles-' + str(version) + '-Beta'
         data_archive = data_dir + '.zip'
         fetch(''.join(website), data_archive, data_archive)
-        unarchive(os.path.join(here, download_dir, data_archive),
-                  target, data_dir)
-        src_dir = os.path.join(target, src_dir)
-        data_dir = os.path.join(target, data_dir)
+        unarchive(data_archive, data_dir)
+        src_dir = os.path.join(target_build_dir, src_dir)
+        data_dir = os.path.join(target_build_dir, data_dir)
 
     environment['GMAT_VERSION'] = version
     environment['GMAT_ROOT'] = os.path.abspath(src_dir)

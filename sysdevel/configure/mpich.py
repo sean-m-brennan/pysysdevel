@@ -79,16 +79,16 @@ def is_installed(environ, version):
     return mpich_found
 
 
-def install(environ, version, target='build', locally=True):
-    if not gsl_found:
+def install(environ, version, locally=True):
+    if not mpich_found:
         if version is None:
             version = '3.0.2'
         website = ('http://www.mpich.org/',
                    'static/tarballs/' + str(version) + '/')
-        if 'windows' in platform.system().lower():
+        if locally:
             src_dir = 'mpich-' + str(version)
             archive = src_dir + '.tar.gz'
-            autotools_install(environ, website, archive, src_dir, target, locally)
+            autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('MPICH', website,
                            None,

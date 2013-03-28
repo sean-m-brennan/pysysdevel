@@ -46,7 +46,7 @@ def is_installed(environ, version):
     return matplotlib_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     global environment
     if not matplotlib_found:
         import matplotlib
@@ -55,7 +55,7 @@ def install(environ, version, target='build', locally=True):
             version = '1.2.0'
         src_dir = 'matplotlib-' + str(version)
         archive = src_dir + '.tar.gz'
-        pth = install_pypkg(src_dir, website, archive, target, locally=locally)
+        pth = install_pypkg(src_dir, website, archive, locally=locally)
 
         mpl = sys.modules.get('matplotlib', None)
         if mpl:

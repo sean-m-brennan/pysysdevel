@@ -72,7 +72,7 @@ def is_installed(environ, version):
     return geos_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not geos_found:
         if version is None:
             version = '3.3.8'
@@ -81,7 +81,7 @@ def install(environ, version, target='build', locally=True):
             website = ('http://download.osgeo.org/geos/',)
             src_dir = 'geos-' + str(version)
             archive = src_dir + '.tar.bz2'
-            autotools_install(environ, website, archvie, src_dir, target, locally)
+            autotools_install(environ, website, archvie, src_dir, locally)
         else:
             global_install('Geos', website,
                            None,

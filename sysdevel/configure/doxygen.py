@@ -44,11 +44,12 @@ def is_installed(environ, version):
     return doxygen_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not doxygen_found:
         if version is None:
             version = '1.8.3.1'
         website = ('http://ftp.stack.nl/pub/users/dimitri/',)
+        #FIXME no local install
         global_install('Doxygen', website,
                        'doxygen-' + str(version) + '-setup.exe',
                        'doxygen',

@@ -43,13 +43,13 @@ def is_installed(environ, version):
     return pil_found
 
 
-def install(environ, version, target='build', locally=True):
+def install(environ, version, locally=True):
     if not pil_found:
         website = 'http://effbot.org/downloads/'
         if version is None:
             version = '1.1.7'
         src_dir = 'Imaging-' + str(version)
         archive = src_dir + '.tar.gz'
-        install_pypkg(src_dir, website, archive, target, locally=locally)
+        install_pypkg(src_dir, website, archive, locally=locally)
         if not is_installed(environ, version):
             raise Exception('PIL.Image installation failed.')
