@@ -26,6 +26,8 @@ from sysdevel.util import *
 
 environment = dict()
 f2c_found = False
+DEBUG = False
+
 
 def null():
     global environment
@@ -34,13 +36,15 @@ def null():
 
 def is_installed(environ, version):
     global environment, f2c_found
+    set_debug(DEBUG)
     try:
         incl_dir = find_header('f2c.h')
         environment['F2C_INCLUDE_DIR'] = find_header('f2c.h')
         ## f2c lib is built into libgfortran
         f2c_found = True
     except Exception,e:
-        f2c_found = False
+        if DEBUG:
+            print e
     return f2c_found
 
 

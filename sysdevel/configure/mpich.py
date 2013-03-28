@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 mpich_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, mpich_found
+    set_debug(DEBUG)
     base_dirs = []
     mpich_lib_list = ['mpich', 'mpichcxx', 'mpichf90']
     if 'windows' in platform.system().lower():
@@ -65,7 +67,9 @@ def is_installed(environ, version):
         mpich_inc_dir = find_header('mpi.h', base_dirs,
                                     ['mpich2', 'mpich2-' + arch,])
         mpich_found = True
-    except Exception,e:
+    except Exception, e:
+        if DEBUG:
+            print e
         return mpich_found
 
     environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir

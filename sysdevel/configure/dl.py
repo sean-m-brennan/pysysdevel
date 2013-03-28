@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 libdl_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,8 @@ def null():
 
 def is_installed(environ, version):
     global environment, libdl_found
+
+    set_debug(DEBUG)
     locations = []
     try:
         locations.append(os.environ['MSYS_DIR'])
@@ -47,7 +50,9 @@ def is_installed(environ, version):
         incl_dir = find_header('dlfcn.h', locations)
         lib_dir, lib = find_library('dl', locations)
         libdl_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return libdl_found
 
     environment['DL_INCLUDE_DIR'] = incl_dir

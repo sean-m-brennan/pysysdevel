@@ -24,6 +24,7 @@ from sysdevel.util import *
 
 environment = dict()
 wxglade_found = False
+DEBUG = False
 
 
 def null():
@@ -33,6 +34,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, wxglade_found
+    set_debug(DEBUG)
     try:
         import wxglade.common
         ver = wxglade.common.version
@@ -41,7 +43,8 @@ def is_installed(environ, version):
         environment['WXGLADE'] = find_program('wxglade')
         wxglade_found = True
     except Exception,e:
-        pass
+        if DEBUG:
+            print e
     return wxglade_found
 
 

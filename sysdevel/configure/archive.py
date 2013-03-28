@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 archive_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, archive_found
+    set_debug(DEBUG)
     locations = []
     try:
         locations.append(os.environ['ARCHIVE_ROOT'])
@@ -55,7 +57,9 @@ def is_installed(environ, version):
         incl_dir = find_header('archive.h', locations)
         lib_dir, lib = find_library('archive', locations)
         archive_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return archive_found
 
     environment['ARCHIVE_INCLUDE_DIR'] = incl_dir

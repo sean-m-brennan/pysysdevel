@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 hdf5_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, hdf5_found
+    set_debug(DEBUG)
     base_dirs = []
     try:
         base_dirs.append(os.environ['HDF5_ROOT'])
@@ -57,7 +59,9 @@ def is_installed(environ, version):
         hdf5_lib_dir, hdf5_libs  = find_libraries('hdf5', base_dirs)
         hdf5_inc_dir = find_header('hdf5.h', base_dirs)
         hdf5_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return hdf5_found
 
     hdf5_lib_list = ['hdf5', 'hdf5_fortran', 'hdf5_cpp',

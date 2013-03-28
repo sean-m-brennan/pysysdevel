@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 proj4_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, proj4_found
+    set_debug(DEBUG)
     base_dirs = []
     try:
         base_dirs.append(os.environ['PROJ4_ROOT'])
@@ -53,7 +55,9 @@ def is_installed(environ, version):
         proj4_inc_dir = find_header('proj_api.h', base_dirs)
         proj4_lib_dir, proj4_libs  = find_libraries('proj', base_dirs)
         proj4_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return proj4_found
 
     environment['PROJ4_INCLUDE_DIR'] = proj4_inc_dir

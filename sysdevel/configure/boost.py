@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 boost_found = False
+DEBUG = False
 
 
 def null():
@@ -43,6 +44,7 @@ def is_installed(environ, version):
     else:
         required_version = version.replace('.', '_')
 
+    set_debug(DEBUG)
     base_dirs = []
     try:
         boost_root = os.environ['BOOST_ROOT']
@@ -72,7 +74,9 @@ def is_installed(environ, version):
         if compare_versions(boost_version, required_version) == -1:
             return boost_found
         boost_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return boost_found
 
     environment['BOOST_INCLUDE_DIR'] = incl_dir

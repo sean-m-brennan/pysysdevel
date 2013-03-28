@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 gsl_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, gsl_found
+    set_debug(DEBUG)
     base_dirs = []
     try:
         base_dirs.append(os.environ['GSL_ROOT'])
@@ -55,7 +57,9 @@ def is_installed(environ, version):
         inc_dir = find_header('gsl_types.h', base_dirs, ['gsl'])
         lib_dir, libs  = find_libraries('gsl', base_dirs)
         gsl_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return gsl_found
 
     environment['GSL_INCLUDE_DIR'] = inc_dir

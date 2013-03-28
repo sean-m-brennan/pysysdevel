@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 graphviz_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, graphviz_found
+    set_debug(DEBUG)
     base_dirs = []
     try:
         base_dirs.append(os.environ['GRAPHVIZ_ROOT'])
@@ -57,7 +59,9 @@ def is_installed(environ, version):
         inc_dir = find_header('graph.h', base_dirs, ['graphviz'])
         lib_dir, lib = find_library('graph', base_dirs)
         graphviz_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return graphviz_found
 
     environment['GRAPHVIZ_INCLUDE_DIR'] = inc_dir

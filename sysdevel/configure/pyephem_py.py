@@ -38,7 +38,7 @@ def is_installed(environ, version):
         if compare_versions(ver, version) == -1:
             return pyephem_found
         pyephem_found = True
-    except Exception,e:
+    except:
         pass
     return pyephem_found
 

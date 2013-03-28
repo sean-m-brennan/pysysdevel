@@ -27,6 +27,7 @@ DEPENDENCIES = ['java']
 
 environment = dict()
 antlr_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def is_installed(environ, version):
     global environment, antlr_found
     if version is None:
         version = '3.1.2'
+    set_debug(DEBUG)
     try:
         classpaths = []
         try:
@@ -62,7 +64,8 @@ def is_installed(environ, version):
                                 "org.antlr.Tool",]
         antlr_found = True
     except Exception,e:
-        pass
+        if DEBUG:
+            print e
     return antlr_found
 
 

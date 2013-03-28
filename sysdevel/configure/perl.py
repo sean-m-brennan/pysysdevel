@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 perl_found = False
+DEBUG = False
 
 
 def null():
@@ -43,9 +44,8 @@ def is_installed(environ, version):
         ver = '5'
     else:
         ver = version.split('.')[0]
-    if 'windows' in platform.system().lower():
-        ver = ''
 
+    set_debug(DEBUG)
     base_dirs = []
     lib_ver = ''
     try:
@@ -60,25 +60,36 @@ def is_installed(environ, version):
         ## Strawberry Perl from http://strawberryperl.com
         base_dirs.append(os.path.join('c:', os.sep, 'strawberry', 'perl'))
         try:
-            base_dirs.append(environ['MSYS_DIR'])
+            base_dirs.append(environ['MSYS_DIR'])  ## msys includes perl
         except:
             pass
+    elif 'darwin' in platform.system().lower():
+        base_dirs.append(os.path.join('/', 'System', 'Library', 'Perl',
+                                      ver + '*', 'darwin-*'))
 
     try:
         perl_exe = find_program('perl', base_dirs)
-        core_dir, perl_lib  = find_library('perl', base_dirs,
-                                           ['perl' + ver, 'bin',
-                                            os.path.join('lib', 'CORE')])
+        incl_dir = find_header('perl.h', base_dirs,
+                               ['CORE', os.path.join('lib', 'CORE'),
+                                os.path.join('perl', 'CORE'),
+                                os.path.join('perl' + ver, 'CORE'),
+                                os.path.join('lib', 'perl' + ver,
+                                             ver + '.*', 'msys', 'CORE'),
+                                ])
+        lib_dir, perl_lib  = find_library('perl', base_dirs,
+                                          [os.path.join('perl', 'bin'),
+                                           incl_dir,])
         if 'windows' in platform.system().lower():
             lib_ver = perl_lib.split('.')[0].split('perl')[1]
-        core_dir = find_header('perl.h', [core_dir])
         perl_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return perl_found
 
     environment['PERL'] = perl_exe
-    environment['PERL_INCLUDE_DIR'] = core_dir
-    environment['PERL_LIB_DIR'] = core_dir
+    environment['PERL_INCLUDE_DIR'] = incl_dir
+    environment['PERL_LIB_DIR'] = lib_dir
     environment['PERL_LIBRARIES'] = [perl_lib]
     environment['PERL_LIBS'] = ['perl' + lib_ver]
     return perl_found
@@ -87,16 +98,35 @@ def is_installed(environ, version):
 def install(environ, version, target='build', locally=True):
     if not perl_found:
         if version is None:
-            version = '5'
-        website = ('http://www.perl.org',)
-        if 'windows' in platform.system().lower():
-            website = ('http://strawberry-perl.googlecode.com/',
-                   'files/')
-            version = '5.16.2.2'
-        global_install('Perl', website,
-                       'strawberry-perl-' + str(version) + '-32bit.msi',
-                       'perl' + str(version),
-                       'libperl-dev',
-                       'perl-devel')
+            version = '5.16.3'
+        website = ('http://www.perl.org/',)
+        if locally and not 'windows' in platform.system().lower():
+            sys.stderr.write('Perl was not found, ' +
+                             'but should be already installed by default.\n' +
+                             'Installing locally anyway.\n')
+            ## MinGW build is *not* straight-forward
+            website = ('http://www.cpan.org/',
+                       'src/' + version.split('.')[0] + '.0/')
+            src_dir = 'perl-' + str(version)
+            archive = src_dir + '.tar.gz'
+            fetch(''.join(website), archive, archive)
+            here = os.path.abspath(os.getcwd())
+            unarchive(os.path.join(here, download_dir, archive),
+                      target, src_dir)
+
+            os.chdir(build_dir)
+            subprocess.check_call(['./Configure', '-des', '-Dprefix=' + prefix])
+            subprocess.check_call(['make'])
+            subprocess.check_call(['make', 'install'])
+            os.chdir(here)
+        else:
+            if 'windows' in platform.system().lower():
+                website = ('http://strawberry-perl.googlecode.com/', 'files/')
+                version = '5.16.2.2'
+            global_install('Perl', website,
+                           'strawberry-perl-' + str(version) + '-32bit.msi',
+                           'perl' + str(version),
+                           'libperl-dev',
+                           'perl-devel')
         if not is_installed(environ, version):
             raise Exception('Perl installation failed.')

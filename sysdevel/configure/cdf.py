@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 cdf_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, cdf_found
+    set_debug(DEBUG)
     lib_name = 'cdf'
     if 'windows' in platform.system().lower():
         lib_name += 'NativeLibrary'
@@ -53,7 +55,9 @@ def is_installed(environ, version):
         incl_dir = find_header('cdf.h', base_dirs)
         lib_dir, lib = find_library('cdf', base_dirs)
         cdf_found = True
-    except Exception,e:
+    except Exception, e:
+        if DEBUG:
+            print e
         return cdf_found
 
     environment['CDF_INCLUDE_DIR'] = incl_dir
@@ -106,7 +110,12 @@ def install(environ, version, target='build', locally=True):
             else:
                 subprocess.check_call(['make',
                                        'OS=' + oper_sys, 'ENV=gnu', 'all'])
-                admin_check_call(['make', 'INSTALLDIR=' + prefix, 'install'])
+                if locally:
+                    subprocess.check_call(['make', 'INSTALLDIR=' + prefix,
+                                           'install'])
+                else:
+                    admin_check_call(['make', 'INSTALLDIR=' + prefix,
+                                      'install'])
             os.chdir(here)
         else:
             global_install('CDF', website,

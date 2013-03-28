@@ -53,6 +53,7 @@ def install(environ, version, target='build', locally=True):
         py_ver = ''.join(get_python_version())
         website = ('http://sourceforge.net/projects/wxpython/',
                    'files/wxPython/' + str(version) + '/')
+        ## FIXME local install
         global_install('wxPython', website,
                        'wxPython' + short_ver + '-win32-' + str(version) + \
                            '-py' + py_ver + '.exe',

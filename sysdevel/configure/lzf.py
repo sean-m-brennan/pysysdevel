@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 lzf_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, lzf_found
+    set_debug(DEBUG)
     base_dirs = []
     try:
         base_dirs.append(environ['MSYS_DIR'])
@@ -47,7 +49,9 @@ def is_installed(environ, version):
         inc_dir = find_header('lzf.h', base_dirs, ['lzf'])
         lib_dir, libs  = find_libraries('lzf', base_dirs)
         lzf_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return lzf_found
 
     environment['LZF_INCLUDE_DIR'] = inc_dir

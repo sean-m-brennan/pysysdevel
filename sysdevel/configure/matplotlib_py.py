@@ -39,7 +39,7 @@ def is_installed(environ, version):
         if compare_versions(ver, version) == -1:
             return matplotlib_found
         matplotlib_found = True
-    except Exception,e:
+    except:
         return matplotlib_found
 
     environment['MATPLOTLIB_DATA_FILES'] = matplotlib.get_py2exe_datafiles()

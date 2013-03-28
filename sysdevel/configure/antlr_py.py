@@ -37,7 +37,7 @@ def is_installed(environ, version):
     try:
         import antlr3
         antlr_python_found = True
-    except Exception,e:
+    except:
         pass
     return antlr_python_found
 

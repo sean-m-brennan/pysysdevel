@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 antlr_c_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, antlr_c_found
+    set_debug(DEBUG)
     try:
         base_dirs.append(environ['MSYS_DIR'])
     except:
@@ -46,7 +48,9 @@ def is_installed(environ, version):
         inc_dir = find_header('antlr3.h', base_dirs)
         lib_dir, libs  = find_libraries('antlr3c', base_dirs)
         antlr_c_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return antlr_c_found
 
     environment['ANTLR_C_INCLUDE_DIR'] = inc_dir

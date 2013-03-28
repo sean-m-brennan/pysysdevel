@@ -84,7 +84,8 @@ def is_installed(environ, version):
             _set_environment(gmat_root, gmat_version)
             gmat_found = True
     except Exception, e:
-        pass
+        if DEBUG:
+            print e
     return gmat_found
 
 

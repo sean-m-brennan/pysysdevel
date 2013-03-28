@@ -95,6 +95,10 @@ def read_cache():
 
 def save_cache():
     cache_file = os.path.join(target_build_dir, '.cache')
+    if not os.path.isdir(target_build_dir):
+        if os.path.exists(target_build_dir):
+            os.remove(target_build_dir)
+        mkdir(target_build_dir)
     cache = shelve.open(cache_file)
     cache['local_search_paths'] = local_search_paths
     cache.close()
@@ -177,7 +181,7 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
         if path != None and os.path.exists(path):
             for sub in subdirs:
                 ext_paths = glob.glob(os.path.join(path, sub))
-                for ext_path in extpaths:
+                for ext_path in ext_paths:
                     if DEBUG:
                         print 'Searching ' + ext_path + ' for ' + filepath
                     filename = os.path.basename(filepath)

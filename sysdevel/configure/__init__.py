@@ -23,7 +23,7 @@ import os
 import sys
 import platform
 
-import sysdevel.util
+from sysdevel import util
 
 
 class FatalError(SystemExit):
@@ -52,7 +52,7 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     other required software is installed.
     Install missing prerequisites that have an installer defined.
     '''
-    sysdevel.util.read_cache()
+    util.read_cache()
     skip = False
     for idx, arg in enumerate(sys.argv[:]):
         if arg.startswith('clean'):
@@ -75,7 +75,7 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     for help_name in prerequisite_list:
         environment = __configure_package(environment, help_name,
                                           skip, install, quiet)
-    sysdevel.util.save_cache()
+    util.save_cache()
 
     return environment
 

@@ -37,8 +37,8 @@ def is_installed(environ, version):
     try:
         import pyplusplus
         pyplusplus_found = True
-    except Exception,e:
-        print 'Py++ not found: ' + str(e)
+    except:
+        pass
     return pyplusplus_found
 
 

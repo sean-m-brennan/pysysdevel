@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 gccxml_found = False
+DEBUG = False
 
 
 def null():
@@ -35,6 +36,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, gccxml_found
+    set_debug(DEBUG)
     base_dirs = []
     try:
         base_dirs.append(os.path.join(os.environ['ProgramFiles'],
@@ -48,8 +50,9 @@ def is_installed(environ, version):
     try:
         environment['GCCXML'] = find_program('gccxml', base_dirs)
         gccxml_found = True
-    except:
-        pass
+    except Exception, e:
+        if DEBUG:
+            print e
     return gccxml_found
 
 

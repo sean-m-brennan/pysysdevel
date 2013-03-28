@@ -39,7 +39,7 @@ def is_installed(environ, version):
         if not version is None and ver < version:
             return shapely_found
         shapely_found = True
-    except Exception,e:
+    except:
         pass
     return shapely_found
 

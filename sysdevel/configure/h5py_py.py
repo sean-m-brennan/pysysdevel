@@ -39,7 +39,7 @@ def is_installed(environ, version):
         if compare_versions(ver, version) == -1:
             return h5py_found
         h5py_found = True
-    except Exception,e:
+    except:
         pass
     return h5py_found
 

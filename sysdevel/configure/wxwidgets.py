@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 wx_found = False
+DEBUG = False
 
 
 def null():
@@ -36,6 +37,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, wx_found
+    set_debug(DEBUG)
     try:
         wx_config = os.environ['WX_CONFIG']
     except:
@@ -46,8 +48,9 @@ def is_installed(environ, version):
             pass
         try:
             wx_config = find_program('wx-config', locations)
-        except:
-            wx_found = False
+        except Exception, e:
+            if DEBUG:
+                print e
             return wx_found
     try:
         cppflags_cmd = [wx_config, '--cppflags']
@@ -58,8 +61,9 @@ def is_installed(environ, version):
         process = subprocess.Popen(ldflags_cmd, stdout=subprocess.PIPE)
         environment['WX_LD_FLAGS'] = process.communicate()[0].split()
         wx_found = True
-    except:
-        pass
+    except Exception, e:
+        if DEBUG:
+            print e
     return wx_found
     
 

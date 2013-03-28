@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 geos_found = False
+DEBUG = False
 
 
 def null():
@@ -38,6 +39,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, geos_found
+    set_debug(DEBUG)
     base_dirs = []
     try:
         base_dirs.append(os.environ['GEOS_ROOT'])
@@ -58,7 +60,9 @@ def is_installed(environ, version):
         if compare_versions(ver, version) == -1:
             return geos_found
         geos_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return geos_found
 
     environment['GEOS_INCLUDE_DIR'] = inc_dir

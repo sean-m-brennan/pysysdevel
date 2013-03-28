@@ -51,7 +51,7 @@ def is_installed(environ, version):
         if compare_versions(ver, version) == -1:
             return basemap_found
         basemap_found = True
-    except Exception, e:
+    except:
         return basemap_found
 
     environment['BASEMAP_DATA_PATHLIST'] = basemap_data_pathlist

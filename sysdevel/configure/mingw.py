@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 mingw_found = False
+DEBUG = False
 
 
 def null():
@@ -41,6 +42,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, mingw_found
+    set_debug(DEBUG)
     ## Python was (most likely) built with msvcr90.dll, thus it's a dependency
     ## FIXME detect
     environment['MSVCRT_DIR'] = None
@@ -55,7 +57,9 @@ def is_installed(environ, version):
                            os.environ['ProgramFiles'],
                            ]
             environment['MSVCRT_DIR'], _ = find_library('msvcr90', msvcrt_dirs)
-        except:
+        except Exception, e:
+            if DEBUG:
+                print e
             pass
 
     try:
@@ -66,8 +70,13 @@ def is_installed(environ, version):
             locations.append(os.path.join(os.environ['ProgramFiles'], 'MinGW'))
         except:
             pass
-        gcc = find_program('mingw32-gcc', locations)
-        mingw_root = os.path.abspath(os.path.join(os.path.dirname(gcc), '..'))
+        try:
+            gcc = find_program('mingw32-gcc', locations)
+            mingw_root = os.path.abspath(os.path.join(os.path.dirname(gcc), '..'))
+        except Exception, e:
+            if DEBUG:
+                print e
+            return mingw_found
 
     msys_root = os.path.join(mingw_root, 'msys', '1.0')
     try:
@@ -75,7 +84,9 @@ def is_installed(environ, version):
         gxx = find_program('mingw32-g++', [mingw_root])
         gfort = find_program('mingw32-gfortran', [mingw_root])
         mingw_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         return mingw_found
 
     environment['MINGW_DIR']     = mingw_root

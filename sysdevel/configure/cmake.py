@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 cmake_found = False
+DEBUG = False
 
 
 def null():
@@ -37,6 +38,8 @@ def is_installed(environ, version):
     global environment, cmake_found
     if version is None:
         version = '2.8'
+
+    set_debug(DEBUG)
     base_dirs = []
     try:
         base_dirs.append(os.path.join(os.environ['ProgramFiles'],
@@ -50,8 +53,9 @@ def is_installed(environ, version):
     try:
         environment['CMAKE'] = find_program('cmake', base_dirs)
         cmake_found = True
-    except:
-        pass
+    except Exception, e:
+        if DEBUG:
+            print e
     return cmake_found
 
 

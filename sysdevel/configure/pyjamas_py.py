@@ -24,6 +24,7 @@ from sysdevel.util import *
 
 environment = dict()
 pyjamas_found = False
+DEBUG = False
 
 
 def null():
@@ -33,6 +34,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, pyjamas_found
+    set_debug(DEBUG)
     try:
         pyjamas_root = os.environ['PYJAMAS_ROOT']
         pyjs_bin = os.path.join(pyjamas_root, 'bin')
@@ -40,13 +42,16 @@ def is_installed(environ, version):
         environment['PYJSBUILD'] = find_program('pyjsbuild', [pyjs_bin])
         sys.path.insert(0, pyjs_lib)
         pyjamas_found = True
-    except:
+    except Exception, e:
+        if DEBUG:
+            print e
         try:
             import pyjs
             environment['PYJSBUILD'] = find_program('pyjsbuild')
             pyjamas_found = True
-        except:
-            pass
+        except Exception, e:
+            if DEBUG:
+                print e
     return pyjamas_found
 
 

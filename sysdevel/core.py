@@ -201,6 +201,10 @@ class CustomDistribution(NumpyDistribution):
         self.quit_on_error = attrs.get('quit_on_error')
         if self.quit_on_error != None:
             del old_attrs['quit_on_error']
+        ## Enable parallel building
+        self.parallel_build = attrs.get('parallel_build')
+        if self.parallel_build != None:
+            del old_attrs['parallel_build']
 
         ## py2exe options
         self.ctypes_com_server = attrs.pop("ctypes_com_server", [])
@@ -251,26 +255,68 @@ class CustomDistribution(NumpyDistribution):
 
 
 
-def process_package(fnctn, build_base, pyexe, argv,
+def process_package(fnctn, build_base, progress, pyexe, argv,
                     pkg_name, pkg_dir, addtnl_args=[]):
     sys.stdout.write(fnctn.upper() + 'ING ' + pkg_name + ' in ' + pkg_dir + ' ')
+    logging = True
+    if 'clean' in fnctn:
+        logging = False
     log_file = os.path.join(build_base, pkg_name + '_' + fnctn + '.log')
-    log = open(log_file, 'w')
+    if logging:
+        log = open(log_file, 'w')
+    else:
+        log = open(os.devnull, 'w')
     try:
         p = subprocess.Popen([pyexe, os.path.join(pkg_dir, 'setup.py'),
                               ] + argv + addtnl_args,
                              stdout=log, stderr=log)
-        status = util.process_progress(p)
+        status = progress(p)
         log.close()
     except KeyboardInterrupt:
         p.terminate()
         log.close()
         status = 1
     if status != 0:
-        sys.stdout.write(' failed; See ' + log_file + '\n')
+        sys.stdout.write(' failed')
+        if logging:
+            sys.stdout.write('; See ' + log_file + '\n')
+        sys.stdout.write('\n')           
     else:
         sys.stdout.write(' done\n')
     return pkg_name, status
+
+
+def process_subpackages(parallel, fnctn, build_base, subpackages,
+                        argv, quit_on_error):
+    try:
+        if not parallel:
+            raise ImportError
+        ## parallel
+        import pp
+        job_server = pp.Server()
+        results = [job_server.submit(process_package,
+                                     (fnctn, build_base, util.process_progress,
+                                      sys.executable, argv,) + sub,
+                                     (), ('os', 'subprocess',))
+                   for sub in subpackages]
+        has_failed = False
+        for result in results:
+            res_tpl = result()
+            if res_tpl is None:
+                raise Exception("Parallel build failed.")
+            pkg_name, status = res_tpl
+            if status != 0 and quit_on_error:
+                has_failed = True
+            if has_failed:
+                sys.exit(status)
+    except ImportError: ## serial
+        for sub in subpackages:
+            args = (fnctn, build_base, util.process_progress,
+                    sys.executable, argv,) + sub
+            pkg_name, status = process_package(*args)
+            if status != 0 and quit_on_error:
+                sys.exit(status)
+
 
 
 class build(old_build):
@@ -311,11 +357,6 @@ class build(old_build):
         return self.distribution.has_data_files() or \
             self.distribution.has_data_directories()
 
-    def quit_on_error(self):
-        if hasattr(self.distribution, 'quit_on_error') and \
-                self.distribution.quit_on_error is not None:
-            return self.distribution.quit_on_error
-        return False
 
     ## Order is important
     sub_commands = [
@@ -342,39 +383,18 @@ class build(old_build):
                 os.makedirs(self.build_base)
             except:
                 pass
-            idx = sys.argv.index('setup.py') + 1
-            argv = list(sys.argv[idx:])
+            for idx in range(len(sys.argv)):
+                if 'setup.py' in sys.argv[idx]:
+                    break
+            argv = list(sys.argv[idx+1:])
             if 'install' in argv:
                 argv.remove('install')
             if 'clean' in argv:
                 argv.remove('clean')
-            try:  ## parallel
-                import pp
-                job_server = pp.Server()
-                results = [
-                    job_server.submit(process_package,
-                                      ('build', self.build_base,
-                                       sys.executable, argv,) + sub,
-                                      (),
-                                      ('os', 'subprocess', 'util',))
-                    for sub in self.distribution.subpackages]
-                has_failed = False
-                for result in results:
-                    res_tpl = result()
-                    if res_tpl is None:
-                        raise Exception("Parallel build failed.")
-                    pkg_name, status = res_tpl
-                    if status != 0 and self.quit_on_error():
-                        has_failed = True
-                if has_failed:
-                    sys.exit(status)
-            except ImportError: ## serial
-                for sub in self.distribution.subpackages:
-                    args = ('build', self.build_base,
-                            sys.executable, argv,) + sub
-                    pkg_name, status = process_package(*args)
-                    if status != 0 and self.quit_on_error():
-                        sys.exit(status)
+
+            process_subpackages(self.distribution.parallel_build, 'build',
+                                self.build_base, self.distribution.subpackages,
+                                argv, self.distribution.quit_on_error)
 
             if self.has_pure_modules() or self.has_c_libraries() or \
                     self.has_ext_modules() or self.has_shared_libraries() or \
@@ -419,39 +439,18 @@ class install(old_install):
                 os.makedirs(build.build_base)
             except:
                 pass
-            idx = sys.argv.index('setup.py') + 1
-            argv = list(sys.argv[idx:])
+            for idx in range(len(sys.argv)):
+                if 'setup.py' in sys.argv[idx]:
+                    break
+            argv = list(sys.argv[idx+1:])
             if 'build' in argv:
                 argv.remove('build')
             if 'clean' in argv:
                 argv.remove('clean')
-            try:  ## parallel
-                import pp
-                job_server = pp.Server()
-                results = [
-                    job_server.submit(process_package,
-                                      ('install', self.build_base,
-                                       sys.executable, argv,) + sub,
-                                      (),
-                                      ('os', 'subprocess', 'util',))
-                    for sub in self.distribution.subpackages]
-                has_failed = False
-                for result in results:
-                    res_tpl = result()
-                    if res_tpl is None:
-                        raise Exception("Parallel build failed.")
-                    pkg_name, status = result()
-                    if status != 0 and self.quit_on_error():
-                        has_failed = True
-                if has_failed:
-                    sys.exit(status)
-            except ImportError: ## serial
-                for sub in self.distribution.subpackages:
-                    args = ('install', build.build_base,
-                            sys.executable, argv,) + sub
-                    pkg_name, status = process_package(*args)
-                    if status != 0 and self.quit_on_error():
-                        sys.exit(status)
+
+            process_subpackages(build.distribution.parallel_build, 'install',
+                                build.build_base, self.distribution.subpackages,
+                                argv, build.distribution.quit_on_error)
 
             if build.has_pure_modules() or build.has_c_libraries() or \
                     build.has_ext_modules() or build.has_shared_libraries() or \
@@ -515,13 +514,13 @@ class clean(old_clean):
             except:
                 pass
         if self.distribution.subpackages != None:
-            for sub in self.distribution.subpackages:
-                idx = sys.argv.index('setup.py') + 1
-                argv = list(sys.argv[idx:])
-                print "CLEANING " + str(sub[0]) + ' in ' + str(sub[1])
-                subprocess.call([sys.executable,
-                                 os.path.join(sub[1], 'setup.py'),
-                                 ] +  argv)
+            for idx in range(len(sys.argv)):
+                if 'setup.py' in sys.argv[idx]:
+                    break
+            argv = list(sys.argv[idx+1:])
+            process_subpackages(build.distribution.parallel_build, 'clean',
+                                build.build_base, self.distribution.subpackages,
+                                argv, False)
 
         # Remove user-specified generated files
         if self.distribution.generated_files != None:

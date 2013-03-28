@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 ctypesgen_found = False
+DEBUG = False
 
 
 def null():
@@ -36,13 +37,15 @@ def null():
 
 def is_installed(environ, version):
     global environment, ctypesgen_found
+    set_debug(DEBUG)
     try:
         environment['CTYPESGEN'] = find_program('ctypesgen.py')
         import ctypesgencore
         environment['CTYPESGEN_PATH'] = os.path.dirname(ctypesgencore.__file__)
         ctypesgen_found = True
-    except:
-        pass
+    except Exception, e:
+        if DEBUG:
+            print e
     return ctypesgen_found
 
 

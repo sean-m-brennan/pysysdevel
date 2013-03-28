@@ -25,6 +25,7 @@ from sysdevel.util import *
 
 environment = dict()
 java_found = False
+DEBUG = False
 
 
 def null():
@@ -37,6 +38,7 @@ def null():
 
 def is_installed(environ, version):
     global environment, java_found
+    set_debug(DEBUG)
     try:
         locations = glob.glob(os.path.join('C:' + os.sep + 'OpenSCG',
                                            'openjdk*'))
@@ -58,6 +60,8 @@ def is_installed(environ, version):
             pass
         java_found = True
     except Exception,e:
+        if DEBUG:
+            print e
         return java_found
 
     environment['JAVA'] = java_runtime

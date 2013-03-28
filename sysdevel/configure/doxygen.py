@@ -24,6 +24,7 @@ from sysdevel.util import *
 
 environment = dict()
 doxygen_found = False
+DEBUG = False
 
 
 def null():
@@ -33,11 +34,13 @@ def null():
 
 def is_installed(environ, version):
     global environment, doxygen_found
+    set_debug(DEBUG)
     try:
         environment['DOXYGEN'] = find_program('doxygen')
         doxygen_found = True
-    except:
-        pass
+    except Exception, e:
+        if DEBUG:
+            print e
     return doxygen_found
 
 

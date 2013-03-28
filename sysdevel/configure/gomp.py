@@ -26,6 +26,7 @@ from sysdevel.util import *
 
 environment = dict()
 gomp_found = False
+DEBUG = False
 
 
 def null():
@@ -36,13 +37,15 @@ def null():
 
 def is_installed(environ, version):
     global environment, gomp_found
+    set_debug(DEBUG)
     try:
         gomp_lib_dir, gomp_lib  = find_library('gomp')
         environment['GOMP_LIBRARY_DIR'] = gomp_lib_dir
         environment['GOMP_LIBRARY'] = gomp_lib
         gomp_found = True
     except Exception,e:
-        print e
+        if DEBUG:
+            print e
         gomp_found = False
     return gomp_found
 
