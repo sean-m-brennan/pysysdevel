@@ -280,9 +280,9 @@ def process_package(fnctn, build_base, progress, pyexe, argv,
         sys.stdout.write(' failed')
         if logging:
             sys.stdout.write('; See ' + log_file)
-        sys.stdout.write('\n')           
     else:
         sys.stdout.write(' done')
+    sys.stdout.write('\n')           
     return pkg_name, status
 
 
