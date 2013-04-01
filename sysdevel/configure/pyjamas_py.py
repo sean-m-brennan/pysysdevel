@@ -104,7 +104,7 @@ def install(environ, version, locally=True):
             raise e
         check_install(status, log, log_file)
 
-        sys.stdout.write(' done\n')
+        sys.stdout.write(' done')
         os.chdir(here)
         search_path = []
         if locally:
@@ -117,6 +117,6 @@ def install(environ, version, locally=True):
 def check_install(status, log, log_file):
     if status != 0:
         log.close()
-        sys.stdout.write(' failed; See ' + log_file + '\n')
+        sys.stdout.write(' failed; See ' + log_file)
         raise Exception('Pyjamas is required, but could not be ' +
                         'installed; See ' + log_file)

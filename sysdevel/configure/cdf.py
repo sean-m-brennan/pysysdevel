@@ -76,7 +76,7 @@ def install(environ, version, locally=True):
         if locally or not 'darwin' in platform.system().lower():
             here = os.path.abspath(os.getcwd())
             if locally:
-                prefix = os.path.abspath(dst_dir)
+                prefix = os.path.abspath(target_build_dir)
                 if not prefix in local_search_paths:
                     local_search_paths.append(prefix)
             else:
@@ -84,22 +84,21 @@ def install(environ, version, locally=True):
 
             website = ('http://cdaweb.gsfc.nasa.gov/',
                        'pub/software/cdf/dist/cdf' + str(version))
+            oper_sys = os_dir = 'linux'
             if 'windows' in platform.system().lower():
                 os_dir = 'windows/src_distribution'
                 oper_sys = 'mingw'
             elif 'darwin' in platform.system().lower():
                 oper_sys = os_dir = 'macosx'
                 os_dir += '/src_distribution'
-            elif 'linux' in platform.system().lower():
-                oper_sys = os_dir = 'linux'
-            website += '/' + os_dir
+
+            web_subdir = '/' + os_dir + '/'
             src_dir = 'cdf' + str(version) + '-dist'
             archive = src_dir + '-cdf.tar.gz'
-            fetch(''.join(website), archive, archive)
+            fetch(''.join(website) + web_subdir, archive, archive)
             unarchive(archive, src_dir)
 
-            build_dir = os.path.join(target_build_dir, src_dir, '_build')
-            mkdir(build_dir)
+            build_dir = os.path.join(target_build_dir, src_dir)
             os.chdir(build_dir)
             if 'windows' in platform.system().lower():
                 mingw_check_call(environ, ['make',

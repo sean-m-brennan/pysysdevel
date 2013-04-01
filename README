@@ -1,31 +1,32 @@
-sysdevel
+SysDevel
 --------
 
-sysdevel is a Python package that assists software development in
+SysDevel is a Python package that assists software development in
 three related areas: model development, data visualization, and
-collaboration & distribution. This package facilitates multi-model
+collaboration and distribution. This package facilitates multi-model
 simulation development by implementing a generic Model-View-Controller
 interface. The View portion of this interface handles data
 visualization by unifying both web-based and desktop UI tools. For
-package distribution, sysdevel extends the distutils package to handle
+package distribution, SysDevel extends the distutils package to handle
 external libraries and application freezing.
 
-All code in sysdevel is released under the Mozilla Public License 2.0
+All code in SysDevel is released under the Mozilla Public License 2.0
 (see the 'LICENSE' file).
 
 
 This package requires:
-  * Python 2.4 or greater (www.python.org)
-  * NumPy (www.numpy.org)
+  * Python 2.4 or greater (http://www.python.org)
+  * NumPy (http://www.numpy.org)
 
 Using Python 2.4 or 2.5 may also require:
       (if you are downloading over https behind a proxy)
-  * httpsproxy_urllib2 (pypi.python.org/pypi/httpsproxy_urllib2)
+  * httpsproxy_urllib2 (http://pypi.python.org/pypi/httpsproxy_urllib2)
 
 
 Build/Install
-  `python setup.py build`
-  `python setup.py install` (with admin privileges)
+  ```
+  python setup.py build
+  python setup.py install``` (with admin privileges)
 
 
 

@@ -758,11 +758,11 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True):
             log.close()
             raise e
         if status != 0:
-            sys.stdout.write(' failed; See ' + log_file + '\n')
+            sys.stdout.write(' failed; See ' + log_file)
             raise Exception(name + ' is required, but could not be ' +
                             'installed; See ' + log_file)
         else:
-            sys.stdout.write(' done\n')
+            sys.stdout.write(' done')
         if locally:
             site.addsitedir(target_lib_dir)
             if not target_lib_dir in sys.path:

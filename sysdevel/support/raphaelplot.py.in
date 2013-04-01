@@ -15,9 +15,9 @@
 # 
 #**************************************************************************
 
-## Requires raphael.js
-
 import math
+
+import raphael.min.js
 
 from pyjamas.ui.SimplePanel import SimplePanel
 from pyjamas.raphael.raphael import Raphael

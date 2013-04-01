@@ -86,8 +86,7 @@ def install(environ, version, locally=True):
             src_dir = 'hdf5-' + str(version)
             archive = src_dir + '.tar.bz2'
             autotools_install(environ, website, archive, src_dir, locally,
-                              extra_cfg=['--enable-cxx', '--enable-fortran',
-                                         '--enable-parallel',])
+                              extra_cfg=['--enable-cxx', '--enable-fortran'])
         else:
             global_install('HDF5', website,
                            None,

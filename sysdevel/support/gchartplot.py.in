@@ -17,6 +17,8 @@
 
 import math
 
+## no js dependency
+
 from pyjamas import logging
 log = logging.getConsoleLogger()
 

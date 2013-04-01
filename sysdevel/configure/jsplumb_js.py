@@ -20,7 +20,7 @@ def install(environ, version, locally=True):
     website = 'http://jsplumb.googlecode.com/files/'
     js_file = 'jquery.jsPlumb-' + version + '-all-min.js'
     js_dir = os.path.join(target_build_dir, javascript_dir)
-    js_target = 'jquery.jsPlumb-all-min.js'
+    js_target = 'jquery.jsPlumb.min.js'
     if not os.path.exists(js_dir):
         os.makedirs(js_dir)
     if not os.path.exists(os.path.join(js_dir, js_target)):

@@ -1,5 +1,5 @@
 """
-Fetch three.js
+Fetch stats.js
 """
 
 from sysdevel.util import *
@@ -13,8 +13,8 @@ def is_installed(environ, version):
     return False
 
 def install(environ, version, locally=True):
-    website = 'http://mrdoob.github.com/three.js/build/'
-    js_file = 'three.min.js'
+    website = 'https://github.com/mrdoob/stats.js/blob/master/build/'
+    js_file = 'stats.min.js'
     js_dir = os.path.join(target_build_dir, javascript_dir)
     if not os.path.exists(js_dir):
         os.makedirs(js_dir)

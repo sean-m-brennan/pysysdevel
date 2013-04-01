@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find MinGW
+Find/fetch/install MinGW
 """
 #**************************************************************************
 # 
@@ -31,7 +31,6 @@ DEBUG = False
 
 def null():
     global environment
-    environment['MSVCRT_DIR'] = None
     environment['MINGW_DIR'] = None
     environment['MSYS_DIR'] = None
     environment['MSYS_SHELL'] = None
@@ -43,25 +42,6 @@ def null():
 def is_installed(environ, version):
     global environment, mingw_found
     set_debug(DEBUG)
-    ## Python was (most likely) built with msvcr90.dll, thus it's a dependency
-    ## FIXME detect
-    environment['MSVCRT_DIR'] = None
-    try:
-        environment['MSVCRT_DIR'] = os.environ['MSVCRT_DIR']
-    except:
-        try:
-            msvcrt_dirs = [os.path.join(os.environ['ProgramFiles'],
-                                        'Microsoft Visual Studio 9.0',
-                                        'VC', 'redist', 'x86',
-                                        'Microsoft.VC90.CRT'),
-                           os.environ['ProgramFiles'],
-                           ]
-            environment['MSVCRT_DIR'], _ = find_library('msvcr90', msvcrt_dirs)
-        except Exception, e:
-            if DEBUG:
-                print e
-            pass
-
     try:
         mingw_root = os.environ['MINGW_ROOT']
     except:
@@ -106,8 +86,7 @@ def install(environ, version, locally=True):
                    str(version) + '/')
         global_install('MinGW', website,
                        'mingw-get-inst-' + str(version) + '.exe',
-                       'i386-mingw32-binutils i386-mingw32-gcc i386-mingw32-runtime i386-mingw32-w32api',
-                       'mingw32-binutils gcc-mingw32 mingw32-runtime',
-                       'mingw32-gcc-c++ mingw32-gcc mingw32-pthreads mingw32-w32api mingw32-binutils mingw32-runtime mingw32-filesystem mingw32-cpp mingw32-dlfcn-static')
+                       ## No cross-compiling
+                       None, None, None)
         if not is_installed(environ, version):
             raise Exception('MinGW installation failed.')

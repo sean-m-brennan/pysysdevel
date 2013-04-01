@@ -1,19 +1,24 @@
 Required software:
-   + Git
+
+   + Python 2.4 or greater, plus NumPy
      * Linux:
-        sudo apt-get install git
+        sudo apt-get install python-dev python-numpy
 	  or
-	sudo yum install git-core
+	sudo yum install python-devel numpy
 
      * Windows:
-        see http://code.google.com/p/tortoisegit/wiki/SetupHowTo
-       - msysgit: http://code.google.com/p/msysgit/downloads/list
-       - tortoisegit: http://code.google.com/p/tortoisegit/wiki/Download
- 
-     * Mac OSX:
-       - Macports (http://www.macports.org), including its prerequisites
+       - MSI installer from http://www.python.org/download/
+
+       - pywin32 (http://sourceforge.net/projects/pywin32/files/pywin32)
+	   Download/run the installer that fits your python version
+
+       - numpy (http://sourceforge.net/projects/numpy/files/NumPy)
+	   Download/run the installer that fits your python version
+
+     * Mac OSX: (replacing '26' with the desired python version)
+       - MacPorts (http://www.macports.org), including its prerequisites
            Xcode (http://developer.apple.com/technologies/tools/)
-           (and X11, but it should already be present)
+           and X11 (but it should already be present)
 	   * Follow the instructions at http://guide.macports.org *
 
          IMPORTANT: before installing any ports, edit
@@ -23,40 +28,27 @@ Required software:
 	   Also edit /opt/local/etc/macports/macports.conf uncommenting the line:
              build_arch  i386
 
-         Warning: Running 'port selfupdate' will wipe out these settings.
+         Warning: Running `port selfupdate` will wipe out these settings.
 
        Then run:
-         sudo port install git-core
+         sudo port install python26 python_select
+         sudo port select --set python python26
+         sudo port install py26-numpy
 
-
-   + Python 2.4 or greater, plus NumPy
-     * Linux:
-        sudo apt-get install python-dev python-numpy
-	  or
-	sudo yum install python-devel numpy
-
-     * Windows:
-        MSI installer from http://www.python.org/download/
-
-	- pywin32 (http://sourceforge.net/projects/pywin32/files/pywin32)
-	   Download/run the installer that fits your python version
-
-	- numpy (http://sourceforge.net/projects/numpy/files/NumPy)
-	   Download/run the installer that fits your python version
-
-     * Mac OSX: (replacing '26' with the desired python version)
-        sudo port install python26 python_select
-        sudo port select --set python python26
-	sudo port install py26-numpy
-
-	NOTE: Python version 2.7 is broken on OSX. Do not use it.
+	NOTE: Python version 2.7 is broken in MacPorts. Do not use it.
 
 
    + SysDevel
-      git clone ssh://git.isr.lanl.gov/n/git/pysysdevel
+      Download/unarchive from https://github.com/pysysdevel/zipball/master
+        or
+      git clone https://github.com/pysysdevel.git
+
       cd pysysdevel
       sudo python setup.py install
 
+
+
+SysDevel does the rest, but in case something goes wrong, we also use the following:
 
    + GCC collection (gcc, g++, gfortran)
      * Linux:
@@ -68,12 +60,12 @@ Required software:
        - MinGW (http://sourceforge.net/projects/mingw)
           Run mingw-get-inst.exe
             * Select at least:
-	        C Compiler
-	        C++ Compiler
-	        Fortran Compiler
-	        MSYS Basic System, and
-	        MinGW Developer Toolkit
+	       + C Compiler
+	       + C++ Compiler
+	       + Fortran Compiler
+	       + MSYS Basic System, and
+	       + MinGW Developer Toolkit
 
      * Mac OSX:
-       gcc, g++, and gfortran are all part of Xcode
-
+       gcc and g++ are part of Xcode
+       - Gfortran (http://r.research.att.com/tools/)

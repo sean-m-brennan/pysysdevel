@@ -72,6 +72,11 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
 
     if 'windows' in platform.system().lower():
         prerequisite_list.insert(0, 'mingw')
+        if 'boost' in prerequisite_list:  ## assuming boost-python
+            prerequisite_list.insert(0, 'msvcrt')
+    else:
+        prerequisite_list.insert(0, 'gcc')
+
     for help_name in prerequisite_list:
         environment = __configure_package(environment, help_name,
                                           skip, install, quiet)
@@ -85,6 +90,7 @@ def __configure_package(environment, help_name, skip, install, quiet):
     if not isinstance(help_name, basestring):
         req_version = help_name[1]
         help_name = help_name[0]
+    base = help_name
     full_name = 'sysdevel.configure.' + help_name
     try:
         __import__(full_name)
@@ -97,7 +103,7 @@ def __configure_package(environment, help_name, skip, install, quiet):
             try:
                 __import__(full_name)
             except ImportError, e:
-                sys.stderr.write('No setup helper module ' + help_name + '\n')
+                sys.stderr.write('No setup helper module ' + base + '\n')
                 raise e
     return __run_helper__(environment, help_name, full_name,
                           req_version, skip, install, quiet)
