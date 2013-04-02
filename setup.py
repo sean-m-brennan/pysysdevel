@@ -30,7 +30,6 @@ cwd = os.path.dirname(__file__)
 if cwd:
     os.chdir(cwd)
 
-import helper
 
 def main(argv=None):
     if argv is None:
