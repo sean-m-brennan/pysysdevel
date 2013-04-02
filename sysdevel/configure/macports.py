@@ -17,7 +17,7 @@ def null():
 
 def is_installed(environ, version):
     global macports_found
-    macports_found = _uses_macports()
+    macports_found = system_uses_macports()
     return macports_found
 
 

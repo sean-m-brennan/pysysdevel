@@ -46,7 +46,7 @@ def install(environ, version, locally=True):
     global local_search_paths
     if not gccxml_found:
         if locally or ('darwin' in platform.system().lower() and
-                       _uses_homebrew()):
+                       system_uses_homebrew()):
             here = os.path.abspath(os.getcwd())
             if locally:
                 prefix = os.path.abspath(dst_dir)
@@ -62,15 +62,18 @@ def install(environ, version, locally=True):
             build_dir = os.path.join(download_dir, src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
-            config_cmd = [environ['CMAKE'], '..',
-                          '-G', '"MSYS Makefiles"',
-                          '-DCMAKE_INSTALL_PREFIX=' + prefix,
-                          '-DCMAKE_MAKE_PROGRAM=/bin/make.exe']
             if 'windows' in platform.system().lower():
+                config_cmd = [environ['CMAKE'], '..',
+                              '-G', '"MSYS Makefiles"',
+                              '-DCMAKE_INSTALL_PREFIX=' + prefix,
+                              '-DCMAKE_MAKE_PROGRAM=/bin/make.exe']
                 mingw_check_call(environ, config_cmd)
                 mingw_check_call(environ, ['make'])
                 mingw_check_call(environ, ['make', 'install'])
             else:
+                config_cmd = [environ['CMAKE'], '..',
+                              '-G', '"Unix Makefiles"',
+                              '-DCMAKE_INSTALL_PREFIX=' + prefix]
                 subprocess.check_call(config_cmd)
                 subprocess.check_call(environ, ['make'])
                 if locally:

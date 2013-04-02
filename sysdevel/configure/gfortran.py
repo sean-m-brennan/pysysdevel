@@ -41,7 +41,7 @@ def install(environ, version, locally=True):
             website = ('http://sourceforge.net/projects/mingw/',
                        'files/Installer/mingw-get-inst/mingw-get-inst-' +
                        str(version) + '/')
-        if 'darwin' in platform.system().lower() and _uses_macports():
+        if 'darwin' in platform.system().lower() and system_uses_macports():
             raise Exception('GFortran does not appear to be installed.')
         global_install('GFortran', website,
                        winstaller='mingw-get-inst-' + str(version) + '.exe',

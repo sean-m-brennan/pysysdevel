@@ -21,7 +21,7 @@ def null():
 
 def is_installed(environ, version):
     global homebrew_found
-    homebrew_found = _uses_homebrew()
+    homebrew_found = system_uses_homebrew()
     return homebrew_found
 
 

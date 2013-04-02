@@ -1,13 +1,14 @@
+Mac OSX
+-------
 
-+ MacPorts (http://www.macports.org)
-  IMPORTANT: before installing any ports, edit
-  /opt/local/share/macports/Tcl/port1.0/portconfigure.tcl such that
-  the line that begins with "default configure.ldflags" reads as:
-    default configure.ldflags   {"-L${prefix}/lib -Xlinker -headerpad_max_install_names"}
-  Also edit /opt/local/etc/macports/macports.conf uncommenting the line:
-    build_arch  i386
+  + MacPorts (http://www.macports.org)
+    IMPORTANT: before installing any ports, edit
+    /opt/local/share/macports/Tcl/port1.0/portconfigure.tcl such that
+    the line that begins with "default configure.ldflags" reads as:
+      default configure.ldflags   {"-L${prefix}/lib -Xlinker -headerpad_max_install_names"}
+    Also edit /opt/local/etc/macports/macports.conf uncommenting the line:
+      build_arch  i386
 
-  WARNING: Running `port selfupdate` will wipe out these settings.
-
-  NOTE: Python version 2.7 is broken in MacPorts. Do not use it.
+    WARNING: Running `port selfupdate` will wipe out these settings.
+    NOTE: Python version 2.7 is broken in MacPorts. Do not use it.
 

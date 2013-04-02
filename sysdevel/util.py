@@ -37,9 +37,12 @@ import tarfile
 import zipfile
 import subprocess
 import ctypes
-import shelve
 import distutils.sysconfig
 
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 
 default_path_prefixes = ['/usr', '/usr/local',
@@ -90,8 +93,9 @@ def read_cache():
     global local_search_paths
     cache_file = os.path.join(target_build_dir, '.cache')
     if os.path.exists(cache_file):
-        cache = shelve.open(cache_file)
-        local_search_paths += cache['local_search_paths']
+        cache = open(cache_file, 'rb')
+        cached = json.load(cache)
+        local_search_paths += cached['local_search_paths']
         cache.close()
 
 def save_cache():
@@ -100,8 +104,10 @@ def save_cache():
         if os.path.exists(target_build_dir):
             os.remove(target_build_dir)
         mkdir(target_build_dir)
-    cache = shelve.open(cache_file)
-    cache['local_search_paths'] = local_search_paths
+    cache = open(cache_file, 'wb')
+    cached = dict()
+    cached['local_search_paths'] = local_search_paths
+    json.dump(cached, cache)
     cache.close()
 
 def delete_cache():
@@ -818,7 +824,7 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
     os.chdir(here)
 
 
-def _uses_apt_get():
+def system_uses_apt_get():
     try:
         find_program('apt-get')
         return os.path.exists('/etc/apt/sources.list')
@@ -826,7 +832,7 @@ def _uses_apt_get():
         pass
     return False
 
-def _uses_yum():
+def system_uses_yum():
     try:
         find_program('yum')
         return os.path.exists('/etc/yum.conf')
@@ -834,7 +840,7 @@ def _uses_yum():
         pass
     return False
 
-def _uses_homebrew():
+def system_uses_homebrew():
     try:
         find_program('brew')
         return True
@@ -842,7 +848,7 @@ def _uses_homebrew():
         pass
     return False
 
-def _uses_macports():
+def system_uses_macports():
     try:
         find_program('port')
         return os.path.exists('/opt/local/etc/macports/macports.conf')
@@ -859,11 +865,11 @@ def global_install(what, website_tpl, winstaller=None,
         admin_check_call(installer)
 
     elif 'darwin' in platform.system().lower() and port:
-        if _uses_homebrew() and brew:
+        if system_uses_homebrew() and brew:
             print '\nInstalling ' + ', '.join(brew.split()) + ' in the system:'
             subprocess.check_call(['brew', 'install',] + brew.split())
 
-        elif _uses_macports() and port:
+        elif system_uses_macports() and port:
             print '\nInstalling ' + ', '.join(port.split()) + ' in the system:'
             admin_check_call(['port', 'install',] + port.split())
 
@@ -872,11 +878,11 @@ def global_install(what, website_tpl, winstaller=None,
                                     what + 'by hand. See ' + website_tpl[0])
 
     elif 'linux' in platform.system().lower():
-        if _uses_apt_get() and deb:
+        if system_uses_apt_get() and deb:
             print '\nInstalling ' + ', '.join(deb.split()) + ' in the system:'
             admin_check_call(['apt-get', 'install',] + deb.split())
 
-        elif _uses_yum() and rpm:
+        elif system_uses_yum() and rpm:
             print '\nInstalling ' + ', '.join(rpm.split()) + ' in the system:'
             admin_check_call(['yum', 'install',] + rpm.split())
 
