@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Find liblzf
 """
@@ -67,15 +65,15 @@ def install(environ, version, locally=True):
         if version is None:
             version = '3.6'
         website = ('http://dist.schmorp.de/liblzf/Attic/',)
-        if locally or 'windows' in platform.system().lower() or \
-                ('darwin' in platform.system().lower() and _uses_homebrew()):
-            #FIXME lzf brew
+        if locally or 'windows' in platform.system().lower():
             src_dir = 'liblzf-' + str(version)
             archive = src_dir + '.tar.gz'
             autotools_install(environ, website, archive, src_dir, locally)
         else:
+            here = os.path.abspath(os.path.dirname(__file__))
             global_install('LZF', website,
-                           brew=None, port='liblzf',
+                           brew=os.path.join(here, 'liblzf.rb'),
+                           port='liblzf',
                            deb='liblzf-dev', rpm='liblzf-devel')
         if not is_installed(environ, version):
             raise Exception('LZF installation failed.')
