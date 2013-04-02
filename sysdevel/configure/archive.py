@@ -21,6 +21,7 @@ Find libarchive
 #**************************************************************************
 
 import os
+import platform
 
 from sysdevel.util import *
 
@@ -81,9 +82,7 @@ def install(environ, version, locally=True):
             autotools_install(environ, website, archvie, src_dir, locally)
         else:
             global_install('Archive', website,
-                           None,
-                           'libarchive',
-                           'libarchive-dev',
-                           'libarchive-devel')
+                           brew='libarchive', port='libarchive',
+                           deb='libarchive-dev', rpm='libarchive-devel')
         if not is_installed(environ, version):
             raise Exception('libarchive installation failed.')

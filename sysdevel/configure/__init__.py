@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Entry point for finding/installing required libraries
 """
@@ -72,10 +71,13 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
 
     if 'windows' in platform.system().lower():
         prerequisite_list.insert(0, 'mingw')
-        if 'boost' in prerequisite_list:  ## assuming boost-python
+        if 'boost' in prerequisite_list:  ## assuming boost-python is needed
             prerequisite_list.insert(0, 'msvcrt')
     else:
         prerequisite_list.insert(0, 'gcc')
+    if 'darwin' in platform.system().lower() and \
+            not 'macports' in prerequisite_list:
+        prerequisite_list.insert(0, 'homebrew')
 
     for help_name in prerequisite_list:
         environment = __configure_package(environment, help_name,

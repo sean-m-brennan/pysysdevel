@@ -20,7 +20,9 @@ Find Graphviz library
 # 
 #**************************************************************************
 
-import os, glob
+import os
+import glob
+import platform
 
 from sysdevel.util import *
 
@@ -28,7 +30,7 @@ environment = dict()
 graphviz_found = False
 DEBUG = False
 
-DEPENDENCIES = [] #FIXME losts of dependencies
+DEPENDENCIES = [] #FIXME lots of dependencies
 
 def null():
     global environment
@@ -84,9 +86,7 @@ def install(environ, version, locally=True):
             autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('Graphviz', website,
-                           None,
-                           'graphviz-devel',
-                           'graphviz-dev',
-                           'graphviz-devel')
+                           brew='graphviz', port='graphviz-devel',
+                           deb='graphviz-dev', rpm='graphviz-devel')
         if not is_installed(environ, version):
             raise Exception('Graphviz installation failed.')

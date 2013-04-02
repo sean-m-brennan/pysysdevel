@@ -20,7 +20,9 @@ Find Boost
 # 
 #**************************************************************************
 
-import os, platform, subprocess
+import os
+import platform
+import subprocess
 
 from sysdevel.util import *
 
@@ -138,9 +140,9 @@ def install(environ, version, locally=True):
             os.chdir(here)
         else:
             global_install('Boost', website,
-                           None,
-                           'boost +python' + ''.join(get_python_version()),
-                           'libboost-dev',
-                           'boost-devel')
+                           brew='boost',
+                           port='boost +python' + ''.join(get_python_version()),
+                           deb='libboost-dev',
+                           rpm='boost-devel')
         if not is_installed(environ, version):
             raise Exception('Boost installation failed.')

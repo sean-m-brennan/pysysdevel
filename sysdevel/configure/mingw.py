@@ -21,6 +21,7 @@ Find/fetch/install MinGW
 #**************************************************************************
 
 import os
+import platform
 
 from sysdevel.util import *
 
@@ -79,14 +80,15 @@ def is_installed(environ, version):
 
 def install(environ, version, locally=True):
     if not mingw_found:
+        if not 'windows' in platform.system().lower():
+            raise Exception('Not installing MinGW on this platform. ' +
+                            'Cross compiling not (yet) supported.')
         if version is None:
             version = '20120426'
         website = ('http://sourceforge.net/projects/mingw/',
                    'files/Installer/mingw-get-inst/mingw-get-inst-' +
                    str(version) + '/')
         global_install('MinGW', website,
-                       'mingw-get-inst-' + str(version) + '.exe',
-                       ## No cross-compiling
-                       None, None, None)
+                       winstaller='mingw-get-inst-' + str(version) + '.exe')
         if not is_installed(environ, version):
             raise Exception('MinGW installation failed.')

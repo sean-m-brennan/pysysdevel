@@ -20,8 +20,6 @@ Find wxPython
 # 
 #**************************************************************************
 
-import os, subprocess
-
 from sysdevel.util import *
 
 environment = dict()
@@ -55,10 +53,11 @@ def install(environ, version, locally=True):
                    'files/wxPython/' + str(version) + '/')
         ## FIXME no local install
         global_install('wxPython', website,
-                       'wxPython' + short_ver + '-win32-' + str(version) + \
-                           '-py' + py_ver + '.exe',
-                       'py' + py_ver + '-wxpython',
-                       'python-wxgtk python-wxtools',
-                       'wxPython-devel')
+                       winstaller='wxPython' + short_ver + '-win32-' + \
+                           str(version) + '-py' + py_ver + '.exe',
+                       brew='wxmac --python',
+                       port='py' + py_ver + '-wxpython',
+                       deb='python-wxgtk python-wxtools',
+                       rpm='wxPython-devel')
         if not is_installed(environ, version):
             raise Exception('wxpython installation failed.')

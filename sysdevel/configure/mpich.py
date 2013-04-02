@@ -20,7 +20,7 @@ Find MPICH library
 # 
 #**************************************************************************
 
-import os, struct, glob
+import os
 
 from sysdevel.util import *
 
@@ -91,9 +91,7 @@ def install(environ, version, locally=True):
             autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('MPICH', website,
-                           None,
-                           'mpich-devel',
-                           'libmpich2-dev',
-                           'mpich2-devel')
+                           brew='mpich2', port='mpich-devel',
+                           deb='libmpich2-dev', rpm='mpich2-devel')
         if not is_installed(environ, version):
             raise Exception('MPICH2 installation failed.')

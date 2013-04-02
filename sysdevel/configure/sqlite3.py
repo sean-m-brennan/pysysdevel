@@ -20,7 +20,7 @@ Find SQLite3
 # 
 #**************************************************************************
 
-import os
+import platform
 
 from sysdevel.util import *
 
@@ -72,9 +72,7 @@ def install(environ, version, locally=True):
             autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('SQLite3', website,
-                           None,
-                           'sqlite3',
-                           'libsqlite-dev',
-                           'sqlite-devel')
+                           brew='sqlite', port='sqlite3',
+                           deb='libsqlite-dev', rpm='sqlite-devel')
         if not is_installed(environ, version):
             raise Exception('SQLite3 installation failed.')

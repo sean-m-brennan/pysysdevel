@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Build and install sysdevel"""
+"""
+Build and install sysdevel
+"""
 #**************************************************************************
 # 
 # This material was prepared by the Los Alamos National Security, LLC 
@@ -28,6 +30,7 @@ cwd = os.path.dirname(__file__)
 if cwd:
     os.chdir(cwd)
 
+import helper
 
 def main(argv=None):
     if argv is None:

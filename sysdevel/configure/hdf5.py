@@ -20,7 +20,8 @@ Find HDF5 library
 # 
 #**************************************************************************
 
-import os, glob
+import os
+import platform
 
 from sysdevel.util import *
 
@@ -89,9 +90,7 @@ def install(environ, version, locally=True):
                               extra_cfg=['--enable-cxx', '--enable-fortran'])
         else:
             global_install('HDF5', website,
-                           None,
-                           'hdf5',
-                           'hdf5-devel',
-                           'libhdf5-dev')
+                           brew='hdf5', port='hdf5',
+                           deb='hdf5-devel', rpm='libhdf5-dev')
         if not is_installed(environ, version):
             raise Exception('HDF5 installation failed.')

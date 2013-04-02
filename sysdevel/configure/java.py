@@ -20,7 +20,11 @@ Find/install Antlr
 # 
 #**************************************************************************
 
-import platform, shutil, os
+import os
+import platform
+import subprocess
+import glob
+
 from sysdevel.util import *
 
 environment = dict()
@@ -72,22 +76,24 @@ def is_installed(environ, version):
 
 
 def install(environ, version, locally=True):
-    global environment
-    if version is None:
-        version = '1.6.0'
-    sub = str(version).split('.')[1]
-    website = 'http://www.java.com/'
-    installer = None
-    if 'windows' in platform.system().lower():
-        website = 'http://oscg-downloads.s3.amazonaws.com/installers/'
-        installer = 'oscg-openjdk6b24-1-windows-installer.exe'
-    global_install('Java', website,
-                   installer,
-                   'openjdk' + sub,
-                   'openjdk-' + sub + '-jdk',
-                   'java-1.' + str(version) + '-openjdk-devel')
-    if not is_installed(environ, version):
-        raise Exception('Java installation failed.')
+    if not java_found:
+        if version is None:
+            version = '1.6.0'
+        sub = str(version).split('.')[1]
+        website = 'http://www.java.com/'
+        installer = None
+        if 'darwin' in platform.system().lower():
+            raise Exception('Java is included with OSX. What happened?')
+        if 'windows' in platform.system().lower():
+            website = 'http://oscg-downloads.s3.amazonaws.com/installers/'
+            installer = 'oscg-openjdk6b24-1-windows-installer.exe'
+        ## FIXME no local install
+        global_install('Java', website,
+                       winstaller=installer,
+                       deb='openjdk-' + sub + '-jdk',
+                       rpm='java-1.' + str(version) + '-openjdk-devel')
+        if not is_installed(environ, version):
+            raise Exception('Java installation failed.')
 
 
 def __check_java_version(java_cmd, version_list):

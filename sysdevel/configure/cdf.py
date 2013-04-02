@@ -20,7 +20,9 @@ Find NASA Common Data Format library
 # 
 #**************************************************************************
 
-import os, platform, subprocess
+import os
+import platform
+import subprocess
 
 from sysdevel.util import *
 
@@ -116,10 +118,6 @@ def install(environ, version, locally=True):
                                       'install'])
             os.chdir(here)
         else:
-            global_install('CDF', website,
-                           None,
-                           'cdf',
-                           None,
-                           None)
+            global_install('CDF', website, brew='cdf', port='cdf')
         if not is_installed(environ, version):
             raise Exception('CDF installation failed.')

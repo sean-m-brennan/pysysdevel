@@ -21,6 +21,8 @@ Find wxWidgets library
 #**************************************************************************
 
 import os
+import subprocess
+import platform
 
 from sysdevel.util import *
 
@@ -78,9 +80,8 @@ def install(environ, version, locally=True):
             autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('wxWidgets', website,
-                           None,
-                           'wxgtk',
-                           'libwxbase-dev libwxgtk-dev',
-                           'wxBase wxGTK-devel')
+                           brew='wxmac', port='wxgtk',
+                           deb='libwxbase-dev libwxgtk-dev',
+                           rpm='wxBase wxGTK-devel')
         if not is_installed(environ, version):
             raise Exception('WxGTK installation failed.')

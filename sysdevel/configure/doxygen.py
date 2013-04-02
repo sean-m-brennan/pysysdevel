@@ -51,9 +51,8 @@ def install(environ, version, locally=True):
         website = ('http://ftp.stack.nl/pub/users/dimitri/',)
         #FIXME no local install
         global_install('Doxygen', website,
-                       'doxygen-' + str(version) + '-setup.exe',
-                       'doxygen',
-                       'doxygen',
-                       'doxygen')
+                       winstaller='doxygen-' + str(version) + '-setup.exe',
+                       brew='doxygen', port='doxygen',
+                       deb='doxygen', rpm='doxygen')
         if not is_installed(environ, version):
             raise Exception('Doxygen installation failed.')

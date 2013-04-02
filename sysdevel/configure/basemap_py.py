@@ -20,7 +20,10 @@ Find/install Matplotlib Basemap toolkit
 # 
 #**************************************************************************
 
-import os, platform, glob
+import os
+import platform
+import glob
+
 from sysdevel.util import *
 
 ## NB: Basemap documentation lies! It requires Python version > 2.4

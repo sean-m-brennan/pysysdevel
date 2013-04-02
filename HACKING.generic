@@ -16,26 +16,10 @@ Required software:
 	   Download/run the installer that fits your python version
 
      * Mac OSX: (replacing '26' with the desired python version)
-       - MacPorts (http://www.macports.org), including its prerequisites
-           Xcode (http://developer.apple.com/technologies/tools/)
-           and X11 (but it should already be present)
-	   * Follow the instructions at http://guide.macports.org *
+       - XCode (http://developer.apple.com/technologies/tools/)
 
-         IMPORTANT: before installing any ports, edit
-           /opt/local/share/macports/Tcl/port1.0/portconfigure.tcl such that
-           the line that begins with "default configure.ldflags" reads as:
-             default configure.ldflags   {"-L${prefix}/lib -Xlinker -headerpad_max_install_names"}
-	   Also edit /opt/local/etc/macports/macports.conf uncommenting the line:
-             build_arch  i386
-
-         Warning: Running `port selfupdate` will wipe out these settings.
-
-       Then run:
-         sudo port install python26 python_select
-         sudo port select --set python python26
-         sudo port install py26-numpy
-
-	NOTE: Python version 2.7 is broken in MacPorts. Do not use it.
+       If using MacPorts:
+       - Gfortran (http://r.research.att.com/tools/)
 
 
    + SysDevel
@@ -68,4 +52,19 @@ SysDevel does the rest, but in case something goes wrong, we also use the follow
 
      * Mac OSX:
        gcc and g++ are part of Xcode
-       - Gfortran (http://r.research.att.com/tools/)
+
+       - Homebrew (http://mxcl.github.com/homebrew)
+           Run:
+	     brew install git
+	     brew tap Homebrew/homebrew-versions
+	     brew tap samueljohn/homebrew-python
+	     brew install gfortran python26 numpy
+
+         OR
+
+       - MacPorts (http://www.macports.org)
+           Follow the instructions at http://guide.macports.org (see NOTES file)
+           Then run:
+             sudo port install python26 python_select
+             sudo port select --set python python26
+             sudo port install py26-numpy

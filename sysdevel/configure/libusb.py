@@ -20,7 +20,7 @@ Find USB library
 # 
 #**************************************************************************
 
-import os
+import platform
 
 from sysdevel.util import *
 
@@ -74,9 +74,7 @@ def install(environ, version, locally=True):
             autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('USB', website,
-                           None,
-                           'libusb-devel',
-                           'libusb-dev',
-                           'libusb-devel')
+                           brew='libusb', port='libusb-devel',
+                           deb='libusb-dev', rpm='libusb-devel')
         if not is_installed(environ, version):
             raise Exception('USB installation failed.')

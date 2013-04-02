@@ -20,7 +20,8 @@ Find PROJ4 library
 # 
 #**************************************************************************
 
-import os, glob
+import os
+import platform
 
 from sysdevel.util import *
 
@@ -79,10 +80,8 @@ def install(environ, version, locally=True):
             autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('PROJ4', website,
-                           None,
-                           'libproj4',
-                           'libproj-dev',
-                           'proj-devel')
+                           brew='proj', port='libproj4',
+                           deb='libproj-dev', rpm='proj-devel')
         if not is_installed(environ, version):
             raise Exception('Proj4 installation failed.')
 

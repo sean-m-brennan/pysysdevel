@@ -1,5 +1,5 @@
 """
-Find/fetch/install the GCC collection
+Find/fetch/install the GNU Fortran
 """
 
 import os
@@ -8,35 +8,32 @@ import platform
 from sysdevel.util import *
 
 environment = dict()
-gcc_found = False
+gfortran_found = False
 DEBUG = False
 
 
 def null():
     global environment
-    environment['GCC'] = None
-    environment['GXX'] = None
+    environment['GFORTRAN'] = None
 
 
 def is_installed(environ, version):
-    global environment, gcc_found
+    global environment, gfortran_found
     set_debug(DEBUG)
     try:
-        gcc = find_program('gcc')
-        gxx = find_program('g++')
-        gcc_found = True
+        gfort = find_program('gfortran')
+        gfortran_found = True
     except Exception, e:
         if DEBUG:
             print e
-        return gcc_found
+        return gfortran_found
 
-    environment['GCC'] = gcc
-    environment['GXX'] = gxx
-    return gcc_found
+    environment['GFORTRAN'] = gfort
+    return gfortran_found
 
 
 def install(environ, version, locally=True):
-    if not gcc_found:
+    if not gfortran_found:
         website = ('http://gcc.gnu.org',)
         if 'windows' in platform.system().lower():
             if version is None:
@@ -44,12 +41,10 @@ def install(environ, version, locally=True):
             website = ('http://sourceforge.net/projects/mingw/',
                        'files/Installer/mingw-get-inst/mingw-get-inst-' +
                        str(version) + '/')
-        if 'darwin' in platform.system().lower():
-            raise Exception('XCode does not appear to be installed.')
-        global_install('GCC', website,
+        if 'darwin' in platform.system().lower() and _uses_macports():
+            raise Exception('GFortran does not appear to be installed.')
+        global_install('GFortran', website,
                        winstaller='mingw-get-inst-' + str(version) + '.exe',
-                       deb='build-essential g++ autoconf ' + \
-                           'automake libtool gettext',
-                       rpm='gcc gcc-c++ autoconf automake libtool make gettext')
+                       brew='gfortran', deb='gfortran', rpm='gfortran-gfortran')
         if not is_installed(environ, version):
-            raise Exception('GCC installation failed.')
+            raise Exception('GFortran installation failed.')

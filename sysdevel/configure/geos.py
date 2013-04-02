@@ -20,7 +20,8 @@ Find GEOS library
 # 
 #**************************************************************************
 
-import os, glob
+import os
+import platform
 
 from sysdevel.util import *
 

@@ -20,7 +20,8 @@ Find Perl headers and library
 # 
 #**************************************************************************
 
-import os, platform
+import os
+import platform
 
 from sysdevel.util import *
 
@@ -58,7 +59,7 @@ def is_installed(environ, version):
         pass
     if 'windows' in platform.system().lower():
         ## Strawberry Perl from http://strawberryperl.com
-        base_dirs.append(os.path.join('c:', os.sep, 'strawberry', 'perl'))
+        base_dirs.append(os.path.join('C:', os.sep, 'strawberry', 'perl'))
         try:
             base_dirs.append(environ['MSYS_DIR'])  ## msys includes perl
         except:
@@ -104,7 +105,7 @@ def install(environ, version, locally=True):
             sys.stderr.write('Perl was not found, ' +
                              'but should be already installed by default.\n' +
                              'Installing locally anyway.\n')
-            ## MinGW build is *not* straight-forward
+            ## MinGW build is *not* straight-forward - hence not implemented
             website = ('http://www.cpan.org/',
                        'src/' + version.split('.')[0] + '.0/')
             src_dir = 'perl-' + str(version)
@@ -119,13 +120,13 @@ def install(environ, version, locally=True):
             subprocess.check_call(['make', 'install'])
             os.chdir(here)
         else:
+            if 'darwin' in platform.system().lower():
+                raise Exception('Perl is included with OSX. What happened?')
             if 'windows' in platform.system().lower():
                 website = ('http://strawberry-perl.googlecode.com/', 'files/')
                 version = '5.16.2.2'
             global_install('Perl', website,
                            'strawberry-perl-' + str(version) + '-32bit.msi',
-                           'perl' + str(version),
-                           'libperl-dev',
-                           'perl-devel')
+                           deb='libperl-dev', rpm='perl-devel')
         if not is_installed(environ, version):
             raise Exception('Perl installation failed.')

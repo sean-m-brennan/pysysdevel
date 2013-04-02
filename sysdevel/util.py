@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Utilities for finding prerequisities
 """
@@ -162,6 +160,10 @@ def find_program(name, pathlist=[]):
                 if os.path.exists(full + '.bat'):
                     if DEBUG:
                         print 'Found ' + full + '.bat'
+                    return full + '.bat'
+                if os.path.exists(full + '.cmd'):
+                    if DEBUG:
+                        print 'Found ' + full + '.cmd'
                     return full + '.bat'
     raise Exception(name + ' not found.')
 
@@ -832,26 +834,51 @@ def _uses_yum():
         pass
     return False
 
+def _uses_homebrew():
+    try:
+        find_program('brew')
+        return True
+    except:
+        pass
+    return False
 
-def global_install(what, website_tpl, winstaller, port, apt, yum):
+def _uses_macports():
+    try:
+        find_program('port')
+        return os.path.exists('/opt/local/etc/macports/macports.conf')
+    except:
+        pass
+    return False
+
+
+def global_install(what, website_tpl, winstaller=None,
+                   brew=None, port=None, deb=None, rpm=None):
     if 'windows' in platform.system().lower() and winstaller:
         fetch(''.join(website_tpl), winstaller, winstaller)
         installer = os.path.join(download_dir, winstaller)
         admin_check_call(installer)
 
     elif 'darwin' in platform.system().lower() and port:
-        ## assumes macports installed
-        print '\nInstalling ' + ', '.join(port.split()) + ' in the system:'
-        admin_check_call(['port', 'install',] + port.split())
+        if _uses_homebrew() and brew:
+            print '\nInstalling ' + ', '.join(brew.split()) + ' in the system:'
+            subprocess.check_call(['brew', 'install',] + brew.split())
+
+        elif _uses_macports() and port:
+            print '\nInstalling ' + ', '.join(port.split()) + ' in the system:'
+            admin_check_call(['port', 'install',] + port.split())
+
+        else:
+            raise PrerequisiteError('Unsupported OSX pkg manager. Install ' +
+                                    what + 'by hand. See ' + website_tpl[0])
 
     elif 'linux' in platform.system().lower():
-        if _uses_apt_get() and apt:
-            print '\nInstalling ' + ', '.join(apt.split()) + ' in the system:'
-            admin_check_call(['apt-get', 'install',] + apt.split())
+        if _uses_apt_get() and deb:
+            print '\nInstalling ' + ', '.join(deb.split()) + ' in the system:'
+            admin_check_call(['apt-get', 'install',] + deb.split())
 
-        elif _uses_yum() and yum:
-            print '\nInstalling ' + ', '.join(yum.split()) + ' in the system:'
-            admin_check_call(['yum', 'install',] + yum.split())
+        elif _uses_yum() and rpm:
+            print '\nInstalling ' + ', '.join(rpm.split()) + ' in the system:'
+            admin_check_call(['yum', 'install',] + rpm.split())
 
         else:
             raise PrerequisiteError('Unsupported Linux flavor. Install ' +

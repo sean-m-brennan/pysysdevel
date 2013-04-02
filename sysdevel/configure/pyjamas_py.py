@@ -20,6 +20,11 @@ Find/install Pyjamas
 # 
 #**************************************************************************
 
+import os
+import glob
+import sys
+import subprocess
+
 from sysdevel.util import *
 
 environment = dict()

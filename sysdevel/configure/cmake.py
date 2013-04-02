@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Find CMake
 """
@@ -20,7 +18,7 @@ Find CMake
 # 
 #**************************************************************************
 
-import os, subprocess
+import os
 
 from sysdevel.util import *
 
@@ -67,9 +65,7 @@ def install(environ, version, locally=True):
                    'files/v' + major_minor_version(version) + '/')
         #FIXME no local install
         global_install('CMake', website,
-                       'cmake-' + str(version) + '-win32-x86.exe',
-                       'cmake',
-                       'cmake',
-                       'cmake')
+                       winstaller='cmake-' + str(version) + '-win32-x86.exe',
+                       brew='cmake', port='cmake', deb='cmake', rpm='cmake')
         if not is_installed(environ, version):
             raise Exception('CMake installation failed.')
