@@ -362,7 +362,7 @@ def download_progress(count, block_size, total_size):
     '''
     percent = int(count * block_size * 100 / total_size)
     if VERBOSE:
-        sys.stdout.write("\r" + download_file + "  %d%%" % percent)
+        sys.stdout.write("\rFETCHING " + download_file + "  %2d%%" % percent)
         sys.stdout.flush()
 
 
@@ -370,9 +370,12 @@ def fetch(website, remote, local):
     mkdir(download_dir)
     set_downloading_file(remote)
     if not os.path.exists(os.path.join(download_dir, local)):
+        if VERBOSE:
+            sys.stdout.write('\n')
         urlretrieve(website + remote, os.path.join(download_dir, local),
                     download_progress)
-        sys.stdout.write('\n')
+        if VERBOSE:
+            sys.stdout.write('\n')
 
 
 def unarchive(archive, target, archive_dir=download_dir):
@@ -714,7 +717,8 @@ def install_pyscript(website, name, locally=True):
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
-    sys.stdout.write('PREREQUISITE ' + name + ' ')
+    if VERBOSE:
+        sys.stdout.write('\nPREREQUISITE ' + name + ' ')
     fetch(website, name, name)
     try:
         shutil.copy(os.path.join(download_dir, name), target_dir)
@@ -729,8 +733,8 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True):
     target_dir = os.path.abspath(target_build_dir)
     target_lib_dir = os.path.join(target_dir, local_lib_dir)
 
-    sys.stdout.write('PREREQUISITE ' + name + ' ')
-    sys.stdout.flush()
+    if VERBOSE:
+        sys.stdout.write('\nPREREQUISITE ' + name + ' ')
     fetch(website, archive, archive)
     unarchive(archive, src_dir)
     if not os.path.exists(target_lib_dir):

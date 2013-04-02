@@ -65,10 +65,12 @@ def install(environ, version, locally=True):
     if not pyjamas_found:
         if version is None:
             version = '0.8.1a'
-        website = 'https://github.com/pyjs/pyjs/zipball/0.8.1a'
+        website = 'https://github.com/pyjs/pyjs/zipball/'
         archive = 'pyjs-' + version + '.zip'
         src_dir = 'pyjamas-' + version
-        fetch(website, '', archive)
+        if VERBOSE:
+            sys.stdout.write('\nPREREQUISITE pyjamas ')
+        fetch(website, version, archive)
         unarchive(archive, src_dir)
 
         working_dir = os.path.join(target_build_dir, src_dir)
@@ -79,7 +81,6 @@ def install(environ, version, locally=True):
         ## Unique two-step installation
         log_file = os.path.join(target_build_dir, 'pyjamas.log')
         log = open(log_file, 'w')
-        sys.stdout.write('PREREQUISITE pyjamas ')
         here = os.path.abspath(os.getcwd())
         os.chdir(working_dir)
 
