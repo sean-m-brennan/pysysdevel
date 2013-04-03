@@ -128,9 +128,10 @@ def __run_helper__(environment, short_name, long_name, version,
         environment = __configure_package(environment, dep,
                                           skip, install, quiet)
     if not quiet:
-        sys.stdout.write('Checking for ' + short_name + '  ')
+        sys.stdout.write('Checking for ' + short_name + ' ')
         if not version is None:
-            sys.stdout.write('v.' + version + '  ')
+            sys.stdout.write('v.' + version)
+        sys.stdout.write('\n')
         sys.stdout.flush()
     if skip:
         helper.null()
@@ -138,8 +139,6 @@ def __run_helper__(environment, short_name, long_name, version,
         if not install:
             raise Exception(help_name + ' cannot be found.')
         helper.install(environment, version)
-    if not quiet:
-        sys.stdout.write('\n')
     return dict(helper.environment.items() + environment.items())
 
 

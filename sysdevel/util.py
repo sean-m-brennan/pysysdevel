@@ -320,18 +320,20 @@ def process_progress(p):
     prev = dots = 0
     status = p.poll()
     while status is None:
-        prev = dots
-        dots += 1
-        dots %= max_dots
-        if prev:
-            sys.stdout.write('\b' * prev)
-        sys.stdout.write('.' * dots)
-        sys.stdout.flush()
+        if VERBOSE:
+            prev = dots
+            dots += 1
+            dots %= max_dots
+            if prev:
+                sys.stdout.write('\b' * prev)
+            sys.stdout.write('.' * dots)
+            sys.stdout.flush()
         time.sleep(0.2)
         status = p.poll()
-    sys.stdout.write('\b' * dots)
-    sys.stdout.write('.' * max_dots)
-    sys.stdout.flush()
+    if VERBOSE:
+        sys.stdout.write('\b' * dots)
+        sys.stdout.write('.' * max_dots)
+        sys.stdout.flush()
     return status
  
 
@@ -370,8 +372,6 @@ def fetch(website, remote, local):
     mkdir(download_dir)
     set_downloading_file(remote)
     if not os.path.exists(os.path.join(download_dir, local)):
-        if VERBOSE:
-            sys.stdout.write('\n')
         urlretrieve(website + remote, os.path.join(download_dir, local),
                     download_progress)
         if VERBOSE:
@@ -670,7 +670,7 @@ def get_python_version():
 def major_minor_version(ver):
     sver = str(ver)
     tpl = sver.split('.')
-    return '.'.join(tpl[0], tpl[1])
+    return '.'.join(tpl[:2])
 
 
 def compare_versions(actual, requested):
@@ -717,9 +717,9 @@ def install_pyscript(website, name, locally=True):
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
-    if VERBOSE:
-        sys.stdout.write('\nPREREQUISITE ' + name + ' ')
     fetch(website, name, name)
+    if VERBOSE:
+        sys.stdout.write('PREREQUISITE ' + name + ' ')
     try:
         shutil.copy(os.path.join(download_dir, name), target_dir)
     except Exception,e:
@@ -733,10 +733,10 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True):
     target_dir = os.path.abspath(target_build_dir)
     target_lib_dir = os.path.join(target_dir, local_lib_dir)
 
-    if VERBOSE:
-        sys.stdout.write('\nPREREQUISITE ' + name + ' ')
     fetch(website, archive, archive)
     unarchive(archive, src_dir)
+    if VERBOSE:
+        sys.stdout.write('PREREQUISITE ' + name + ' ')
     if not os.path.exists(target_lib_dir):
         os.makedirs(target_lib_dir)
     try:
@@ -774,7 +774,8 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True):
             raise Exception(name + ' is required, but could not be ' +
                             'installed; See ' + log_file)
         else:
-            sys.stdout.write(' done')
+            if VERBOSE:
+                sys.stdout.write(' done\n')
         if locally:
             site.addsitedir(target_lib_dir)
             if not target_lib_dir in sys.path:
@@ -829,73 +830,86 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
 
 
 def system_uses_apt_get():
-    try:
-        find_program('apt-get')
-        return os.path.exists('/etc/apt/sources.list')
-    except:
-        pass
+    if 'linux' in platform.system().lower():
+        try:
+            find_program('apt-get')
+            return os.path.exists('/etc/apt/sources.list')
+        except:
+            pass
     return False
 
 def system_uses_yum():
-    try:
-        find_program('yum')
-        return os.path.exists('/etc/yum.conf')
-    except:
-        pass
+    if 'linux' in platform.system().lower():
+        try:
+            find_program('yum')
+            return os.path.exists('/etc/yum.conf')
+        except:
+            pass
     return False
 
 def system_uses_homebrew():
-    try:
-        find_program('brew')
-        return True
-    except:
-        pass
+    if 'darwin' in platform.system().lower():
+        try:
+            find_program('brew')
+            return True
+        except:
+            pass
     return False
 
 def system_uses_macports():
-    try:
-        find_program('port')
-        return os.path.exists('/opt/local/etc/macports/macports.conf')
-    except:
-        pass
+    if 'darwin' in platform.system().lower():
+        try:
+            find_program('port')
+            return os.path.exists('/opt/local/etc/macports/macports.conf')
+        except:
+            pass
     return False
+
+
+def homebrew_prefix():
+    p = subprocess.Popen(['brew', '--prefix'],
+                         stdout=subprocess.PIPE)
+    return p.communicate()[0].strip()
 
 
 def global_install(what, website_tpl, winstaller=None,
                    brew=None, port=None, deb=None, rpm=None):
+    sys.stdout.write('\nINSTALLING ' + what + ' in the system')
+    log = open(os.path.join(target_build_dir, what + '.log'))
     if 'windows' in platform.system().lower() and winstaller:
         fetch(''.join(website_tpl), winstaller, winstaller)
         installer = os.path.join(download_dir, winstaller)
-        admin_check_call(installer)
+        admin_check_call(installer, log, log)
 
     elif 'darwin' in platform.system().lower() and port:
         if system_uses_homebrew() and brew:
-            print '\nInstalling ' + ', '.join(brew.split()) + ' in the system:'
-            subprocess.check_call(['brew', 'install',] + brew.split())
+            subprocess.check_call(['brew', 'install',] + brew.split(),
+                                  log, log)
 
         elif system_uses_macports() and port:
-            print '\nInstalling ' + ', '.join(port.split()) + ' in the system:'
-            admin_check_call(['port', 'install',] + port.split())
+            admin_check_call(['port', 'install',] + port.split(), log, log)
 
         else:
+            log.close()
             raise PrerequisiteError('Unsupported OSX pkg manager. Install ' +
                                     what + 'by hand. See ' + website_tpl[0])
 
     elif 'linux' in platform.system().lower():
         if system_uses_apt_get() and deb:
-            print '\nInstalling ' + ', '.join(deb.split()) + ' in the system:'
-            admin_check_call(['apt-get', 'install',] + deb.split())
+            admin_check_call(['apt-get', 'install',] + deb.split(), log, log)
 
         elif system_uses_yum() and rpm:
-            print '\nInstalling ' + ', '.join(rpm.split()) + ' in the system:'
-            admin_check_call(['yum', 'install',] + rpm.split())
+            admin_check_call(['yum', 'install',] + rpm.split(), log, log)
 
         else:
+            log.close()
             raise PrerequisiteError('Unsupported Linux flavor. Install ' +
                                     what + 'by hand. See ' + website_tpl[0])
     else:
+        log.close()
         raise PrerequisiteError('Unsupported platform. Install ' + what +
                                 'by hand. See ' + website_tpl[0])
+    log.close()
 
 
 def as_admin():

@@ -80,7 +80,7 @@ def install(environ, version, locally=True):
             autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('wxWidgets', website,
-                           brew='wxmac', port='wxgtk',
+                           brew='wxwidgets', port='wxgtk',
                            deb='libwxbase-dev libwxgtk-dev',
                            rpm='wxBase wxGTK-devel')
         if not is_installed(environ, version):

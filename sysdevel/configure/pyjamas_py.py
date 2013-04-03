@@ -68,10 +68,10 @@ def install(environ, version, locally=True):
         website = 'https://github.com/pyjs/pyjs/zipball/'
         archive = 'pyjs-' + version + '.zip'
         src_dir = 'pyjamas-' + version
-        if VERBOSE:
-            sys.stdout.write('\nPREREQUISITE pyjamas ')
         fetch(website, version, archive)
         unarchive(archive, src_dir)
+        if VERBOSE:
+            sys.stdout.write('PREREQUISITE pyjamas ')
 
         working_dir = os.path.join(target_build_dir, src_dir)
         if not os.path.exists(working_dir):
@@ -110,7 +110,8 @@ def install(environ, version, locally=True):
             raise e
         check_install(status, log, log_file)
 
-        sys.stdout.write(' done')
+        if VERBOSE:
+            sys.stdout.write(' done\n')
         os.chdir(here)
         search_path = []
         if locally:
