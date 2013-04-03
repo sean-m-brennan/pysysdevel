@@ -678,8 +678,7 @@ def setup(**attr):
     for ext in new_attr.get('ext_modules',[]):
         new_libraries = []
         for item in ext.libraries:
-            #if isinstance(item, unicode): ## unicode here screws up, convert it
-            #    item = ''.join(chr(ord(c)) for c in item.decode('ascii'))
+            [item] = util.convert_ulist([item])
             if is_sequence(item):
                 lib_name, build_info = item
                 _check_append_ext_library(libraries, item)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Utilities for finding prerequisities
 """
@@ -118,6 +119,19 @@ def delete_cache():
 
 def sysdevel_support_path(filename):
     return os.path.join(os.path.dirname(__file__), 'support', filename)
+
+
+def convert_ulist(str_list):
+    ## distutils *might* not be able to handle unicode, convert it
+    if str_list is None:
+        return None
+    converted = []
+    for s in str_list:
+        if isinstance(s, unicode):
+            converted.append(''.join(chr(ord(c)) for c in s.decode('ascii')))
+        else:
+            converted.append(s)
+    return converted
 
 
 def uniquify(seq, id_fctn=None):
@@ -874,41 +888,43 @@ def homebrew_prefix():
 
 def global_install(what, website_tpl, winstaller=None,
                    brew=None, port=None, deb=None, rpm=None):
-    sys.stdout.write('\nINSTALLING ' + what + ' in the system')
-    log = open(os.path.join(target_build_dir, what + '.log'))
+    sys.stdout.write('INSTALLING ' + what + ' in the system\n')
+    sys.stdout.flush()
+    log = open(os.path.join(target_build_dir, what + '.log'), 'w')
     if 'windows' in platform.system().lower() and winstaller:
         fetch(''.join(website_tpl), winstaller, winstaller)
         installer = os.path.join(download_dir, winstaller)
         admin_check_call(installer, log, log)
 
-    elif 'darwin' in platform.system().lower() and port:
+    elif 'darwin' in platform.system().lower():
         if system_uses_homebrew() and brew:
             subprocess.check_call(['brew', 'install',] + brew.split(),
-                                  log, log)
+                                  stdout=log, stderr=log)
 
         elif system_uses_macports() and port:
-            admin_check_call(['port', 'install',] + port.split(), log, log)
-
+            admin_check_call(['port', 'install',] + port.split(),
+                             stdout=log, stderr=log)
         else:
             log.close()
             raise PrerequisiteError('Unsupported OSX pkg manager. Install ' +
-                                    what + 'by hand. See ' + website_tpl[0])
+                                    what + ' by hand. See ' + website_tpl[0])
 
     elif 'linux' in platform.system().lower():
         if system_uses_apt_get() and deb:
-            admin_check_call(['apt-get', 'install',] + deb.split(), log, log)
-
+            admin_check_call(['apt-get', 'install',] + deb.split(),
+                             stdout=log, stderr=log)
         elif system_uses_yum() and rpm:
-            admin_check_call(['yum', 'install',] + rpm.split(), log, log)
-
+            admin_check_call(['yum', 'install',] + rpm.split(),
+                             stdout=log, stderr=log)
         else:
             log.close()
             raise PrerequisiteError('Unsupported Linux flavor. Install ' +
-                                    what + 'by hand. See ' + website_tpl[0])
+                                    what + ' by hand. See ' + website_tpl[0])
     else:
         log.close()
-        raise PrerequisiteError('Unsupported platform. Install ' + what +
-                                'by hand. See ' + website_tpl[0])
+        raise PrerequisiteError('Unsupported platform (' + platform.system() +
+                                '). Install ' + what + ' by hand. See ' +
+                                website_tpl[0])
     log.close()
 
 
@@ -919,7 +935,7 @@ def as_admin():
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
 
 
-def admin_check_call(cmd_line, quiet=False):
+def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None):
     if 'windows' in platform.system().lower():
         if not isinstance(cmd_line, basestring):
             cmd_line = ' '.join(cmd_line)
@@ -933,7 +949,7 @@ def admin_check_call(cmd_line, quiet=False):
             if status != 0:
                 raise subprocess.CalledProcessError(status, cmd_line)
         else:
-            subprocess.check_call([cmd_line])
+            subprocess.check_call([cmd_line], stdout=stdout, stderr=stderr)
     else:
         if isinstance(cmd_line, basestring):
             cmd_line = cmd_line.split()
@@ -941,7 +957,8 @@ def admin_check_call(cmd_line, quiet=False):
         if not as_admin():
             sudo_prefix = ['sudo']
         if quiet:
-            subprocess.check_call(sudo_prefix + cmd_line)
+            subprocess.check_call(sudo_prefix + cmd_line,
+                                  stdout=stdout, stderr=stderr)
         else:
             subprocess.check_call(sudo_prefix + cmd_line,
                                   stdout=sys.stdout, stderr=sys.stderr)

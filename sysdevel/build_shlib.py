@@ -22,6 +22,7 @@
 from numpy.distutils.command.build_clib import *
 from numpy.distutils.misc_util import get_numpy_include_dirs
 
+from util import convert_ulist
 
 class build_shlib(build_clib):
     '''
@@ -66,9 +67,9 @@ class build_shlib(build_clib):
 
 
     def build_a_library(self, build_info, lib_name, libraries):
-        libraries = build_info.get('libraries') or []
-        library_dirs = build_info.get('library_dirs') or []
-        runtime_library_dirs = build_info.get('runtime_library_dirs') or None
+        libraries = convert_ulist(build_info.get('libraries') or [])
+        library_dirs = convert_ulist(build_info.get('library_dirs') or [])
+        runtime_library_dirs = convert_ulist(build_info.get('runtime_library_dirs'))
         extra_preargs = build_info.get('extra_compiler_args') or []
         extra_postargs = build_info.get('extra_link_args') or []
 

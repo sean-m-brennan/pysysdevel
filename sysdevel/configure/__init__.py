@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Entry point for finding/installing required libraries
 """

@@ -45,6 +45,6 @@ def install(environ, version, locally=True):
             raise Exception('GFortran does not appear to be installed.')
         global_install('GFortran', website,
                        winstaller='mingw-get-inst-' + str(version) + '.exe',
-                       brew='gfortran', deb='gfortran', rpm='gfortran-gfortran')
+                       brew='gfortran', deb='gfortran', rpm='gcc-gfortran')
         if not is_installed(environ, version):
             raise Exception('GFortran installation failed.')
