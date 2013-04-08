@@ -27,7 +27,7 @@ def is_installed(environ, version):
     global homebrew_found
     homebrew_found = system_uses_homebrew()
     if homebrew_found and \
-            os.path.realpath(sys.executable) != python_sys_executable():
+            not sys.executable in python_sys_executables():
         switch_python()
     return homebrew_found
 
@@ -59,12 +59,11 @@ def python_executable():
     return os.path.join(homebrew_prefix(), 'bin', 'python')
 
 
-def python_sys_executable():
-    return os.path.realpath(glob.glob(
-            os.path.join(homebrew_prefix(), 'Cellar', 'python', '*',
-                         'Frameworks', 'Python.framework', 'Versions',
-                         'Current', 'Resources', 'Python.app', 'Contents',
-                         'MacOS', 'Python'))[0])
+def python_sys_executables():
+    return glob.glob(
+        os.path.join(homebrew_prefix(), 'Cellar', 'python', '*',
+                     'Frameworks', 'Python.framework', 'Versions', '*',
+                     'Resources', 'Python.app', 'Contents', 'MacOS', 'Python'))
 
 
 def switch_python():
