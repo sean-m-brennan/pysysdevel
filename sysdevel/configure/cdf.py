@@ -91,8 +91,8 @@ def install(environ, version, locally=True):
                 os_dir = 'windows/src_distribution'
                 oper_sys = 'mingw'
             elif 'darwin' in platform.system().lower():
-                oper_sys = os_dir = 'macosx'
-                os_dir += '/src_distribution'
+                oper_sys = 'macosx'
+                os_dir = 'macosX/src_distribution'
 
             web_subdir = '/' + os_dir + '/'
             src_dir = 'cdf' + str(version) + '-dist'

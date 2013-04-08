@@ -1337,8 +1337,8 @@ def get_options(pkg_config, options):
         opts = {'py2app': {
             'optimize': 2,
             'includes': pkg_config.dynamic_modules,
-            'packages': pkg_config.required_pkgs + pkg_config.extra_pkgs + \
-                packages_present,
+            'packages': pkg_config.required_pkgs.values() + \
+                pkg_config.extra_pkgs,
             'iconfile': os.path.join(pkg_config.PACKAGE, pkg_config.image_dir,
                                      pkg_config.PACKAGE + '.icns'),
             'excludes': ['tcl', 'Tkconstants', 'Tkinter', 'pytz',],

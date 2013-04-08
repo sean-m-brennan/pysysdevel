@@ -30,6 +30,7 @@ def install(environ, version, locally=True):
     if not macports_found:
         if version is None:
             version = '2.1.3'
+        python_version = '26'
         website = ('https://distfiles.macports.org/MacPorts/',)
         src_dir = 'MacPorts-' + str(version)
         archive = src_dir + '.tar.gz'
@@ -40,9 +41,13 @@ def install(environ, version, locally=True):
                    '{"-L${prefix}/lib -Xlinker -headerpad_max_install_names"}')
         patch_file('/opt/local/etc/macports/macports.conf',
                    'build_arch  i386', '#', '')
-        admin_check_call(['port', 'install', 'python26', 'python_select'])
-        admin_check_call(['port', 'select', '--set', 'python', 'python26'])
-        admin_check_call(['port', 'install', 'py26-numpy'])
+        admin_check_call(['port', 'install', 'python' + python_version,
+                          'python_select'])
+        admin_check_call(['port', 'select', '--set', 'python',
+                          'python' + python_version])
+        admin_check_call(['port', 'install', 'py' + python_version + '-numpy'])
+        admin_check_call(['port', 'install',
+                          'py' + python_version + '-py2app-devel'])
         switch_python()
 
 def port_prefix():

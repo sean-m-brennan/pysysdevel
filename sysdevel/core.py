@@ -25,7 +25,7 @@ import os
 import platform
 import subprocess
 
-from numpy.distutils import extension
+from numpy.distutils import extension as old_extension
 from numpy.distutils.numpy_distribution import NumpyDistribution
 from numpy.distutils.command.build import build as old_build
 from numpy.distutils.command.config_compiler import config_cc as old_config_cc
@@ -37,12 +37,40 @@ from distutils.command.clean import clean as old_clean
 import util
 
 
-class WebExtension(extension.Extension):
+class Extension(old_extension.Extension):
+    def __init__(self, name, sources,
+                 include_dirs=None,
+                 define_macros=None,
+                 undef_macros=None,
+                 library_dirs=None,
+                 libraries=None,
+                 runtime_library_dirs=None,
+                 extra_objects=None,
+                 extra_compile_args=None,
+                 extra_link_args=None,
+                 export_symbols=None,
+                 swig_opts=None,
+                 depends=None,
+                 language=None,
+                 f2py_options=None,
+                 module_dirs=None,):
+        old_extension.Extension.__init__(self, name, sources,
+                                     include_dirs, define_macros, undef_macros,
+                                     util.convert_ulist(library_dirs),
+                                     util.convert_ulist(libraries),
+                                     util.convert_ulist(runtime_library_dirs),
+                                     extra_objects,
+                                     extra_compile_args, extra_link_args,
+                                     export_symbols, swig_opts, depends,
+                                     language, f2py_options, module_dirs,)
+
+
+class WebExtension(old_extension.Extension):
     def __init__(self, name, sources, source_dir,
                  public_subdir='', extra_support_files=[],
                  extra_public_files=[], extra_compile_args=[],
                  compiler=None):
-        extension.Extension.__init__(self, name, sources)
+        old_extension.Extension.__init__(self, name, sources)
         self.source_directory = source_dir
         self.public_subdir = public_subdir
         self.extra_support_files = extra_support_files
@@ -51,12 +79,12 @@ class WebExtension(extension.Extension):
         self.extra_compile_args = extra_compile_args
 
 
-class DocExtension(extension.Extension):
+class DocExtension(old_extension.Extension):
     def __init__(self, name, source_dir, sphinx_cfg=None,
                  doxy_cfg=None, doxy_srcs=[], extra_docs = [],
                  extra_directories=[], no_sphinx=False,
                  style=util.DEFAULT_STYLE):
-        extension.Extension.__init__(self, name, [])
+        old_extension.Extension.__init__(self, name, [])
         self.source_directory = source_dir
         self.sphinx_config = sphinx_cfg
         self.doxygen_cfg = doxy_cfg
@@ -67,13 +95,13 @@ class DocExtension(extension.Extension):
         self.style = style
 
 
-class AntlrGrammar(extension.Extension):
+class AntlrGrammar(old_extension.Extension):
     def __init__(self, name, directory, sources):
-        extension.Extension.__init__(self, name, sources)
+        old_extension.Extension.__init__(self, name, sources)
         self.directory = directory
 
 
-class PyPlusPlusExtension(extension.Extension):
+class PyPlusPlusExtension(old_extension.Extension):
     def __init__(self, name, sources,
                  pypp_file, binding_file,
                  include_dirs=None,
@@ -91,10 +119,12 @@ class PyPlusPlusExtension(extension.Extension):
                  language=None,
                  f2py_options=None,
                  module_dirs=None,):
-        extension.Extension.__init__(self, name, sources,
+        old_extension.Extension.__init__(self, name, sources,
                                      include_dirs, define_macros, undef_macros,
-                                     library_dirs, libraries,
-                                     runtime_library_dirs, extra_objects,
+                                     util.convert_ulist(library_dirs),
+                                     util.convert_ulist(libraries),
+                                     util.convert_ulist(runtime_library_dirs),
+                                     extra_objects,
                                      extra_compile_args, extra_link_args,
                                      export_symbols, swig_opts, depends,
                                      language, f2py_options, module_dirs,)
@@ -103,7 +133,7 @@ class PyPlusPlusExtension(extension.Extension):
         self.builder = ''
 
 
-class Executable(extension.Extension):
+class Executable(old_extension.Extension):
     ## make sure it matches numpy extension signature
     def __init__(self, name, sources,
                  include_dirs=None,
@@ -121,10 +151,12 @@ class Executable(extension.Extension):
                  language=None,
                  f2py_options=None,
                  module_dirs=None,):
-        extension.Extension.__init__(self, name, sources,
+        old_extension.Extension.__init__(self, name, sources,
                                      include_dirs, define_macros, undef_macros,
-                                     library_dirs, libraries,
-                                     runtime_library_dirs, extra_objects,
+                                     util.convert_ulist(library_dirs),
+                                     util.convert_ulist(libraries),
+                                     util.convert_ulist(runtime_library_dirs),
+                                     extra_objects,
                                      extra_compile_args, extra_link_args,
                                      export_symbols, swig_opts, depends,
                                      language, f2py_options, module_dirs,)

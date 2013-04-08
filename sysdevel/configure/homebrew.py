@@ -44,6 +44,10 @@ def install(environ, version, locally=True):
         subprocess.check_call(['brew', 'install', 'python', '--universal',
                                '--framework'])
         subprocess.check_call([pip_executable(), 'install', 'numpy'])
+        subprocess.check_call([pip_executable(), 'install', 'distribute'])
+        subprocess.check_call(['brew', 'install', 'sip'])
+        subprocess.check_call(['brew', 'install', 'pyqt'])
+        subprocess.check_call([pip_executable(), 'install', 'py2app'])
         switch_python()
 
 
