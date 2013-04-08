@@ -19,6 +19,12 @@ Custom extensions and setup
 # 
 #**************************************************************************
 
+try:
+    ## Must be first (get the monkeypatching out of the way)
+    import setuptools
+except:
+    pass
+
 import sys
 import shutil
 import os
@@ -577,8 +583,6 @@ class clean(old_clean):
 ## Almost verbatim from numpy.disutils.core
 
 if 'setuptools' in sys.modules:
-    raise NotImplementedError('SysDevel is incompatible with setuptools')
-
     have_setuptools = True
     from setuptools import setup as old_setup
     # easy_install imports math, it may be picked up from cwd
@@ -591,6 +595,13 @@ if 'setuptools' in sys.modules:
 else:
     from distutils.core import setup as old_setup
     have_setuptools = False
+
+allows_py2app = False
+try:
+    from py2app.build_app import py2app
+    allows_py2app = True
+except:
+    pass
 
 import warnings
 import distutils.core
@@ -647,6 +658,9 @@ if have_setuptools:
     my_cmdclass['easy_install'] = easy_install.easy_install
     my_cmdclass['egg_info'] = egg_info.egg_info
 
+if allows_py2app:
+    my_cmdclass['py2app'] = py2app
+
 
 def get_distribution(always=False):
     dist = distutils.core._setup_distribution
@@ -658,7 +672,6 @@ def get_distribution(always=False):
     # class is local to a function in setuptools.command.easy_install
     if dist is not None and \
             'DistributionWithoutHelpCommands' in repr(dist):
-        #raise NotImplementedError("setuptools not supported yet for numpy.scons branch")
         dist = None
     if always and dist is None:
         dist = CustomDistribution()
@@ -732,7 +745,7 @@ def setup(**attr):
        and 'headers' not in new_attr:
         new_attr['headers'] = []
 
-    # Use our custom NumpyDistribution class instead of distutils' one
+    # Use our custom Distribution class instead of distutils' one
     new_attr['distclass'] = CustomDistribution
 
     return old_setup(**new_attr)
