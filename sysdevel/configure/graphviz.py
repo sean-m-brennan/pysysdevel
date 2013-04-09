@@ -59,8 +59,8 @@ def is_installed(environ, version):
         except:
             pass
     try:
-        inc_dir = find_header('graph.h', base_dirs, ['graphviz'])
-        lib_dir, lib = find_library('graph', base_dirs)
+        inc_dir = find_header('cgraph.h', base_dirs, ['graphviz'])
+        lib_dir, lib = find_library('cgraph', base_dirs)
         graphviz_found = True
     except Exception, e:
         if DEBUG:
@@ -70,7 +70,7 @@ def is_installed(environ, version):
     environment['GRAPHVIZ_INCLUDE_DIR'] = inc_dir
     environment['GRAPHVIZ_LIB_DIR'] = lib_dir
     environment['GRAPHVIZ_LIBRARIES'] = [lib]
-    environment['GRAPHVIZ_LIBS'] = ['graph']
+    environment['GRAPHVIZ_LIBS'] = ['cgraph']
     return graphviz_found
 
 

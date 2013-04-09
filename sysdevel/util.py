@@ -809,6 +809,32 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True):
         return distutils.sysconfig.get_python_lib()
 
 
+def gcc_is_64bit():
+    retval = False
+    try:
+        tempsrc = 'hello.c'
+        tempobj = 'hello.o'
+        t = open(tempsrc, 'w')
+        t.write('#include <stdio.h>\n' +
+                'int main() {\n' +
+                '  printf("Hello\\n");\n' +
+                '  return 0;\n' +
+                '}\n')
+        t.close()
+        subprocess.check_call(['gcc', '-o', tempobj, tempsrc])
+        p = subprocess.Popen(['file', tempobj], stdout=subprocess.PIPE)
+        if 'x86_64' in p.communicate()[0]:
+            retval = True
+    except:
+        pass
+    os.unlink(tempsrc)
+    try:
+        os.unlink(tempobj)
+    except:
+        pass
+    return retval
+        
+
 def autotools_install(environ, website, archive, src_dir, locally=True,
                       extra_cfg=[]):
     global local_search_paths

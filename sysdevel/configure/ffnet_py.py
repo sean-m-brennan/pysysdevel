@@ -25,7 +25,7 @@ from sysdevel.util import *
 environment = dict()
 ffnet_found = False
 
-DEPENDENCIES = ['networkx']
+DEPENDENCIES = ['scipy', 'networkx']
 
 def null():
     pass

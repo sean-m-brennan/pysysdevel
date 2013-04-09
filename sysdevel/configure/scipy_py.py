@@ -7,6 +7,7 @@ from sysdevel.util import *
 environment = dict()
 scipy_found = False
 
+DEPENDENCIES = ['gfortran']
 
 def null():
     pass
