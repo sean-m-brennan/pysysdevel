@@ -56,11 +56,12 @@ def install(environ, version, locally=True):
                 prefix = global_prefix
 
             src_dir = 'gccxml'
-            if not os.path.exists(os.path.join(download_dir, src_dir)):
+            if not os.path.exists(os.path.join(here, download_dir, src_dir)):
                 os.chdir(download_dir)
                 gitsite = 'https://github.com/gccxml/gccxml.git'
                 subprocess.check_call([environ['GIT'], 'clone', gitsite,
                                        src_dir])
+                os.chdir(here)
             build_dir = os.path.join(download_dir, src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)

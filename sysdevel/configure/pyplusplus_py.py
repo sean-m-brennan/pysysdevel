@@ -47,15 +47,16 @@ def install(environ, version, locally=True):
     if not pyplusplus_found:
         if version is None:
             version = '1.0.0'
+        major = '.'.join(version.split('.')[:2])
         mainsite = 'http://downloads.sourceforge.net/project/pygccxml/'
-        website = mainsite + 'pygccxml/pygccxml-' + version[:-2] + '/'
+        website = mainsite + 'pygccxml/pygccxml-' + major + '/'
         src_dir = 'pygccxml-' + str(version)
         archive = src_dir + '.zip'
         install_pypkg(src_dir, website, archive, locally=locally)
 
-        website = mainsite + 'pyplusplus/pyplusplus-' + version[:-2] + '/'
-        src_dir = 'pyplusplus-' + str(version) + '.zip'
-        archive = src_dir + '.zip'
+        website = mainsite + 'pyplusplus/pyplusplus-' + major + '/'
+        src_dir = 'Py++-' + str(version)
+        archive = 'pyplusplus-' + str(version) + '.zip'
         install_pypkg(src_dir, website, archive, locally=locally)
         if not is_installed(environ, version):
             raise Exception('Py++ installation failed.')
