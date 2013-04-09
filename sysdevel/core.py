@@ -553,11 +553,12 @@ class config_fc(old_config_fc):
 
 class clean(old_clean):
     def run(self):
-        # Remove .pyc files
+        # Remove .pyc, .lreg and .sibling files
         if hasattr(os, 'walk'):
             for root, dirs, files in os.walk('.'):
                 for f in files:
-                    if f.endswith('.pyc'):
+                    if f.endswith('.pyc') or \
+                            f.endswith('.lreg') or f.endswith('.sibling'):
                         try:
                             os.unlink(f)
                         except:
