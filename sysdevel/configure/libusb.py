@@ -66,7 +66,7 @@ def install(environ, version, locally=True):
         if version is None:
             version = '1.0.9'
         major = '.'.join(version.split('.')[:2])
-        website = ('http://prdownloads.sourceforge.net/project/libusb',
+        website = ('http://prdownloads.sourceforge.net/project/libusb/',
                    'libusb-' + major + '/libusb-' + version + '/')
         if locally or 'windows' in platform.system().lower():
             src_dir = 'libusb-' + str(version)

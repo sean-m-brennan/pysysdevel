@@ -421,12 +421,13 @@ def create_script_wrapper(pyscript, target_dir):
             f.write('@echo off\n' +
                     exe + ' "%~dp0' + pyscript + '" %*')
         else:
-            f.write('#!/bin/bash\n\n' + 
-                    'loc=`dirname "$0"`\n' + 
-                    'path=`cd "$loc/.."; pwd`\n' + 
-                    'export LD_LIBRARY_PATH=$path/lib:$path/lib64:' +
-                    '$LD_LIBRARY_PATH\n' +
-                    sys.executable + ' $path/bin/' + pyscript + ' $@\n')
+            f.write(
+                '#!/bin/bash\n\n' + 
+                'loc=`dirname "$0"`\n' + 
+                'path=`cd "$loc/.."; pwd`\n' + 
+                'export LD_LIBRARY_PATH=$path/lib:$path/lib64:$LD_LIBRARY_PATH\n' +
+                'export DYLD_LIBRARY_PATH=$path/lib:$path/lib64:$DYLD_LIBRARY_PATH\n' +
+                sys.executable + ' $path/bin/' + pyscript + ' $@\n')
         f.close()
 
 def create_runscript(pkg, mod, target):

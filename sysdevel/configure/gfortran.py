@@ -51,8 +51,10 @@ def install(environ, version, locally=True):
                        str(version) + '/')
         if 'darwin' in platform.system().lower() and system_uses_macports():
             raise Exception('GFortran does not appear to be installed.')
+        here = os.path.abspath(os.path.dirname(__file__))
         global_install('GFortran', website,
                        winstaller='mingw-get-inst-' + str(version) + '.exe',
-                       brew='gfortran', deb='gfortran', rpm='gcc-gfortran')
+                       brew='gfortran ', #+ os.path.join(here, 'g77.rb'),
+                       deb='gfortran', rpm='gcc-gfortran')
         if not is_installed(environ, version):
             raise Exception('GFortran installation failed.')

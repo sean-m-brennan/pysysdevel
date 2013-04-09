@@ -49,16 +49,18 @@ def install(environ, version, locally=True):
                        system_uses_homebrew()):
             here = os.path.abspath(os.getcwd())
             if locally:
-                prefix = os.path.abspath(dst_dir)
+                prefix = os.path.abspath(target_build_dir)
                 if not prefix in local_search_paths:
                     local_search_paths.append(prefix)
             else:
                 prefix = global_prefix
 
             src_dir = 'gccxml'
-            os.chdir(download_dir)
-            gitsite = 'https://github.com/gccxml/gccxml.git'
-            subprocess.check_call([environ['GIT'], 'clone', gitsite, src_dir])
+            if not os.path.exists(os.path.join(download_dir, src_dir)):
+                os.chdir(download_dir)
+                gitsite = 'https://github.com/gccxml/gccxml.git'
+                subprocess.check_call([environ['GIT'], 'clone', gitsite,
+                                       src_dir])
             build_dir = os.path.join(download_dir, src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
@@ -72,14 +74,14 @@ def install(environ, version, locally=True):
                 mingw_check_call(environ, ['make', 'install'])
             else:
                 config_cmd = [environ['CMAKE'], '..',
-                              '-G', '"Unix Makefiles"',
+                              '-G', 'Unix Makefiles',
                               '-DCMAKE_INSTALL_PREFIX=' + prefix]
                 subprocess.check_call(config_cmd)
-                subprocess.check_call(environ, ['make'])
+                subprocess.check_call(['make'])
                 if locally:
-                    subprocess.check_call(environ, ['make', 'install'])
+                    subprocess.check_call(['make', 'install'])
                 else:
-                    admin_check_call(environ, ['make', 'install'])
+                    admin_check_call(['make', 'install'])
             os.chdir(here)
         else:
             if version is None:
