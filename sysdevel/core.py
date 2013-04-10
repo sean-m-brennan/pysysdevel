@@ -37,10 +37,17 @@ from numpy.distutils.command.build import build as old_build
 from numpy.distutils.command.config_compiler import config_cc as old_config_cc
 from numpy.distutils.command.config_compiler import config_fc as old_config_fc
 from numpy.distutils.core import Extension
-from distutils.command.install import install as old_install
+from numpy.distutils.command.install import install as old_install
 from distutils.command.clean import clean as old_clean
+from distutils.core import Command
 
 import util
+
+
+## Unit tests are tuples, consisting of a name and a list of unit test modules.
+
+## Shared libraries, like static libraries, consist of
+##  a name and a build_info dictionary.
 
 
 class Extension(old_extension.Extension):
@@ -243,6 +250,10 @@ class CustomDistribution(NumpyDistribution):
         self.parallel_build = attrs.get('parallel_build')
         if self.parallel_build != None:
             del old_attrs['parallel_build']
+        ## Unit testing
+        self.tests = attrs.get('tests')
+        if self.tests != None:
+            del old_attrs['tests']
 
         ## py2exe options
         self.ctypes_com_server = attrs.pop("ctypes_com_server", [])
@@ -467,7 +478,11 @@ class install(old_install):
     sub_commands = [('install_exe', has_exe),
                     ('install_data', has_data),
                     ('install_lib', has_lib),
-                    ] + old_install.sub_commands  ## includes install_lib
+                    ('install_headers', old_install.has_headers),
+                    ('install_scripts', old_install.has_scripts),
+                    ('install_data',    has_data),
+                    ('install_egg_info', lambda self:True),
+                    ]
 
     def run(self):
         if self.distribution.subpackages != None:
@@ -501,15 +516,38 @@ class install(old_install):
             old_install.run(self)
 
 
+from numpy.distutils import log
+
 class config_cc(old_config_cc):
     def finalize_options(self):
         ## force specific compiler
         if 'windows' in platform.system().lower():
             self.compiler = 'mingw32'
-        old_config_cc.finalize_options(self)
 
+        log.info('unifing config_cc, config, build_clib, build_shlib, build_ext, build commands --compiler options')
+        build_clib = self.get_finalized_command('build_clib')
+        build_shlib = self.get_finalized_command('build_shlib')
+        build_ext = self.get_finalized_command('build_ext')
+        config = self.get_finalized_command('config')
+        build = self.get_finalized_command('build')
+        cmd_list = [self, config, build_clib, build_shlib, build_ext, build]
+        for a in ['compiler']:
+            l = []
+            for c in cmd_list:
+                v = getattr(c,a)
+                if v is not None:
+                    if not isinstance(v, str): v = v.compiler_type
+                    if v not in l: l.append(v)
+            if not l: v1 = None
+            else: v1 = l[0]
+            if len(l)>1:
+                log.warn('  commands have different --%s options: %s'\
+                         ', using first in list as default' % (a, l))
+            if v1:
+                for c in cmd_list:
+                    if getattr(c,a) is None: setattr(c, a, v1)
+        return
 
-from numpy.distutils import log
 
 class config_fc(old_config_fc):
     def initialize_options(self):
@@ -526,7 +564,20 @@ class config_fc(old_config_fc):
             self.noopt = True
             self.debug = True
 
-        ## nearly identical to that in the numpy original
+        ''' Perhaps not necessary?
+        if ((self.f77exec is None and self.f90exec is None) or \
+                'gfortran' in self.f77exec or 'gfortran' in self.f90exec) and \
+                'darwin' in platform.system().lower():
+            ## Unify GCC and GFortran default outputs
+            if util.gcc_is_64bit():
+                os.environ['FFLAGS'] = '-arch x86_64'
+                os.environ['FCFLAGS'] = '-arch x86_64'
+            else:
+                os.environ['FFLAGS'] = '-arch i686'
+                os.environ['FCFLAGS'] = '-arch i686'
+                '''
+
+        ## the rest is nearly identical to that in the numpy original
         log.info('unifing config_fc, config, build_clib, build_shlib, build_ext, build commands --fcompiler options')
         build_clib = self.get_finalized_command('build_clib')
         build_shlib = self.get_finalized_command('build_shlib')
@@ -599,6 +650,44 @@ class clean(old_clean):
         util.delete_cache()
 
 
+class test(Command):
+    description = "unit testing"
+
+    user_options = []
+
+    def initialize_options(self):
+        self.tests = []
+
+    def finalize_options(self):
+        if not self.tests: 
+            self.tests = self.distribution.tests
+
+    def run(self):
+        if self.tests:
+            self.run_command('build')
+            build = self.get_finalized_command('build')
+            build_dir = build.build_base
+            buildpy = self.get_finalized_command('build_py')
+            src_dirs = buildpy.package_dir
+            pkg_dirs = ['test', 'python', build.build_lib]
+            lib_dirs = [build.build_temp]
+            for pkg, units in self.tests:
+                test_dir = os.path.join(build_dir, 'test')
+                if not os.path.exists(os.path.join(test_dir, 'test')):
+                    util.copy_tree(os.path.join(src_dirs[pkg], 'test'),
+                                   test_dir, excludes=['.svn*', 'CVS*'])
+                f = open(os.path.join(test_dir, '__init__.py'), 'w')
+                f.write("__all__ = ['" +
+                        "', '".join(units) + "']\n")
+                f.close()
+                outfile = os.path.join(build_dir, 'test_' + pkg + '.py')
+                util.create_testscript(units, outfile, pkg_dirs)
+                wrap = util.create_test_wrapper(outfile, build_dir, lib_dirs)
+                log.info('running unit tests for ' + pkg)
+                subprocess.check_call([wrap])
+
+
+
 
 ##################################################
 ## Almost verbatim from numpy.disutils.core
@@ -669,6 +758,7 @@ my_cmdclass = {'build':            build,
                'install':          install,
                'bdist_rpm':        bdist_rpm.bdist_rpm,
                'clean':            clean,
+               'test':             test,
                }
 if have_setuptools:
     # Use our own versions of develop and egg_info to ensure that build_src is

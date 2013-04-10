@@ -55,10 +55,13 @@ class pkg_config(object):
 
         self.source_files      = srcs
         self.runscripts        = runscripts
+        self.generated_scripts = []
+        self.tests             = []
         self.package_files     = dict({self.PACKAGE: data_files})
         self.extra_data_files  = extra_data
         self.required_pkgs     = dict({self.PACKAGE: req_pkgs})
         self.dynamic_modules   = dict({self.PACKAGE: dyn_mods})
+        self.logo_bmp_path     = None
         self.environment       = environ
         self.prerequisites     = prereq
         self.redistributed     = redistrib

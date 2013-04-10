@@ -59,6 +59,7 @@ download_dir  = 'third_party'
 local_search_paths = []
 javascript_dir = 'javascript'
 target_build_dir = 'build'
+windows_postinstall = 'postinstall.py'
 
 default_py2exe_library = 'library.zip'
 
@@ -412,7 +413,12 @@ def unarchive(archive, target, archive_dir=download_dir):
 
 
 def create_script_wrapper(pyscript, target_dir):
-    dst_file = os.path.join(target_dir, )
+    pyscript = os.path.basename(pyscript)
+    if 'windows' in platform.system().lower():
+        dst_ext = '.bat'
+    else:
+        dst_ext = '.sh'
+    dst_file = os.path.join(target_dir, os.path.splitext(pyscript)[0] + dst_ext)
     if not os.path.exists(dst_file):
         f = open(dst_file, 'w')
         if 'windows' in platform.system().lower():
@@ -429,9 +435,14 @@ def create_script_wrapper(pyscript, target_dir):
                 'export DYLD_LIBRARY_PATH=$path/lib:$path/lib64:$DYLD_LIBRARY_PATH\n' +
                 sys.executable + ' $path/bin/' + pyscript + ' $@\n')
         f.close()
+        os.chmod(dst_file, 0777)
+    return dst_file
 
-def create_runscript(pkg, mod, target):
+
+def create_runscript(pkg, mod, target, extra):
     if not os.path.exists(target):
+        if extra is None:
+            extra = ''
         if DEBUG:
             print 'Creating runscript ' + target
         f = open(target, 'w')
@@ -459,10 +470,67 @@ def create_runscript(pkg, mod, target):
                 "        bases.append(os.path.join(here, '..', lib, ver, 'site-packages'))\n" +
                 "for base in bases:\n" +
                 "    sys.path.insert(0, os.path.abspath(base))\n\n" +
-                "##############################\n\n"
+                "##############################\n\n" +
+                extra +
                 "from " + pkg + " import " + mod + "\n" +
                 mod + ".main()\n")
         f.close()
+        os.chmod(target, 0777)
+
+
+def create_test_wrapper(pyscript, target_dir, lib_dirs):
+    pyscript = os.path.basename(pyscript)
+    if 'windows' in platform.system().lower():
+        dst_ext = '.bat'
+    else:
+        dst_ext = '.sh'
+    dst_file = os.path.join(target_dir, os.path.splitext(pyscript)[0] + dst_ext)
+    if not os.path.exists(dst_file):
+        f = open(dst_file, 'w')
+        if 'windows' in platform.system().lower():
+            wexe = os.path.join(os.path.dirname(sys.executable), 'pythonw')
+            exe = os.path.join(os.path.dirname(sys.executable), 'python')
+            f.write('@echo off\n' +
+                    exe + ' "%~dp0' + pyscript + '" %*')
+        else:
+            dirlist = ''
+            for d in lib_dirs:
+               dirlist += os.path.abspath(d) + ':' 
+            f.write(
+                '#!/bin/bash\n\n' +
+                'loc=`dirname "$0"`\n' + 
+                'export LD_LIBRARY_PATH=' + dirlist + '$LD_LIBRARY_PATH\n' +
+                'export DYLD_LIBRARY_PATH=' + dirlist + '$DYLD_LIBRARY_PATH\n' +
+                sys.executable + ' $loc/' + pyscript + ' $@\n')
+        f.close()
+        os.chmod(dst_file, 0777)
+    return dst_file
+
+
+def create_testscript(units, target, pkg_dirs):
+    if not os.path.exists(target):
+        if DEBUG:
+            print 'Creating testscript ' + target
+        f = open(target, 'w')
+        f.write("#!/usr/bin/env python\n" +
+                "# -*- coding: utf-8 -*-\n\n" +
+                "## In case the app is not installed in the standard location\n" + 
+                "import sys\n" +
+                "import os\n" +
+                "here = os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))\n" +
+                "bases = [here]\n")
+        for d in pkg_dirs:
+            f.write("bases.append('" + d + "')\n")
+        f.write("for base in bases:\n" +
+                "    sys.path.insert(0, os.path.abspath(base))\n\n" +
+                "##############################\n\n")
+        for unit in units:
+            f.write("from test." + unit + " import *\n")
+        f.write("\nimport unittest\nunittest.main()\n")
+        f.close()
+        os.chmod(target, 0777)
+
+
 
 def symlink(original, target):
     if not os.path.lexists(target):
@@ -1421,13 +1489,14 @@ def get_options(pkg_config, options):
             packages = flatten(pkg_config.names.values()) + \
                 pkg_config.extra_pkgs,
             package_data = data,
-            scripts = pkg_config.runscripts,
+            create_scripts = pkg_config.generated_scripts,
             data_files = pkg_config.extra_data_files,
+            tests = pkg_config.tests,
             )
         if target_os == 'windows':
             specific_options['bdist_wininst'] = {
-                'bitmap': os.path.join('gpstools', 'img', 'cxd_logo.bmp'),
-                'install_script': 'gpstools_postinstall.py',
+                'bitmap': pkg_config.logo_bmp_path,
+                'install_script': windows_postinstall,
                 'keep_temp': True,
                 'user_access_control': 'auto',
                 }

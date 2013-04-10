@@ -31,7 +31,7 @@ import util
 
 class build_scripts(_build_scripts):
     '''
-    Build python modules from ANTLR grammars
+    Build python runscripts and shell wrappers
     '''
     def initialize_options(self):
         _build_scripts.initialize_options(self)
@@ -50,14 +50,15 @@ class build_scripts(_build_scripts):
                 self.scripts = []
             for tpl in self.create_scripts:
                 outfile = os.path.join(self.build_dir, os.path.basename(tpl[0]))
-                util.create_runscript(tpl[1], tpl[2], outfile)
+                util.create_runscript(tpl[1], tpl[2], outfile, tpl[3])
                 self.scripts.append(outfile)
 
         if self.distribution.has_shared_libs():
             prev_list = list(self.scripts)
             for s in prev_list:
-                util.create_script_wrapper(s, self.build_dir)
-                self.scripts.append(s)
+                if '.py' in s:
+                    util.create_script_wrapper(s, self.build_dir)
+                    self.scripts.append(s)
 
         if self.scripts:
             self.copy_scripts()

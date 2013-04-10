@@ -28,14 +28,6 @@ def is_installed(environ, version):
             print e
         return gfortran_found
 
-    ## Unify GCC and GFortran default outputs
-    if gcc_is_64bit():
-        os.environ['FFLAGS'] = '-arch x86_64'
-        os.environ['FCFLAGS'] = '-arch x86_64'
-    else:
-        os.environ['FFLAGS'] = '-arch i686'
-        os.environ['FCFLAGS'] = '-arch i686'
-
     environment['GFORTRAN'] = gfort
     return gfortran_found
 
