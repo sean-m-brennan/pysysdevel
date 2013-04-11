@@ -77,7 +77,7 @@ _sep_ = ':'
 if 'windows' in platform.system().lower():
     _sep_ = ';'
 
-VERBOSE = True
+VERBOSE = False
 DEBUG = False
 
 def set_verbose(b):
@@ -425,7 +425,8 @@ def create_script_wrapper(pyscript, target_dir):
         if 'windows' in platform.system().lower():
             wexe = os.path.join(os.path.dirname(sys.executable), 'pythonw')
             exe = os.path.join(os.path.dirname(sys.executable), 'python')
-            f.write('@echo off\n' +
+            f.write('@echo off\nsetlocal\n' +
+                    'set PATH=%~dp0..\\Lib;%PATH%\n' +
                     exe + ' "%~dp0' + pyscript + '" %*')
         else:
             f.write(
@@ -486,50 +487,52 @@ def create_test_wrapper(pyscript, target_dir, lib_dirs):
     else:
         dst_ext = '.sh'
     dst_file = os.path.join(target_dir, os.path.splitext(pyscript)[0] + dst_ext)
-    if not os.path.exists(dst_file):
-        f = open(dst_file, 'w')
-        if 'windows' in platform.system().lower():
-            wexe = os.path.join(os.path.dirname(sys.executable), 'pythonw')
-            exe = os.path.join(os.path.dirname(sys.executable), 'python')
-            f.write('@echo off\n' +
-                    exe + ' "%~dp0' + pyscript + '" %*')
-        else:
-            dirlist = ''
-            for d in lib_dirs:
-               dirlist += os.path.abspath(d) + ':' 
-            f.write(
-                '#!/bin/bash\n\n' +
+    f = open(dst_file, 'w')
+    if 'windows' in platform.system().lower():
+        wexe = os.path.join(os.path.dirname(sys.executable), 'pythonw')
+        exe = os.path.join(os.path.dirname(sys.executable), 'python')
+        dirlist = ''
+        for d in lib_dirs:
+            dirlist += os.path.abspath(d) + ';' 
+        f.write('@echo off\nsetlocal\n' +
+                'set PATH=' + dirlist + '%PATH%\n' +
+                exe + ' "%~dp0' + pyscript + '" %*')
+    else:
+        dirlist = ''
+        for d in lib_dirs:
+            dirlist += os.path.abspath(d) + ':' 
+        f.write('#!/bin/bash\n\n' +
                 'loc=`dirname "$0"`\n' + 
                 'export LD_LIBRARY_PATH=' + dirlist + '$LD_LIBRARY_PATH\n' +
                 'export DYLD_LIBRARY_PATH=' + dirlist + '$DYLD_LIBRARY_PATH\n' +
                 sys.executable + ' $loc/' + pyscript + ' $@\n')
-        f.close()
-        os.chmod(dst_file, 0777)
+    f.close()
+    os.chmod(dst_file, 0777)
     return dst_file
 
 
-def create_testscript(units, target, pkg_dirs):
-    if not os.path.exists(target):
-        if DEBUG:
-            print 'Creating testscript ' + target
-        f = open(target, 'w')
-        f.write("#!/usr/bin/env python\n" +
-                "# -*- coding: utf-8 -*-\n\n" +
-                "## In case the app is not installed in the standard location\n" + 
-                "import sys\n" +
-                "import os\n" +
-                "here = os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))\n" +
-                "bases = [here]\n")
-        for d in pkg_dirs:
-            f.write("bases.append('" + d + "')\n")
-        f.write("for base in bases:\n" +
-                "    sys.path.insert(0, os.path.abspath(base))\n\n" +
-                "##############################\n\n")
-        for unit in units:
-            f.write("from test." + unit + " import *\n")
-        f.write("\nimport unittest\nunittest.main()\n")
-        f.close()
-        os.chmod(target, 0777)
+def create_testscript(tester, units, target, pkg_dirs):
+    if DEBUG:
+        print 'Creating testscript ' + target
+    f = open(target, 'w')
+    f.write("#!/usr/bin/env python\n" +
+            "# -*- coding: utf-8 -*-\n\n" +
+            "## In case the app is not installed in the standard location\n" + 
+            "import sys\n" +
+            "import os\n" +
+            "bases = [os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))]\n"
+            )
+    for d in pkg_dirs:
+        f.write("bases.append(r'" + d + "')\n")
+    f.write("for base in bases:\n" +
+            "    sys.path.insert(0, os.path.abspath(base))\n\n" +
+            "##############################\n\n"
+            )
+    for unit in units:
+        f.write("from " + tester + "." + unit + " import *\n")
+    f.write("\nimport unittest\nunittest.main()\n")
+    f.close()
+    os.chmod(target, 0777)
 
 
 def programfiles_directories():

@@ -669,11 +669,26 @@ class test(Command):
             build_dir = build.build_base
             buildpy = self.get_finalized_command('build_py')
             src_dirs = buildpy.package_dir
-            pkg_dirs = ['test', 'python', build.build_lib]
+            environ = self.distribution.environment
+
+            pkg_dirs = [build_dir, build.build_lib,
+                        os.path.join(build_dir, 'python')]
             lib_dirs = [build.build_temp]
+            try:
+                lib_dirs += environ['PATH']
+                # FIXME need boost, etc dlls for windows
+            except:
+                pass
+            try:
+                lib_dirs.append(os.path.join(environ['MINGW_DIR'], 'bin'))
+                lib_dirs.append(os.path.join(environ['MSYS_DIR'], 'bin'))
+                lib_dirs.append(os.path.join(environ['MSYS_DIR'], 'lib'))
+            except:
+                pass
+            postfix = '.'.join(build.build_temp.split('.')[1:])
             for pkg, units in self.tests:
-                test_dir = os.path.join(build_dir, 'test')
-                if not os.path.exists(os.path.join(test_dir, 'test')):
+                test_dir = os.path.join(build_dir, 'test_' + pkg)
+                if not os.path.exists(test_dir):
                     util.copy_tree(os.path.join(src_dirs[pkg], 'test'),
                                    test_dir, excludes=['.svn*', 'CVS*'])
                 f = open(os.path.join(test_dir, '__init__.py'), 'w')
@@ -681,7 +696,7 @@ class test(Command):
                         "', '".join(units) + "']\n")
                 f.close()
                 outfile = os.path.join(build_dir, 'test_' + pkg + '.py')
-                util.create_testscript(units, outfile, pkg_dirs)
+                util.create_testscript('test_' + pkg, units, outfile, pkg_dirs)
                 wrap = util.create_test_wrapper(outfile, build_dir, lib_dirs)
                 log.info('running unit tests for ' + pkg)
                 subprocess.check_call([wrap])
