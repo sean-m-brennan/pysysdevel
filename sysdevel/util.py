@@ -49,6 +49,7 @@ except ImportError:
 
 default_path_prefixes = ['/usr', '/usr/local',
                          '/opt/local',
+                         #FIXME nonstandard drives also
                          'C:\\MinGW', 'C:\\MinGW\\msy\1.0',
                          ] + glob.glob('C:\\Python*\\')
 

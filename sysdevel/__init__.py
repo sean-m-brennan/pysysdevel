@@ -23,11 +23,10 @@ areas: model coupling, data visualization, and collaboration & distribution.
 #**************************************************************************
 
 
-__all__ = ['pkg_config', 'core',
+__all__ = ['pkg_config', 'core', 'util',
            'build_clib', 'build_doc', 'build_exe', 'build_js',
-           'build_pypp_ext', 'build_py', 'build_shlib', 'build_src',
-           'install_data', 'install_exe', 'install_lib',
-           'util', 'httplib', 'urllib2',
+           'build_pypp_ext', 'build_py', 'build_scripts', 'build_shlib',
+           'build_src', 'install_data', 'install_exe', 'install_lib',
            'configure',]
 
 import os

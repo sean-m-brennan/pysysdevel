@@ -480,8 +480,7 @@ class install(old_install):
                     ('install_lib', has_lib),
                     ('install_headers', old_install.has_headers),
                     ('install_scripts', old_install.has_scripts),
-                    ('install_data',    has_data),
-                    ('install_egg_info', lambda self:True),
+                    #('install_egg_info', lambda self:True),
                     ]
 
     def run(self):
@@ -514,6 +513,17 @@ class install(old_install):
                 old_install.run(self)
         else:
             old_install.run(self)
+
+
+#from numpy.distutils.command.install_clib import install_clib
+class install_clib(Command):
+    ''' Bypass unneeded call to numpy install_clib command '''
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        pass
 
 
 from numpy.distutils import log
@@ -768,6 +778,7 @@ my_cmdclass = {'build':            build,
                'scons':            scons.scons,
                'install_exe':      install_exe.install_exe,
                'install_lib':      install_lib.install_lib,
+               'install_clib':     install_clib,
                'install_data':     install_data.install_data,
                'install_headers':  install_headers.install_headers,
                'install':          install,
