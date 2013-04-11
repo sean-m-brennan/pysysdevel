@@ -46,11 +46,10 @@ def is_installed(environ, version):
         locations.append(os.environ['ARCHIVE_ROOT'])
     except:
         pass
+    for d in programfiles_directories():
+        locations.append(os.path.join(d, 'GnuWin32'))
     try:
-        locations.append(os.path.join(os.environ['ProgramFiles'], 'GnuWin32'))
-    except:
-        pass
-    try:
+        locations.append(environ['MINGW_DIR'])
         locations.append(environ['MSYS_DIR'])
     except:
         pass

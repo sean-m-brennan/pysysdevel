@@ -24,12 +24,11 @@ def is_installed(environ, version):
 
     set_debug(DEBUG)
     base_dirs = [os.path.join('C:',  os.sep, 'msysgit', 'cmd')]
+    for d in programfiles_directories():
+        base_dirs.append(os.path.join(d, 'Git', 'cmd'))
     try:
-        base_dirs.append(os.path.join(os.environ['ProgramFiles'], 'Git', 'cmd'))
-    except:
-        pass
-    try:
-        base_dirs.append(os.path.join(environ['MSYS_DIR'], 'bin'))
+        base_dirs.append(environ['MINGW_DIR'])
+        base_dirs.append(environ['MSYS_DIR'])
     except:
         pass
     try:

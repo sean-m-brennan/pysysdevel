@@ -41,6 +41,7 @@ def is_installed(environ, version):
     global environment, antlr_c_found
     set_debug(DEBUG)
     try:
+        base_dirs.append(environ['MINGW_DIR'])
         base_dirs.append(environ['MSYS_DIR'])
     except:
         pass

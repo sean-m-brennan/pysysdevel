@@ -48,16 +48,13 @@ def is_installed(environ, version):
         base_dirs.append(os.environ['GRAPHVIZ_ROOT'])
     except:
         pass
-    if 'windows' in platform.system().lower():
-        try:
-            progfiles = os.environ['ProgramFiles']
-            base_dirs += glob.glob(os.path.join(progfiles, 'Graphviz*'))
-        except:
-            pass
-        try:
-            base_dirs.append(environ['MSYS_DIR'])
-        except:
-            pass
+    for d in programfiles_directories():
+        base_dirs += glob.glob(os.path.join(d, 'Graphviz*'))
+    try:
+        base_dirs.append(environ['MINGW_DIR'])
+        base_dirs.append(environ['MSYS_DIR'])
+    except:
+        pass
     try:
         inc_dir = find_header('cgraph.h', base_dirs, ['graphviz'])
         lib_dir, lib = find_library('cgraph', base_dirs)

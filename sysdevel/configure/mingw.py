@@ -47,10 +47,8 @@ def is_installed(environ, version):
         mingw_root = os.environ['MINGW_ROOT']
     except:
         locations = [os.path.join('C:', os.sep, 'MinGW')]
-        try:
-            locations.append(os.path.join(os.environ['ProgramFiles'], 'MinGW'))
-        except:
-            pass
+        for d in programfiles_directories():
+            locations.append(os.path.join(d, 'MinGW'))
         try:
             gcc = find_program('mingw32-gcc', locations)
             mingw_root = os.path.abspath(os.path.join(os.path.dirname(gcc), '..'))

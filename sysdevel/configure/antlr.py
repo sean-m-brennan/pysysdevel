@@ -52,13 +52,12 @@ def is_installed(environ, version):
             antlr_root = os.environ['ANTLR_ROOT']
         except:
             antlr_root = None
-        try:
-            win_loc = os.path.join(os.environ['ProgramFiles'], 'ANTLR', 'lib')
-        except:
-            win_loc = None
-        jarfile = find_file('antlr*' + version[0] + '*.jar', ['/usr/share/java',
-                                             '/opt/local/share/java',
-                                             win_loc, antlr_root,] + classpaths)
+        win_locs = []
+        for d in programfiles_directories():
+            win_locs.append(os.path.join(d, 'ANTLR', 'lib'))
+        jarfile = find_file('antlr*' + version[0] + '*.jar',
+                            ['/usr/share/java', '/opt/local/share/java',
+                             antlr_root,] + win_locs + classpaths)
         environment['ANTLR'] = [environ['JAVA'],
                                 "-classpath", os.path.abspath(jarfile),
                                 "org.antlr.Tool",]

@@ -38,6 +38,7 @@ import tarfile
 import zipfile
 import subprocess
 import ctypes
+import string
 import distutils.sysconfig
 
 try:
@@ -48,8 +49,8 @@ except ImportError:
 
 default_path_prefixes = ['/usr', '/usr/local',
                          '/opt/local',
-                         'C:\\MinGW', 'C:\\MinGW\\msy\1.0'] + \
-                         glob.glob('C:\\Python*\\')
+                         'C:\\MinGW', 'C:\\MinGW\\msy\1.0',
+                         ] + glob.glob('C:\\Python*\\')
 
 download_file = ''
 
@@ -531,6 +532,25 @@ def create_testscript(units, target, pkg_dirs):
         os.chmod(target, 0777)
 
 
+def programfiles_directories():
+    if 'windows' in platform.system().lower():
+        try:
+            drive = os.path.splitdrive(os.environ['ProgramFiles'])[0]
+        except:
+            drive = 'c:'
+        return [os.path.join(drive, os.sep, 'Program Files'),
+                os.path.join(drive, os.sep, 'Program Files (x86)'),]
+    return []
+
+
+def convert2unixpath(win_path):
+    if 'windows' in platform.system().lower():
+        path = win_path.replace('\\', '/')
+        for alpha in string.uppercase + string.lowercase:
+            path = path.replace(alpha + ':', '/' + alpha)
+        return path
+    return win_path
+
 
 def symlink(original, target):
     if not os.path.lexists(target):
@@ -917,6 +937,7 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
             local_search_paths.append(prefix)
     else:
         prefix = global_prefix
+    prefix = convert2unixpath(prefix)  ## MinGW shell strips backslashes
 
     build_dir = os.path.join(target_build_dir, src_dir, '_build')
     mkdir(build_dir)
@@ -989,7 +1010,11 @@ def global_install(what, website_tpl, winstaller=None,
     if 'windows' in platform.system().lower() and winstaller:
         fetch(''.join(website_tpl), winstaller, winstaller)
         installer = os.path.join(download_dir, winstaller)
-        admin_check_call(installer, log, log)
+        try:
+            admin_check_call(installer, log, log)
+        except:
+            ## some installers do not exit cleanly
+            pass
 
     elif 'darwin' in platform.system().lower():
         if system_uses_homebrew() and brew:
@@ -1160,6 +1185,7 @@ def safe_eval(stmt):
     #return eval(stmt, safe_dict)  #TODO not implemented
     return eval(stmt)
 
+#FIXME unify argv, environ and options handling
 
 def handle_arguments(argv, option_list=[]):
     if '--quiet' in argv:
@@ -1285,6 +1311,7 @@ def get_options(pkg_config, options):
         INCLUDE_TCLTK_WIN = False
         #os.environ['PATH'] += _sep_ + 'gtk/lib' + _sep_ + 'gtk/bin'
 
+        #FIXME pull info from environ (msvcrt.py)  environment['MSVCR_DIR']
         msvc_version = '9.0'  ## boost-python requires MSVC 9.0
         msvc_path = os.path.join(os.environ['ProgramFiles(x86)'],
                                  'Microsoft Visual Studio ' + msvc_version,

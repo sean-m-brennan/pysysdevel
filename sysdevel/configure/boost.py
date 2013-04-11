@@ -60,11 +60,11 @@ def is_installed(environ, version):
         base_dirs.append(os.environ['BOOST_LIBRARY_DIR'])
     except:
         pass
-    if 'windows' in platform.system().lower():
-        try:
-            base_dirs.append(environ['MSYS_DIR'])
-        except:
-            pass
+    try:
+        base_dirs.append(environ['MINGW_DIR'])
+        base_dirs.append(environ['MSYS_DIR'])
+    except:
+        pass
     try:
         incl_dir = find_header(os.path.join('boost', 'version.hpp'),
                                base_dirs, ['boost-*'])

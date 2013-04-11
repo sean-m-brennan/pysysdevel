@@ -49,10 +49,11 @@ def is_installed(environ, version):
     if 'windows' in platform.system().lower():
         base_dirs.append(os.path.join('C:', os.sep, 'CDF Distribution',
                                       'cdf' + version + '-dist'))
-        try:
-            base_dirs.append(environ['MSYS_DIR'])
-        except:
-            pass
+    try:
+        base_dirs.append(environ['MINGW_DIR'])
+        base_dirs.append(environ['MSYS_DIR'])
+    except:
+        pass
     try:
         incl_dir = find_header('cdf.h', base_dirs)
         lib_dir, lib = find_library('cdf', base_dirs)
@@ -83,6 +84,7 @@ def install(environ, version, locally=True):
                     local_search_paths.append(prefix)
             else:
                 prefix = global_prefix
+            prefix = convert2unixpath(prefix)  ## MinGW shell strips backslashes
 
             website = ('http://cdaweb.gsfc.nasa.gov/',
                        'pub/software/cdf/dist/cdf' + str(version))

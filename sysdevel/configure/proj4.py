@@ -48,10 +48,11 @@ def is_installed(environ, version):
         pass
     if 'windows' in platform.system().lower():
         base_dirs.append(os.path.join('C:', os.sep, 'OSGeo4W'))
-        try:
-            base_dirs.apeend(environ['MSYS_DIR'])
-        except:
-            pass
+    try:
+        base_dirs.apeend(environ['MINGW_DIR'])
+        base_dirs.apeend(environ['MSYS_DIR'])
+    except:
+        pass
     try:
         proj4_inc_dir = find_header('proj_api.h', base_dirs)
         proj4_lib_dir, proj4_libs  = find_libraries('proj', base_dirs)

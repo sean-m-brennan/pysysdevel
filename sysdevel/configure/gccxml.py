@@ -24,12 +24,10 @@ def is_installed(environ, version):
     global environment, gccxml_found
     set_debug(DEBUG)
     base_dirs = []
+    for d in programfiles_directories():
+        base_dirs.append(os.path.join(d, 'GCC_XML'))
     try:
-        base_dirs.append(os.path.join(os.environ['ProgramFiles'],
-                                      'GCC_XML', 'bin'))
-    except:
-        pass
-    try:
+        base_dirs.append(environ['MINGW_DIR'])
         base_dirs.append(environ['MSYS_DIR'])
     except:
         pass
@@ -54,6 +52,7 @@ def install(environ, version, locally=True):
                     local_search_paths.append(prefix)
             else:
                 prefix = global_prefix
+            prefix = convert2unixpath(prefix)  ## MinGW shell strips backslashes
 
             src_dir = 'gccxml'
             if not os.path.exists(os.path.join(here, download_dir, src_dir)):

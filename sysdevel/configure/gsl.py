@@ -46,11 +46,10 @@ def is_installed(environ, version):
         base_dirs.append(os.environ['GSL_ROOT'])
     except:
         pass
+    for d in programfiles_directories():
+        base_dirs.append(os.path.join(d, 'GnuWin32'))
     try:
-        base_dirs.append(os.path.join(os.environ['ProgramFiles'], 'GnuWin32'))
-    except:
-        pass
-    try:
+        base_dirs.append(environ['MINGW_DIR'])
         base_dirs.append(environ['MSYS_DIR'])
     except:
         pass

@@ -42,6 +42,7 @@ def is_installed(environ, version):
     set_debug(DEBUG)
     locations = []
     try:
+        locations.append(environ['MINGW_DIR'])
         locations.append(environ['MSYS_DIR'])
     except:
         pass

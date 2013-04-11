@@ -46,16 +46,13 @@ def is_installed(environ, version):
         base_dirs.append(os.environ['HDF5_ROOT'])
     except:
         pass
-    if 'windows' in platform.system().lower():
-        try:
-            progfiles = os.environ['ProgramFiles']
-            base_dirs.append(os.path.join(progfiles, 'HDF_Group', 'HDF5'))
-        except:
-            pass
-        try:
-            base_dirs.append(environ['MSYS_DIR'])
-        except:
-            pass
+    for d in programfiles_directories():
+        base_dirs.append(os.path.join(d, 'HDF_Group', 'HDF5'))
+    try:
+        base_dirs.append(environ['MINGW_DIR'])
+        base_dirs.append(environ['MSYS_DIR'])
+    except:
+        pass
     try:
         hdf5_lib_dir, hdf5_libs  = find_libraries('hdf5', base_dirs)
         hdf5_inc_dir = find_header('hdf5.h', base_dirs)

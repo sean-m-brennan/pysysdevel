@@ -48,10 +48,11 @@ def is_installed(environ, version):
         pass
     if 'windows' in platform.system().lower():
         base_dirs.append(os.path.join('C:', os.sep, 'OSGeo4W'))
-        try:
-            base_dirs.append(environ['MSYS_DIR'])
-        except:
-            pass
+    try:
+        base_dirs.append(environ['MINGW_DIR'])
+        base_dirs.append(environ['MSYS_DIR'])
+    except:
+        pass
     try:
         lib_dir, libs  = find_libraries('geos_c', base_dirs)
         inc_dir = find_header('geos_c.h', base_dirs)

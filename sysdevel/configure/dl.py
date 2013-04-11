@@ -43,6 +43,7 @@ def is_installed(environ, version):
     set_debug(DEBUG)
     locations = []
     try:
+        locations.append(os.environ['MINGW_DIR'])
         locations.append(os.environ['MSYS_DIR'])
     except:
         pass
@@ -72,9 +73,8 @@ def install(environ, version, locally=True):
                     local_search_paths.append(prefix)
             else:
                 prefix = global_prefix
+            prefix = convert2unixpath(prefix)  ## MinGW shell strips backslashes
 
-            prefix=prefix.replace("\\","/")
-            prefix=prefix.replace("C:","/C")
             website = ('http://dlfcn-win32.googlecode.com/files/',)
             if version is None:
                 version = 'r19'
@@ -86,9 +86,10 @@ def install(environ, version, locally=True):
             build_dir = os.path.join(target_build_dir, src_dir)
             os.chdir(build_dir)
             try:
-                mingw_check_call(environ, ['./configure', '--prefix=' + prefix, '--enable-shared'])
+                mingw_check_call(environ, ['./configure', '--prefix=' + prefix,
+                                           '--enable-shared'])
             except:
-			    pass
+                pass
             mingw_check_call(environ, ['make'])
             mingw_check_call(environ, ['make', 'install'])
         else:
