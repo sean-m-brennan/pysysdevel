@@ -20,11 +20,12 @@ Find Doxygen
 # 
 #**************************************************************************
 
+import os
 from sysdevel.util import *
 
 environment = dict()
 doxygen_found = False
-DEBUG = False
+DEBUG = True
 
 
 def null():
@@ -35,8 +36,19 @@ def null():
 def is_installed(environ, version):
     global environment, doxygen_found
     set_debug(DEBUG)
+    base_dirs=[]
+    base_dirs.append(os.path.join(os.environ['ProgramFiles'], 'doxygen'))
+    if 'windows' in platform.system().lower():
+        try:
+            base_dirs.append(os.path.join(os.environ['ProgramFiles'], 'doxygen'))
+        except Exception, e:
+            print e
+        try:
+            base_dirs.append(environ['MSYS_DIR'])
+        except:
+            pass
     try:
-        environment['DOXYGEN'] = find_program('doxygen')
+        environment['DOXYGEN'] = find_program('doxygen', base_dirs)
         doxygen_found = True
     except Exception, e:
         if DEBUG:

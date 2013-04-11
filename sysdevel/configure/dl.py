@@ -65,12 +65,32 @@ def is_installed(environ, version):
 def install(environ, version, locally=True):
     if not libdl_found:
         if 'windows' in platform.system().lower():
+            here = os.path.abspath(os.getcwd())
+            if locally:
+                prefix = os.path.abspath(target_build_dir)
+                if not prefix in local_search_paths:
+                    local_search_paths.append(prefix)
+            else:
+                prefix = global_prefix
+
+            prefix=prefix.replace("\\","/")
+            prefix=prefix.replace("C:","/C")
             website = ('http://dlfcn-win32.googlecode.com/files/',)
             if version is None:
                 version = 'r19'
             src_dir = 'dlfcn-win32-' + str(version)
             archive = src_dir + '.tar.bz2'
-            autotools_install(environ, website, archive, src_dir, locally)
+            fetch(''.join(website), archive, archive)
+            unarchive(archive, src_dir)
+
+            build_dir = os.path.join(target_build_dir, src_dir)
+            os.chdir(build_dir)
+            try:
+                mingw_check_call(environ, ['./configure', '--prefix=' + prefix, '--enable-shared'])
+            except:
+			    pass
+            mingw_check_call(environ, ['make'])
+            mingw_check_call(environ, ['make', 'install'])
         else:
             raise Exception('Non-Windows platform with missing libdl.')
         if not is_installed(environ, version):
