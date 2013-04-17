@@ -168,23 +168,23 @@ def find_program(name, pathlist=[]):
         path_env = []
     for path in local_search_paths + pathlist + path_env:
         if path != None and os.path.exists(path):
-            if DEBUG:
-                print 'Searching ' + path + ' for ' + name
             for p in [path, os.path.join(path, 'bin')]:
+                if DEBUG:
+                    print 'Searching ' + p + ' for ' + name
                 full = os.path.join(p, name)
-                if os.path.exists(full):
+                if os.path.lexists(full):
                     if DEBUG:
                         print 'Found ' + full
                     return full
-                if os.path.exists(full + '.exe'):
+                if os.path.lexists(full + '.exe'):
                     if DEBUG:
                         print 'Found ' + full + '.exe'
                     return full + '.exe'
-                if os.path.exists(full + '.bat'):
+                if os.path.lexists(full + '.bat'):
                     if DEBUG:
                         print 'Found ' + full + '.bat'
                     return full + '.bat'
-                if os.path.exists(full + '.cmd'):
+                if os.path.lexists(full + '.cmd'):
                     if DEBUG:
                         print 'Found ' + full + '.cmd'
                     return full + '.bat'
@@ -395,6 +395,24 @@ def fetch(website, remote, local):
             sys.stdout.write('\n')
 
 
+def zipextractall(zipfile):
+    ## zipfile.extractall not in 2.4
+    for name in zipfile.namelist():
+        (dirname, filename) = os.path.split(name)
+        if filename == '':
+            mkdir(dirname)
+        else:
+            f = open(name, 'w')
+            f.write(archivefile.read(name))
+            f.close()
+
+    
+def tarextractall(tarfile):
+    ## tarfile.extractall not in 2.4
+    for tarinfo in tarfile:
+        tarfile.extract(tarinfo)
+
+    
 def unarchive(archive, target, archive_dir=download_dir):
     here = os.path.abspath(os.getcwd())
     if not os.path.exists(os.path.join(target_build_dir, target)):
@@ -402,13 +420,16 @@ def unarchive(archive, target, archive_dir=download_dir):
         os.chdir(target_build_dir)
         if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
             z = tarfile.open(os.path.join(here, archive_dir, archive), 'r:gz')
-            z.extractall()
+            tarextractall(z)
+            z.close()
         elif archive.endswith('.tar.bz2'):
             z = tarfile.open(os.path.join(here, archive_dir, archive), 'r:bz2')
-            z.extractall()
+            tarextractall(z)
+            z.close()
         elif archive.endswith('.zip'):
             z = zipfile.ZipFile(os.path.join(here, archive_dir, archive), 'r')
-            z.extractall()
+            zipextractall(z)
+            z.close()
         else:
             raise Exception('Unrecognized archive compression: ' + archive)
         os.chdir(here)
@@ -914,7 +935,7 @@ def gcc_is_64bit():
                 '  return 0;\n' +
                 '}\n')
         t.close()
-        subprocess.check_call(['gcc', '-o', tempobj, tempsrc])
+        check_call(['gcc', '-o', tempobj, tempsrc])
         p = subprocess.Popen(['file', tempobj], stdout=subprocess.PIPE)
         if 'x86_64' in p.communicate()[0]:
             retval = True
@@ -953,11 +974,11 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
         mingw_check_call(environ, ['make'])
         mingw_check_call(environ, ['make', 'install'])
     else:
-        subprocess.check_call(['../configure', '--prefix=' + prefix] +
+        check_call(['../configure', '--prefix=' + prefix] +
                               extra_cfg)
-        subprocess.check_call(['make'])
+        check_call(['make'])
         if locally:
-            subprocess.check_call(['make', 'install'])
+            check_call(['make', 'install'])
         else:
             admin_check_call(['make', 'install'])
     os.chdir(here)
@@ -1010,6 +1031,7 @@ def global_install(what, website_tpl, winstaller=None,
                    brew=None, port=None, deb=None, rpm=None):
     sys.stdout.write('INSTALLING ' + what + ' in the system\n')
     sys.stdout.flush()
+    mkdir(target_build_dir)
     log = open(os.path.join(target_build_dir, what + '.log'), 'w')
     if 'windows' in platform.system().lower() and winstaller:
         fetch(''.join(website_tpl), winstaller, winstaller)
@@ -1022,7 +1044,7 @@ def global_install(what, website_tpl, winstaller=None,
 
     elif 'darwin' in platform.system().lower():
         if system_uses_homebrew() and brew:
-            subprocess.check_call(['brew', 'install',] + brew.split(),
+            check_call(['brew', 'install',] + brew.split(),
                                   stdout=log, stderr=log)
 
         elif system_uses_macports() and port:
@@ -1059,6 +1081,12 @@ def as_admin():
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
 
 
+def check_call(cmd_line, *args, **kwargs):
+    status = subprocess.call(cmd_line, *args, **kwargs)
+    if status != 0:
+        raise subprocess.CalledProcessError(status, cmd_line)
+    
+
 def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None):
     if 'windows' in platform.system().lower():
         if not isinstance(cmd_line, basestring):
@@ -1073,7 +1101,7 @@ def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None):
             if status != 0:
                 raise subprocess.CalledProcessError(status, cmd_line)
         else:
-            subprocess.check_call([cmd_line], stdout=stdout, stderr=stderr)
+            check_call([cmd_line], stdout=stdout, stderr=stderr)
     else:
         if isinstance(cmd_line, basestring):
             cmd_line = cmd_line.split()
@@ -1081,11 +1109,10 @@ def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None):
         if not as_admin():
             sudo_prefix = ['sudo']
         if quiet:
-            subprocess.check_call(sudo_prefix + cmd_line,
-                                  stdout=stdout, stderr=stderr)
+            check_call(sudo_prefix + cmd_line, stdout=stdout, stderr=stderr)
         else:
-            subprocess.check_call(sudo_prefix + cmd_line,
-                                  stdout=sys.stdout, stderr=sys.stderr)
+            check_call(sudo_prefix + cmd_line,
+                       stdout=sys.stdout, stderr=sys.stderr)
 
 
 def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None):

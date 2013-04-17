@@ -70,6 +70,7 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     environment = dict()
     environment['PACKAGE_VERSION'] = version
 
+    prerequisite_list.insert(0, 'httpsproxy_urllib2_py')
     if 'windows' in platform.system().lower():
         prerequisite_list.insert(0, 'mingw')
         if 'boost' in prerequisite_list:  ## assuming boost-python is needed
