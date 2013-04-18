@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find Jinja
+Find Jinja2
 """
 #**************************************************************************
 # 
@@ -54,4 +54,4 @@ def install(environ, version, locally=True):
         archive = src_dir + '.tar.gz' 
         install_pypkg(src_dir, website, archive, locally=locally)
         if not is_installed(environ, version):
-            raise Exception('Jinja installation failed.')
+            raise Exception('Jinja2 installation failed.')

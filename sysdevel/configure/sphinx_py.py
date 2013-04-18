@@ -24,6 +24,8 @@ import os, platform
 
 from sysdevel.util import *
 
+DEPENDENCIES = ['docutils', 'jinja2', 'pygments', 'roman',]# 'rst2pdf']#FIXME
+
 environment = dict()
 sphinx_found = False
 

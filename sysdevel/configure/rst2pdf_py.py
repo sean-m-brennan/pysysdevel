@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find Uuid
+Find rst2pdf
 """
 #**************************************************************************
 # 
@@ -24,8 +24,10 @@ import os
 
 from sysdevel.util import *
 
+DEPENDENCIES = ['docutils', 'reportlab', 'pygments', 'pdfrw']
+
 environment = dict()
-uuid_found = False
+rst2pdf_found = False
 
 
 def null():
@@ -33,25 +35,25 @@ def null():
 
 
 def is_installed(environ, version):
-    global environment, uuid_found
+    global environment, rst2pdf_found
     try:
-        import uuid
-        ver = uuid.__version__
+        import rst2pdf
+        ver = rst2pdf.version
         if compare_versions(ver, version) == -1:
-            return uuid_found
-        uuid_found = True
+            return rst2pdf_found
+        rst2pdf_found = True
     except:
         pass
-    return uuid_found
+    return rst2pdf_found
 
 
 def install(environ, version, locally=True):
-    if not uuid_found:
-        website = 'https://pypi.python.org/packages/source/u/uuid/'
+    if not rst2pdf_found:
+        website = 'http://rst2pdf.googlecode.com/files/'
         if version is None:
-            version = '1.30'
-        src_dir = 'uuid-' + str(version)
+            version = '0.93'
+        src_dir = 'rst2pdf-' + str(version)
         archive = src_dir + '.tar.gz' 
         install_pypkg(src_dir, website, archive, locally=locally)
-        #if not is_installed(environ, version):
-        #    raise Exception('Uuid installation failed.')
+        if not is_installed(environ, version):
+            raise Exception('rst2pdf installation failed.')

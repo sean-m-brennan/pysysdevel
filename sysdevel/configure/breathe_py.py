@@ -24,7 +24,7 @@ import os, sys
 
 from sysdevel.util import *
 
-DEPENDENCIES = [('sphinx', '1.0.7'), 'docutils', 'jinja', 'uuid']
+DEPENDENCIES = [('sphinx', '1.0.7'), 'uuid',]
 
 environment = dict()
 breathe_found = False

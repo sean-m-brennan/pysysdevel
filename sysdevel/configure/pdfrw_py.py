@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find Uuid
+Find pdfrw
 """
 #**************************************************************************
 # 
@@ -25,7 +25,7 @@ import os
 from sysdevel.util import *
 
 environment = dict()
-uuid_found = False
+pdfrw_found = False
 
 
 def null():
@@ -33,25 +33,25 @@ def null():
 
 
 def is_installed(environ, version):
-    global environment, uuid_found
+    global environment, pdfrw_found
     try:
-        import uuid
-        ver = uuid.__version__
+        import pdfrw
+        ver = pdfrw.__version__
         if compare_versions(ver, version) == -1:
-            return uuid_found
-        uuid_found = True
+            return pdfrw_found
+        pdfrw_found = True
     except:
         pass
-    return uuid_found
+    return pdfrw_found
 
 
 def install(environ, version, locally=True):
-    if not uuid_found:
-        website = 'https://pypi.python.org/packages/source/u/uuid/'
+    if not pdfrw_found:
+        website = 'https://pypi.python.org/packages/source/p/pdfrw/'
         if version is None:
-            version = '1.30'
-        src_dir = 'uuid-' + str(version)
+            version = '0.1'
+        src_dir = 'pdfrw-' + str(version)
         archive = src_dir + '.tar.gz' 
         install_pypkg(src_dir, website, archive, locally=locally)
-        #if not is_installed(environ, version):
-        #    raise Exception('Uuid installation failed.')
+        if not is_installed(environ, version):
+            raise Exception('pdfrw installation failed.')

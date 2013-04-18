@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Find Uuid
+Find Reportlab
 """
 #**************************************************************************
 # 
@@ -25,7 +25,7 @@ import os
 from sysdevel.util import *
 
 environment = dict()
-uuid_found = False
+reportlab_found = False
 
 
 def null():
@@ -33,25 +33,38 @@ def null():
 
 
 def is_installed(environ, version):
-    global environment, uuid_found
+    global environment, reportlab_found
     try:
-        import uuid
-        ver = uuid.__version__
+        import reportlab
+        ver = reportlab.Version
         if compare_versions(ver, version) == -1:
-            return uuid_found
-        uuid_found = True
+            return reportlab_found
+        reportlab_found = True
     except:
         pass
-    return uuid_found
+    return reportlab_found
 
 
 def install(environ, version, locally=True):
-    if not uuid_found:
-        website = 'https://pypi.python.org/packages/source/u/uuid/'
+    if not reportlab_found:
+        website = 'https://pypi.python.org/packages/source/r/reportlab/'
         if version is None:
-            version = '1.30'
-        src_dir = 'uuid-' + str(version)
-        archive = src_dir + '.tar.gz' 
-        install_pypkg(src_dir, website, archive, locally=locally)
-        #if not is_installed(environ, version):
-        #    raise Exception('Uuid installation failed.')
+            version = '2.3'
+            src_dir = 'ReportLab_2_3'
+        else:
+            src_dir = 'reportlab-' + str(version)
+        name = 'reportlab-' + str(version)
+        archive = name + '.tar.gz' 
+        install_pypkg(name, website, archive, src_dir=src_dir,
+                      patch=patch, locally=locally)
+        if not is_installed(environ, version):
+            raise Exception('Reportlab installation failed.')
+
+
+def patch(src_path):
+    ##FIXME problems with Python 2.4 patch:
+    # reportlab/graphics/charts/axes.py
+    #  pmv = self._pmv if self.labelAxisMode=='axispmv' else None
+    # reportlab/graphics/renderSVG.py
+    #  svgAttrs = self.fontHacks[font] if font in self.fontHacks else {}
+    pass
