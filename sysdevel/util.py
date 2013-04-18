@@ -419,7 +419,7 @@ def zipextractall(zipfile):
             mkdir(dirname)
         else:
             f = open(name, 'w')
-            f.write(archivefile.read(name))
+            f.write(zipfile.read(name))
             f.close()
 
     
