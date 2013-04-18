@@ -24,7 +24,11 @@ import sys
 import shutil
 import glob
 import subprocess
-from numpy.distutils.command.build_scripts import build_scripts as _build_scripts
+
+try:
+    from numpy.distutils.command.build_scripts import build_scripts as _build_scripts
+except:
+    from distutils.command.build_scripts import build_scripts as _build_scripts
 
 import util
 

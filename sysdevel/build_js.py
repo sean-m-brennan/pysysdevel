@@ -25,8 +25,13 @@ import logging
 import subprocess
 import shutil
 import glob
-from numpy.distutils.command.build_ext import build_ext
+
 from distutils.errors import DistutilsExecError
+
+try:
+    from numpy.distutils.command.build_ext import build_ext
+except:
+    from distutils.command.build_ext import build_ext
 
 import util
 

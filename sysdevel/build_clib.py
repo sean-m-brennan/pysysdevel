@@ -20,8 +20,11 @@
 #**************************************************************************
 
 import os
-from numpy.distutils.command.build_clib import build_clib as old_build_clib
-from numpy.distutils.misc_util import get_numpy_include_dirs
+
+try:
+    from numpy.distutils.command.build_clib import build_clib as old_build_clib
+except:
+    from distutils.command.build_clib import build_clib as old_build_clib
 
 
 class build_clib(old_build_clib):

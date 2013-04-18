@@ -21,7 +21,11 @@ Utilities for finding prerequisities
 
 import os
 import sys
-from numpy.distutils.command.build_ext import build_ext
+
+try:
+    from numpy.distutils.command.build_ext import build_ext
+except:
+    from distutils.command.build_ext import build_ext
 
 import util
 

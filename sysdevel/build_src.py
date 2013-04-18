@@ -24,7 +24,11 @@ import sys
 import shutil
 import glob
 import subprocess
-from numpy.distutils.command.build_src import build_src as _build_src
+
+try:
+    from numpy.distutils.command.build_src import build_src as _build_src
+except:
+    from distutils.command.build_src import build_src as _build_src
 
 import util
 

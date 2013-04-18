@@ -19,8 +19,13 @@
 # 
 #**************************************************************************
 
-from numpy.distutils.command.build_clib import *
-from numpy.distutils.misc_util import get_numpy_include_dirs
+have_numpy = False
+try:
+    from numpy.distutils.command.build_clib import *
+    from numpy.distutils.misc_util import get_numpy_include_dirs
+    have_numpy = True
+except:
+    from distutils.command.build_clib import *
 
 
 class build_exe(build_clib):
@@ -77,7 +82,7 @@ class build_exe(build_clib):
         self.compiler.customize_cmd(self)
         self.compiler.show_customization()
 
-        if self.have_f_sources():
+        if have_numpy and self.have_f_sources():
             from numpy.distutils.fcompiler import new_fcompiler
             self.fcompiler = new_fcompiler(compiler=self.fcompiler,
                                            verbose=self.verbose,
@@ -157,6 +162,7 @@ class build_exe(build_clib):
                 log.info("building '%s' library", exe.name)
 
             """ 
+            if have_numpy:
             config_fc = exe.config_fc or {}
             if fcompiler is not None and config_fc:
                 log.info('using additional config_fc from setup script '\
@@ -187,7 +193,8 @@ class build_exe(build_clib):
                 include_dirs = []
             extra_postargs = exe.extra_compile_args or []
 
-            include_dirs.extend(get_numpy_include_dirs())
+            if have_numpy:
+                include_dirs.extend(get_numpy_include_dirs())
             # where compiled F90 module files are:
             module_dirs = exe.module_dirs or []
             module_build_dir = os.path.dirname(lib_file)

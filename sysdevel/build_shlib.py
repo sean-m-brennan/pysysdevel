@@ -19,8 +19,13 @@
 # 
 #**************************************************************************
 
-from numpy.distutils.command.build_clib import *
-from numpy.distutils.misc_util import get_numpy_include_dirs
+have_numpy = False
+try:
+    from numpy.distutils.command.build_clib import *
+    from numpy.distutils.misc_util import get_numpy_include_dirs
+    have_numpy = True
+except:
+    from distutils.command.build_clib import *
 
 from util import convert_ulist
 
@@ -138,40 +143,41 @@ class build_shlib(build_clib):
         else:
             log.info("building '%s' library", lib_name)
 
-        config_fc = build_info.get('config_fc',{})
-        if fcompiler is not None and config_fc:
-            log.info('using additional config_fc from setup script '\
-                     'for fortran compiler: %s' \
-                     % (config_fc,))
-            from numpy.distutils.fcompiler import new_fcompiler
-            fcompiler = new_fcompiler(compiler=fcompiler.compiler_type,
-                                      verbose=self.verbose,
-                                      dry_run=self.dry_run,
-                                      force=self.force,
-                                      requiref90=requiref90,
-                                      c_compiler=self.compiler)
-            if fcompiler is not None:
-                dist = self.distribution
-                base_config_fc = dist.get_option_dict('config_fc').copy()
-                base_config_fc.update(config_fc)
-                fcompiler.customize(base_config_fc)
+        if have_numpy:
+            config_fc = build_info.get('config_fc',{})
+            if fcompiler is not None and config_fc:
+                log.info('using additional config_fc from setup script '\
+                             'for fortran compiler: %s' \
+                             % (config_fc,))
+                from numpy.distutils.fcompiler import new_fcompiler
+                fcompiler = new_fcompiler(compiler=fcompiler.compiler_type,
+                                          verbose=self.verbose,
+                                          dry_run=self.dry_run,
+                                          force=self.force,
+                                          requiref90=requiref90,
+                                          c_compiler=self.compiler)
+                if fcompiler is not None:
+                    dist = self.distribution
+                    base_config_fc = dist.get_option_dict('config_fc').copy()
+                    base_config_fc.update(config_fc)
+                    fcompiler.customize(base_config_fc)
 
-        # check availability of Fortran compilers
-        if (f_sources or fmodule_sources) and fcompiler is None:
-            ver = '77'
-            if requiref90:
-                ver = '90'
-            raise DistutilsError, "library %s has Fortran%s sources"\
-                  " but no Fortran compiler found" % (lib_name, ver)
+            # check availability of Fortran compilers
+            if (f_sources or fmodule_sources) and fcompiler is None:
+                ver = '77'
+                if requiref90:
+                    ver = '90'
+                raise DistutilsError, "library %s has Fortran%s sources"\
+                    " but no Fortran compiler found" % (lib_name, ver)
 
-        print 'Moving on'
         macros = build_info.get('macros')
         include_dirs = build_info.get('include_dirs')
         if include_dirs is None:
             include_dirs = []
         extra_postargs = build_info.get('extra_compiler_args') or []
 
-        include_dirs.extend(get_numpy_include_dirs())
+        if have_numpy:
+            include_dirs.extend(get_numpy_include_dirs())
         # where compiled F90 module files are:
         module_dirs = build_info.get('module_dirs') or []
         module_build_dir = os.path.dirname(lib_file)

@@ -22,7 +22,10 @@
 import os
 import util
 
-from numpy.distutils.command.install_data import install_data as old_data
+try:
+    from numpy.distutils.command.install_data import install_data as old_data
+except:
+    from distutils.command.install_data import install_data as old_data
 
 
 class install_data(old_data):

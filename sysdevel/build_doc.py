@@ -26,8 +26,12 @@ import glob
 import shutil
 import platform
 import subprocess
-from numpy.distutils.command.build_ext import build_ext
 from distutils import dir_util
+
+try:
+    from numpy.distutils.command.build_ext import build_ext
+except:
+    from distutils.command.build_ext import build_ext
 
 import util
 

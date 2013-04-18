@@ -24,8 +24,13 @@ import sys
 import shutil
 import glob
 import subprocess
-from numpy.distutils.command.build_py import build_py as _build_py
+
 from types import *
+
+try:
+    from numpy.distutils.command.build_py import build_py as _build_py
+except:
+    from distutils.command.build_py import build_py as _build_py
 
 import util
 
