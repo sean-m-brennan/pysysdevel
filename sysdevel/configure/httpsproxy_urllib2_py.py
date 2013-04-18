@@ -34,15 +34,10 @@ def is_installed(environ, version):
     global urllib_patch_found
     pyver = get_python_version()
     if pyver[0] == '2' and (pyver[1] == '4' or pyver[1] == '5'):
-        try:
-            import urllib2
-            ver = urllib2.__version__  #FIXME test for patch presence
-            if compare_versions(ver, version) == -1:
-                return urllib_patch_found
-            urllib_patch_found = True
-        except:
-            pass
-    else:  ## not needed for python 2.6+
+        ## Cannot detect if this is already present, install regardless
+        urllib_patch_found = False
+    else:
+        ## Not needed for Python 2.6+
         urllib_patch_found = True
     return urllib_patch_found
 
