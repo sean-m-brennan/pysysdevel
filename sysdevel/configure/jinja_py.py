@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-If we're running Python 2.4/5, pull this patched urllib2. 
+Find Jinja
 """
 #**************************************************************************
 # 
@@ -20,12 +20,12 @@ If we're running Python 2.4/5, pull this patched urllib2.
 # 
 #**************************************************************************
 
-import sys
+import os
 
 from sysdevel.util import *
 
 environment = dict()
-urllib_patch_found = False
+jinja_found = False
 
 
 def null():
@@ -33,40 +33,25 @@ def null():
 
 
 def is_installed(environ, version):
-    global urllib_patch_found
-    if sys.version_info < (2, 6):
-        ## Cannot detect if this is already present
-        urllib_patch_found = False
-    else:
-        ## Not needed for Python 2.6+
-        urllib_patch_found = True
-    return urllib_patch_found
+    global environment, jinja_found
+    try:
+        import jinja2
+        ver = jinja2.__version__
+        if compare_versions(ver, version) == -1:
+            return jinja_found
+        jinja_found = True
+    except:
+        pass
+    return jinja_found
 
 
 def install(environ, version, locally=True):
-    global urllib_patch_found
-    if not urllib_patch_found:
-        website = 'http://pypi.python.org/packages/source/h/httpsproxy_urllib2/'
+    if not jinja_found:
+        website = 'https://pypi.python.org/packages/source/J/Jinja2/'
         if version is None:
-            version = '1.0'
-        src_dir = 'httpsproxy_urllib2-' + str(version)
+            version = '2.6'
+        src_dir = 'Jinja2-' + str(version)
         archive = src_dir + '.tar.gz' 
         install_pypkg(src_dir, website, archive, locally=locally)
-        urllib_patch_found = True
-        reload(urllib2)
-        reload(httplib)
-        ## Don't check / can't detect
-        ## Also need to update setuptools, if present
-        """
-        try:
-            import setuptools
-        except:
-            pass
-        if 'setuptools' in sys.modules:
-            website = 'http://pypi.python.org/packages/source/s/setuptools/'
-            version = '0.6c11'
-            src_dir = 'setuptools-' + str(version)
-            archive = src_dir + '.tar.gz' 
-            install_pypkg(src_dir, website, archive, locally=locally)
-            reload(setuptools)
-            """
+        if not is_installed(environ, version):
+            raise Exception('Jinja installation failed.')

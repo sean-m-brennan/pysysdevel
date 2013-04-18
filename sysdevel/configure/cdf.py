@@ -110,10 +110,10 @@ def install(environ, version, locally=True):
                 mingw_check_call(environ, ['make',
                                            'INSTALLDIR=' + prefix, 'install'])
             else:
-                subprocess.check_call(['make',
+                check_call(['make',
                                        'OS=' + oper_sys, 'ENV=gnu', 'all'])
                 if locally:
-                    subprocess.check_call(['make', 'INSTALLDIR=' + prefix,
+                    check_call(['make', 'INSTALLDIR=' + prefix,
                                            'install'])
                 else:
                     admin_check_call(['make', 'INSTALLDIR=' + prefix,

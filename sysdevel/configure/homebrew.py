@@ -36,18 +36,18 @@ def install(environ, version, locally=True):
     if not 'darwin' in platform.system().lower():
         return
     if not homebrew_found:
-        subprocess.check_call('ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"')
-        subprocess.check_call(['brew', 'doctor'])
-        subprocess.check_call(['brew', 'install', 'git'])
+        check_call('ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"')
+        check_call(['brew', 'doctor'])
+        check_call(['brew', 'install', 'git'])
         for repo in repositories:
-            subprocess.check_call(['brew', 'tap', repo])
-        subprocess.check_call(['brew', 'install', 'python', '--universal',
+            check_call(['brew', 'tap', repo])
+        check_call(['brew', 'install', 'python', '--universal',
                                '--framework'])
-        subprocess.check_call([pip_executable(), 'install', 'numpy'])
-        subprocess.check_call([pip_executable(), 'install', 'distribute'])
-        subprocess.check_call(['brew', 'install', 'sip'])
-        subprocess.check_call(['brew', 'install', 'pyqt'])
-        subprocess.check_call([pip_executable(), 'install', 'py2app'])
+        check_call([pip_executable(), 'install', 'numpy'])
+        check_call([pip_executable(), 'install', 'distribute'])
+        check_call(['brew', 'install', 'sip'])
+        check_call(['brew', 'install', 'pyqt'])
+        check_call([pip_executable(), 'install', 'py2app'])
         switch_python()
 
 

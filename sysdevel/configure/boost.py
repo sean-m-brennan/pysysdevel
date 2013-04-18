@@ -42,7 +42,7 @@ def null():
 def is_installed(environ, version):
     global environment, boost_found
     if version is None:
-        required_version = '1_33'
+        required_version = '1_44_0'
     else:
         required_version = version.replace('.', '_')
 
@@ -101,7 +101,12 @@ def install(environ, version, locally=True):
     if not boost_found:
         if version is None:
             version = '1_44_0'
-        website = ('http://prdownloads.sourceforge.net/boost/',)
+        if '.' in version:
+            version = version.replace('.', '_')
+        if len(version.split('_')) < 3:
+            version += '_0'
+        website = ('http://downloads.sourceforge.net/project/boost/',
+                   'boost/' + version.replace('_', '.') + '/')
         if locally or 'windows' in platform.system().lower():
             src_dir = 'boost_' + str(version)
             archive = src_dir + '.tar.bz2'
@@ -135,8 +140,8 @@ def install(environ, version, locally=True):
                 if status != 0:
                     raise subprocess.CalledProcessError(status, cmd_line)
             else:
-                subprocess.check_call(['./bootstrap.sh'])
-                subprocess.check_call(['./bjam', 'install', '--prefix='+prefix])
+                check_call(['./bootstrap.sh'])
+                check_call(['./bjam', 'install', '--prefix='+prefix])
             os.chdir(here)
         else:
             global_install('Boost', website,

@@ -115,9 +115,9 @@ def install(environ, version, locally=True):
 
             here = os.path.abspath(os.getcwd())
             os.chdir(build_dir)
-            subprocess.check_call(['./Configure', '-des', '-Dprefix=' + prefix])
-            subprocess.check_call(['make'])
-            subprocess.check_call(['make', 'install'])
+            check_call(['./Configure', '-des', '-Dprefix=' + prefix])
+            check_call(['make'])
+            check_call(['make', 'install'])
             os.chdir(here)
         else:
             if 'darwin' in platform.system().lower():

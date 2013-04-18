@@ -58,8 +58,7 @@ def install(environ, version, locally=True):
             if not os.path.exists(os.path.join(here, download_dir, src_dir)):
                 os.chdir(download_dir)
                 gitsite = 'https://github.com/gccxml/gccxml.git'
-                subprocess.check_call([environ['GIT'], 'clone', gitsite,
-                                       src_dir])
+                check_call([environ['GIT'], 'clone', gitsite, src_dir])
                 os.chdir(here)
             build_dir = os.path.join(download_dir, src_dir, '_build')
             mkdir(build_dir)
@@ -76,10 +75,10 @@ def install(environ, version, locally=True):
                 config_cmd = [environ['CMAKE'], '..',
                               '-G', 'Unix Makefiles',
                               '-DCMAKE_INSTALL_PREFIX=' + prefix]
-                subprocess.check_call(config_cmd)
-                subprocess.check_call(['make'])
+                check_call(config_cmd)
+                check_call(['make'])
                 if locally:
-                    subprocess.check_call(['make', 'install'])
+                    check_call(['make', 'install'])
                 else:
                     admin_check_call(['make', 'install'])
             os.chdir(here)

@@ -19,27 +19,48 @@ Custom extensions and setup
 # 
 #**************************************************************************
 
-try:
-    ## Must be first (get the monkeypatching out of the way)
-    import setuptools
-except:
-    pass
-
 import sys
+
+if True: #sys.version_info > (2, 5):
+    try:
+        # Must be first (get the monkeypatching out of the way)
+        import setuptools
+    except:
+        pass  # setuptools plus earlier python do not mix well
+
 import shutil
 import os
 import platform
 import subprocess
 
-from numpy.distutils import extension as old_extension
-from numpy.distutils.numpy_distribution import NumpyDistribution
-from numpy.distutils.command.build import build as old_build
-from numpy.distutils.command.config_compiler import config_cc as old_config_cc
-from numpy.distutils.command.config_compiler import config_fc as old_config_fc
-from numpy.distutils.core import Extension
-from numpy.distutils.command.install import install as old_install
+have_numpy = False
+try:
+    from numpy.distutils import extension as old_extension
+    from numpy.distutils.numpy_distribution import NumpyDistribution as Distribution
+    from numpy.distutils.command.build import build as old_build
+    from numpy.distutils.command.config_compiler import config_cc as old_config_cc
+    from numpy.distutils.command.config_compiler import config_fc as old_config_fc
+    from numpy.distutils.core import Extension
+    from numpy.distutils.command.install import install as old_install
+    from numpy.distutils.command import config, build_ext, sdist, \
+         install_headers, bdist_rpm, scons
+    have_numpy = True
+    
+except ImportError, e:
+    print 'NumPy not found. Failover to distutils alone.'
+    from distutils import extension as old_extension
+    from distutils.dist import Distribution
+    from distutils.command.build import build as old_build
+    from distutils.command.config_compiler import config_cc as old_config_cc
+    from distutils.core import Extension
+    from distutils.command.install import install as old_install
+    from distutils.command import config, build_ext, sdist, \
+         install_headers, bdist_rpm
+
 from distutils.command.clean import clean as old_clean
 from distutils.core import Command
+from distutils import log
+
 
 import util
 
@@ -147,7 +168,7 @@ class PyPlusPlusExtension(old_extension.Extension):
 
 
 class Executable(old_extension.Extension):
-    ## make sure it matches numpy extension signature
+    ## make sure it matches extension signature
     def __init__(self, name, sources,
                  include_dirs=None,
                  define_macros=None,
@@ -178,9 +199,9 @@ class Executable(old_extension.Extension):
 
 ############################################################
 
-class CustomDistribution(NumpyDistribution):
+class CustomDistribution(Distribution):
     '''
-    Subclass NumpyDistribution to support new commands
+    Subclass Distribution to support new commands
     '''
     def __init__(self, attrs=None):
         old_attrs = attrs
@@ -264,14 +285,14 @@ class CustomDistribution(NumpyDistribution):
         self.isapi = attrs.pop("isapi", [])
         self.zipfile = attrs.pop("zipfile", util.default_py2exe_library)
 
-        NumpyDistribution.__init__(self, old_attrs)
+        Distribution.__init__(self, old_attrs)
 
     def has_scripts(self):
-        return NumpyDistribution.has_scripts(self) or \
+        return Distribution.has_scripts(self) or \
             (self.create_scripts != None and len(self.create_scripts) > 0)
 
     def has_c_libraries(self):
-        return NumpyDistribution.has_c_libraries(self) or self.has_shared_libs()
+        return Distribution.has_c_libraries(self) or self.has_shared_libs()
 
     def has_shared_libs(self):
         return (self.sh_libraries != None and len(self.sh_libraries) > 0) or \
@@ -370,11 +391,7 @@ def process_subpackages(parallel, fnctn, build_base, subpackages,
 
 class build(old_build):
     '''
-    Subclass numpy build command to support new commands.
-    Order is important: numpy, distutils, the rest.
-    build_doc MUST be last.
-    Assumes commands from build.build: build_py, build_clib, build_ext,
-      build_scripts
+    Subclass build command to support new commands.
     '''
     def has_pure_modules(self):
         return self.distribution.has_pure_modules() or \
@@ -457,9 +474,7 @@ class build(old_build):
 
 class install(old_install):
     '''
-    Subclass numpy build command to support new commands.
-    Order is important: numpy, my build_shlib, distutils, the rest.
-    build_doc MUST be last.
+    Subclass install command to support new commands.
     '''
     def initialize_options (self):
         old_install.initialize_options(self)
@@ -515,7 +530,6 @@ class install(old_install):
             old_install.run(self)
 
 
-#from numpy.distutils.command.install_clib import install_clib
 class install_clib(Command):
     ''' Bypass unneeded call to numpy install_clib command '''
     def initialize_options(self):
@@ -525,8 +539,6 @@ class install_clib(Command):
     def run(self):
         pass
 
-
-from numpy.distutils import log
 
 class config_cc(old_config_cc):
     def finalize_options(self):
@@ -558,58 +570,60 @@ class config_cc(old_config_cc):
                     if getattr(c,a) is None: setattr(c, a, v1)
         return
 
+if old_config_fc:
+    class config_fc(old_config_fc):
+        def initialize_options(self):
+            old_config_fc.initialize_options(self)
+            try:
+                old_ldflags = os.environ['LDFLAGS']
+            except:
+                old_ldflags = ''
+            if not 'darwin' in platform.system().lower():
+                os.environ['LDFLAGS'] = old_ldflags + ' -shared'
 
-class config_fc(old_config_fc):
-    def initialize_options(self):
-        old_config_fc.initialize_options(self)
-        try:
-            old_ldflags = os.environ['LDFLAGS']
-        except:
-            old_ldflags = ''
-        if not 'darwin' in platform.system().lower():
-            os.environ['LDFLAGS'] = old_ldflags + ' -shared'
+        def finalize_options(self):
+            if 'windows' in platform.system().lower():
+                self.noopt = True
+                self.debug = True
 
-    def finalize_options(self):
-        if 'windows' in platform.system().lower():
-            self.noopt = True
-            self.debug = True
-
-        ''' Perhaps not necessary?
-        if ((self.f77exec is None and self.f90exec is None) or \
+            """ Perhaps not necessary?
+            if ((self.f77exec is None and self.f90exec is None) or \
                 'gfortran' in self.f77exec or 'gfortran' in self.f90exec) and \
                 'darwin' in platform.system().lower():
-            ## Unify GCC and GFortran default outputs
-            if util.gcc_is_64bit():
-                os.environ['FFLAGS'] = '-arch x86_64'
-                os.environ['FCFLAGS'] = '-arch x86_64'
-            else:
-                os.environ['FFLAGS'] = '-arch i686'
-                os.environ['FCFLAGS'] = '-arch i686'
-                '''
+                ## Unify GCC and GFortran default outputs
+                if util.gcc_is_64bit():
+                    os.environ['FFLAGS'] = '-arch x86_64'
+                    os.environ['FCFLAGS'] = '-arch x86_64'
+                else:
+                    os.environ['FFLAGS'] = '-arch i686'
+                    os.environ['FCFLAGS'] = '-arch i686'
+                """
 
-        ## the rest is nearly identical to that in the numpy original
-        log.info('unifing config_fc, config, build_clib, build_shlib, build_ext, build commands --fcompiler options')
-        build_clib = self.get_finalized_command('build_clib')
-        build_shlib = self.get_finalized_command('build_shlib')
-        build_ext = self.get_finalized_command('build_ext')
-        config = self.get_finalized_command('config')
-        build = self.get_finalized_command('build')
-        cmd_list = [self, config, build_clib, build_shlib, build_ext, build]
-        for a in ['fcompiler']:
-            l = []
-            for c in cmd_list:
-                v = getattr(c,a)
-                if v is not None:
-                    if not isinstance(v, str): v = v.compiler_type
-                    if v not in l: l.append(v)
-            if not l: v1 = None
-            else: v1 = l[0]
-            if len(l)>1:
-                log.warn('  commands have different --%s options: %s'\
-                         ', using first in list as default' % (a, l))
-            if v1:
+            ## the rest is nearly identical to that in the numpy original
+            log.info('unifing config_fc, config, build_clib, build_shlib, ' +
+                     'build_ext, build commands --fcompiler options')
+            build_clib = self.get_finalized_command('build_clib')
+            build_shlib = self.get_finalized_command('build_shlib')
+            build_ext = self.get_finalized_command('build_ext')
+            config = self.get_finalized_command('config')
+            build = self.get_finalized_command('build')
+            cmd_list = [self, config,
+                        build_clib, build_shlib, build_ext, build]
+            for a in ['fcompiler']:
+                l = []
                 for c in cmd_list:
-                    if getattr(c,a) is None: setattr(c, a, v1)
+                    v = getattr(c,a)
+                    if v is not None:
+                        if not isinstance(v, str): v = v.compiler_type
+                        if v not in l: l.append(v)
+                if not l: v1 = None
+                else: v1 = l[0]
+                if len(l)>1:
+                    log.warn('  commands have different --%s options: %s'\
+                             ', using first in list as default' % (a, l))
+                if v1:
+                    for c in cmd_list:
+                        if getattr(c,a) is None: setattr(c, a, v1)
 
 
 class clean(old_clean):
@@ -709,7 +723,7 @@ class test(Command):
                 util.create_testscript('test_' + pkg, units, outfile, pkg_dirs)
                 wrap = util.create_test_wrapper(outfile, build_dir, lib_dirs)
                 log.info('running unit tests for ' + pkg)
-                subprocess.check_call([wrap])
+                util.check_call([wrap])
 
 
 
@@ -741,11 +755,6 @@ except:
 import warnings
 import distutils.core
 import distutils.dist
-from numpy.distutils.misc_util import get_data_files, is_sequence, is_string
-from numpy.distutils.command import config, build_ext, sdist, \
-    install_headers, bdist_rpm, scons
-from numpy.distutils.core import _exit_interactive_session, _command_line_ok, \
-    _dict_append
 
 import build_doc
 import build_js
@@ -760,43 +769,50 @@ import install_data
 import install_lib
 import install_exe
 
-my_cmdclass = {'build':            build,
-               'build_src':        build_src.build_src,
-               'build_scripts':    build_scripts.build_scripts,
-               'config_cc':        config_cc,
-               'config_fc':        config_fc,
-               'config':           config.config,
-               'build_ext':        build_ext.build_ext,
-               'build_py':         build_py.build_py,
-               'build_clib':       build_clib.build_clib,
-               'build_shlib':      build_shlib.build_shlib,
-               'build_js':         build_js.build_js,
-               'build_doc':        build_doc.build_doc,
-               'build_pypp_ext':   build_pypp_ext.build_pypp_ext,
-               'build_exe':        build_exe.build_exe,
-               'sdist':            sdist.sdist,
-               'scons':            scons.scons,
-               'install_exe':      install_exe.install_exe,
-               'install_lib':      install_lib.install_lib,
-               'install_clib':     install_clib,
-               'install_data':     install_data.install_data,
-               'install_headers':  install_headers.install_headers,
-               'install':          install,
-               'bdist_rpm':        bdist_rpm.bdist_rpm,
-               'clean':            clean,
-               'test':             test,
-               }
-if have_setuptools:
-    # Use our own versions of develop and egg_info to ensure that build_src is
-    # handled appropriately.
-    from numpy.distutils.command import develop, egg_info
-    my_cmdclass['bdist_egg'] = bdist_egg.bdist_egg
-    my_cmdclass['develop'] = develop.develop
-    my_cmdclass['easy_install'] = easy_install.easy_install
-    my_cmdclass['egg_info'] = egg_info.egg_info
+my_cmdclass = dict()
+my_cmdclass['build']            = build,
+my_cmdclass['build_src']        = build_src.build_src,
+my_cmdclass['build_scripts']    = build_scripts.build_scripts,
+my_cmdclass['config_cc']        = config_cc,
+my_cmdclass['config_fc']        = config_fc,
+my_cmdclass['config']           = config.config,
+my_cmdclass['build_ext']        = build_ext.build_ext,
+my_cmdclass['build_py']         = build_py.build_py,
+my_cmdclass['build_clib']       = build_clib.build_clib,
+my_cmdclass['build_shlib']      = build_shlib.build_shlib,
+my_cmdclass['build_js']         = build_js.build_js,
+my_cmdclass['build_doc']        = build_doc.build_doc,
+my_cmdclass['build_pypp_ext']   = build_pypp_ext.build_pypp_ext,
+my_cmdclass['build_exe']        = build_exe.build_exe,
+my_cmdclass['sdist']            = sdist.sdist,
+if have_numpy:
+    my_cmdclass['scons']        = scons.scons
+my_cmdclass['install_exe']      = install_exe.install_exe,
+my_cmdclass['install_lib']      = install_lib.install_lib,
+my_cmdclass['install_clib']     = install_clib,
+my_cmdclass['install_data']     = install_data.install_data,
+my_cmdclass['install_headers']  = install_headers.install_headers,
+my_cmdclass['install']          = install,
+my_cmdclass['bdist_rpm']        = bdist_rpm.bdist_rpm,
+my_cmdclass['clean']            = clean,
+my_cmdclass['test']             = test,
 
+
+if have_setuptools:
+    if have_numpy:
+        # Use our own versions of develop and egg_info to ensure that build_src
+        # is handled appropriately.
+        from numpy.distutils.command import develop, egg_info
+        
+    my_cmdclass['bdist_egg']    = bdist_egg.bdist_egg
+    if have_numpy:
+        my_cmdclass['develop']  = develop.develop
+    my_cmdclass['easy_install'] = easy_install.easy_install
+    #if have_numpy:
+    #    my_cmdclass['egg_info'] = egg_info.egg_info
+    
 if allows_py2app:
-    my_cmdclass['py2app'] = py2app
+    my_cmdclass['py2app']       = py2app
 
 
 def get_distribution(always=False):
@@ -816,13 +832,15 @@ def get_distribution(always=False):
 
 
 def setup(**attr):
-    if len(sys.argv)<=1 and not attr.get('script_args',[]):
-        from numpy.distutils.interactive import interactive_sys_argv
-        import atexit
-        atexit.register(_exit_interactive_session)
-        sys.argv[:] = interactive_sys_argv(sys.argv)
-        if len(sys.argv)>1:
-            return setup(**attr)
+    if have_numpy:
+        if len(sys.argv)<=1 and not attr.get('script_args',[]):
+            from numpy.distutils.interactive import interactive_sys_argv
+            from numpy.distutils.core import _exit_interactive_session
+            import atexit
+            atexit.register(_exit_interactive_session)
+            sys.argv[:] = interactive_sys_argv(sys.argv)
+            if len(sys.argv)>1:
+                return setup(**attr)
 
     cmdclass = my_cmdclass.copy()
 
@@ -831,29 +849,32 @@ def setup(**attr):
         cmdclass.update(new_attr['cmdclass'])
     new_attr['cmdclass'] = cmdclass
 
-    if 'configuration' in new_attr:
-        # To avoid calling configuration if there are any errors
-        # or help request in command in the line.
-        configuration = new_attr.pop('configuration')
+    if have_numpy:
+        from numpy.distutils.core import _command_line_ok, _dict_append
 
-        old_dist = distutils.core._setup_distribution
-        old_stop = distutils.core._setup_stop_after
-        distutils.core._setup_distribution = None
-        distutils.core._setup_stop_after = "commandline"
-        try:
-            dist = setup(**new_attr)
-        finally:
-            distutils.core._setup_distribution = old_dist
-            distutils.core._setup_stop_after = old_stop
-        if dist.help or not _command_line_ok():
-            # probably displayed help, skip running any commands
-            return dist
+        if 'configuration' in new_attr:
+            # To avoid calling configuration if there are any errors
+            # or help request in command in the line.
+            configuration = new_attr.pop('configuration')
 
-        # create setup dictionary and append to new_attr
-        config = configuration()
-        if hasattr(config,'todict'):
-            config = config.todict()
-        _dict_append(new_attr, **config)
+            old_dist = distutils.core._setup_distribution
+            old_stop = distutils.core._setup_stop_after
+            distutils.core._setup_distribution = None
+            distutils.core._setup_stop_after = "commandline"
+            try:
+                dist = setup(**new_attr)
+            finally:
+                distutils.core._setup_distribution = old_dist
+                distutils.core._setup_stop_after = old_stop
+            if dist.help or not _command_line_ok():
+                # probably displayed help, skip running any commands
+                return dist
+
+            # create setup dictionary and append to new_attr
+            config = configuration()
+            if hasattr(config,'todict'):
+                config = config.todict()
+            _dict_append(new_attr, **config) #FIXME
 
     # Move extension source libraries to libraries
     libraries = []
@@ -861,11 +882,11 @@ def setup(**attr):
         new_libraries = []
         for item in ext.libraries:
             [item] = util.convert_ulist([item])
-            if is_sequence(item):
+            if util.is_sequence(item):
                 lib_name, build_info = item
                 _check_append_ext_library(libraries, item)
                 new_libraries.append(lib_name)
-            elif is_string(item):
+            elif util.is_string(item):
                 new_libraries.append(item)
             else:
                 raise TypeError("invalid description of extension module "

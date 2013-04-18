@@ -52,7 +52,7 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     other required software is installed.
     Install missing prerequisites that have an installer defined.
     '''
-    util.read_cache()
+    read = util.read_cache()
     skip = False
     for idx, arg in enumerate(sys.argv[:]):
         if arg.startswith('clean'):
@@ -66,7 +66,10 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
                          'You are running version ' + pyver)
 
     if not quiet:
-        sys.stdout.write('CONFIGURE \n')
+        sys.stdout.write('CONFIGURE  ')
+        if read:
+            sys.stdout.write('(from cache)')
+        sys.stdout.write('\n')
     environment = dict()
     environment['PACKAGE_VERSION'] = version
 

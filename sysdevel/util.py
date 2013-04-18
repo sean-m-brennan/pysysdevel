@@ -101,6 +101,8 @@ def read_cache():
         cached = json.load(cache)
         local_search_paths += cached['local_search_paths']
         cache.close()
+        return len(local_search_paths) > 0
+    return False
 
 def save_cache():
     cache_file = os.path.join(target_build_dir, '.cache')
@@ -122,6 +124,20 @@ def delete_cache():
 
 def sysdevel_support_path(filename):
     return os.path.join(os.path.dirname(__file__), 'support', filename)
+
+
+def is_string(item):
+    return isinstance(item, basestring)
+
+
+def is_sequence(seq):
+    if is_string(seq):
+        return False
+    try:
+        len(seq)
+    except:
+        return False
+    return True
 
 
 def convert_ulist(str_list):
@@ -854,7 +870,8 @@ def install_pyscript(website, name, locally=True):
         raise Exception('Unable to install ' + name + ': ' + str(e))
 
 
-def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True):
+def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
+                  patch=None):
     if src_dir is None:
         src_dir = name
     here = os.path.abspath(os.getcwd())
@@ -863,6 +880,9 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True):
 
     fetch(website, archive, archive)
     unarchive(archive, src_dir)
+    if patch:
+        patch(os.path.join(target_dir, src_dir))
+
     if VERBOSE:
         sys.stdout.write('PREREQUISITE ' + name + ' ')
     if not os.path.exists(target_lib_dir):
