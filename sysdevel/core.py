@@ -32,6 +32,7 @@ import shutil
 import os
 import platform
 import subprocess
+import glob
 
 from distutils.core import Command
 from distutils.command.clean import clean as old_clean
@@ -389,11 +390,22 @@ class install(old_install):
 
 
 class sdist(old_sdist):
-    def add_defaults (self):
-        old_sdist.add_defaults(self)
-        #print "INSIDE SDIST " + os.getcwd() FIXME *not* running
-        if os.path.exists('third_party'):
-            self.filelist.extend(glob.glob('third_party/*'))
+    def get_file_list (self):
+        old_sdist.get_file_list(self)
+        self.filelist.extend(glob.glob('third_party/*'))
+
+    def run (self):
+        ## Bizarrely, the following simply does not work
+        ## old_sdist.run(self)
+        ## Therefore:
+        from distutils.filelist import FileList
+        self.filelist = FileList()
+        self.check_metadata()
+        self.get_file_list()
+        if self.manifest_only:
+            return
+        self.make_distribution()
+        
 
 
 class clean(old_clean):
