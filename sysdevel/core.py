@@ -389,9 +389,11 @@ class install(old_install):
 
 
 class sdist(old_sdist):
-    def run(self):
-        #FIXME sdist include third_party dir and pysysdevel dir
-        old_sdist.run(self)
+    def add_defaults (self):
+        old_sdist.add_defaults(self)
+        #print "INSIDE SDIST " + os.getcwd() FIXME *not* running
+        if os.path.exists('third_party'):
+            self.filelist.extend(glob.glob('third_party/*'))
 
 
 class clean(old_clean):

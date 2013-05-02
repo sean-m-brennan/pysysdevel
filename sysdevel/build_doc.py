@@ -70,8 +70,11 @@ class build_doc(build_ext):
 
         ## Make sure that sources are complete in build_lib.
         self.run_command('build_src')
+        ## Ditto extensions
+        self.run_command('build_ext')
 
         build = self.get_finalized_command('build')
+        buildpy = self.get_finalized_command('build_py')
         target = os.path.abspath(os.path.join(build.build_base, 'http'))
         util.mkdir(target)
         build_verbose = self.distribution.verbose
@@ -106,8 +109,14 @@ class build_doc(build_ext):
                                 reprocess = True
                                 break
             if reprocess:
-                bld_dir = os.path.abspath(self.build_lib)
+                src_dirs = []
+                for package in buildpy.packages:
+                    # Locate package source directory
+                    src_dirs.append(os.path.abspath(buildpy.get_package_dir(package)))
+                #FIXME rst files in package sources (mutiple packages)
+                #src_dir = src_dirs[0]
                 src_dir = os.path.abspath('.')
+                bld_dir = os.path.abspath(self.build_lib)
                 doc_bld_dir = os.path.join(bld_dir,
                                            os.path.relpath(doc_dir, src_dir))
                 environ['BUILD_DIR'] = bld_dir
@@ -123,7 +132,7 @@ class build_doc(build_ext):
                                    excludes=['.svn', 'CVS', '.git', '.hg*'])
 
                 ## Configure rst files
-                util.configure_files(environ, doc_dir, '*.rst', working_dir)
+                util.configure_files(environ, src_dir, '*.rst', working_dir)
 
                 if os.path.exists(os.path.join(doc_dir, dext.doxygen_cfg)):
                     ## Doxygen + breathe

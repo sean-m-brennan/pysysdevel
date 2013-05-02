@@ -34,7 +34,8 @@ class pkg_config(object):
     (eg. 'pkg = subclass_config(...)').
     '''
     def __init__(self, name, package_tree,
-                 pkg_id, version, author, company, copyright, srcs, runscripts,
+                 pkg_id, version, author, email, website, company,
+                 copyright, srcs, runscripts,
                  data_files=[], extra_data=[], req_pkgs=[], dyn_mods=[],
                  extra_pkgs=[], extra_libs=[], environ=dict(), prereq=[],
                  redistrib=[], img_dir='', build_dir='', description=''):
@@ -47,6 +48,8 @@ class pkg_config(object):
         self.RELEASE           = version
         self.COPYRIGHT         = copyright
         self.AUTHOR            = author
+        self.AUTHOR_CONTACT    = email
+        self.WEBSITE           = website
         self.COMPANY           = company
         self.ID                = pkg_id
         self.PACKAGE_TREE      = package_tree
