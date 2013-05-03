@@ -24,7 +24,6 @@ import os
 import sys
 from distutils.core import setup
 
-
 # Just in case we are being called from a different directory
 cwd = os.path.dirname(__file__)
 if cwd:
@@ -38,8 +37,9 @@ def main(argv=None):
     setup(name         = 'sysdevel',
           version      = '0.5.2',
           description  = 'Simulation and Model Development with Python',
+          author       = 'Sean M. Brennan',
+          author_email = 'brennan@lanl.gov',
           url          = 'https://github.com/pysysdevel',
-          requires     = ['numpy',],
           packages     = ['sysdevel', 'sysdevel.configure',],
           package_data = {'sysdevel': ['sphinx_conf.py.in',
                                        'win_postinstall.py.in',
