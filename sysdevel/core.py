@@ -20,13 +20,14 @@ Custom setup
 #**************************************************************************
 
 import sys
-
-if True: #sys.version_info > (2, 5):
+import sysdevel
+if sysdevel.using_setuptools and sys.version_info > (2, 5):
+    ## setuptools is broken in at least Python 2.4
     try:
-        # Must be first (get the monkeypatching out of the way)
+        ## Must be first (get the monkeypatching out of the way)
         import setuptools
     except:
-        pass  # setuptools plus earlier python do not mix well
+        pass
 
 import shutil
 import os
@@ -389,25 +390,6 @@ class install(old_install):
             old_install.run(self)
 
 
-class sdist(old_sdist):
-    def get_file_list (self):
-        old_sdist.get_file_list(self)
-        self.filelist.extend(glob.glob('third_party/*'))
-
-    def run (self):
-        ## Bizarrely, the following simply does not work
-        ## old_sdist.run(self)
-        ## Therefore:
-        from distutils.filelist import FileList
-        self.filelist = FileList()
-        self.check_metadata()
-        self.get_file_list()
-        if self.manifest_only:
-            return
-        self.make_distribution()
-        
-
-
 class clean(old_clean):
     def run(self):
         # Remove .pyc, .lreg and .sibling files
@@ -534,6 +516,39 @@ try:
     allows_py2app = True
 except:
     pass
+
+
+
+class sdist(old_sdist):
+    def extend_filelist (self):
+        self.filelist.extend(glob.glob('third_party/*'))
+
+    def run (self):
+        if have_setuptools:
+            self.run_command('egg_info')
+            ei_cmd = self.get_finalized_command('egg_info')
+            self.filelist = ei_cmd.filelist
+            self.filelist.append(os.path.join(ei_cmd.egg_info,'SOURCES.txt'))
+            self.extend_filelist()
+            self.check_readme()
+            self.check_metadata()
+            self.make_distribution()
+            dist_files = getattr(self.distribution,'dist_files',[])
+            for file in self.archive_files:
+                data = ('sdist', '', file)
+                if data not in dist_files:
+                    dist_files.append(data)
+        else:
+            from distutils.filelist import FileList
+            self.filelist = FileList()
+            self.check_metadata()
+            self.get_file_list()
+            self.extend_filelist()
+            if self.manifest_only:
+                return
+            self.make_distribution()
+
+
 
 import warnings
 import distutils.core

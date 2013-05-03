@@ -33,5 +33,11 @@ import os
 
 config_dir = os.path.join(os.path.dirname(__file__), 'configure')
 support_dir = os.path.join(os.path.dirname(__file__), 'support')
+using_setuptools = False
+
+def use_setuptools():
+    global using_setuptools
+    using_setuptools = True
 
 from configure import configure_system, FatalError
+

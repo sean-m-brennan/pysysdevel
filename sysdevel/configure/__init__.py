@@ -52,7 +52,7 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     other required software is installed.
     Install missing prerequisites that have an installer defined.
     '''
-    read = util.read_cache()
+    environment = util.read_cache()
     skip = False
     for idx, arg in enumerate(sys.argv[:]):
         if arg.startswith('clean'):
@@ -67,10 +67,9 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
 
     if not quiet:
         sys.stdout.write('CONFIGURE  ')
-        if read:
+        if len(environment):
             sys.stdout.write('(from cache)')
         sys.stdout.write('\n')
-    environment = dict()
     environment['PACKAGE_VERSION'] = version
 
     prerequisite_list.insert(0, 'httpsproxy_urllib2_py')
@@ -87,7 +86,7 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     for help_name in prerequisite_list:
         environment = __configure_package(environment, help_name,
                                           skip, install, quiet)
-    util.save_cache()
+    util.save_cache(environment)
 
     return environment
 

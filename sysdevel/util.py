@@ -100,11 +100,12 @@ def read_cache():
         cache = open(cache_file, 'rb')
         cached = json.load(cache)
         local_search_paths += cached['local_search_paths']
+        environ = cached['environment']
         cache.close()
-        return len(local_search_paths) > 0
-    return False
+        return environ
+    return dict()
 
-def save_cache():
+def save_cache(environ):
     cache_file = os.path.join(target_build_dir, '.cache')
     if not os.path.isdir(target_build_dir):
         if os.path.exists(target_build_dir):
@@ -113,6 +114,7 @@ def save_cache():
     cache = open(cache_file, 'wb')
     cached = dict()
     cached['local_search_paths'] = local_search_paths
+    cached['environment'] = environ
     json.dump(cached, cache)
     cache.close()
 
