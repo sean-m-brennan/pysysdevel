@@ -28,14 +28,13 @@ try:
     class config_fc(old_cfg_fc):
         def initialize_options(self):
             old_cfg_fc.initialize_options(self)
-            """ FIXME set this in build_shlib
             try:
                 old_ldflags = os.environ['LDFLAGS']
             except:
                 old_ldflags = ''
-            if not 'darwin' in platform.system().lower():
-                os.environ['LDFLAGS'] = old_ldflags + ' -shared'
-            """
+            #if not 'darwin' in platform.system().lower(): //FIXME ?
+            os.environ['LDFLAGS'] = old_ldflags + ' -shared'
+
 
         def finalize_options(self):
             """ Perhaps not necessary? (potential OSX problem)
