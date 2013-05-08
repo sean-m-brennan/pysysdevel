@@ -104,6 +104,7 @@ class pkg_config(object):
         self.environment['COPYRIGHT'] = self.COPYRIGHT
         self.environment['AUTHOR'] = self.AUTHOR
         self.environment['COMPANY'] = self.COMPANY
+        self.environment['COMPILER'] = 'gcc'
 
 
     def get_prerequisites(self, argv):
@@ -119,6 +120,7 @@ class pkg_config(object):
             elif compiler.startswith('msvc'):
                 self.prerequisites = ['msvc'] + self.prerequisites
             ## TODO error?
+            self.environment['COMPILER'] = compiler
         return self.prerequisites, argv
 
     def additional_env(self, envir):

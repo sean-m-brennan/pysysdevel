@@ -30,6 +30,12 @@ except:
 
 class config_cc(old_config_cc):
     def finalize_options(self):
+        ## force cached compiler
+        if 'windows' in platform.system().lower():
+            env = self.distribution.environment
+            if 'COMPILER' in env:
+                self.compiler = env['COMPILER'].encode('ascii', 'ignore')
+
         ## *nearly* identical to that in the numpy original
         log.info('unifing config_cc, config, build_clib, build_shlib, ' +
                  'build_ext, build commands --compiler options')
