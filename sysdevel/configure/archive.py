@@ -78,7 +78,7 @@ def install(environ, version, locally=True):
         if locally or 'windows' in platform.system().lower():
             src_dir = 'libarchive-' + str(version)
             archive = src_dir + '.tar.gz'
-            autotools_install(environ, website, archvie, src_dir, locally)
+            autotools_install(environ, website, archive, src_dir, locally)
         else:
             global_install('Archive', website,
                            brew='libarchive', port='libarchive',
