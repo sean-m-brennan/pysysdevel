@@ -25,3 +25,9 @@ def install(environ, version, locally=True):
     if not os.path.exists(os.path.join(js_dir, js_file)):
         fetch(website, js_file, js_file)
         shutil.copy(os.path.join(download_dir, js_file), js_dir)
+    ## mousewheel plugin by default
+    website = 'https://raw.github.com/brandonaaron/jquery-mousewheel/master/'
+    js_file = 'jquery.mousewheel.js'
+    if not os.path.exists(os.path.join(js_dir, js_file)):
+        fetch(website, js_file, js_file)
+        shutil.copy(os.path.join(download_dir, js_file), js_dir)

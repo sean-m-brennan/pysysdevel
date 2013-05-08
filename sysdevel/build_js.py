@@ -160,10 +160,10 @@ class build_js(build_ext):
                 if not os.path.exists(targetfile):
                     util.configure_file(environ, filepath, targetfile)
 
-            js_dnld_dir = os.path.join(build.build_base, util.javascript_dir)
-            if os.path.exists(js_dnld_dir):
-                for js in glob.glob(os.path.join(js_dnld_dir, '*.js')):
-                    shutil.copy(js, target)
+            js_dir = os.path.join(build.build_base, util.javascript_dir)
+            if os.path.exists(js_dir):
+                util.copy_tree(js_dir, os.path.join(target,
+                                                    util.javascript_dir))
 
             if not os.path.lexists(os.path.join(target, 'index.html')):
                 shutil.copyfile(os.path.join(target, wext.name + '.html'),
