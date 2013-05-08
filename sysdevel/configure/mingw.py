@@ -43,6 +43,10 @@ def null():
 def is_installed(environ, version):
     global environment, mingw_found
     set_debug(DEBUG)
+    if 'MSVC' in environ:
+        raise Exception('MinGW *and* MS Visual C both specified ' +
+                        'as the chosen compiler.')
+
     try:
         mingw_root = os.environ['MINGW_ROOT']
     except:

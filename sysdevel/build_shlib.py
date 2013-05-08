@@ -265,6 +265,7 @@ class build_shlib(build_clib):
         link_compiler = compiler
         if cxx_sources:
             link_compiler = cxx_compiler
+        extra_postargs = build_info.get('extra_link_args') or []
 
         ## Alternate ending
         link_compiler.link(

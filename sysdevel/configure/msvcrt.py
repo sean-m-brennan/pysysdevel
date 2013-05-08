@@ -1,5 +1,5 @@
 """
-Find/fetch msvcr.dll (required if linking to Python on Windows)
+Find/fetch msvcr??.dll (required if linking to Python on Windows)
 """
 
 import os, platform, sys
@@ -21,7 +21,7 @@ def is_installed(environ, version):
     global environment, msvcrt_found
     set_debug(DEBUG)
 
-    version, _, _ = _get_version()
+    version, _, _ = get_msvc_version()
     dot_ver = '.'.join(version)
     ver = ''.join(version)
 
@@ -72,7 +72,7 @@ def is_installed(environ, version):
 
 def install(environ, version, locally=True):
     if not msvcrt_found:
-        version, ms_id, name = _get_version()
+        version, ms_id, name = get_msvc_version()
         if ms_id:
             import webbrowser
             website = ('http://www.microsoft.com/en-us/download/',
@@ -86,30 +86,3 @@ def install(environ, version, locally=True):
         else:
             raise Exception('MSVC runtime included as part of the OS, ' +
                             'but not found.')
-        
-
-
-def _get_version():
-    py_version = get_python_version()
-    py_32bit = platform.architecture()[0] == '32bit'
-    name = ''
-    ms_id = None
-    version = ('',)
-    if py_version < ('2', '4'):
-        raise Exception('sysdevel only supports Python 2.4 and up')
-    if py_32bit:
-        if py_version <= ('2', '5'):
-            name = '.NET Framework version 1.1 redistributable package'
-            ms_id = '26'
-            version = ('7', '1')
-        else:
-            name = 'Visual C++ 2008 redistributable package (x86)'
-            ms_id = '29'
-            version = ('9', '0')
-    else:
-        if py_version >= ('2', '6'):
-            name = 'Visual C++ 2008 redistributable package (x64)'
-            ms_id = '15336'
-            version = ('9', '0')
-
-    return version, ms_id, name

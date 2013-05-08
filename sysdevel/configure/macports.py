@@ -41,13 +41,17 @@ def install(environ, version, locally=True):
                    '{"-L${prefix}/lib -Xlinker -headerpad_max_install_names"}')
         patch_file('/opt/local/etc/macports/macports.conf',
                    'build_arch  i386', '#', '')
+        log = open(os.path.join(target_build_dir, 'macports_setup.log'), 'w')
         admin_check_call(['port', 'install', 'python' + python_version,
-                          'python_select'])
+                          'python_select'], stdout=log, stderr=log)
         admin_check_call(['port', 'select', '--set', 'python',
-                          'python' + python_version])
-        admin_check_call(['port', 'install', 'py' + python_version + '-numpy'])
+                          'python' + python_version], stdout=log, stderr=log)
+        admin_check_call(['port', 'install', 'py' + python_version + '-numpy'],
+                         stdout=log, stderr=log)
         admin_check_call(['port', 'install',
-                          'py' + python_version + '-py2app-devel'])
+                          'py' + python_version + '-py2app-devel'],
+                         stdout=log, stderr=log)
+        log.close()
         switch_python()
 
 def port_prefix():

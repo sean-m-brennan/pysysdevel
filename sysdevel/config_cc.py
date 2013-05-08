@@ -30,11 +30,7 @@ except:
 
 class config_cc(old_config_cc):
     def finalize_options(self):
-        ## force specific compiler
-        if 'windows' in platform.system().lower():
-            self.compiler = 'mingw32'
-
-            # the rest is *nearly* identical to that in the numpy original
+        ## *nearly* identical to that in the numpy original
         log.info('unifing config_cc, config, build_clib, build_shlib, ' +
                  'build_ext, build commands --compiler options')
         build_clib = self.get_finalized_command('build_clib')

@@ -30,6 +30,9 @@ environment = dict()
 boost_found = False
 DEBUG = False
 
+if 'windows' in platform.system().lower():
+    DEPENDENCIES = ['mingw'] # FIXME msvc build also
+
 
 def null():
     global environment
@@ -69,6 +72,7 @@ def is_installed(environ, version):
         incl_dir = find_header(os.path.join('boost', 'version.hpp'),
                                base_dirs, ['boost-*'])
         lib_dir, libs = find_libraries('boost', base_dirs)
+        ## FIXME lib_dir is wrong in windows (maybe)
         boost_version = get_header_version(os.path.join(incl_dir, 'boost',
                                                         'version.hpp'),
                                            'BOOST_LIB_VERSION')
@@ -109,7 +113,7 @@ def install(environ, version, locally=True):
                    'boost/' + version.replace('_', '.') + '/')
         if locally or 'windows' in platform.system().lower():
             src_dir = 'boost_' + str(version)
-            archive = src_dir + '.tar.bz2'
+            archive = src_dir + '.tar.gz'
 
             here = os.path.abspath(os.getcwd())
             fetch(''.join(website), archive, archive)
@@ -123,25 +127,38 @@ def install(environ, version, locally=True):
                 prefix = global_prefix
 
             os.chdir(os.path.join(target_build_dir, src_dir))
+            log = open('build.log', 'w')
+            err = open('build.errors', 'w')
             ## unique build process
             if 'windows' in platform.system().lower():
                 os_environ = os.environ.copy()
-                os_environ['PATH'] += os.path.join(environ['MINGW_DIR'], 'bin') + ';'
-                os_environ['PATH'] += os.path.join(environ['MSYS_DIR'], 'bin') + ';'
+                new_path = os_environ['PATH'] + \
+                    os.path.join(environ['MINGW_DIR'], 'bin') + ';' + \
+                    os.path.join(environ['MSYS_DIR'], 'bin') + ';'
+                os_environ['PATH'] = new_path.encode('ascii', 'ignore')
                 cmd_line = 'bootstrap.bat mingw'
-                p = subprocess.Popen(cmd_line, env=os_environ)
+                #cmd_line = 'bootstrap.bat msvc'
+                p = subprocess.Popen(cmd_line, env=os_environ,
+                                     stdout=log, stderr=err)
                 status = p.wait()
                 if status != 0:
                     raise subprocess.CalledProcessError(status, cmd_line)
-                cmd_line = 'bjam install --build-type=complete --toolset=gcc ' + \
-                    '--prefix=' + environ['MSYS_DIR']
-                p = subprocess.Popen(cmd_line, env=os_environ)
+                toolset = 'toolset=gcc'
+                #toolset = 'toolset=msvc'
+                cmd_line = 'bjam.exe install link=shared link=static ' + \
+                    toolset + ' variant=release threading=single ' + \
+                    '--prefix=' + prefix
+                p = subprocess.Popen(cmd_line, env=os_environ,
+                                     stdout=log, stderr=err)
                 status = p.wait()
                 if status != 0:
                     raise subprocess.CalledProcessError(status, cmd_line)
             else:
-                check_call(['./bootstrap.sh'])
-                check_call(['./bjam', 'install', '--prefix='+prefix])
+                check_call(['./bootstrap.sh'], stdout=log, stderr=err)
+                check_call(['./bjam', 'install', '--prefix=' + prefix],
+                           stdout=log, stderr=err)
+            log.close()
+            err.close()
             os.chdir(here)
         else:
             global_install('Boost', website,

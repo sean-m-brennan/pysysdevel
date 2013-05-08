@@ -47,10 +47,7 @@ except ImportError:
     import simplejson as json
 
 
-default_path_prefixes = ['/usr', '/usr/local',
-                         '/opt/local',
-                         #FIXME nonstandard drives also
-                         'C:\\MinGW', 'C:\\MinGW\\msy\1.0',
+default_path_prefixes = ['/usr', '/usr/local', '/opt/local',
                          ] + glob.glob('C:\\Python*\\')
 
 download_file = ''
@@ -102,6 +99,8 @@ def read_cache():
         local_search_paths += cached['local_search_paths']
         environ = cached['environment']
         cache.close()
+        if len(local_search_paths) == 0:
+            local_search_paths = [os.path.abspath(target_build_dir)]
         return environ
     return dict()
 
@@ -264,11 +263,15 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
     of the given library. For Windows, it is important to not have a
     trailing path separator.
     '''
+    ## FIXME for Windows, separate definitions (*.dll.a, *.lib) from libs (*.dll, *.a)
     default_lib_paths = ['lib64', 'lib', '']
     suffixes = ['.so', '.a']
     prefixes = ['', 'lib']
+    definitions = []
     if 'windows' in platform.system().lower():
-        suffixes = ['.lib', '.a', '.dll']
+        def_suffixes = ['.dll.a', '.lib']
+        suffixes = ['.dll', '.a']
+        default_lib_paths.append('bin')
     if 'darwin' in platform.system().lower():
         suffixes += ['.dylib']
     subdirs = []
@@ -287,6 +290,17 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                     for root, dirnames, filenames in \
                             os.walk(os.path.join(path, subpath, sub)):
                         for prefix in prefixes:
+                            if 'windows' in platform.system().lower():
+                                for def_suffix in def_suffixes:
+                                    filename = prefix + name + '*' + def_suffix
+                                    if DEBUG:
+                                        print 'Searching ' + root + \
+                                            ' for ' + filename
+                                    libs = []
+                                    for fn in filenames:
+                                        if fnmatch.fnmatch(fn, filename):
+                                            definitions.append((root.rstrip(os.sep), fn))
+                                    #FIXME return to caller
                             for suffix in suffixes:
                                 filename = prefix + name + '*' + suffix
                                 if DEBUG:
@@ -306,7 +320,6 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                         print 'Found at ' + root
                                     return root.rstrip(os.sep), libs
     raise Exception(name + ' library not found.')
-
 
 def libraries_from_components(components, path):
     libs = []
@@ -348,7 +361,20 @@ def patch_file(filepath, match, original, replacement):
             if match in line:
                 line = line.replace(original, replacement)
             fixed.write(line)
-    
+
+
+def patch_c_only_header(filepath):
+    orig = open(filepath, 'r')
+    lines = orig.readlines()
+    orig.close()
+    shutil.move(filepath, filepath + '.orig')
+    fixed = open(filepath, 'w')
+    fixed.write('#ifdef __cplusplus\nextern "C" {\n#endif\n\n')
+    for line in lines:
+        fixed.write(line)
+    fixed.write('\n#ifdef __cplusplus\n}\n#endif\n')
+    fixed.close()
+ 
 
 def process_progress(p):
     max_dots = 10
@@ -989,20 +1015,22 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
     build_dir = os.path.join(target_build_dir, src_dir, '_build')
     mkdir(build_dir)
     os.chdir(build_dir)
+    log = open('build.log', 'w')
     if 'windows' in platform.system().lower():
         ## Assumes MinGW present, detected, and loaded in environment
         mingw_check_call(environ, ['../configure', '--prefix=' + prefix] +
-                         extra_cfg)
-        mingw_check_call(environ, ['make'])
-        mingw_check_call(environ, ['make', 'install'])
+                         extra_cfg, stdout=log, stderr=log)
+        mingw_check_call(environ, ['make'], stdout=log, stderr=log)
+        mingw_check_call(environ, ['make', 'install'], stdout=log, stderr=log)
     else:
-        check_call(['../configure', '--prefix=' + prefix] +
-                              extra_cfg)
-        check_call(['make'])
+        check_call(['../configure', '--prefix=' + prefix] + extra_cfg,
+                   stdout=log, stderr=log)
+        check_call(['make'], stdout=log, stderr=log)
         if locally:
-            check_call(['make', 'install'])
+            check_call(['make', 'install'], stdout=log, stderr=log)
         else:
-            admin_check_call(['make', 'install'])
+            admin_check_call(['make', 'install'], stdout=log, stderr=log)
+    log.close()
     os.chdir(here)
 
 
@@ -1043,6 +1071,32 @@ def system_uses_macports():
     return False
 
 
+def get_msvc_version():
+    py_version = get_python_version()
+    py_32bit = platform.architecture()[0] == '32bit'
+    name = ''
+    ms_id = None
+    version = ('',)
+    if py_version < ('2', '4'):
+        raise Exception('sysdevel only supports Python 2.4 and up')
+    if py_32bit:
+        if py_version <= ('2', '5'):
+            name = '.NET Framework version 1.1 redistributable package'
+            ms_id = '26'
+            version = ('7', '1')
+        else:
+            name = 'Visual C++ 2008 redistributable package (x86)'
+            ms_id = '29'
+            version = ('9', '0')
+    else:
+        if py_version >= ('2', '6'):
+            name = 'Visual C++ 2008 redistributable package (x64)'
+            ms_id = '15336'
+            version = ('9', '0')
+
+    return version, ms_id, name
+
+
 def homebrew_prefix():
     p = subprocess.Popen(['brew', '--prefix'],
                          stdout=subprocess.PIPE)
@@ -1059,7 +1113,7 @@ def global_install(what, website_tpl, winstaller=None,
         fetch(''.join(website_tpl), winstaller, winstaller)
         installer = os.path.join(download_dir, winstaller)
         try:
-            admin_check_call(installer, log, log)
+            admin_check_call(installer, stdout=log, stderr=log)
         except:
             ## some installers do not exit cleanly
             pass
@@ -1142,12 +1196,12 @@ def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None):
         os.path.join(environ['MINGW_DIR'], 'bin') + ';'
     os_environ = os.environ.copy()
     old_path = os_environ.get('PATH', '')
-    os_environ['PATH'] = path #+ old_path
+    os_environ['PATH'] = path.encode('ascii', 'ignore') #+ old_path #FIXME?
     shell = os.path.join(environ['MSYS_DIR'], 'bin', 'bash.exe')
     if not isinstance(cmd_line, basestring):
         cmd_line = ' '.join(cmd_line)
     p = subprocess.Popen(shell + ' -c "' + cmd_line + '"',
-                         env=os_environ)
+                         env=os_environ, stdout=stdout, stderr=stderr)
     status = p.wait()
     if status != 0:
         raise subprocess.CalledProcessError(status, cmd_line)

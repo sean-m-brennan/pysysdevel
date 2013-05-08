@@ -26,6 +26,9 @@ import subprocess
 
 from sysdevel.util import *
 
+if 'windows' in platform.system().lower():
+    DEPENDENCIES = ['mingw']
+
 environment = dict()
 cdf_found = False
 DEBUG = False
@@ -104,20 +107,24 @@ def install(environ, version, locally=True):
 
             build_dir = os.path.join(target_build_dir, src_dir)
             os.chdir(build_dir)
+            log = open('build.log', 'w')
             if 'windows' in platform.system().lower():
                 mingw_check_call(environ, ['make',
-                                           'OS=mingw', 'ENV=gnu', 'all'])
+                                           'OS=mingw', 'ENV=gnu', 'all'],
+                                 stdout=log, stderr=log)
                 mingw_check_call(environ, ['make',
-                                           'INSTALLDIR=' + prefix, 'install'])
+                                           'INSTALLDIR=' + prefix, 'install'],
+                                 stdout=log, stderr=log)
             else:
-                check_call(['make',
-                                       'OS=' + oper_sys, 'ENV=gnu', 'all'])
+                check_call(['make', 'OS=' + oper_sys, 'ENV=gnu', 'all'],
+                           stdout=log, stderr=log)
                 if locally:
-                    check_call(['make', 'INSTALLDIR=' + prefix,
-                                           'install'])
+                    check_call(['make', 'INSTALLDIR=' + prefix, 'install'],
+                               stdout=log, stderr=log)
                 else:
                     admin_check_call(['make', 'INSTALLDIR=' + prefix,
-                                      'install'])
+                                      'install'], stdout=log, stderr=log)
+            log.close()
             os.chdir(here)
         else:
             global_install('CDF', website, brew='cdf', port='cdf')

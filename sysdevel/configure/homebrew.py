@@ -36,18 +36,23 @@ def install(environ, version, locally=True):
     if not 'darwin' in platform.system().lower():
         return
     if not homebrew_found:
-        check_call('ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"')
-        check_call(['brew', 'doctor'])
-        check_call(['brew', 'install', 'git'])
+        log = open(os.path.join(target_build_dir, 'homebrew_build.log'), 'w')
+        check_call('ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"', stdout=log, stderr=log)
+        check_call(['brew', 'doctor'], stdout=log, stderr=log)
+        check_call(['brew', 'install', 'git'], stdout=log, stderr=log)
         for repo in repositories:
-            check_call(['brew', 'tap', repo])
+            check_call(['brew', 'tap', repo], stdout=log, stderr=log)
         check_call(['brew', 'install', 'python', '--universal',
-                               '--framework'])
-        check_call([pip_executable(), 'install', 'numpy'])
-        check_call([pip_executable(), 'install', 'distribute'])
-        check_call(['brew', 'install', 'sip'])
-        check_call(['brew', 'install', 'pyqt'])
-        check_call([pip_executable(), 'install', 'py2app'])
+                               '--framework'], stdout=log, stderr=log)
+        check_call([pip_executable(), 'install', 'numpy'],
+                   stdout=log, stderr=log)
+        check_call([pip_executable(), 'install', 'distribute'],
+                   stdout=log, stderr=log)
+        check_call(['brew', 'install', 'sip'], stdout=log, stderr=log)
+        check_call(['brew', 'install', 'pyqt'], stdout=log, stderr=log)
+        check_call([pip_executable(), 'install', 'py2app'],
+                   stdout=log, stderr=log)
+        log.close()
         switch_python()
 
 

@@ -115,9 +115,12 @@ def install(environ, version, locally=True):
 
             here = os.path.abspath(os.getcwd())
             os.chdir(build_dir)
-            check_call(['./Configure', '-des', '-Dprefix=' + prefix])
-            check_call(['make'])
-            check_call(['make', 'install'])
+            log = open('build.log', 'w')
+            check_call(['./Configure', '-des', '-Dprefix=' + prefix],
+                       stdout=log, stderr=log)
+            check_call(['make'], stdout=log, stderr=log)
+            check_call(['make', 'install'], stdout=log, stderr=log)
+            log.close()
             os.chdir(here)
         else:
             if 'darwin' in platform.system().lower():

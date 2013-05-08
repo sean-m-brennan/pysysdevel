@@ -63,24 +63,39 @@ def install(environ, version, locally=True):
             build_dir = os.path.join(download_dir, src_dir, '_build')
             mkdir(build_dir)
             os.chdir(build_dir)
+            log = open('build.log', 'w')
             if 'windows' in platform.system().lower():
-                config_cmd = [environ['CMAKE'], '..',
-                              '-G', '"MSYS Makefiles"',
-                              '-DCMAKE_INSTALL_PREFIX=' + prefix,
-                              '-DCMAKE_MAKE_PROGRAM=/bin/make.exe']
-                mingw_check_call(environ, config_cmd)
-                mingw_check_call(environ, ['make'])
-                mingw_check_call(environ, ['make', 'install'])
+                if 'MSVC' in environ:
+                    config_cmd = [environ['CMAKE'], '..',
+                                  '-G', '"NMake Makefiles"',
+                                  '-DCMAKE_INSTALL_PREFIX=' + prefix]
+                    check_call([environ['MSVC_VARS']], stdout=log, stderr=log)
+                    check_call(config_cmd, stdout=log, stderr=log)
+                    check_call([environ['NMAKE']], stdout=log, stderr=log)
+                    check_call([environ['NMAKE'], 'install'],
+                               stdout=log, stderr=log)
+                else:  ## MinGW
+                    config_cmd = [environ['CMAKE'], '..',
+                                  '-G', '"MSYS Makefiles"',
+                                  '-DCMAKE_INSTALL_PREFIX=' + prefix,
+                                  '-DCMAKE_MAKE_PROGRAM=/bin/make.exe']
+                    mingw_check_call(environ, config_cmd,
+                                     stdout=log, stderr=log)
+                    mingw_check_call(environ, ['make'], stdout=log, stderr=log)
+                    mingw_check_call(environ, ['make', 'install'],
+                                 stdout=log, stderr=log)
             else:
                 config_cmd = [environ['CMAKE'], '..',
                               '-G', 'Unix Makefiles',
                               '-DCMAKE_INSTALL_PREFIX=' + prefix]
-                check_call(config_cmd)
-                check_call(['make'])
+                check_call(config_cmd, stdout=log, stderr=log)
+                check_call(['make'], stdout=log, stderr=log)
                 if locally:
-                    check_call(['make', 'install'])
+                    check_call(['make', 'install'], stdout=log, stderr=log)
                 else:
-                    admin_check_call(['make', 'install'])
+                    admin_check_call(['make', 'install'],
+                                     stdout=log, stderr=log)
+            log.close()
             os.chdir(here)
         else:
             if version is None:

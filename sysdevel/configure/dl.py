@@ -21,8 +21,13 @@ Find libdl
 #**************************************************************************
 
 import os
+import platform
+import shutil
 
 from sysdevel.util import *
+
+if 'windows' in platform.system().lower():
+    DEPENDENCIES = ['mingw']
 
 environment = dict()
 libdl_found = False
@@ -43,8 +48,8 @@ def is_installed(environ, version):
     set_debug(DEBUG)
     locations = []
     try:
-        locations.append(os.environ['MINGW_DIR'])
-        locations.append(os.environ['MSYS_DIR'])
+        locations.append(environ['MINGW_DIR'])
+        locations.append(environ['MSYS_DIR'])
     except:
         pass
     try:
@@ -64,6 +69,7 @@ def is_installed(environ, version):
 
 
 def install(environ, version, locally=True):
+    global local_search_paths
     if not libdl_found:
         if 'windows' in platform.system().lower():
             here = os.path.abspath(os.getcwd())
@@ -85,13 +91,18 @@ def install(environ, version, locally=True):
 
             build_dir = os.path.join(target_build_dir, src_dir)
             os.chdir(build_dir)
-            try:
-                mingw_check_call(environ, ['./configure', '--prefix=' + prefix,
-                                           '--enable-shared'])
-            except:
-                pass
-            mingw_check_call(environ, ['make'])
-            mingw_check_call(environ, ['make', 'install'])
+            log = open('build.log', 'w')
+            patch_c_only_header('dlfcn.h')
+            mingw_check_call(environ, ['./configure', '--prefix=' + prefix,
+                                       '--libdir=' + prefix + '/lib',
+                                       '--incdir=' + prefix + '/include',
+                                       '--enable-shared'],
+                             stdout=log, stderr=log)
+            mingw_check_call(environ, ['make'], stdout=log, stderr=log)
+            mingw_check_call(environ, ['make', 'install'],
+                             stdout=log, stderr=log)
+            log.close()
+            os.chdir(here)
         else:
             raise Exception('Non-Windows platform with missing libdl.')
         if not is_installed(environ, version):

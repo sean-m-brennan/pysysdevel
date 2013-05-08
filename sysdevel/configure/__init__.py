@@ -73,11 +73,12 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     environment['PACKAGE_VERSION'] = version
 
     prerequisite_list.insert(0, 'httpsproxy_urllib2_py')
-    if 'windows' in platform.system().lower():
+    if 'windows' in platform.system().lower() and \
+           not 'msvc' in prerequisite_list:
         prerequisite_list.insert(0, 'mingw')
         if 'boost' in prerequisite_list:  ## assuming boost-python is needed
             prerequisite_list.insert(0, 'msvcrt')
-    else:
+    if not 'windows' in platform.system().lower():
         prerequisite_list.insert(0, 'gcc')
     if 'darwin' in platform.system().lower() and \
             not 'macports' in prerequisite_list:
@@ -114,6 +115,7 @@ def __configure_package(environment, help_name, skip, install, quiet):
     return __run_helper__(environment, help_name, full_name,
                           req_version, skip, install, quiet)
 
+
 configured = []
 
 def __run_helper__(environment, short_name, long_name, version,
@@ -131,6 +133,7 @@ def __run_helper__(environment, short_name, long_name, version,
             continue
         environment = __configure_package(environment, dep,
                                           skip, install, quiet)
+        util.save_cache(environment)
     if not quiet:
         sys.stdout.write('Checking for ' + short_name + ' ')
         if not version is None:
@@ -143,6 +146,6 @@ def __run_helper__(environment, short_name, long_name, version,
         if not install:
             raise Exception(help_name + ' cannot be found.')
         helper.install(environment, version)
-    return dict(helper.environment.items() + environment.items())
-
-
+    env = dict(helper.environment.items() + environment.items())
+    util.save_cache(env)  ## intermediate cache
+    return env
