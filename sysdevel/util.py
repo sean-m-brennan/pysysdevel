@@ -1428,6 +1428,7 @@ def get_options(pkg_config, options):
         INCLUDE_TCLTK_WIN = False
         #os.environ['PATH'] += _sep_ + 'gtk/lib' + _sep_ + 'gtk/bin'
 
+        ''' FIXME needs access to environment
         msvcrt_release_path = pkg_config.environment['MSVCRT_DIR']
         msvcrt_debug_path = pkg_config.environment['MSVCRT_DEBUG_DIR']
 
@@ -1437,6 +1438,7 @@ def get_options(pkg_config, options):
         else:
             msvc_glob = os.path.join(msvcrt_release_path, '*.*')
             sys.path.append(msvcrt_release_path)
+            '''
 
         package_name = pkg_config.PACKAGE
         icon_file = os.path.join(pkg_config.PACKAGE, pkg_config.image_dir,
@@ -1446,7 +1448,7 @@ def get_options(pkg_config, options):
         addtnl_files += pkg_config.get_data_files(options['app'])
         addtnl_files += pkg_config.get_extra_data_files(options['app'])
         addtnl_files += [('.', [icon_file])]
-        addtnl_files += [('.', glob.glob(msvc_glob))] #FIXME?
+        #addtnl_files += [('.', glob.glob(msvc_glob))] #FIXME?
         icon_res = [(0, icon_file)]
 
         if INCLUDE_GTK_WIN:
