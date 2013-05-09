@@ -22,6 +22,8 @@ Package specification
 import os
 import platform
 
+import util
+
 
 class pkg_config(object):
     '''
@@ -109,18 +111,25 @@ class pkg_config(object):
 
     def get_prerequisites(self, argv):
         if 'windows' in platform.system().lower():
-            compiler = 'msvc'  ## distutils default on Windows
+            environ = util.read_cache()
+            if 'COMPILER' in environ:
+                compiler = environ['COMPILER']
+            else:
+                compiler = 'msvc'  ## distutils default on Windows
             for a in range(len(argv)):
                 if argv[a].startswith('--compiler='):
-                    compiler = arg[11:]
+                    compiler = argv[a][11:]
                 elif argv[a] == '-c':
                     compiler = argv[a+1]
             if compiler == 'mingw32':
-                self.prerequisites = ['mingw', 'msvcrt'] + self.prerequisites
+                self.prerequisites = ['mingw'] + self.prerequisites
             elif compiler.startswith('msvc'):
                 self.prerequisites = ['msvc'] + self.prerequisites
-            ## TODO error?
+            else:
+                raise Exception("Unknown compiler specified: " + compiler)
             self.environment['COMPILER'] = compiler
+        if self.environment['COMPILER'] == 'gcc':
+            self.prerequisites = ['gcc'] + self.prerequisites
         return self.prerequisites, argv
 
     def additional_env(self, envir):

@@ -1418,26 +1418,15 @@ def get_options(pkg_config, options):
         INCLUDE_TCLTK_WIN = False
         #os.environ['PATH'] += _sep_ + 'gtk/lib' + _sep_ + 'gtk/bin'
 
-        #FIXME pull info from environ (msvcrt.py)  environment['MSVCR_DIR']
-        msvc_version = '9.0'  ## boost-python requires MSVC 9.0
-        msvc_path = os.path.join(os.environ['ProgramFiles(x86)'],
-                                 'Microsoft Visual Studio ' + msvc_version,
-                                 'VC', 'redist')
-        msvc_release_path = os.path.join(msvc_path, 'x86', 'Microsoft.VC90.CRT')
-        msvc_debug_path = os.path.join(msvc_path, 'Debug_NonRedist',
-                                       'x86', 'Microsoft.VC90.DebugCRT')
-
-        if not os.path.exists(msvc_release_path):  ## use MingW
-            # FIXME MinGW msvc*90.dll??
-            msvc_release_path = os.path.join('sysdevel', 'win_release')
-            msvc_debug_path = os.path.join('sysdevel', 'win_debug')
+        msvcrt_release_path = pkg_config.environment['MSVCRT_DIR']
+        msvcrt_debug_path = pkg_config.environment['MSVCRT_DEBUG_DIR']
 
         if pkg_config.build_config.lower() == 'debug':
-            msvc_glob = os.path.join(msvc_debug_path, '*.*')
-            sys.path.append(msvc_debug_path)
+            msvc_glob = os.path.join(msvcrt_debug_path, '*.*')
+            sys.path.append(msvcrt_debug_path)
         else:
-            msvc_glob = os.path.join(msvc_release_path, '*.*')
-            sys.path.append(msvc_release_path)
+            msvc_glob = os.path.join(msvcrt_release_path, '*.*')
+            sys.path.append(msvcrt_release_path)
 
         package_name = pkg_config.PACKAGE
         icon_file = os.path.join(pkg_config.PACKAGE, pkg_config.image_dir,
@@ -1447,7 +1436,7 @@ def get_options(pkg_config, options):
         addtnl_files += pkg_config.get_data_files(options['app'])
         addtnl_files += pkg_config.get_extra_data_files(options['app'])
         addtnl_files += [('.', [icon_file])]
-        #addtnl_files += [('.', glob.glob(msvc_glob))] FIXME?
+        addtnl_files += [('.', glob.glob(msvc_glob))] #FIXME?
         icon_res = [(0, icon_file)]
 
         if INCLUDE_GTK_WIN:

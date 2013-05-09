@@ -14,6 +14,7 @@ DEBUG = False
 def null():
     global environment
     environment['MSVCRT_DIR'] = None
+    environment['MSVCRT_DEBUG_DIR'] = None
     environment['MSVCRT_LIBS'] = []
 
 
@@ -25,47 +26,55 @@ def is_installed(environ, version):
     dot_ver = '.'.join(version)
     ver = ''.join(version)
 
-    msvcrt_dirs = []
+    msvcr_rel_dirs = []
+    msvcr_dbg_dirs = []
     for d in programfiles_directories():
-        msvcrt_dirs.append(os.path.join(d, 'Microsoft Visual Studio ' + dot_ver,
-                                        'VC', 'redist', 'x86',
-                                        'Microsoft.VC' + ver + '.CRT'))
-        msvcrt_dirs.append(os.path.join(d, 'Microsoft Visual Studio ' + dot_ver,
-                                        'VC', 'redist', 'Debug_NonRedist', 'x86',
-                                        'Microsoft.VC' + ver + '.DebugCRT'))
-    msvcrx_dirs = msvcrt_dirs
+        msvcr_rel_dirs.append(os.path.join(d,
+                                           'Microsoft Visual Studio ' + dot_ver,
+                                           'VC', 'redist', 'x86',
+                                           'Microsoft.VC' + ver + '.CRT'))
+        msvcr_dbg_dirs.append(os.path.join(d,
+                                           'Microsoft Visual Studio ' + dot_ver,
+                                           'VC', 'redist',
+                                           'Debug_NonRedist', 'x86',
+                                           'Microsoft.VC' + ver + '.DebugCRT'))
     try:
-        msvcrx_dirs.append(os.environ['MSVCRT_DIR'])
+        msvcr_rel_dirs.append(os.environ['MSVCRT_DIR'])
     except:
         pass
     try:
-        msvcrx_dirs.append(os.environ['SYSTEM'])
+        msvcr_rel_dirs.append(os.environ['SYSTEM'])
     except:
         pass
     try:
-        msvcrx_dirs.append(os.path.join(os.environ['WINDIR'], 'System32'))
+        msvcr_rel_dirs.append(os.path.join(os.environ['WINDIR'], 'System32'))
     except:
         pass
     try:
-        msvcrx_dirs.append(os.path.join(os.environ['WINDIR'], 'SysWOW64'))
+        msvcr_rel_dirs.append(os.path.join(os.environ['WINDIR'], 'SysWOW64'))
     except:
         pass
     try:
         ## Just the DLLs
-        environment['MSVCR_DIR'], _ = find_library('msvcr' + ver, msvcrx_dirs)
+        release_dir, _ = find_library('msvcr' + ver, msvcr_rel_dirs)
+        debug_dir, _ = find_library('msvcr' + ver, msvcr_dbg_dirs)
+        ''' FIXME do we need the manifests?
         try:
             # Manifests
             manifest = find_file('Microsoft.VC' + ver + '.CRT.manifest',
-                                 msvcrt_dirs)
+                                 msvcr_rel_dirs)
             environment['MSVCRT_DIR'] = os.path.dirname(manifest)
         except:
             pass
+            '''
         msvcrt_found = True
     except Exception, e:
         if DEBUG:
             print e
         pass
-    
+
+    environment['MSVCRT_DIR'] = release_dir
+    environment['MSVCRT_DEBUG_DIR'] = debug_dir
     environment['MSVCRT_LIBS'] = ['msvcr' + ver, 'msvcp' + ver]
     return msvcrt_found
 

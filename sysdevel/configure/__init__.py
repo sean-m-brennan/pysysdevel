@@ -74,12 +74,9 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
 
     prerequisite_list.insert(0, 'httpsproxy_urllib2_py')
     if 'windows' in platform.system().lower() and \
-           not 'msvc' in prerequisite_list:
-        prerequisite_list.insert(0, 'mingw')
-        if 'boost' in prerequisite_list:  ## assuming boost-python is needed
-            prerequisite_list.insert(0, 'msvcrt')
-    if not 'windows' in platform.system().lower():
-        prerequisite_list.insert(0, 'gcc')
+            'mingw' in prerequisite_list and \
+            'boost' in prerequisite_list:  ## assuming boost-python is needed
+        prerequisite_list.append('msvcrt')
     if 'darwin' in platform.system().lower() and \
             not 'macports' in prerequisite_list:
         prerequisite_list.insert(0, 'homebrew')
