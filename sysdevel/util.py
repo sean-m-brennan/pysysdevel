@@ -123,6 +123,16 @@ def delete_cache():
         os.remove(cache)
 
 
+def in_prerequisites(item, prereqs):
+    for p in prereqs:
+         if not isinstance(p, basestring):
+            if item == p[0]:
+                return True
+         elif item == p:
+             return True
+    return False
+
+
 def sysdevel_support_path(filename):
     return os.path.join(os.path.dirname(__file__), 'support', filename)
 

@@ -28,6 +28,7 @@ def is_installed(environ, version):
 
     msvcr_rel_dirs = []
     msvcr_dbg_dirs = []
+    msvs_present = False
     for d in programfiles_directories():
         msvcr_rel_dirs.append(os.path.join(d,
                                            'Microsoft Visual Studio ' + dot_ver,
@@ -38,22 +39,22 @@ def is_installed(environ, version):
                                            'VC', 'redist',
                                            'Debug_NonRedist', 'x86',
                                            'Microsoft.VC' + ver + '.DebugCRT'))
-    try:
-        msvcr_rel_dirs.append(os.environ['MSVCRT_DIR'])
-    except:
-        pass
-    try:
-        msvcr_rel_dirs.append(os.environ['SYSTEM'])
-    except:
-        pass
-    try:
-        msvcr_rel_dirs.append(os.path.join(os.environ['WINDIR'], 'System32'))
-    except:
-        pass
-    try:
-        msvcr_rel_dirs.append(os.path.join(os.environ['WINDIR'], 'SysWOW64'))
-    except:
-        pass
+        if os.path.exists(os.path.join(d, 'Microsoft Visual Studio ' + dot_ver)):
+            msvs_present = True
+
+    if not msvs_present:
+        try:
+            msvcr_rel_dirs.append(os.environ['MSVCRT_DIR'])
+        except:
+            pass
+        try:
+            msvcr_rel_dirs.append(os.environ['SYSTEM'])
+        except:
+            try:
+                msvcr_rel_dirs.append(os.path.join(os.environ['WINDIR'],
+                                                   'System32'))
+            except:
+                pass
     try:
         ## Just the DLLs
         release_dir, _ = find_library('msvcr' + ver, msvcr_rel_dirs)
