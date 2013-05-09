@@ -55,6 +55,8 @@ def is_installed(environ, version):
                                                    'System32'))
             except:
                 pass
+    release_dir = None
+    debug_dir = None
     try:
         ## Just the DLLs
         release_dir, _ = find_library('msvcr' + ver, msvcr_rel_dirs)

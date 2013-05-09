@@ -25,11 +25,14 @@ def is_installed(environ, version):
         raise Exception('MS Visual C *and* MinGW both specified ' +
                         'as the chosen compiler.')
 
-    version, _, _ = get_msvc__version()
+    version, _, _ = get_msvc_version()
     dot_ver = '.'.join(version)
     ver = ''.join(version)
 
     msvc_dirs = []
+    vcvars = None
+    nmake = None
+    msvc = None
     for d in programfiles_directories():
         msvc_dirs.append(os.path.join(d, 'Microsoft Visual Studio ' + dot_ver,
                                       'VC'))
