@@ -1439,8 +1439,10 @@ def get_options(pkg_config, options):
 
         ''' FIXME needs access to environment'''
         # FIXME only if including an extension
-        msvcrt_release_path = pkg_config.environment['MSVCRT_DIR'].encode('ascii', 'ignore')
-        msvcrt_debug_path = pkg_config.environment['MSVCRT_DEBUG_DIR'].encode('ascii', 'ignore')
+        msvcrt_release_path = \
+            pkg_config.environment['MSVCRT_DIR'].encode('ascii', 'ignore')
+        msvcrt_debug_path = \
+            pkg_config.environment['MSVCRT_DEBUG_DIR'].encode('ascii', 'ignore')
 
         if pkg_config.build_config.lower() == 'debug':
             msvc_glob = os.path.join(msvcrt_debug_path, '*.*')
