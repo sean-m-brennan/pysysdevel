@@ -1,6 +1,3 @@
-"""
-Find or fetch Homebrew
-"""
 
 import subprocess
 import platform
@@ -9,51 +6,54 @@ import os
 import glob
 
 from sysdevel.util import *
+from sysdevel.configuration import config
 
-environment = dict()
-homebrew_found = False
-DEBUG = False
+class configuration(config):
+    """
+    Find/fetch Homebrew
+    """
 
-repositories = ['Homebrew/homebrew-dupes',
-                'Homebrew/homebrew-science',
-                #'Homebrew/homebrew-versions',
-                'samueljohn/homebrew-python', ]
+    repositories = ['Homebrew/homebrew-dupes',
+                    'Homebrew/homebrew-science',
+                    #'Homebrew/homebrew-versions',
+                    'samueljohn/homebrew-python', ]
 
-def null():
-    pass
-
-
-def is_installed(environ, version):
-    global homebrew_found
-    homebrew_found = system_uses_homebrew()
-    if homebrew_found and \
-            not sys.executable in python_sys_executables():
-        switch_python()
-    return homebrew_found
+    def __init__(self):
+        config.__init__(self, debug=False)
 
 
-def install(environ, version, locally=True):
-    if not 'darwin' in platform.system().lower():
-        return
-    if not homebrew_found:
-        log = open(os.path.join(target_build_dir, 'homebrew_build.log'), 'w')
-        check_call('ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"', stdout=log, stderr=log)
-        check_call(['brew', 'doctor'], stdout=log, stderr=log)
-        check_call(['brew', 'install', 'git'], stdout=log, stderr=log)
-        for repo in repositories:
-            check_call(['brew', 'tap', repo], stdout=log, stderr=log)
-        check_call(['brew', 'install', 'python', '--universal',
-                               '--framework'], stdout=log, stderr=log)
-        check_call([pip_executable(), 'install', 'numpy'],
-                   stdout=log, stderr=log)
-        check_call([pip_executable(), 'install', 'distribute'],
-                   stdout=log, stderr=log)
-        check_call(['brew', 'install', 'sip'], stdout=log, stderr=log)
-        check_call(['brew', 'install', 'pyqt'], stdout=log, stderr=log)
-        check_call([pip_executable(), 'install', 'py2app'],
-                   stdout=log, stderr=log)
-        log.close()
-        switch_python()
+    def is_installed(self, environ, version):
+        self.found = system_uses_homebrew()
+        if self.found and \
+                not sys.executable in python_sys_executables():
+            switch_python()
+        return self.found
+
+
+    def install(self, environ, version, locally=True):
+        if not 'darwin' in platform.system().lower():
+            return
+        if not self.found:
+            log = open(os.path.join(target_build_dir,
+                                    'homebrew_build.log'), 'w')
+            check_call('ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"',
+                       stdout=log, stderr=log)
+            check_call(['brew', 'doctor'], stdout=log, stderr=log)
+            check_call(['brew', 'install', 'git'], stdout=log, stderr=log)
+            for repo in self.repositories:
+                check_call(['brew', 'tap', repo], stdout=log, stderr=log)
+            check_call(['brew', 'install', 'python', '--universal',
+                        '--framework'], stdout=log, stderr=log)
+            check_call([pip_executable(), 'install', 'numpy'],
+                       stdout=log, stderr=log)
+            check_call([pip_executable(), 'install', 'distribute'],
+                       stdout=log, stderr=log)
+            check_call(['brew', 'install', 'sip'], stdout=log, stderr=log)
+            check_call(['brew', 'install', 'pyqt'], stdout=log, stderr=log)
+            check_call([pip_executable(), 'install', 'py2app'],
+                       stdout=log, stderr=log)
+            log.close()
+            switch_python()
 
 
 def pip_executable():

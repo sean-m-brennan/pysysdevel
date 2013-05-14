@@ -1,73 +1,66 @@
-"""
-Find/fetch MS Visual Studio
-"""
 
-import os, platform, sys
+import os
+import platform
+import sys
 
 from sysdevel.util import *
+from sysdevel.configuration import config
 
-environment = dict()
-msvc_found = False
-DEBUG = False
-
-
-def null():
-    global environment
-    environment['MSVC'] = None
-    environment['NMAKE'] = None
-    environment['MSVC_VARS'] = None
+class configuration(config):
+    """
+    Find MS Visual Studio
+    """
+    def __init__(self):
+        config.__init__(self, debug=False)
 
 
-def is_installed(environ, version):
-    global environment, msvc_found
-    set_debug(DEBUG)
-    if 'MINGW_CC' in environ:
-        raise Exception('MS Visual C *and* MinGW both specified ' +
-                        'as the chosen compiler.')
-
-    version, _, _ = get_msvc_version()
-    dot_ver = '.'.join(version)
-    ver = ''.join(version)
-
-    msvc_dirs = []
-    vcvars = None
-    nmake = None
-    msvc = None
-    for d in programfiles_directories():
-        msvc_dirs.append(os.path.join(d, 'Microsoft Visual Studio ' + dot_ver,
-                                      'VC'))
-    try:
-        vcvars = find_program('vcvarsall', msvc_dirs)
-        nmake = find_program('nmake', msvc_dirs)
-        msvc = find_program('cl', msvc_dirs)
-        msvc_found = True
-    except Exception, e:
-        if DEBUG:
-            print e
-        pass
-
-    environment['MSVC_VARS'] = vcvars
-    environment['NMAKE'] = nmake
-    environment['MSVC'] = msvc
-    return msvc_found
+    def null(self):
+        self.environment['MSVC'] = None
+        self.environment['NMAKE'] = None
+        self.environment['MSVC_VARS'] = None
 
 
-def install(environ, version, locally=True):
-    if not msvc_found:
-        version, ms_id, name = get_msvc_version()
-        if ms_id:
-            import webbrowser
-            website = ('http://www.microsoft.com/en-us/download/',
-                       'details.aspx?id=' + ms_id)
-            sys.stdout.write('Manually download and install (from ' +
-                             website[0] + ')\nthe ' + name + '.\n' +
-                             'Opening a browser to confirm download ...\n')
-            webbrowser.open(''.join(website))
-            raw_input('Press any key once the redistributable ' +
-                      'package is installed')
-            #patch c:\Python*\Lib\distutils\msvc9compiler.py
-            # insert ld_args.append('/MANIFEST')
-            # after  ld_args.append('/MANIFESTFILE:' + temp_manifest)
-        else:
-            raise Exception('MSVC runtime included as part of the OS, ' +
-                            'but not found.')
+    def is_installed(self, environ, version):
+        set_debug(self.debug)
+        if 'MINGW_CC' in environ:
+            raise Exception('MS Visual C *and* MinGW both specified ' +
+                            'as the chosen compiler.')
+
+        version, _, _ = get_msvc_version()
+        dot_ver = '.'.join(version)
+        ver = ''.join(version)
+
+        vcvars = None
+        nmake = None
+        msvc = None
+
+        msvc_dirs = []
+        limit = False
+        if 'MSVC' in environ:
+            msvc_dirs.append(os.path.dirname(environ['MSVC']))
+            limit = True
+
+        if not limit:
+            for d in programfiles_directories():
+                msvc_dirs.append(os.path.join(d,
+                                              'Microsoft Visual Studio ' + dot_ver,
+                                              'VC'))
+        try:
+            vcvars = find_program('vcvarsall', msvc_dirs, limit=limit)
+            nmake = find_program('nmake', msvc_dirs, limit=limit)
+            msvc = find_program('cl', msvc_dirs, limit=limit)
+            self.found = True
+        except Exception, e:
+            if self.debug:
+                print e
+            return self.found
+
+        self.environment['MSVC_VARS'] = vcvars
+        self.environment['NMAKE'] = nmake
+        self.environment['MSVC'] = msvc
+        return self.found
+
+
+    def install(self, environ, version, locally=True):
+        if not self.found:
+            raise Exception('Install MS Visual Studio by hand')

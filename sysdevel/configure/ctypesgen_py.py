@@ -1,65 +1,54 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-Find ctypesgen package
-"""
-#**************************************************************************
-# 
-# This material was prepared by the Los Alamos National Security, LLC 
-# (LANS), under Contract DE-AC52-06NA25396 with the U.S. Department of 
-# Energy (DOE). All rights in the material are reserved by DOE on behalf 
-# of the Government and LANS pursuant to the contract. You are authorized 
-# to use the material for Government purposes but it is not to be released 
-# or distributed to the public. NEITHER THE UNITED STATES NOR THE UNITED 
-# STATES DEPARTMENT OF ENERGY, NOR LOS ALAMOS NATIONAL SECURITY, LLC, NOR 
-# ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR 
-# ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
-# COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
-# PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE 
-# PRIVATELY OWNED RIGHTS.
-# 
-#**************************************************************************
 
-import os
+from sysdevel.configuration import prog_config
 
-from sysdevel.util import *
-
-environment = dict()
-ctypesgen_found = False
-DEBUG = False
+class configuration(prog_config):
+    """
+    Find/install ctypesgen package
+    """
+    def __init__(self):
+        prog_config.__init__(self, 'ctypesgen.py', debug=False)
 
 
-def null():
-    global environment
-    environment['CTYPESGEN'] = None
-    environment['CTYPESGEN_PATH'] = None
+    def null(self):
+        self.environment['CTYPESGEN'] = None
+        self.environment['CTYPESGEN_PATH'] = None
 
 
-def is_installed(environ, version):
-    global environment, ctypesgen_found
-    set_debug(DEBUG)
-    try:
-        environment['CTYPESGEN'] = find_program('ctypesgen.py')
-        import ctypesgencore
-        environment['CTYPESGEN_PATH'] = os.path.dirname(ctypesgencore.__file__)
-        ctypesgen_found = True
-    except Exception, e:
-        if DEBUG:
-            print e
-    return ctypesgen_found
+    def is_installed(self, environ, version):
+        set_debug(self.debug)
+        limit = False
+        locations = []
+        if 'CTYPESGEN' in environ:
+            locations.append(os.path.dirname(environ['CTYPESGEN']))
+            limit = True
+
+        try:
+            exe = find_program('ctypesgen.py', locations, limit=limit)
+            import ctypesgencore
+            lib = os.path.dirname(ctypesgencore.__file__)
+            self.found = True
+        except Exception, e:
+            if self.debug:
+                print e
+            return self.found
+
+        self.environment['CTYPESGEN'] = exe
+        self.environment['CTYPESGEN_PATH'] = lib
+        return self.found
 
 
-def install(environ, version, locally=True):
-    global environment, local_search_paths
-    if not ctypesgen_found:
-        website = 'http://pypi.python.org/packages/source/c/ctypesgen/'
-        if version is None:
-            version = '0.r125'
-        archive = 'ctypesgen-' + version + '.tar.gz'
-        pth = install_pypkg('ctypesgen-' + version, website, archive, locally=locally)
-        if locally:
-            prefix = os.path.abspath(target_build_dir)
-            if not prefix in local_search_paths:
-                local_search_paths.append(prefix)
-        if not is_installed(environ, version):
-            raise Exception('ctypesgen installation failed.')
+    def install(self, environ, version, locally=True):
+        global local_search_paths
+        if not self.found:
+            website = 'http://pypi.python.org/packages/source/c/ctypesgen/'
+            if version is None:
+                version = '0.r125'
+            archive = 'ctypesgen-' + version + '.tar.gz'
+            install_pypkg('ctypesgen-' + version, website, archive,
+                          locally=locally)
+            if locally:
+                prefix = os.path.abspath(target_build_dir)
+                if not prefix in local_search_paths:
+                    local_search_paths.append(prefix)
+            if not self.is_installed(environ, version):
+                raise Exception('ctypesgen installation failed.')

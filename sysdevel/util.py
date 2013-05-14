@@ -96,7 +96,7 @@ def read_cache():
     if os.path.exists(cache_file):
         cache = open(cache_file, 'rb')
         cached = json.load(cache)
-        local_search_paths += cached['local_search_paths']
+        local_search_paths = cached['local_search_paths']
         environ = cached['environment']
         cache.close()
         if len(local_search_paths) == 0:
@@ -151,6 +151,13 @@ def is_sequence(seq):
     return True
 
 
+def glob_insensitive(directory, file_pattern):
+    def either(c):
+        return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
+    return glob.glob(os.path.join(d, ''.join(map(either, pattern))))
+    
+
+
 def convert_ulist(str_list):
     ## distutils *might* not be able to handle unicode, convert it
     if str_list is None:
@@ -185,7 +192,7 @@ def flatten(seq):
     return result
 
 
-def find_program(name, pathlist=[]):
+def find_program(name, pathlist=[], limit=False):
     '''
     Find the path of an executable.
     '''
@@ -193,7 +200,9 @@ def find_program(name, pathlist=[]):
         path_env = os.environ['PATH'].split(_sep_)
     except:
         path_env = []
-    for path in local_search_paths + pathlist + path_env:
+    if not limit:
+        pathlist += path_env + local_search_paths
+    for path in pathlist:
         if path != None and os.path.exists(path):
             for p in [path, os.path.join(path, 'bin')]:
                 if DEBUG:
@@ -233,8 +242,8 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
     for path_expr in extra_paths:
         pathlist += glob.glob(path_expr)
     if not limit:
-        pathlist += default_path_prefixes
-    for path in local_search_paths + pathlist:
+        pathlist += default_path_prefixes + local_search_paths
+    for path in pathlist:
         if path != None and os.path.exists(path):
             for sub in subdirs:
                 ext_paths = glob.glob(os.path.join(path, sub))
@@ -292,8 +301,8 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
     for path_expr in extra_paths:
         pathlist += glob.glob(path_expr)
     if not limit:
-        pathlist += default_path_prefixes
-    for path in local_search_paths + pathlist:
+        pathlist += default_path_prefixes + local_search_paths
+    for path in pathlist:
         if path != None and os.path.exists(path):
             for subpath in default_lib_paths:
                 for sub in subdirs:
@@ -1428,9 +1437,10 @@ def get_options(pkg_config, options):
         INCLUDE_TCLTK_WIN = False
         #os.environ['PATH'] += _sep_ + 'gtk/lib' + _sep_ + 'gtk/bin'
 
-        ''' FIXME needs access to environment
-        msvcrt_release_path = pkg_config.environment['MSVCRT_DIR']
-        msvcrt_debug_path = pkg_config.environment['MSVCRT_DEBUG_DIR']
+        ''' FIXME needs access to environment'''
+        # FIXME only if including an extension
+        msvcrt_release_path = pkg_config.environment['MSVCRT_DIR'].encode('ascii', 'ignore')
+        msvcrt_debug_path = pkg_config.environment['MSVCRT_DEBUG_DIR'].encode('ascii', 'ignore')
 
         if pkg_config.build_config.lower() == 'debug':
             msvc_glob = os.path.join(msvcrt_debug_path, '*.*')
@@ -1438,7 +1448,7 @@ def get_options(pkg_config, options):
         else:
             msvc_glob = os.path.join(msvcrt_release_path, '*.*')
             sys.path.append(msvcrt_release_path)
-            '''
+
 
         package_name = pkg_config.PACKAGE
         icon_file = os.path.join(pkg_config.PACKAGE, pkg_config.image_dir,
@@ -1448,7 +1458,7 @@ def get_options(pkg_config, options):
         addtnl_files += pkg_config.get_data_files(options['app'])
         addtnl_files += pkg_config.get_extra_data_files(options['app'])
         addtnl_files += [('.', [icon_file])]
-        #addtnl_files += [('.', glob.glob(msvc_glob))] #FIXME?
+        addtnl_files += [('.', glob.glob(msvc_glob))] #FIXME
         icon_res = [(0, icon_file)]
 
         if INCLUDE_GTK_WIN:
@@ -1490,7 +1500,7 @@ def get_options(pkg_config, options):
                     'typelibs': [],
                     'compressed': False,
                     'xref': False,
-                    'bundle_files': file_bundling,
+                    #'bundle_files': file_bundling,
                     'skip_archive': False,
                     'ascii': False,
                     'custom_boot_script': '',

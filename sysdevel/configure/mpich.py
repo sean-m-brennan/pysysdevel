@@ -1,96 +1,79 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-Find MPICH library
-"""
-#**************************************************************************
-# 
-# This material was prepared by the Los Alamos National Security, LLC 
-# (LANS), under Contract DE-AC52-06NA25396 with the U.S. Department of 
-# Energy (DOE). All rights in the material are reserved by DOE on behalf 
-# of the Government and LANS pursuant to the contract. You are authorized 
-# to use the material for Government purposes but it is not to be released 
-# or distributed to the public. NEITHER THE UNITED STATES NOR THE UNITED 
-# STATES DEPARTMENT OF ENERGY, NOR LOS ALAMOS NATIONAL SECURITY, LLC, NOR 
-# ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR 
-# ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
-# COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
-# PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE 
-# PRIVATELY OWNED RIGHTS.
-# 
-#**************************************************************************
 
-import os
+import struct
+import platform
 
 from sysdevel.util import *
+from sysdevel.configuration import lib_config
 
-environment = dict()
-mpich_found = False
-DEBUG = False
-
-
-def null():
-    global environment
-    environment['MPICH_INCLUDE_DIR'] = None
-    environment['MPICH_LIB_DIR'] = None
-    environment['MPICH_LIBRARIES'] = []
-    environment['MPICH_LIBS'] = []
+class configuration(lib_config):
+    """
+    Find/install MPICH library
+    """
+    def __init__(self):
+        lib_config.__init__(self, "mpich2", "mpi.h", debug=False)
 
 
-def is_installed(environ, version):
-    global environment, mpich_found
-    set_debug(DEBUG)
-    base_dirs = []
-    mpich_lib_list = ['mpich', 'mpichcxx', 'mpichf90']
-    if 'windows' in platform.system().lower():
-        mpich_lib_list = ['mpi', 'mpicxx', 'fmpich2g']
-    arch = 'i686'
-    if struct.calcsize('P') == 8:
-        arch = 'x86_64'
+    def is_installed(self, environ, version):
+        set_debug(self.debug)
+        mpich_lib_list = ['mpich', 'mpichcxx', 'mpichf90']
+        if 'windows' in platform.system().lower():
+            mpich_lib_list = ['mpi', 'mpicxx', 'fmpich2g']
+        arch = 'i686'
+        if struct.calcsize('P') == 8:
+            arch = 'x86_64'
 
-    try:
-        base_dirs.append(os.environ['MPICH_ROOT'])
-    except:
-        pass
-    for d in programfiles_directories():
-        base_dirs.append(os.path.join(d, 'MPICH2'))
-    try:
-        base_dirs.append(environ['MINGW_DIR'])
-        base_dirs.append(environ['MSYS_DIR'])
-    except:
-        pass
+        base_dirs = []
+        limit = False
+        if 'MPICH_LIB_DIR' in environ:
+            base_dirs.append(environ['MPICH_LIB_DIR'])
+            limit = True
+            if 'MPICH_INCLUDE_DIR' in environ:
+                base_dirs.append(environ['MPICH_INCLUDE_DIR'])
 
-    try:
-        mpich_lib_dir, mpich_libs  = find_libraries(mpich_lib_list[0],
-                                                    base_dirs)
-        mpich_inc_dir = find_header('mpi.h', base_dirs,
-                                    ['mpich2', 'mpich2-' + arch,])
-        mpich_found = True
-    except Exception, e:
-        if DEBUG:
-            print e
-        return mpich_found
+        if not limit:
+            try:
+                base_dirs.append(os.environ['MPICH_ROOT'])
+            except:
+                pass
+            for d in programfiles_directories():
+                base_dirs.append(os.path.join(d, 'MPICH2'))
+            try:
+                base_dirs.append(environ['MINGW_DIR'])
+                base_dirs.append(environ['MSYS_DIR'])
+            except:
+                pass
 
-    environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir
-    environment['MPICH_LIB_DIR'] = mpich_lib_dir
-    environment['MPICH_LIBRARIES'] = mpich_libs
-    environment['MPICH_LIBS'] = mpich_lib_list
-    return mpich_found
+        try:
+            mpich_lib_dir, mpich_libs  = find_libraries(mpich_lib_list[0],
+                                                        base_dirs)
+            mpich_inc_dir = find_header(self.hdr, base_dirs,
+                                        ['mpich2', 'mpich2-' + arch,])
+            self.found = True
+        except Exception, e:
+            if self.debug:
+                print e
+            return self.found
+
+        self.environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir
+        self.environment['MPICH_LIB_DIR'] = mpich_lib_dir
+        self.environment['MPICH_LIBRARIES'] = mpich_libs
+        self.environment['MPICH_LIBS'] = mpich_lib_list
+        return self.found
 
 
-def install(environ, version, locally=True):
-    if not mpich_found:
-        if version is None:
-            version = '3.0.2'
-        website = ('http://www.mpich.org/',
-                   'static/tarballs/' + str(version) + '/')
-        if locally:
-            src_dir = 'mpich-' + str(version)
-            archive = src_dir + '.tar.gz'
-            autotools_install(environ, website, archive, src_dir, locally)
-        else:
-            global_install('MPICH', website,
-                           brew='mpich2', port='mpich-devel',
-                           deb='libmpich2-dev', rpm='mpich2-devel')
-        if not is_installed(environ, version):
-            raise Exception('MPICH2 installation failed.')
+    def install(self, environ, version, locally=True):
+        if not self.found:
+            if version is None:
+                version = '3.0.2'
+            website = ('http://www.mpich.org/',
+                       'static/tarballs/' + str(version) + '/')
+            if locally:
+                src_dir = 'mpich-' + str(version)
+                archive = src_dir + '.tar.gz'
+                autotools_install(environ, website, archive, src_dir, locally)
+            else:
+                global_install('MPICH', website,
+                               brew='mpich2', port='mpich-devel',
+                               deb='libmpich2-dev', rpm='mpich2-devel')
+            if not self.is_installed(environ, version):
+                raise Exception('MPICH2 installation failed.')

@@ -133,7 +133,8 @@ class pkg_config(object):
         return self.prerequisites, argv
 
     def additional_env(self, envir):
-        return dict(envir.items() + self.environment.items())
+        self.environment = dict(envir.items() + self.environment.items())
+        return self.environment
 
     def get_source_files(self, *args):
         return self.source_files

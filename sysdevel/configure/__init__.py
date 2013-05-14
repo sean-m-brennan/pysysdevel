@@ -1,23 +1,6 @@
-# -*- coding: utf-8 -*-
 """
 Entry point for finding/installing required libraries
 """
-#**************************************************************************
-# 
-# This material was prepared by the Los Alamos National Security, LLC 
-# (LANS), under Contract DE-AC52-06NA25396 with the U.S. Department of 
-# Energy (DOE). All rights in the material are reserved by DOE on behalf 
-# of the Government and LANS pursuant to the contract. You are authorized 
-# to use the material for Government purposes but it is not to be released 
-# or distributed to the public. NEITHER THE UNITED STATES NOR THE UNITED 
-# STATES DEPARTMENT OF ENERGY, NOR LOS ALAMOS NATIONAL SECURITY, LLC, NOR 
-# ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR 
-# ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
-# COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
-# PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE 
-# PRIVATELY OWNED RIGHTS.
-# 
-#**************************************************************************
 
 import os
 import sys
@@ -120,10 +103,8 @@ def __run_helper__(environment, short_name, long_name, version,
                    skip, install, quiet):
     helper = sys.modules[long_name]
     configured.append(short_name)
-    dependencies = []
-    if hasattr(helper, 'DEPENDENCIES'):
-        dependencies = helper.DEPENDENCIES
-    for dep in dependencies:
+    cfg = helper.configuration()
+    for dep in cfg.dependencies:
         dep_name = dep
         if not isinstance(dep, basestring):
             dep_name = dep[0]
@@ -139,11 +120,11 @@ def __run_helper__(environment, short_name, long_name, version,
         sys.stdout.write('\n')
         sys.stdout.flush()
     if skip:
-        helper.null()
-    elif not helper.is_installed(environment, version):
+        cfg.null()
+    elif not cfg.is_installed(environment, version):
         if not install:
             raise Exception(help_name + ' cannot be found.')
-        helper.install(environment, version)
-    env = dict(helper.environment.items() + environment.items())
+        cfg.install(environment, version)
+    env = dict(cfg.environment.items() + environment.items())
     util.save_cache(env)  ## intermediate cache
     return env

@@ -1,61 +1,37 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-Find Breathe
-"""
-#**************************************************************************
-# 
-# This material was prepared by the Los Alamos National Security, LLC 
-# (LANS), under Contract DE-AC52-06NA25396 with the U.S. Department of 
-# Energy (DOE). All rights in the material are reserved by DOE on behalf 
-# of the Government and LANS pursuant to the contract. You are authorized 
-# to use the material for Government purposes but it is not to be released 
-# or distributed to the public. NEITHER THE UNITED STATES NOR THE UNITED 
-# STATES DEPARTMENT OF ENERGY, NOR LOS ALAMOS NATIONAL SECURITY, LLC, NOR 
-# ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR 
-# ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, 
-# COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
-# PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE 
-# PRIVATELY OWNED RIGHTS.
-# 
-#**************************************************************************
 
-import os, sys
+import os
+import sys
 
 from sysdevel.util import *
+from sysdevel.configuration import py_config
 
-DEPENDENCIES = [('sphinx', '1.0.7'), 'uuid',]
+class configuration(py_config):
+    """
+    Find/install Breathe
+    """
+    def __init__(self):
+        py_config.__init__(self, 'breathe', '1.0.0',
+                           dependencies=[('sphinx', '1.0.7'), 'uuid',],
+                           debug=False)
+        ## NB: will not work (unpatched) with Python 2.4
+        if sys.version_info < (2, 6):
+            raise Exception('Breathe is not supported ' +
+                            'for Python versions < 2.6')
 
-environment = dict()
-breathe_found = False
+    def install(self, environ, version, locally=True):
+        if not breathe_found:
+            website = 'https://pypi.python.org/packages/source/b/breathe/'
+            if version is None:
+                version = self.version
+            if sys.version_info < (2, 6):
+                version = '0.7.5'  ## Force version for patching
+            src_dir = 'breathe-' + str(version)
+            archive = src_dir + '.tar.gz' 
+            install_pypkg(src_dir, website, archive, locally=locally,
+                          patch=patch)
+            if not self.is_installed(environ, version):
+                raise Exception('Breathe installation failed.')
 
-
-def null():
-    pass
-
-
-def is_installed(environ, version):
-    global environment, breathe_found
-    try:
-        import breathe
-        ver = breathe.__version__
-        if compare_versions(ver, version) == -1:
-            return breathe_found
-        breathe_found = True
-    except:
-        pass
-    return breathe_found
-
-
-def install(environ, version, locally=True):
-    if not breathe_found:
-        website = 'https://pypi.python.org/packages/source/b/breathe/'
-        version = '0.7.5'  ## Force version due to 2.4 patching
-        src_dir = 'breathe-' + str(version)
-        archive = src_dir + '.tar.gz' 
-        install_pypkg(src_dir, website, archive, locally=locally, patch=patch)
-        #if not is_installed(environ, version):
-        #    raise Exception('Breathe installation failed.')
 
 
 def patch(src_path):

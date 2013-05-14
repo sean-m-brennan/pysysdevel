@@ -1,58 +1,58 @@
-"""
-Find or fetch MacPorts
-"""
 
-import platform
 import sys
+import platform
 
 from sysdevel.util import *
+from sysdevel.configuration import config
 
-environment = dict()
-macports_found = False
-DEBUG = False
-
-
-def null():
-    pass
-
-
-def is_installed(environ, version):
-    global macports_found
-    macports_found = system_uses_macports()
-    if macports_found and sys.executable != python_executable():
-        switch_python()
-    return macports_found
+class configuration(config):
+    """
+    Find/fetch MacPorts
+    """
+    def __init__(self):
+        config.__init__(self, debug=False)
 
 
-def install(environ, version, locally=True):
-    if not 'darwin' in platform.system().lower():
-        return
-    if not macports_found:
-        if version is None:
-            version = '2.1.3'
-        python_version = '26'
-        website = ('https://distfiles.macports.org/MacPorts/',)
-        src_dir = 'MacPorts-' + str(version)
-        archive = src_dir + '.tar.gz'
-        autotools_install(environ, website, archive, src_dir, False)
-        patch_file('/opt/local/share/macports/Tcl/port1.0/portconfigure.tcl',
-                   'default configure.ldflags',
-                   '{-L${prefix}/lib}',
-                   '{"-L${prefix}/lib -Xlinker -headerpad_max_install_names"}')
-        patch_file('/opt/local/etc/macports/macports.conf',
-                   'build_arch  i386', '#', '')
-        log = open(os.path.join(target_build_dir, 'macports_setup.log'), 'w')
-        admin_check_call(['port', 'install', 'python' + python_version,
-                          'python_select'], stdout=log, stderr=log)
-        admin_check_call(['port', 'select', '--set', 'python',
-                          'python' + python_version], stdout=log, stderr=log)
-        admin_check_call(['port', 'install', 'py' + python_version + '-numpy'],
-                         stdout=log, stderr=log)
-        admin_check_call(['port', 'install',
-                          'py' + python_version + '-py2app-devel'],
-                         stdout=log, stderr=log)
-        log.close()
-        switch_python()
+    def is_installed(self, environ, version):
+        self.found = system_uses_macports()
+        if self.found and sys.executable != python_executable():
+            switch_python()
+        return self.found
+
+
+    def install(self, environ, version, locally=True):
+        if not 'darwin' in platform.system().lower():
+            return
+        if not self.found:
+            if version is None:
+                version = '2.1.3'
+            python_version = '26'
+            website = ('https://distfiles.macports.org/MacPorts/',)
+            src_dir = 'MacPorts-' + str(version)
+            archive = src_dir + '.tar.gz'
+            autotools_install(environ, website, archive, src_dir, False)
+            patch_file('/opt/local/share/macports/Tcl/port1.0/portconfigure.tcl',
+                       'default configure.ldflags',
+                       '{-L${prefix}/lib}',
+                       '{"-L${prefix}/lib -Xlinker -headerpad_max_install_names"}')
+            patch_file('/opt/local/etc/macports/macports.conf',
+                       'build_arch  i386', '#', '')
+            log = open(os.path.join(target_build_dir,
+                                    'macports_setup.log'), 'w')
+            admin_check_call(['port', 'install', 'python' + python_version,
+                              'python_select'], stdout=log, stderr=log)
+            admin_check_call(['port', 'select', '--set', 'python',
+                              'python' + python_version],
+                             stdout=log, stderr=log)
+            admin_check_call(['port', 'install',
+                              'py' + python_version + '-numpy'],
+                             stdout=log, stderr=log)
+            admin_check_call(['port', 'install',
+                              'py' + python_version + '-py2app-devel'],
+                             stdout=log, stderr=log)
+            log.close()
+            switch_python()
+
 
 def port_prefix():
     return '/opt/local'
