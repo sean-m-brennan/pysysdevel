@@ -24,7 +24,7 @@ class configuration(config):
 
 
     def is_installed(self, environ, version):
-        set_debug(DEBUG)
+        set_debug(self.debug)
         try:
             locations = glob.glob(os.path.join('C:' + os.sep + 'OpenSCG',
                                                'openjdk*'))
@@ -46,7 +46,7 @@ class configuration(config):
                 pass
             self.found = True
         except Exception,e:
-            if DEBUG:
+            if self.debug:
                 print e
             return self.found
 

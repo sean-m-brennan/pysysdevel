@@ -46,10 +46,11 @@ class configuration(config):
                 except Exception, e:
                     if self.debug:
                         print e
-                return self.found
+                    return self.found
 
         msys_root = os.path.join(mingw_root, 'msys', '1.0')
         try:
+            
             gcc = find_program('mingw32-gcc', [mingw_root], limit=limit)
             gxx = find_program('mingw32-g++', [mingw_root], limit=limit)
             gfort = find_program('mingw32-gfortran', [mingw_root], limit=limit)

@@ -23,7 +23,7 @@ class configuration(lib_config):
         else:
             required_version = version.replace('.', '_')
 
-        set_debug(DEBUG)
+        set_debug(self.debug)
         base_dirs = []
         limit = False
         if 'BOOST_LIB_DIR' in environ and environ['BOOST_LIB_DIR']:
