@@ -1,3 +1,6 @@
+"""
+Configuration classes
+"""
 
 import os
 import platform
