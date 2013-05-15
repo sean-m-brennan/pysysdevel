@@ -138,7 +138,30 @@ def glob_insensitive(directory, file_pattern):
     def either(c):
         return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
     return glob.glob(os.path.join(d, ''.join(map(either, pattern))))
-    
+
+
+def rcs_revision(rcs_type='git'):
+    if rcs_type.lower() == 'git':
+        cmd_line = ['git', 'rev-list', 'HEAD']
+    elif rcs_type.lower() == 'hg' or rcs_type.lower() == 'mercurial':
+        cmd_line = ['hg', 'log', '-r', 'tip',
+                    '--template "{latesttag}.{latesttagdistance}"']
+    elif rcs_type.lower() == 'svn' or rcs_type.lower() == 'subversion':
+        cmd_line = ['svnversion']
+    else:
+        raise Exception('Unknown Revision Control System.')
+
+    p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE)
+    out = p.communicate()[0].strip()
+    if p.wait() != 0:
+        raise Exception('Failed to get ')
+    if rcs_type.lower() == 'git':
+        return len(out.splitlines())
+    elif rcs_type.lower() == 'hg' or rcs_type.lower() == 'mercurial':
+        return int(out, 10)
+    elif rcs_type.lower() == 'svn' or rcs_type.lower() == 'subversion':
+        return int(out[out.find(':')+1:out.find('M')], 10)
+
 
 
 def convert_ulist(str_list):
