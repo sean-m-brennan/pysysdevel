@@ -282,7 +282,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
     of the given library. For Windows, it is important to not have a
     trailing path separator.
     '''
-    ## FIXME for Windows, separate definitions (*.dll.a, *.lib) from libs (*.dll, *.a)
+    ## FIXME for Windows, separate definitions (*.dll.a, *.lib) from libs (*.dll, *.a) as libname_SHLIB_DIR
     default_lib_paths = ['lib64', 'lib', '']
     suffixes = ['.so', '.a']
     prefixes = ['', 'lib']
@@ -1437,21 +1437,6 @@ def get_options(pkg_config, options):
         INCLUDE_TCLTK_WIN = False
         #os.environ['PATH'] += _sep_ + 'gtk/lib' + _sep_ + 'gtk/bin'
 
-        ''' FIXME needs access to environment'''
-        # FIXME only if including an extension
-        msvcrt_release_path = \
-            pkg_config.environment['MSVCRT_DIR'].encode('ascii', 'ignore')
-        msvcrt_debug_path = \
-            pkg_config.environment['MSVCRT_DEBUG_DIR'].encode('ascii', 'ignore')
-
-        if pkg_config.build_config.lower() == 'debug':
-            msvc_glob = os.path.join(msvcrt_debug_path, '*.*')
-            sys.path.append(msvcrt_debug_path)
-        else:
-            msvc_glob = os.path.join(msvcrt_release_path, '*.*')
-            sys.path.append(msvcrt_release_path)
-
-
         package_name = pkg_config.PACKAGE
         icon_file = os.path.join(pkg_config.PACKAGE, pkg_config.image_dir,
                                  pkg_config.PACKAGE + '.ico')
@@ -1460,7 +1445,7 @@ def get_options(pkg_config, options):
         addtnl_files += pkg_config.get_data_files(options['app'])
         addtnl_files += pkg_config.get_extra_data_files(options['app'])
         addtnl_files += [('.', [icon_file])]
-        addtnl_files += [('.', glob.glob(msvc_glob))] #FIXME
+        addtnl_files += [('.', pkg_config.get_missing_libraries())]
         icon_res = [(0, icon_file)]
 
         if INCLUDE_GTK_WIN:
@@ -1502,7 +1487,7 @@ def get_options(pkg_config, options):
                     'typelibs': [],
                     'compressed': False,
                     'xref': False,
-                    #'bundle_files': file_bundling,
+                    'bundle_files': file_bundling,
                     'skip_archive': False,
                     'ascii': False,
                     'custom_boot_script': '',

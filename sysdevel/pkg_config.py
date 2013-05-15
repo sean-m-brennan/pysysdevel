@@ -75,6 +75,8 @@ class pkg_config(object):
         self.build_config      = 'release'
         self.extra_pkgs        = extra_pkgs
         self.extra_libraries   = extra_libs
+        self.missing_libraries = []
+        self.has_extension     = False
 
         if package_tree is not None:
             self.package_names = dict((tree.root(),
@@ -144,3 +146,20 @@ class pkg_config(object):
 
     def get_extra_data_files(self, *args):
         return self.extra_data_files
+
+    def get_missing_libraries(self, *args):
+        ''' List of libraries for explicit inclusion in py2exe build '''
+        if self.has_extension:
+            msvcrt_release_path = \
+                self.environment['MSVCRT_DIR'].encode('ascii', 'ignore')
+            msvcrt_debug_path = \
+                self.environment['MSVCRT_DEBUG_DIR'].encode('ascii', 'ignore')
+            if self.build_config.lower() == 'debug':
+                msvc_glob = os.path.join(msvcrt_debug_path, '*.*')
+                sys.path.append(msvcrt_debug_path)
+            else:
+                msvc_glob = os.path.join(msvcrt_release_path, '*.*')
+                sys.path.append(msvcrt_release_path)
+            self.missing_libraries += glob.glob(msvc_glob)
+
+        return self.missing_libraries

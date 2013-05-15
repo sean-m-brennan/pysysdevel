@@ -33,6 +33,7 @@ class lib_config(config):
      def null(self):
          self.environment[self.lib.upper() + '_INCLUDE_DIR'] = None
          self.environment[self.lib.upper() + '_LIB_DIR'] = None
+         self.environment[self.lib.upper() + '_SHLIB_DIR'] = None
          self.environment[self.lib.upper() + '_LIBS'] = None
          self.environment[self.lib.upper() + '_LIBRARIES'] = None
 
@@ -72,6 +73,7 @@ class lib_config(config):
 
          self.environment[self.lib.upper() + '_INCLUDE_DIR'] = incl_dir
          self.environment[self.lib.upper() + '_LIB_DIR'] = lib_dir
+         #self.environment[self.lib.upper() + '_SHLIB_DIR'] = lib_dir #FIXME
          self.environment[self.lib.upper() + '_LIB'] = [lib]
          self.environment[self.lib.upper() + '_LIBRARIES'] = [self.lib]
          return self.found
