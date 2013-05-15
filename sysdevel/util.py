@@ -137,7 +137,7 @@ def is_sequence(seq):
 def glob_insensitive(directory, file_pattern):
     def either(c):
         return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
-    return glob.glob(os.path.join(d, ''.join(map(either, pattern))))
+    return glob.glob(os.path.join(directory, ''.join(map(either, file_pattern))))
 
 
 def rcs_revision(rcs_type='git'):
