@@ -28,7 +28,7 @@ class configuration(config):
             raise Exception('MinGW *and* MS Visual C both specified ' +
                             'as the chosen compiler.')
         limit = False
-        if 'MINGW_DIR' in environ:
+        if 'MINGW_DIR' in environ and environ['MINGW_DIR']:
             mingw_root = environ['MINGW_DIR']
             limit = True
 

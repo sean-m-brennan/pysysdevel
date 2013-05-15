@@ -14,8 +14,8 @@ class configuration(prog_config):
         set_debug(self.debug)
         base_dirs = []
         limit = False
-        if 'GIT' in environ:
-            locations.append(os.path.dirname(environ['GIT']))
+        if 'GIT' in environ and environ['GIT']:
+            base_dirs.append(os.path.dirname(environ['GIT']))
             limit = True
 
         base_dirs.append(os.path.join('C:',  os.sep, 'msysgit', 'cmd'))

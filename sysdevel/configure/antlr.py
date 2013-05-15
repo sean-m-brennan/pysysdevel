@@ -18,7 +18,7 @@ class configuration(prog_config):
         set_debug(self.debug)
         limit = False
         antlr_root = None
-        if 'ANTLR' in environ:
+        if 'ANTLR' in environ and environ['ANTLR']:
             antlr_root = environ['ANTLR']
             limit = True
 

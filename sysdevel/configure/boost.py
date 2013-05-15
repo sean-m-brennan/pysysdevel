@@ -26,10 +26,10 @@ class configuration(lib_config):
         set_debug(DEBUG)
         base_dirs = []
         limit = False
-        if 'BOOST_LIB_DIR' in environ:
+        if 'BOOST_LIB_DIR' in environ and environ['BOOST_LIB_DIR']:
             base_dirs.append(environ['BOOST_LIB_DIR'])
             limit = True
-            if 'BOOST_INCLUDE_DIR' in environ:
+            if 'BOOST_INCLUDE_DIR' in environ and environ['BOOST_INCLUDE_DIR']:
                 base_dirs.append(environ['BOOST_INCLUDE_DIR'])
 
         if not limit:
@@ -69,7 +69,7 @@ class configuration(lib_config):
 
         self.environment['BOOST_INCLUDE_DIR'] = incl_dir
         self.environment['BOOST_LIB_DIR'] = lib_dir
-        self.environment['BOOST_LIBS'] = libs
+        self.environment['BOOST_LIB_FILES'] = libs
         self.environment['BOOST_LIBRARIES'] = ['boost_python',
                                                'boost_date_time',
                                                'boost_filesystem',

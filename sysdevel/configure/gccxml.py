@@ -18,7 +18,7 @@ class configuration(prog_config):
         set_debug(self.debug)
         limit = False
         base_dirs = []
-        if 'GCCXML' in environ:
+        if 'GCCXML' in environ and environ['GCCXML']:
             base_dirs.append(os.path.dirname(environ['GCCXML']))
             limit = True
 

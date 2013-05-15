@@ -17,7 +17,7 @@ class configuration(config):
     def null(self):
         self.environment['MSVCRT_DIR'] = None
         self.environment['MSVCRT_DEBUG_DIR'] = None
-        self.environment['MSVCRT_LIBS'] = []
+        self.environment['MSVCRT_LIBRARIES'] = []
 
 
     def is_installed(self, environ, version):
@@ -26,10 +26,10 @@ class configuration(config):
         msvcr_rel_dirs = []
         msvcr_dbg_dirs = []
         limit = False
-        if 'MSVCRT_DIR' in environ:
+        if 'MSVCRT_DIR' in environ and environ['MSVCRT_DIR']:
             msvcr_rel_dirs.append(environ['MSVCRT_DIR'])
             limit = True
-            if 'MSVCRT_DEBUG_DIR' in environ:
+            if 'MSVCRT_DEBUG_DIR' in environ and environ['MSVCRT_DEBUG_DIR']:
                 msvcr_dbg_dirs.append(environ['MSVCRT_DEBUG_DIR'])
 
         version, _, _ = get_msvc_version()
@@ -80,7 +80,7 @@ class configuration(config):
 
         self.environment['MSVCRT_DIR'] = release_dir
         self.environment['MSVCRT_DEBUG_DIR'] = debug_dir
-        self.environment['MSVCRT_LIBS'] = ['msvcr' + ver, 'msvcp' + ver]
+        self.environment['MSVCRT_LIBRARIES'] = ['msvcr' + ver, 'msvcp' + ver]
         return self.found
 
 

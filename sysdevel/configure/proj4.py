@@ -16,10 +16,10 @@ class configuration(lib_config):
         set_debug(self.debug)
         base_dirs = []
         limit = False
-        if 'PROJ4_LIB_DIR' in environ:
+        if 'PROJ4_LIB_DIR' in environ and environ['PROJ4_LIB_DIR']:
             base_dirs.append(environ['PROJ4_LIB_DIR'])
             limit = True
-            if 'PROJ4_INCLUDE_DIR' in environ:
+            if 'PROJ4_INCLUDE_DIR' in environ and environ['PROJ4_INCLUDE_DIR']:
                 base_dirs.append(environ['PROJ4_INCLUDE_DIR'])
 
         if not limit:
@@ -45,8 +45,8 @@ class configuration(lib_config):
 
         self.environment['PROJ4_INCLUDE_DIR'] = proj4_inc_dir
         self.environment['PROJ4_LIBRARY_DIR'] = proj4_lib_dir
-        self.environment['PROJ4_LIBRARIES'] = proj4_libs
-        self.environment['PROJ4_LIBS'] = ['proj',]
+        self.environment['PROJ4_LIBRARIES'] = ['proj']
+        self.environment['PROJ4_LIB_FILES'] = proj4_libs
         return self.found
 
 

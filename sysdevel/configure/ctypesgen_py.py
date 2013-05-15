@@ -1,4 +1,5 @@
 
+from sysdevel.util import *
 from sysdevel.configuration import prog_config
 
 class configuration(prog_config):
@@ -18,7 +19,7 @@ class configuration(prog_config):
         set_debug(self.debug)
         limit = False
         locations = []
-        if 'CTYPESGEN' in environ:
+        if 'CTYPESGEN' in environ and environ['CTYPESGEN']:
             locations.append(os.path.dirname(environ['CTYPESGEN']))
             limit = True
 

@@ -37,7 +37,7 @@ class lib_config(config):
         self.environment[self.lib.upper() + '_INCLUDE_DIR'] = None
         self.environment[self.lib.upper() + '_LIB_DIR'] = None
         self.environment[self.lib.upper() + '_SHLIB_DIR'] = None
-        self.environment[self.lib.upper() + '_LIBS'] = None
+        self.environment[self.lib.upper() + '_LIB_FILES'] = None
         self.environment[self.lib.upper() + '_LIBRARIES'] = None
 
 
@@ -46,10 +46,12 @@ class lib_config(config):
 
         locations = []
         limit = False
-        if self.lib.upper() + '_LIB_DIR' in environ:
+        if self.lib.upper() + '_LIB_DIR' in environ and \
+                environ[self.lib.upper() + '_LIB_DIR']:
             locations.append(environ[self.lib.upper() + '_LIB_DIR'])
             limit = True
-            if self.lib.upper() + '_INCLUDE_DIR' in environ:
+            if self.lib.upper() + '_INCLUDE_DIR' in environ and \
+                    environ[self.lib.upper() + '_INCLUDE_DIR']:
                 locations.append(environ[self.lib.upper() + '_INCLUDE_DIR'])
 
         if not limit:
@@ -77,7 +79,7 @@ class lib_config(config):
         self.environment[self.lib.upper() + '_INCLUDE_DIR'] = incl_dir
         self.environment[self.lib.upper() + '_LIB_DIR'] = lib_dir
         #self.environment[self.lib.upper() + '_SHLIB_DIR'] = lib_dir #FIXME
-        self.environment[self.lib.upper() + '_LIB'] = [lib]
+        self.environment[self.lib.upper() + '_LIB_FILES'] = [lib]
         self.environment[self.lib.upper() + '_LIBRARIES'] = [self.lib]
         return self.found
 
@@ -152,7 +154,7 @@ class prog_config(config):
         util.set_debug(self.debug)
         limit = False
         locations = []
-        if self.exe.upper() in environ:
+        if self.exe.upper() in environ and environ[self.exe.upper()]:
             locations.append(os.path.dirname(environ[self.exe.upper()]))
             limit = True
 

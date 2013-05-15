@@ -50,7 +50,7 @@ class configuration(config):
 
         locations = []
         limit = False
-        if 'GMAT_ROOT' in environ:
+        if 'GMAT_ROOT' in environ and environ['GMAT_ROOT']:
             gmat_root = environ['GMAT_ROOT']
         else:
             try:
@@ -219,7 +219,7 @@ class configuration(config):
         self.environment['GMAT_BASE_DIR'] = base_dir
         dirs = []
         self.environment['GMAT_BASE_LIBS'] = [name for name in os.listdir(base_dir)
-                                              if _is_lib_dir(base_dir, name)]
+                                              if self._is_lib_dir(base_dir, name)]
         self.environment['GMAT_BASE_INCLUDE_DIRS'] = [os.path.join(base_dir,
                                                                    'include'),]
 
@@ -288,11 +288,11 @@ class configuration(config):
         gui_dir = os.path.join(self.environment['GMAT_SRC_DIR'], 'gui')
         self.environment['GMAT_GUI_DIR'] = gui_dir
         self.environment['GMAT_GUI_LIBS'] = [name for name in os.listdir(gui_dir)
-                                             if _is_lib_dir(gui_dir, name)]
+                                             if self._is_lib_dir(gui_dir, name)]
         gui_include = os.path.join(gui_dir, 'include')
         self.environment['GMAT_GUI_INCLUDE_DIRS'] = [gui_include]
         for sub in os.listdir(gui_include):
-            if _is_lib_dir(gui_include, sub):
+            if self._is_lib_dir(gui_include, sub):
                 self.environment['GMAT_GUI_INCLUDE_DIRS'] += [
                     os.path.join(gui_include, sub)]
         gui_srcs = []

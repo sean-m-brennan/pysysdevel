@@ -24,10 +24,10 @@ class configuration(lib_config):
 
         base_dirs = []
         limit = False
-        if 'MPICH_LIB_DIR' in environ:
+        if 'MPICH_LIB_DIR' in environ and environ['MPICH_LIB_DIR']:
             base_dirs.append(environ['MPICH_LIB_DIR'])
             limit = True
-            if 'MPICH_INCLUDE_DIR' in environ:
+            if 'MPICH_INCLUDE_DIR' in environ and environ['MPICH_INCLUDE_DIR']:
                 base_dirs.append(environ['MPICH_INCLUDE_DIR'])
 
         if not limit:
@@ -56,8 +56,8 @@ class configuration(lib_config):
 
         self.environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir
         self.environment['MPICH_LIB_DIR'] = mpich_lib_dir
-        self.environment['MPICH_LIBRARIES'] = mpich_libs
-        self.environment['MPICH_LIBS'] = mpich_lib_list
+        self.environment['MPICH_LIBRARIES'] = mpich_lib_list
+        self.environment['MPICH_LIB_FILES'] = mpich_libs
         return self.found
 
 

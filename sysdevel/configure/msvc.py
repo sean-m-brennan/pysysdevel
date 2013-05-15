@@ -36,7 +36,7 @@ class configuration(config):
 
         msvc_dirs = []
         limit = False
-        if 'MSVC' in environ:
+        if 'MSVC' in environ and environ['MSVC']:
             msvc_dirs.append(os.path.dirname(environ['MSVC']))
             limit = True
 

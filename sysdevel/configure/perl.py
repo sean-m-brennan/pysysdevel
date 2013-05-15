@@ -20,16 +20,16 @@ class configuration(lib_config):
             ver = version.split('.')[0]
 
         set_debug(self.debug)
+        lib_ver = ''
         base_dirs = []
         limit = False
-        if 'PERL_LIB_DIR' in environ:
+        if 'PERL_LIB_DIR' in environ and environ['PERL_LIB_DIR']:
             base_dirs.append(environ['PERL_LIB_DIR'])
             limit = True
-            if 'PERL_INCLUDE_DIR' in environ:
+            if 'PERL_INCLUDE_DIR' in environ and environ['PERL_INCLUDE_DIR']:
                 base_dirs.append(environ['PERL_INCLUDE_DIR'])
 
         if not limit:
-            lib_ver = ''
             try:
                 base_dirs.append(os.environ['PERL_CORE'])
             except:
@@ -73,8 +73,8 @@ class configuration(lib_config):
         self.environment['PERL'] = perl_exe
         self.environment['PERL_INCLUDE_DIR'] = incl_dir
         self.environment['PERL_LIB_DIR'] = lib_dir
-        self.environment['PERL_LIBRARIES'] = [perl_lib]
-        self.environment['PERL_LIBS'] = ['perl' + lib_ver]
+        self.environment['PERL_LIBRARIES'] = ['perl' + lib_ver]
+        self.environment['PERL_LIB_FILES'] = [perl_lib]
         return self.found
 
 

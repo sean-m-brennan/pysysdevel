@@ -17,10 +17,10 @@ class configuration(lib_config):
         set_debug(self.debug)
         locations = []
         limit = False
-        if 'GEOS_LIB_DIR' in environ:
+        if 'GEOS_LIB_DIR' in environ and environ['GEOS_LIB_DIR']:
              locations.append(environ['GEOS_LIB_DIR'])
              limit = True
-             if 'GEOS_INCLUDE_DIR' in environ:
+             if 'GEOS_INCLUDE_DIR' in environ and environ['GEOS_INCLUDE_DIR']:
                  locations.append(environ['GEOS_INCLUDE_DIR'])
 
         if not limit:
@@ -51,8 +51,8 @@ class configuration(lib_config):
 
         self.environment['GEOS_INCLUDE_DIR'] = inc_dir
         self.environment['GEOS_LIBRARY_DIR'] = lib_dir
-        self.environment['GEOS_LIBRARIES'] = libs
-        self.environment['GEOS_LIBS'] = ['geos', ' geos_c',]
+        self.environment['GEOS_LIBRARIES'] = ['geos', ' geos_c',]
+        self.environment['GEOS_LIB_FILES'] = libs
         return self.found
 
 

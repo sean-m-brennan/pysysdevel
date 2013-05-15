@@ -20,10 +20,10 @@ class configuration(lib_config):
 
         locations = []
         limit = False
-        if 'DL_LIB_DIR' in environ:
+        if 'DL_LIB_DIR' in environ and environ['DL_LIB_DIR']:
             locations.append(environ['DL_LIB_DIR'])
             limit = True
-            if 'DL_INCLUDE_DIR' in environ:
+            if 'DL_INCLUDE_DIR' in environ and environ['DL_INCLUDE_DIR']:
                 locations.append(environ['DL_INCLUDE_DIR'])
 
         if not limit:
@@ -45,7 +45,7 @@ class configuration(lib_config):
         self.environment['DL_INCLUDE_DIR'] = incl_dir
         self.environment['DL_LIB_DIR'] = lib_dir
          #self.environment['DL_SHLIB_DIR'] = lib_dir #FIXME
-        self.environment['DL_LIB'] = [lib]
+        self.environment['DL_LIB_FILES'] = [lib]
         self.environment['DL_LIBRARIES'] = [self.lib]
         return self.found
 

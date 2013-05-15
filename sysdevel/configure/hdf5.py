@@ -17,10 +17,10 @@ class configuration(lib_config):
         set_debug(self.debug)
         base_dirs = []
         limit = False
-        if 'HDF5_LIB_DIR' in environ:
+        if 'HDF5_LIB_DIR' in environ and environ['HDF5_LIB_DIR']:
             base_dirs.append(environ['HDF5_LIB_DIR'])
             limit = True
-            if 'HDF5_INCLUDE_DIR' in environ:
+            if 'HDF5_INCLUDE_DIR' in environ and environ['HDF5_INCLUDE_DIR']:
                 base_dirs.append(environ['HDF5_INCLUDE_DIR'])
 
         if not limit:
@@ -38,7 +38,7 @@ class configuration(lib_config):
         try:
             hdf5_lib_dir, hdf5_libs  = find_libraries(self.lib, base_dirs,
                                                       limit=limit)
-            hdf5_inc_dir = find_header(slef.hdr, base_dirs, limit=limit)
+            hdf5_inc_dir = find_header(self.hdr, base_dirs, limit=limit)
             self.found = True
         except Exception, e:
             if self.debug:
@@ -52,8 +52,8 @@ class configuration(lib_config):
                              'hdf5_hldll', 'hdf5_hl_fortrandll', 'hdf5_hl_cppdll',]
         self.environment['HDF5_INCLUDE_DIR'] = hdf5_inc_dir
         self.environment['HDF5_LIB_DIR'] = hdf5_lib_dir
-        self.environment['HDF5_LIBS'] = hdf5_lib_list
-        self.environment['HDF5_LIBRARIES'] = hdf5_libs
+        self.environment['HDF5_LIB_FILES'] = hdf5_libs
+        self.environment['HDF5_LIBRARIES'] = hdf5_lib_list
         return self.found
 
 
@@ -62,8 +62,7 @@ class configuration(lib_config):
             if version is None:
                 version = '1.8.10'
             website = ('http://www.hdfgroup.org/',
-                       'ftp/HDF5/releases/hdf5-1.8.10/src-' +
-                       str(version) + '/')
+                       'ftp/HDF5/releases/hdf5-' + str(version) + '/src/')
             if locally or 'windows' in platform.system().lower():
                 src_dir = 'hdf5-' + str(version)
                 archive = src_dir + '.tar.bz2'

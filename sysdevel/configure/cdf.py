@@ -24,11 +24,11 @@ class configuration(lib_config):
 
         limit = False
         base_dirs = []
-        if 'CDF_LIB_DIR' in environ:
+        if 'CDF_LIB_DIR' in environ and environ['CDF_LIB_DIR']:
             base_dirs.append(environ['CDF_LIB_DIR'])
             limit = True
-            if 'CDF_INCLUDE_DIR' in environ:
-                locations.append(environ['CDF_INCLUDE_DIR'])
+            if 'CDF_INCLUDE_DIR' in environ and environ['CDF_INCLUDE_DIR']:
+                base_dirs.append(environ['CDF_INCLUDE_DIR'])
 
         if not limit:
             if 'windows' in platform.system().lower():
@@ -50,7 +50,7 @@ class configuration(lib_config):
 
         self.environment['CDF_INCLUDE_DIR'] = incl_dir
         self.environment['CDF_LIB_DIR'] = lib_dir
-        self.environment['CDF_LIBS'] = [lib]
+        self.environment['CDF_LIB_FILES'] = [lib]
         self.environment['CDF_LIBRARIES'] = [lib_name]
         return self.found
 
