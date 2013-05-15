@@ -15,6 +15,41 @@ class configuration(lib_config):
             self.dependencies.append(['mingw'])
 
 
+    def is_installed(self, environ, version=None):
+        set_debug(self.debug)
+
+        locations = []
+        limit = False
+        if 'DL_LIB_DIR' in environ:
+            locations.append(environ['DL_LIB_DIR'])
+            limit = True
+            if 'DL_INCLUDE_DIR' in environ:
+                locations.append(environ['DL_INCLUDE_DIR'])
+
+        if not limit:
+            try:
+                locations.append(environ['MINGW_DIR'])
+                locations.append(environ['MSYS_DIR'])
+            except:
+                pass
+        try:
+            incl_dir = find_header(self.hdr, locations, limit=limit)
+            lib_dir, lib = find_library(self.lib, locations,
+                                        limit=limit, wildcard=False)
+            self.found = True
+        except Exception, e:
+            if self.debug:
+                print e
+            return self.found
+
+        self.environment['DL_INCLUDE_DIR'] = incl_dir
+        self.environment['DL_LIB_DIR'] = lib_dir
+         #self.environment['DL_SHLIB_DIR'] = lib_dir #FIXME
+        self.environment['DL_LIB'] = [lib]
+        self.environment['DL_LIBRARIES'] = [self.lib]
+        return self.found
+
+
     def install(self, environ, version, locally=True):
         global local_search_paths
         if not self.found:

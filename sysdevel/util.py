@@ -267,16 +267,18 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
     raise Exception(filename + ' not found.')
 
 
-def find_library(name, extra_paths=[], extra_subdirs=[], limit=False):
+def find_library(name, extra_paths=[], extra_subdirs=[],
+                 limit=False, wildcard=True):
     '''
     Find the containing directory and proper filename (returned as a tuple)
     of the given library.
     '''
-    return find_libraries(name, extra_paths, extra_subdirs, limit, True)
+    return find_libraries(name, extra_paths, extra_subdirs,
+                          limit, True, wildcard=wildcard)
 
 
 def find_libraries(name, extra_paths=[], extra_subdirs=[],
-                   limit=False, single=False):
+                   limit=False, single=False, wildcard=True):
     '''
     Find the containing directory and proper filenames (returned as a tuple)
     of the given library. For Windows, it is important to not have a
@@ -311,7 +313,10 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                         for prefix in prefixes:
                             if 'windows' in platform.system().lower():
                                 for def_suffix in def_suffixes:
-                                    filename = prefix + name + '*' + def_suffix
+                                    if wildcard:
+                                        filename = prefix + name + '*' + def_suffix
+                                    else:
+                                        filename = prefix + name + def_suffix
                                     if DEBUG:
                                         print 'Searching ' + root + \
                                             ' for ' + filename
@@ -321,7 +326,10 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                             definitions.append((root.rstrip(os.sep), fn))
                                     #FIXME return to caller
                             for suffix in suffixes:
-                                filename = prefix + name + '*' + suffix
+                                if wildcard:
+                                    filename = prefix + name + '*' + suffix
+                                else:
+                                    filename = prefix + name + suffix
                                 if DEBUG:
                                     print 'Searching ' + root + \
                                         ' for ' + filename

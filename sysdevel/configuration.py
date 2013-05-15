@@ -24,94 +24,94 @@ class config(object):
 
 
 class lib_config(config):
-     def __init__(self, lib, header, dependencies=[], debug=False):
-         config.__init__(self, dependencies, debug)
-         self.lib = lib
-         self.hdr = header
+    def __init__(self, lib, header, dependencies=[], debug=False):
+        config.__init__(self, dependencies, debug)
+        self.lib = lib
+        self.hdr = header
 
 
-     def null(self):
-         self.environment[self.lib.upper() + '_INCLUDE_DIR'] = None
-         self.environment[self.lib.upper() + '_LIB_DIR'] = None
-         self.environment[self.lib.upper() + '_SHLIB_DIR'] = None
-         self.environment[self.lib.upper() + '_LIBS'] = None
-         self.environment[self.lib.upper() + '_LIBRARIES'] = None
+    def null(self):
+        self.environment[self.lib.upper() + '_INCLUDE_DIR'] = None
+        self.environment[self.lib.upper() + '_LIB_DIR'] = None
+        self.environment[self.lib.upper() + '_SHLIB_DIR'] = None
+        self.environment[self.lib.upper() + '_LIBS'] = None
+        self.environment[self.lib.upper() + '_LIBRARIES'] = None
 
 
-     def is_installed(self, environ, version=None):
-         util.set_debug(self.debug)
+    def is_installed(self, environ, version=None):
+        util.set_debug(self.debug)
 
-         locations = []
-         limit = False
-         if self.lib.upper() + '_LIB_DIR' in environ:
-             locations.append(environ[self.lib.upper() + '_LIB_DIR'])
-             limit = True
-             if self.lib.upper() + '_INCLUDE_DIR' in environ:
-                 locations.append(environ[self.lib.upper() + '_INCLUDE_DIR'])
+        locations = []
+        limit = False
+        if self.lib.upper() + '_LIB_DIR' in environ:
+            locations.append(environ[self.lib.upper() + '_LIB_DIR'])
+            limit = True
+            if self.lib.upper() + '_INCLUDE_DIR' in environ:
+                locations.append(environ[self.lib.upper() + '_INCLUDE_DIR'])
 
-         if not limit:
-             try:
-                 locations.append(os.environ[self.lib.upper() + '_ROOT'])
-             except:
-                 pass
-             for d in util.programfiles_directories():
-                 locations.append(os.path.join(d, 'GnuWin32'))
-                 locations += util.glob_insensitive(d, self.lib + '*')
-             try:
-                 locations.append(environ['MINGW_DIR'])
-                 locations.append(environ['MSYS_DIR'])
-             except:
-                 pass
-         try:
-             incl_dir = util.find_header(self.hdr, locations, limit=limit)
-             lib_dir, lib = util.find_library(self.lib, locations, limit=limit)
-             self.found = True
-         except Exception, e:
-             if util.DEBUG:
-                 print e
-             return self.found
+        if not limit:
+            try:
+                locations.append(os.environ[self.lib.upper() + '_ROOT'])
+            except:
+                pass
+            for d in util.programfiles_directories():
+                locations.append(os.path.join(d, 'GnuWin32'))
+                locations += util.glob_insensitive(d, self.lib + '*')
+            try:
+                locations.append(environ['MINGW_DIR'])
+                locations.append(environ['MSYS_DIR'])
+            except:
+                pass
+        try:
+            incl_dir = util.find_header(self.hdr, locations, limit=limit)
+            lib_dir, lib = util.find_library(self.lib, locations, limit=limit)
+            self.found = True
+        except Exception, e:
+            if self.debug:
+                print e
+            return self.found
 
-         self.environment[self.lib.upper() + '_INCLUDE_DIR'] = incl_dir
-         self.environment[self.lib.upper() + '_LIB_DIR'] = lib_dir
-         #self.environment[self.lib.upper() + '_SHLIB_DIR'] = lib_dir #FIXME
-         self.environment[self.lib.upper() + '_LIB'] = [lib]
-         self.environment[self.lib.upper() + '_LIBRARIES'] = [self.lib]
-         return self.found
+        self.environment[self.lib.upper() + '_INCLUDE_DIR'] = incl_dir
+        self.environment[self.lib.upper() + '_LIB_DIR'] = lib_dir
+        #self.environment[self.lib.upper() + '_SHLIB_DIR'] = lib_dir #FIXME
+        self.environment[self.lib.upper() + '_LIB'] = [lib]
+        self.environment[self.lib.upper() + '_LIBRARIES'] = [self.lib]
+        return self.found
 
 
-     def install(self, environ, version, locally=True):
-         raise NotImplementedError('lib' + self.lib + ' installation')
+    def install(self, environ, version, locally=True):
+        raise NotImplementedError('lib' + self.lib + ' installation')
 
 
 
 class py_config(config):
-     def __init__(self, pkg, version, dependencies=[], debug=False):
-         config.__init__(self, dependencies, debug)
-         self.pkg = pkg
-         self.version = version
+    def __init__(self, pkg, version, dependencies=[], debug=False):
+        config.__init__(self, dependencies, debug)
+        self.pkg = pkg
+        self.version = version
 
 
-     def is_installed(self, environ, version=None):
-         try:
-             impl = __import__(self.pkg.lower())
-             check_version = False
-             if hasattr(impl, '__version__'):
-                 ver = impl.__version__
-                 check_version = True
-             elif hasattr(impl, 'version'):
-                 ver = impl.version
-                 check_version = True
-             if check_version:
-                 if util.compare_versions(ver, version) == -1:
-                     return self.found
-             self.found = True
-         except:
-             if util.DEBUG:
-                 print e
-         return self.found
+    def is_installed(self, environ, version=None):
+        try:
+            impl = __import__(self.pkg.lower())
+            check_version = False
+            if hasattr(impl, '__version__'):
+                ver = impl.__version__
+                check_version = True
+            elif hasattr(impl, 'version'):
+                ver = impl.version
+                check_version = True
+            if check_version:
+                if util.compare_versions(ver, version) == -1:
+                    return self.found
+            self.found = True
+        except:
+            if self.debug:
+                print e
+        return self.found
 
 
-     def install(self, environ, version, locally=True):
+    def install(self, environ, version, locally=True):
         if not self.found:
             website = 'https://pypi.python.org/packages/source/' + \
                 self.pkg[0] + '/' + self.pkg + '/'
@@ -126,34 +126,34 @@ class py_config(config):
 
 
 class js_config(config):
-     def __init__(self, dependencies=[], debug=False):
-         config.__init__(self, dependencies, debug)
+    def __init__(self, dependencies=[], debug=False):
+        config.__init__(self, dependencies, debug)
 
 
-     def is_installed(self, environ, version=None):
-         return False  ## always fetch
+    def is_installed(self, environ, version=None):
+        return False  ## always fetch
 
 
 
 class prog_config(config):
-     def __init__(self, exe, dependencies=[], debug=False):
-         config.__init__(self, dependencies, debug)
-         self.exe = exe
+    def __init__(self, exe, dependencies=[], debug=False):
+        config.__init__(self, dependencies, debug)
+        self.exe = exe
 
 
-     def null(self):
-         self.environment[self.exe.upper()] = None
+    def null(self):
+        self.environment[self.exe.upper()] = None
 
 
-     def is_installed(self, environ, version=None):
-         util.set_debug(self.debug)
-         limit = False
-         locations = []
-         if self.exe.upper() in environ:
-             locations.append(os.path.dirname(environ[self.exe.upper()]))
-             limit = True
+    def is_installed(self, environ, version=None):
+        util.set_debug(self.debug)
+        limit = False
+        locations = []
+        if self.exe.upper() in environ:
+            locations.append(os.path.dirname(environ[self.exe.upper()]))
+            limit = True
 
-         if not limit:
+        if not limit:
             try:
                 locations.append(os.environ[self.exe.upper() + '_ROOT'])
             except:
@@ -164,17 +164,17 @@ class prog_config(config):
             except:
                 pass
 
-         try:
-             program = util.find_program(self.exe, locations, limit=limit)
-             self.found = True
-         except Exception, e:
-             if util.DEBUG:
-                 print e
-             return self.found
+        try:
+            program = util.find_program(self.exe, locations, limit=limit)
+            self.found = True
+        except Exception, e:
+            if self.debug:
+                print e
+            return self.found
 
-         self.environment[self.exe.upper()] = program
-         return self.found
+        self.environment[self.exe.upper()] = program
+        return self.found
 
 
-     def install(self, environ, version, locally=True):
-         raise NotImplementedError(self.exe + ' installation')
+    def install(self, environ, version, locally=True):
+        raise NotImplementedError(self.exe + ' installation')
