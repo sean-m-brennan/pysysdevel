@@ -160,7 +160,10 @@ def rcs_revision(rcs_type='git'):
     elif rcs_type.lower() == 'hg' or rcs_type.lower() == 'mercurial':
         return int(out, 10)
     elif rcs_type.lower() == 'svn' or rcs_type.lower() == 'subversion':
-        return int(out[out.find(':')+1:out.find('M')], 10)
+        end = out.find('M')
+        if end < 0:
+            end = len(out)
+        return int(out[out.find(':')+1:end], 10)
 
 
 
