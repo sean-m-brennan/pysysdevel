@@ -20,3 +20,15 @@ class configuration(py_config):
         except:
             pass
         return self.found
+
+
+    def install(self, environ, version, locally=True):
+        if not self.found:
+            website = 'https://pypi.python.org/packages/source/p/pyserial/'
+            if version is None:
+                version = self.version
+            src_dir = 'pyserial-' + str(version)
+            archive = src_dir + '.tar.gz' 
+            install_pypkg(src_dir, website, archive, locally=locally)
+            if not self.is_installed(environ, version):
+                raise Exception(self.pkg + ' installation failed.')
