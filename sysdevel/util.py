@@ -151,7 +151,10 @@ def rcs_revision(rcs_type='git'):
     else:
         raise Exception('Unknown Revision Control System.')
 
-    p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE)
+    shell=False
+    if 'windows' in platform.system().lower():
+        shell = True
+    p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE, shell=shell)
     out = p.communicate()[0].strip()
     if p.wait() != 0:
         raise Exception('Failed to get ')
