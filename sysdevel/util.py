@@ -938,7 +938,7 @@ def install_pyscript(website, name, locally=True):
 
 
 def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
-                  patch=None):
+                  patch=None, extra_args=[]):
     if src_dir is None:
         src_dir = name
     here = os.path.abspath(os.getcwd())
@@ -965,13 +965,14 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
             environ['PYTHONPATH'] = target_lib_dir
             cmd_line = [sys.executable, 'setup.py', 'build', 'install',
                         '--home=' + target_dir,
-                        '--install-lib=' + target_lib_dir]
+                        '--install-lib=' + target_lib_dir] + extra_args
         else:
             sudo_prefix = []
             if not as_admin():
                 sudo_prefix = ['sudo']
             cmd_line = sudo_prefix + [sys.executable,
-                                      'setup.py', 'build', 'install']
+                                      'setup.py', 'build', 'install'
+                                      ] + extra_args
         log_file = os.path.join(target_dir, name + '.log')
         log = open(log_file, 'w')
         log.write(str(cmd_line) + '\n\n')

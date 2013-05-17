@@ -20,5 +20,6 @@ class configuration(py_config):
             src_dir = 'scipy-' + str(version)
             archive = src_dir + '.tar.gz' 
             install_pypkg(src_dir, website, archive, locally=locally)
-            if not self.is_installed(environ, version):
+                           #extra_args=['config_fc', '--fcompiler=gnu95'])
+           if not self.is_installed(environ, version):
                 raise Exception('SciPy installation failed.')
