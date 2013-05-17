@@ -13,7 +13,7 @@ class configuration(lib_config):
     def __init__(self):
         lib_config.__init__(self, "cdf", "cdf.h", debug=False)
         if 'windows' in platform.system().lower():
-            self.dependencies.append(['mingw'])
+            self.dependencies.append('mingw')
 
 
     def is_installed(self, environ, version):
