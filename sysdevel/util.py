@@ -54,9 +54,6 @@ environment_defaults = dict({
         'TK_ENABLED'   : False,
         })
 
-_sep_ = ':'
-if 'windows' in platform.system().lower():
-    _sep_ = ';'
 
 VERBOSE = False
 DEBUG = False
@@ -209,7 +206,7 @@ def find_program(name, pathlist=[], limit=False):
     Find the path of an executable.
     '''
     try:
-        path_env = os.environ['PATH'].split(_sep_)
+        path_env = os.environ['PATH'].split(os.pathsep)
     except:
         path_env = []
     if not limit:
@@ -1463,7 +1460,7 @@ def get_options(pkg_config, options):
 
         INCLUDE_GTK_WIN = False
         INCLUDE_TCLTK_WIN = False
-        #os.environ['PATH'] += _sep_ + 'gtk/lib' + _sep_ + 'gtk/bin'
+        #os.environ['PATH'] += os.pathsep + 'gtk/lib' + os.pathsep + 'gtk/bin'
 
         package_name = pkg_config.PACKAGE
         icon_file = os.path.join(pkg_config.PACKAGE, pkg_config.image_dir,

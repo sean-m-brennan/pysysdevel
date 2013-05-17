@@ -32,6 +32,10 @@ class configuration(lib_config):
 
         if not limit:
             try:
+                base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+            except:
+                pass
+            try:
                 base_dirs.append(os.environ['MPICH_ROOT'])
             except:
                 pass

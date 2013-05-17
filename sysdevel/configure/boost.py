@@ -34,6 +34,10 @@ class configuration(lib_config):
 
         if not limit:
             try:
+                base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+            except:
+                pass
+            try:
                 boost_root = os.environ['BOOST_ROOT']
                 boost_root = boost_root.strip('"')
                 if os.path.exists(os.path.join(boost_root, 'stage', 'lib')):
@@ -142,8 +146,9 @@ class configuration(lib_config):
                         raise subprocess.CalledProcessError(status, cmd_line)
                 else:
                     check_call(['./bootstrap.sh'], stdout=log, stderr=err)
-                    check_call(['./bjam', 'install', '--prefix=' + prefix],
-                               stdout=log, stderr=err)
+                    subprocess.call(['./bjam', 'install', '--prefix=' + prefix],
+                                    stdout=log, stderr=err)
+                    ## may return an error even if everything built
                 log.close()
                 err.close()
                 os.chdir(here)

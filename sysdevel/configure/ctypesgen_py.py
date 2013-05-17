@@ -26,7 +26,7 @@ class configuration(prog_config):
         try:
             exe = find_program('ctypesgen.py', locations, limit=limit)
             import ctypesgencore
-            lib = os.path.dirname(ctypesgencore.__file__)
+            lib = os.path.dirname(os.path.dirname(ctypesgencore.__file__))
             self.found = True
         except Exception, e:
             if self.debug:

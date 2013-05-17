@@ -56,6 +56,10 @@ class lib_config(config):
 
         if not limit:
             try:
+                locations += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+            except:
+                pass
+            try:
                 locations.append(os.environ[self.lib.upper() + '_ROOT'])
             except:
                 pass

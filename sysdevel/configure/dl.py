@@ -28,6 +28,10 @@ class configuration(lib_config):
 
         if not limit:
             try:
+                locations += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+            except:
+                pass
+            try:
                 locations.append(environ['MINGW_DIR'])
                 locations.append(environ['MSYS_DIR'])
             except:

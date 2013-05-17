@@ -25,7 +25,7 @@ class configuration(prog_config):
         classpaths = []
         if not limit:
             try:
-                pathlist = environ['CLASSPATH'].split(_sep_)
+                pathlist = environ['CLASSPATH'].split(os.pathsep)
                 for path in pathlist:
                     classpaths.append(os.path.dirname(path))
             except:

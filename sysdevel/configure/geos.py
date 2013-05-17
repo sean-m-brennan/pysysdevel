@@ -25,6 +25,10 @@ class configuration(lib_config):
 
         if not limit:
             try:
+                locations += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+            except:
+                pass
+            try:
                 locations.append(os.environ['GEOS_ROOT'])
             except:
                 pass
