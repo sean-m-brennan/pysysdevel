@@ -58,7 +58,6 @@ class configuration(prog_config):
             if version is None:
                 version = '3.1.2'
             website = 'http://www.antlr' + str(version[0]) + '.org/download/'
-            here = os.path.abspath(os.getcwd())
             src_dir = 'antlr-' + str(version)
             archive = src_dir + '.tar.gz'
             fetch(website, archive, archive)
