@@ -21,6 +21,8 @@ class configuration(lib_config):
         lib_name = 'cdf'
         if 'windows' in platform.system().lower():
             lib_name += 'NativeLibrary'
+        if version is None:
+            version = '34_1'
 
         limit = False
         base_dirs = []
@@ -31,6 +33,10 @@ class configuration(lib_config):
                 base_dirs.append(environ['CDF_INCLUDE_DIR'])
 
         if not limit:
+            try:
+                base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+            except:
+                pass
             if 'windows' in platform.system().lower():
                 base_dirs.append(os.path.join('C:', os.sep, 'CDF Distribution',
                                               'cdf' + version + '-dist'))
@@ -92,6 +98,12 @@ class configuration(lib_config):
                 os.chdir(build_dir)
                 log = open('build.log', 'w')
                 if 'windows' in platform.system().lower():
+                    try:
+                        ## ncurses prerequisite
+                        check_call(['mingw-get', 'install', 'pdcurses'])
+                        check_call(['mingw-get', 'install', 'libpdcurses'])
+                    except:
+                        pass
                     mingw_check_call(environ, ['make',
                                                'OS=mingw', 'ENV=gnu', 'all'],
                                      stdout=log, stderr=log)

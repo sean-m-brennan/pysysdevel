@@ -18,7 +18,7 @@ class configuration(py_config):
             website = 'http://prdownloads.sourceforge.net/ffnet/'
             src_dir = 'ffnet-' + str(version)
             archive = src_dir + '.tar.gz'
-            install_pypkg(src_dir, website, archive, locally=locally,
-                          extra_args=['config_fc', '--fcompiler=gnu95'])
+            install_pypkg(src_dir, website, archive, locally=locally)
+            #              extra_args=['config_fc', '--fcompiler=gnu95'])
             if not self.is_installed(environ, version):
                 raise Exception('ffnet installation failed.')

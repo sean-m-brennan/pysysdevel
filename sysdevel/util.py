@@ -938,7 +938,11 @@ def install_pyscript(website, name, locally=True):
 
 
 def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
-                  patch=None, extra_args=[]):
+                  patch=None, extra_cmds=[], extra_args=[]):
+    compiler = []
+    if 'windows' in platform.system().lower():
+        # FIXME on windows only if using mingw
+        compiler.append('--compiler=mingw32')
     if src_dir is None:
         src_dir = name
     here = os.path.abspath(os.getcwd())
@@ -957,28 +961,31 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
     try:
         os.chdir(os.path.join(target_dir, src_dir))
         environ = os.environ.copy()
+        shell = False
+        if 'windows' in platform.system().lower():
+            shell = True
         if env:
             for e in env:
                 (key, value) = e.split('=')
                 environ[key] = value
         if locally:
             environ['PYTHONPATH'] = target_lib_dir
-            cmd_line = [sys.executable, 'setup.py', 'build', 'install',
-                        '--home=' + target_dir,
-                        '--install-lib=' + target_lib_dir] + extra_args
+            cmd_line = [sys.executable, 'setup.py'] + extra_cmds + \
+                ['build'] + compiler + ['install', '--home=' + target_dir,
+                 '--install-lib=' + target_lib_dir] + extra_args
         else:
             sudo_prefix = []
             if not as_admin():
                 sudo_prefix = ['sudo']
-            cmd_line = sudo_prefix + [sys.executable,
-                                      'setup.py', 'build', 'install'
-                                      ] + extra_args
+            cmd_line = sudo_prefix + [sys.executable, 'setup.py'] + \
+                extra_cmds + ['build'] + compiler + ['install'] + extra_args
         log_file = os.path.join(target_dir, name + '.log')
         log = open(log_file, 'w')
         log.write(str(cmd_line) + '\n\n')
         log.flush()
         try:
-            p = subprocess.Popen(cmd_line, env=environ, stdout=log, stderr=log)
+            p = subprocess.Popen(cmd_line, env=environ, stdout=log, stderr=log,
+                                 shell=shell)
             status = process_progress(p)
             log.close()
         except KeyboardInterrupt,e:
@@ -1052,18 +1059,18 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
         prefix = global_prefix
     prefix = convert2unixpath(prefix)  ## MinGW shell strips backslashes
 
-    build_dir = os.path.join(target_build_dir, src_dir, '_build')
+    build_dir = os.path.join(target_build_dir, src_dir)  ## build in-place
     mkdir(build_dir)
     os.chdir(build_dir)
     log = open('build.log', 'w')
     if 'windows' in platform.system().lower():
         ## Assumes MinGW present, detected, and loaded in environment
-        mingw_check_call(environ, ['../configure', '--prefix=' + prefix] +
+        mingw_check_call(environ, ['./configure', '--prefix=' + prefix] +
                          extra_cfg, stdout=log, stderr=log)
         mingw_check_call(environ, ['make'], stdout=log, stderr=log)
         mingw_check_call(environ, ['make', 'install'], stdout=log, stderr=log)
     else:
-        check_call(['../configure', '--prefix=' + prefix] + extra_cfg,
+        check_call(['./configure', '--prefix=' + prefix] + extra_cfg,
                    stdout=log, stderr=log)
         check_call(['make'], stdout=log, stderr=log)
         if locally:

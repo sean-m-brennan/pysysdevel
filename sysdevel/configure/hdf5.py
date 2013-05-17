@@ -25,6 +25,10 @@ class configuration(lib_config):
 
         if not limit:
             try:
+                base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+            except:
+                pass
+            try:
                 base_dirs.append(os.environ['HDF5_ROOT'])
             except:
                 pass
@@ -63,11 +67,18 @@ class configuration(lib_config):
                 version = '1.8.10'
             website = ('http://www.hdfgroup.org/',
                        'ftp/HDF5/releases/hdf5-' + str(version) + '/src/')
+            if 'windows' in platform.system().lower():
+                try:
+                    ## zlib prerequisite
+                    check_call(['mingw-get', 'install', 'libz-dev'])
+                except:
+                    pass
             if locally or 'windows' in platform.system().lower():
                 src_dir = 'hdf5-' + str(version)
-                archive = src_dir + '.tar.bz2'
+                archive = src_dir + '.tar.gz'
                 autotools_install(environ, website, archive, src_dir, locally,
-                                  extra_cfg=['--enable-cxx', '--enable-fortran'])
+                                  extra_cfg=['--enable-cxx',
+                                             '--enable-fortran', '-lws2_32'])
             else:
                 global_install('HDF5', website,
                                brew='hdf5', port='hdf5',
