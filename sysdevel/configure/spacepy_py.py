@@ -21,7 +21,7 @@ class configuration(py_config):
             src_dir = 'spacepy-' + str(version)
             archive = src_dir + '.tar.gz' 
             install_pypkg(src_dir, website, archive, locally=locally)
-                          #extra_args=['config_fc', '--fcompiler=gnu95'])
+            #              extra_args=['config_fc', '--fcompiler=gnu95'])
             ## FIXME silently failing
             #if not self.is_installed(environ, version):
             #    raise Exception('SpacePy installation failed.')
