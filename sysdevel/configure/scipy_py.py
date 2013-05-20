@@ -10,7 +10,7 @@ class configuration(py_config):
     """
     def __init__(self):
         py_config.__init__(self, 'scipy', '0.11.0',
-                           dependencies=['gfortran', 'atlas'],
+                           dependencies=['gfortran'], #'atlas'], #'lapack'?],
                            debug=False)
 
 
@@ -22,6 +22,8 @@ class configuration(py_config):
                 'project/scipy/scipy/' + version + '/'
             src_dir = 'scipy-' + str(version)
             archive = src_dir + '.tar.gz'
+            if 'windows' in platform.system().lower():
+                locally = False
             install_pypkg(src_dir, website, archive, locally=locally)
             if not self.is_installed(environ, version):
                 raise Exception('SciPy installation failed.')
