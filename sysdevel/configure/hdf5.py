@@ -67,7 +67,9 @@ class configuration(lib_config):
                 version = '1.8.10'
             website = ('http://www.hdfgroup.org/',
                        'ftp/HDF5/releases/hdf5-' + str(version) + '/src/')
+            env = dict()
             if 'windows' in platform.system().lower():
+                env['LIBS'] = '-lws2_32'
                 try:
                     ## zlib prerequisite
                     check_call(['mingw-get', 'install', 'libz-dev'])
@@ -77,11 +79,15 @@ class configuration(lib_config):
                 src_dir = 'hdf5-' + str(version)
                 archive = src_dir + '.tar.gz'
                 autotools_install(environ, website, archive, src_dir, locally,
-                                  extra_cfg=['--enable-cxx',
-                                             '--enable-fortran', '-lws2_32'])
+                                  extra_cfg=['--enable-cxx','--enable-fortran'],
+                                  addtnl_env=env)
             else:
                 global_install('HDF5', website,
                                brew='hdf5', port='hdf5',
                                deb='hdf5-devel', rpm='libhdf5-dev')
             if not self.is_installed(environ, version):
                 raise Exception('HDF5 installation failed.')
+
+
+    ## FIXME: windows mingw build needs patch
+    ## Remove h5perf_serial from perform/Makefile.in

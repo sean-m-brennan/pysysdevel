@@ -1042,7 +1042,7 @@ def gcc_is_64bit():
         
 
 def autotools_install(environ, website, archive, src_dir, locally=True,
-                      extra_cfg=[]):
+                      extra_cfg=[], addtnl_env=dict()):
     global local_search_paths
     here = os.path.abspath(os.getcwd())
     fetch(''.join(website), archive, archive)
@@ -1063,17 +1063,22 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
     if 'windows' in platform.system().lower():
         ## Assumes MinGW present, detected, and loaded in environment
         mingw_check_call(environ, ['./configure', '--prefix=' + prefix] +
-                         extra_cfg, stdout=log, stderr=log)
-        mingw_check_call(environ, ['make'], stdout=log, stderr=log)
-        mingw_check_call(environ, ['make', 'install'], stdout=log, stderr=log)
+                         extra_cfg, stdout=log, stderr=log,
+                         addtnl_env=addtnl_env)
+        mingw_check_call(environ, ['make'], stdout=log, stderr=log,
+                         addtnl_env=addtnl_env)
+        mingw_check_call(environ, ['make', 'install'], stdout=log, stderr=log,
+                         addtnl_env=addtnl_env)
     else:
         check_call(['./configure', '--prefix=' + prefix] + extra_cfg,
-                   stdout=log, stderr=log)
-        check_call(['make'], stdout=log, stderr=log)
+                   stdout=log, stderr=log, env=addtnl_env)
+        check_call(['make'], stdout=log, stderr=log, env=addtnl_env)
         if locally:
-            check_call(['make', 'install'], stdout=log, stderr=log)
+            check_call(['make', 'install'], stdout=log, stderr=log,
+                       env=addtnl_env)
         else:
-            admin_check_call(['make', 'install'], stdout=log, stderr=log)
+            admin_check_call(['make', 'install'], stdout=log, stderr=log,
+                             addtnl_env=addtnl_env)
     log.close()
     os.chdir(here)
 
@@ -1207,7 +1212,8 @@ def check_call(cmd_line, *args, **kwargs):
         raise subprocess.CalledProcessError(status, cmd_line)
     
 
-def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None):
+def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None,
+                     addtnl_env=dict()):
     if 'windows' in platform.system().lower():
         if not isinstance(cmd_line, basestring):
             cmd_line = ' '.join(cmd_line)
@@ -1221,7 +1227,7 @@ def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None):
             if status != 0:
                 raise subprocess.CalledProcessError(status, cmd_line)
         else:
-            check_call([cmd_line], stdout=stdout, stderr=stderr)
+            check_call([cmd_line], stdout=stdout, stderr=stderr, env=addtnl_env)
     else:
         if isinstance(cmd_line, basestring):
             cmd_line = cmd_line.split()
@@ -1229,18 +1235,21 @@ def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None):
         if not as_admin():
             sudo_prefix = ['sudo']
         if quiet:
-            check_call(sudo_prefix + cmd_line, stdout=stdout, stderr=stderr)
+            check_call(sudo_prefix + cmd_line, stdout=stdout, stderr=stderr,
+                       env=addtnl_env)
         else:
             check_call(sudo_prefix + cmd_line,
-                       stdout=sys.stdout, stderr=sys.stderr)
+                       stdout=sys.stdout, stderr=sys.stderr, env=addtnl_env)
 
 
-def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None):
+def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None,
+                     addtnl_env=dict()):
     path = os.path.join(environ['MSYS_DIR'], 'bin') + ';' + \
         os.path.join(environ['MINGW_DIR'], 'bin') + ';'
     os_environ = os.environ.copy()
     old_path = os_environ.get('PATH', '')
     os_environ['PATH'] = path.encode('ascii', 'ignore') #+ old_path #FIXME?
+    os_environ = dict(os_environ.items() + addtnl_env.items())
     shell = os.path.join(environ['MSYS_DIR'], 'bin', 'bash.exe')
     if not isinstance(cmd_line, basestring):
         cmd_line = ' '.join(cmd_line)
