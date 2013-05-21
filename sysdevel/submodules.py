@@ -35,11 +35,11 @@ def git_pull(submodules):
 
 
 
-def git_pull_sparse(submodule, includes, excludes):
+def git_pull_sparse(submodule, excludes):
     """
     Takes a tuple, consisting of project name, repo location,
     and optional revision number,
-    plus a list of directories for sparse checkout.
+    plus a list of paths to exclude from sparse checkout.
     """
     shell = False
     if 'windows' in platform.system().lower():
@@ -54,11 +54,10 @@ def git_pull_sparse(submodule, includes, excludes):
                               shell=shell)
         subprocess.check_call("git config core.sparsecheckout true", shell=True)
         sparse = open(os.path.join('.git', 'info', 'sparse-checkout'), 'w')
+        sparse.write('/*\n')  ## all files
+        sparse.write('*/*\n')  ## all directories
         for ex in excludes:
             sparse.write('!' + ex + '/\n')
-        sparse.write('*\n')  ## all files
-        for incl in includes:
-            sparse.write(incl + '/\n')
         sparse.close()
         subprocess.check_call(['git', 'pull'], shell=shell)
         try:  ## specific revision
