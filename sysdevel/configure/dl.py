@@ -80,9 +80,10 @@ class configuration(lib_config):
                 os.chdir(build_dir)
                 log = open('build.log', 'w')
                 patch_c_only_header('dlfcn.h')
-                mingw_check_call(environ, ['./configure', '--prefix=' + prefix,
-                                           '--libdir=' + prefix + '/lib',
-                                           '--incdir=' + prefix + '/include',
+                mingw_check_call(environ, ['./configure',
+                                           '--prefix="' + prefix + '"',
+                                           '--libdir="' + prefix + '/lib"',
+                                           '--incdir="' + prefix + '/include"',
                                            '--enable-shared'],
                                  stdout=log, stderr=log)
                 mingw_check_call(environ, ['make'], stdout=log, stderr=log)

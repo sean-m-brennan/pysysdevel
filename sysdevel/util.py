@@ -1062,7 +1062,7 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
     log = open('build.log', 'w')
     if 'windows' in platform.system().lower():
         ## Assumes MinGW present, detected, and loaded in environment
-        mingw_check_call(environ, ['./configure', '--prefix=' + prefix] +
+        mingw_check_call(environ, ['./configure', '--prefix="' + prefix + '"'] +
                          extra_cfg, stdout=log, stderr=log,
                          addtnl_env=addtnl_env)
         mingw_check_call(environ, ['make'], stdout=log, stderr=log,

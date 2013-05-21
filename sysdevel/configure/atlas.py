@@ -43,7 +43,7 @@ class configuration(lib_config):
                 if 'windows' in platform.system().lower():
                     # Assumes MinGW present, detected, and loaded in environment
                     mingw_check_call(environ, ['../configure',
-                                               '--prefix=' + prefix,
+                                               '--prefix="' + prefix + '"',
                                                '--shared', #'-O ',
                                                '-b 32', '-Si nocygin 1'],
                                      stdout=log, stderr=log)

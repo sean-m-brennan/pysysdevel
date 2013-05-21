@@ -138,7 +138,7 @@ class configuration(lib_config):
                     #toolset = 'toolset=msvc'
                     cmd_line = 'bjam.exe install link=shared link=static ' + \
                         toolset + ' variant=release threading=single ' + \
-                        '--prefix=' + prefix
+                        '--prefix="' + prefix + '"'
                     p = subprocess.Popen(cmd_line, env=os_environ,
                                          stdout=log, stderr=err)
                     status = p.wait()

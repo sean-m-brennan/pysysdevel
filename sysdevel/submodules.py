@@ -35,7 +35,7 @@ def git_pull(submodules):
 
 
 
-def git_pull_sparse(submodule, rules):
+def git_pull_sparse(submodule, includes, excludes):
     """
     Takes a tuple, consisting of project name, repo location,
     and optional revision number,
@@ -49,13 +49,16 @@ def git_pull_sparse(submodule, rules):
         os.mkdir(submodule[0])
         os.chdir(submodule[0])
         subprocess.check_call(['git', 'init'], shell=shell)
-        subprocess.check_call(['git', 'remote', 'add', '-f',
+        subprocess.check_call(['git', 'remote', 'add',
                                '--track', 'master', 'origin', submodule[1]],
                               shell=shell)
         subprocess.check_call("git config core.sparsecheckout true", shell=True)
         sparse = open(os.path.join('.git', 'info', 'sparse-checkout'), 'w')
-        for rule in rules:
-            sparse.write(rule + '\n')
+        for ex in excludes:
+            sparse.write('!' + ex + '/\n')
+        sparse.write('*\n')  ## all files
+        for incl in includes:
+            sparse.write(incl + '/\n')
         sparse.close()
         subprocess.check_call(['git', 'pull'], shell=shell)
         try:  ## specific revision

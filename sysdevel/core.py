@@ -111,6 +111,8 @@ class CustomDistribution(oldDistribution):
         self.quit_on_error = attrs.get('quit_on_error')
         if self.quit_on_error != None:
             del old_attrs['quit_on_error']
+        else:
+            self.quit_on_error = True
         ## Enable parallel building
         self.parallel_build = attrs.get('parallel_build')
         if self.parallel_build != None:
@@ -205,7 +207,7 @@ def process_subpackages(parallel, fnctn, build_base, subpackages,
     try:
         if not parallel:
             raise ImportError
-        ## parallel
+        ## parallel building
         import pp
         job_server = pp.Server()
         results = [job_server.submit(process_package,
@@ -223,7 +225,7 @@ def process_subpackages(parallel, fnctn, build_base, subpackages,
                 has_failed = True
             if has_failed:
                 sys.exit(status)
-    except ImportError: ## serial
+    except ImportError: ## serial building
         for sub in subpackages:
             args = (fnctn, build_base, util.process_progress,
                     sys.executable, argv,) + sub
