@@ -7,7 +7,7 @@ class configuration(py_config):
     Find/install SpacePy
     """
     def __init__(self):
-        py_config.__init__(self, 'spacepy', '0.1.3',
+        py_config.__init__(self, 'spacepy', '0.1.4',
                            dependencies=['gfortran', 'cdf', 'ffnet', 'h5py'],
                            debug=True)
 
