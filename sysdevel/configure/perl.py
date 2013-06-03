@@ -32,6 +32,7 @@ class configuration(lib_config):
         if not limit:
             try:
                 base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+                base_dirs += os.environ['CPATH'].split(os.pathsep)
             except:
                 pass
             try:

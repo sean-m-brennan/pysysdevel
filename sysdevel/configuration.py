@@ -57,6 +57,7 @@ class lib_config(config):
         if not limit:
             try:
                 locations += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+                locations += os.environ['CPATH'].split(os.pathsep)
             except:
                 pass
             try:

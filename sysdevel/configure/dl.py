@@ -18,27 +18,28 @@ class configuration(lib_config):
     def is_installed(self, environ, version=None):
         set_debug(self.debug)
 
-        locations = []
+        base_dirs = []
         limit = False
         if 'DL_LIB_DIR' in environ and environ['DL_LIB_DIR']:
-            locations.append(environ['DL_LIB_DIR'])
+            base_dirs.append(environ['DL_LIB_DIR'])
             limit = True
             if 'DL_INCLUDE_DIR' in environ and environ['DL_INCLUDE_DIR']:
-                locations.append(environ['DL_INCLUDE_DIR'])
+                base_dirs.append(environ['DL_INCLUDE_DIR'])
 
         if not limit:
             try:
-                locations += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+                base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+                base_dirs += os.environ['CPATH'].split(os.pathsep)
             except:
                 pass
             try:
-                locations.append(environ['MINGW_DIR'])
-                locations.append(environ['MSYS_DIR'])
+                base_dirs.append(environ['MINGW_DIR'])
+                base_dirs.append(environ['MSYS_DIR'])
             except:
                 pass
         try:
-            incl_dir = find_header(self.hdr, locations, limit=limit)
-            lib_dir, lib = find_library(self.lib, locations,
+            incl_dir = find_header(self.hdr, base_dirs, limit=limit)
+            lib_dir, lib = find_library(self.lib, base_dirs,
                                         limit=limit, wildcard=False)
             self.found = True
         except Exception, e:
