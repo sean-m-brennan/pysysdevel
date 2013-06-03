@@ -12,13 +12,13 @@ try:
         pass
 
     ## WxPython
-
+    # FIXME wx ui objects
 
     from datetime.datetime import strptime
     from flex_ui import FlexUI, multiline_text
     UserInterface = FlexUI
 
-except __OneTimeCustomException:
+except __OneTimeCustomException, e:
     ## Pyjamas
     from pyjamas import Window
     from pyjamas.ui.RootPanel import RootPanel
@@ -28,12 +28,12 @@ except __OneTimeCustomException:
     from pyjamas.ui.DecoratorPanel import DecoratorTitledPanel
     from pyjamas.ui.HorizontalPanel import HorizontalPanel
     from pyjamas.ui.VerticalPanel import VerticalPanel
-    from pyjamas.ui.Image import Image
     from pyjamas.ui.HTML import HTML
     from pyjamas.ui.Button import Button
     from pyjamas.ui.RadioButton import RadioButton
     from pyjamas.ui.FlexTable import FlexTable
     from pyjamas.ui.Label import Label
+    from pyjamas.ui.Image import Image
     from pyjamas.ui.CheckBox import CheckBox
     from pyjamas.ui.TextArea import TextArea
     from pyjamas.ui.TextBox import TextBox

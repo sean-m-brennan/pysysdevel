@@ -28,15 +28,31 @@ class configuration(js_config):
             shutil.copy(os.path.join(download_dir, js_file), js_dir)
 
         for js_tpl in [('', 'Detector.js'),
+
                        ('shaders/', 'FXAAShader.js'),
                        ('shaders/', 'CopyShader.js'),
                        ('shaders/', 'ConvolutionShader.js'),
+
+                       ('postprocessing/', 'BloomPass.js'),
+                       ('postprocessing/', 'DotScreenPass.js'),
                        ('postprocessing/', 'EffectComposer.js'),
+                       ('postprocessing/', 'FilmPass.js'),
                        ('postprocessing/', 'MaskPass.js'),
                        ('postprocessing/', 'RenderPass.js'),
+                       ('postprocessing/', 'SavePass.js'),
                        ('postprocessing/', 'ShaderPass.js'),
-                       ('postprocessing/', 'BloomPass.js'),
+                       ('postprocessing/', 'TexturePass.js'),
+
+                       ('controls/', 'EditorControls.js'),
+                       ('controls/', 'FirstPersonControls.js'),
+                       ('controls/', 'FlyControls.js'),
+                       ('controls/', 'OrbitControls.js'),
+                       ('controls/', 'PathControls.js'),
+                       ('controls/', 'PointerLockControls.js'),
+                       ('controls/', 'TrackballControls.js'),
+                       
                        ## plenty more that could be added here
+                       ## effects, renderers, more shaders, etc.
                        ]:
             js_subdir = os.path.join(js_dir, js_tpl[0])
             js_file = js_tpl[1]

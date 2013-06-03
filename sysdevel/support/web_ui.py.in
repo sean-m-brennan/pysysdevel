@@ -52,12 +52,17 @@ class PHPdataHandler(object):
 
 
 def multiline_text(text):
-    return test.replace('\n', '<br/>')
+    return text.replace('\n', '<br/>')
 
 
 
 class WebUI(object):
-    def __init_(self):
+    @classmethod
+    def main(klass, argv=None):
+        klass().__init_UI()
+
+
+    def __init__(self):
         self.server = '@@{WEBSOCKET_SERVER}'
         self.resource = '@@{WEBSOCKET_RESOURCE}'
         self.log = logging.getConsoleLogger()
@@ -125,10 +130,10 @@ JS("""
         'd': new RegExp('^[0-9]{1,2}'),
         'm': new RegExp('^[0-9]{1,2}'),
         'H': new RegExp('^[0-9]{1,2}'),
-        'M': new RegExp('^[0-9]{1,2}')
-        'S': new RegExp('^[0-9]{1,2}')
+        'M': new RegExp('^[0-9]{1,2}'),
+        'S': new RegExp('^[0-9]{1,2}'),
         'f': new RegExp('^[0-9]+')
-    }
+    };
 
     /*
      * _parseData does the actual parsing job needed by `strptime`
@@ -217,11 +222,13 @@ JS("""
                 return null;
             }
             date.setMinutes(parsed.M);
+        }
         if (typeof parsed.S != "undefined") {
             if (parsed.S < 0 || parsed.S > 59) {
                 return null;
             }
             date.setSeconds(parsed.S);
+        }
         if (typeof parsed.f != "undefined") {
             if (parsed.f < 0 || parsed.f > 999) {
                 return null;

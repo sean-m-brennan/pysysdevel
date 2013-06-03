@@ -3,7 +3,6 @@ Model-View-Controller base classes
 """
 
 import math
-import types
 
 
 class UnknownModelException(Exception):
@@ -78,19 +77,18 @@ class DataController(object):
         '''
         Outputs; relevant attributes and properties.
         '''
-        MethodWrapperType = type(object().__hash__)
-        everything = list(dir(self))
-        for slot in dir(self):
-            attr = getattr(self, slot)
-            if slot.startswith('_') or \
-                    isinstance(attr, types.BuiltinMethodType) or \
-                    isinstance(attr, MethodWrapperType) or \
-                    isinstance(attr, types.MethodType) or \
-                    isinstance(attr, types.FunctionType) or \
-                    isinstance(attr, types.TypeType):
-                everything.remove(slot)
-        return everything
-
+        discard = dir(type('dummy', (object,), {}))  ## builtins
+        discard += [item for item in dir(self) if callable(item)]  ## methods
+        return [item for item in dir(self) if item not in discard]
+        """  Followinf not supported under PyJS
+        import inspect
+        discard = dir(type('dummy', (object,), {}))
+        discard += inspect.getmembers(self,
+                                      lambda x: inspect.isbuiltin(x) or \
+                                          inspect.ismethod(x))
+        return [item for item in inspect.getmembers(self)
+                if item not in discard]
+        """
 
     def requires(self):
         '''
