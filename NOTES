@@ -1,3 +1,12 @@
+
+When building fortran->python, the errors:
+     undefined reference to `MAIN__'
+or   undefined reference to `main'
+mean that you must add 'config_fc --fcompiler=gnu95' (or your choice of fortran)
+to your 'python setup.py ...' invocation, and/or add '-shared' to the LDFLAGS
+environment variable.
+
+
 Mac OSX
 -------
 
