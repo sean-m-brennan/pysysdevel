@@ -151,7 +151,7 @@ class build_shlib(build_clib):
                 raise DistutilsError, "library %s has Fortran%s sources"\
                     " but no Fortran compiler found" % (lib_name, ver)
 
-       if fcompiler is not None:
+        if fcompiler is not None:
             fcompiler.extra_f77_compile_args = build_info.get('extra_f77_compile_args') or []
             fcompiler.extra_f90_compile_args = build_info.get('extra_f90_compile_args') or []
 
@@ -200,7 +200,8 @@ class build_shlib(build_clib):
             f_objects = []
 
             if requiref90:
-                if fcompiler.module_dir_switch is None:  #FIXME breaks under numpy 1.7
+                # FIXME breaks under numpy 1.7
+                if fcompiler.module_dir_switch is None:
                     existing_modules = glob('*.mod')
                 extra_postargs += fcompiler.module_options(\
                     module_dirs,module_build_dir)
