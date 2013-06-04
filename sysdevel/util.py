@@ -965,6 +965,7 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
             for e in env:
                 (key, value) = e.split('=')
                 environ[key] = value
+        environ['LDFLAGS'] = '-shared'
         if locally:
             environ['PYTHONPATH'] = target_lib_dir
             cmd_line = [sys.executable, 'setup.py'] + extra_cmds + \

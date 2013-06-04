@@ -115,7 +115,7 @@ class py_config(config):
                 if util.compare_versions(ver, version) == -1:
                     return self.found
             self.found = True
-        except:
+        except Exception, e:
             if self.debug:
                 print e
         return self.found

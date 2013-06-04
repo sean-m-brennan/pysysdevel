@@ -102,8 +102,6 @@ class build_shlib(build_clib):
 
         # save source type information so that build_ext can use it.
         source_languages = []
-        arg = build_info.get('language', None)
-        if arg: source_languages.append(arg)
         if c_sources: source_languages.append('c')
         if cxx_sources: source_languages.append('c++')
         if requiref90: source_languages.append('f90')
@@ -153,6 +151,10 @@ class build_shlib(build_clib):
                 raise DistutilsError, "library %s has Fortran%s sources"\
                     " but no Fortran compiler found" % (lib_name, ver)
 
+       if fcompiler is not None:
+            fcompiler.extra_f77_compile_args = build_info.get('extra_f77_compile_args') or []
+            fcompiler.extra_f90_compile_args = build_info.get('extra_f90_compile_args') or []
+
         macros = build_info.get('macros')
         include_dirs = build_info.get('include_dirs')
         if include_dirs is None:
@@ -198,7 +200,7 @@ class build_shlib(build_clib):
             f_objects = []
 
             if requiref90:
-                if fcompiler.module_dir_switch is None:
+                if fcompiler.module_dir_switch is None:  #FIXME breaks under numpy 1.7
                     existing_modules = glob('*.mod')
                 extra_postargs += fcompiler.module_options(\
                     module_dirs,module_build_dir)
