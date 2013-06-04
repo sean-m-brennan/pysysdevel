@@ -250,13 +250,21 @@ class build_shlib(build_clib):
             link_compiler = cxx_compiler
         extra_postargs = build_info.get('extra_link_args') or []
 
+        ## May be dependent on other libs we're builing
+        shlib_libraries = []
+        for libinfo in build_info.get('libraries',[]):
+            if isinstance(libinfo, basestring):
+                shlib_libraries.append(libinfo)
+            else:
+                shlib_libraries.append(libinfo[0])
+
         ## Alternate ending
         link_compiler.link(
             target_desc          = link_compiler.SHARED_LIBRARY,
             objects              = objects,
             output_filename      = target_library,
             output_dir           = self.build_clib,
-            libraries            = libraries,
+            libraries            = shlib_libraries,
             library_dirs         = library_dirs,
             runtime_library_dirs = runtime_library_dirs,
             debug                = self.debug,
