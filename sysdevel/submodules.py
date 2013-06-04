@@ -9,6 +9,11 @@ import subprocess
 import sys
 import time
 
+def git_version():
+    p = subprocess.Popen(['git', '--version'], stdout=subprocess.PIPE)
+    return tuple([int(x, 10) for x in p.communicate()[0].split()[2].split('.')])
+
+
 def git_pull(submodules):
     """
     Takes a list of tuples, consisting of project name, repo location,
@@ -41,6 +46,11 @@ def git_pull_sparse(submodule, excludes):
     and optional revision number,
     plus a list of paths to exclude from sparse checkout.
     """
+    ## Sparse first implemented in 1.7.0
+    ## Exclusion doesn't work until 1.7.10
+    if git_version() < (1, 7, 10):
+        return git_pull([submodule])
+
     shell = False
     if 'windows' in platform.system().lower():
        shell = True
