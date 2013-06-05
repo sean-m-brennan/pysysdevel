@@ -2,13 +2,24 @@
 'build_exe' command for (non-python) executables
 """
 
+import os
+from glob import glob
+from distutils.errors import DistutilsSetupError, DistutilsError, \
+     DistutilsFileError
+from distutils.dep_util import newer_group
+
 have_numpy = False
 try:
-    from numpy.distutils.command.build_clib import *
+    from numpy.distutils.command.build_clib import build_clib
     from numpy.distutils.misc_util import get_numpy_include_dirs
+    from numpy.distutils import log
+    from numpy.distutils.misc_util import filter_sources, is_sequence
     have_numpy = True
 except:
-    from distutils.command.build_clib import *
+    from distutils.command.build_clib import build_clib
+    from distutils import log
+
+from util import convert_ulist, filter_sources, is_sequence
 
 
 class build_exe(build_clib):

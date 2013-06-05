@@ -131,6 +131,29 @@ def is_sequence(seq):
     return True
 
 
+def filter_sources(sources):
+    """Return four lists of filenames containing
+    C, C++, Fortran, and Fortran 90 module sources,
+    respectively.
+    """
+    c_sources = []
+    cxx_sources = []
+    f_sources = []
+    fmodule_sources = []
+    for source in sources:
+        if fortran_ext_match(source):
+            modules = _get_f90_modules(source)
+            if modules:
+                fmodule_sources.append(source)
+            else:
+                f_sources.append(source)
+        elif cxx_ext_match(source):
+            cxx_sources.append(source)
+        else:
+            c_sources.append(source)
+    return c_sources, cxx_sources, f_sources, fmodule_sources
+
+
 def glob_insensitive(directory, file_pattern):
     def either(c):
         return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c

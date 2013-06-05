@@ -2,16 +2,23 @@
 'build_shlib' command for *shared* (non-python) libraries
 """
 
+import os
+from glob import glob
+from distutils.errors import DistutilsSetupError, DistutilsError, \
+     DistutilsFileError
+from distutils.dep_util import newer_group
+
 have_numpy = False
 try:
-    from numpy.distutils.command.build_clib import *
+    from numpy.distutils.command.build_clib import build_clib
     from numpy.distutils.misc_util import get_numpy_include_dirs
+    from numpy.distutils import log
     have_numpy = True
 except:
-    from distutils.command.build_clib import *
+    from distutils.command.build_clib import build_clib
+    from distutils import log
 
-from distutils import log
-from util import convert_ulist
+from util import convert_ulist, filter_sources, is_sequence
 
 
 class build_shlib(build_clib):
@@ -87,7 +94,7 @@ class build_shlib(build_clib):
 
         # default compilers
         compiler = self.compiler
-        fcompiler = self.fcompiler
+        fcompiler = getattr(self, '_f_compiler', self.fcompiler)
 
         sources = build_info.get('sources')
         if sources is None or not is_sequence(sources):
@@ -153,11 +160,9 @@ class build_shlib(build_clib):
                 raise DistutilsError, "library %s has Fortran%s sources"\
                     " but no Fortran compiler found" % (lib_name, ver)
 
-            ''' Incompatible with older NumPy versions
             if fcompiler is not None:
                 fcompiler.extra_f77_compile_args = build_info.get('extra_f77_compile_args') or []
                 fcompiler.extra_f90_compile_args = build_info.get('extra_f90_compile_args') or []
-            '''
 
         macros = build_info.get('macros')
         include_dirs = build_info.get('include_dirs')
@@ -206,7 +211,6 @@ class build_shlib(build_clib):
             f_objects = []
 
             if requiref90:
-                # FIXME breaks under numpy 1.7
                 if fcompiler.module_dir_switch is None:
                     existing_modules = glob('*.mod')
                 extra_postargs += fcompiler.module_options(\
@@ -221,7 +225,7 @@ class build_shlib(build_clib):
                                                debug=self.debug,
                                                extra_postargs=extra_postargs)
 
-            if requiref90 and self.fcompiler.module_dir_switch is None:
+            if requiref90 and fcompiler.module_dir_switch is None:
                 # move new compiled F90 module files to module_build_dir
                 for f in glob('*.mod'):
                     if f in existing_modules:
