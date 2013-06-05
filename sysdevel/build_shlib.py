@@ -10,7 +10,9 @@ try:
 except:
     from distutils.command.build_clib import *
 
+from distutils import log
 from util import convert_ulist
+
 
 class build_shlib(build_clib):
     '''
@@ -151,9 +153,11 @@ class build_shlib(build_clib):
                 raise DistutilsError, "library %s has Fortran%s sources"\
                     " but no Fortran compiler found" % (lib_name, ver)
 
+            ''' Incompatible with older NumPy versions
             if fcompiler is not None:
                 fcompiler.extra_f77_compile_args = build_info.get('extra_f77_compile_args') or []
                 fcompiler.extra_f90_compile_args = build_info.get('extra_f90_compile_args') or []
+            '''
 
         macros = build_info.get('macros')
         include_dirs = build_info.get('include_dirs')

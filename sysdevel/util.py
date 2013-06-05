@@ -1071,12 +1071,14 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
         mingw_check_call(environ, ['make', 'install'], stdout=log, stderr=log,
                          addtnl_env=addtnl_env)
     else:
+        os_environ = os.environ.copy()
+        os_environ = dict(os_environ.items() + addtnl_env.items())
         check_call(['./configure', '--prefix=' + prefix] + extra_cfg,
-                   stdout=log, stderr=log, env=addtnl_env)
-        check_call(['make'], stdout=log, stderr=log, env=addtnl_env)
+                   stdout=log, stderr=log, env=os_environ)
+        check_call(['make'], stdout=log, stderr=log, env=os_environ)
         if locally:
             check_call(['make', 'install'], stdout=log, stderr=log,
-                       env=addtnl_env)
+                       env=os_environ)
         else:
             admin_check_call(['make', 'install'], stdout=log, stderr=log,
                              addtnl_env=addtnl_env)
@@ -1230,6 +1232,8 @@ def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None,
         else:
             check_call([cmd_line], stdout=stdout, stderr=stderr, env=addtnl_env)
     else:
+        os_environ = os.environ.copy()
+        os_environ = dict(os_environ.items() + addtnl_env.items())
         if isinstance(cmd_line, basestring):
             cmd_line = cmd_line.split()
         sudo_prefix = []
@@ -1237,10 +1241,10 @@ def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None,
             sudo_prefix = ['sudo']
         if quiet:
             check_call(sudo_prefix + cmd_line, stdout=stdout, stderr=stderr,
-                       env=addtnl_env)
+                       env=os_environ)
         else:
             check_call(sudo_prefix + cmd_line,
-                       stdout=sys.stdout, stderr=sys.stderr, env=addtnl_env)
+                       stdout=sys.stdout, stderr=sys.stderr, env=os_environ)
 
 
 def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None,
