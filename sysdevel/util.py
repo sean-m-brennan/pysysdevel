@@ -22,6 +22,7 @@ import zipfile
 import subprocess
 import ctypes
 import string
+import re
 import distutils.sysconfig
 
 try:
@@ -129,6 +130,29 @@ def is_sequence(seq):
     except:
         return False
     return True
+
+
+cxx_ext_match = re.compile(r'.*[.](cpp|cxx|cc)\Z',re.I).match
+fortran_ext_match = re.compile(r'.*[.](f90|f95|f77|for|ftn|f)\Z',re.I).match
+f90_ext_match = re.compile(r'.*[.](f90|f95)\Z',re.I).match
+f90_module_name_match = re.compile(r'\s*module\s*(?P<name>[\w_]+)',re.I).match
+def _get_f90_modules(source):
+    """Return a list of Fortran f90 module names that
+    given source file defines.
+    """
+    if not f90_ext_match(source):
+        return []
+    modules = []
+    f = open(source,'r')
+    f_readlines = getattr(f,'xreadlines',f.readlines)
+    for line in f_readlines():
+        m = f90_module_name_match(line)
+        if m:
+            name = m.group('name')
+            modules.append(name)
+            # break  # XXX can we assume that there is one module per file?
+    f.close()
+    return modules
 
 
 def filter_sources(sources):

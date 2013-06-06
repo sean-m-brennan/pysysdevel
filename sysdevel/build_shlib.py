@@ -159,10 +159,11 @@ class build_shlib(build_clib):
                     ver = '90'
                 raise DistutilsError, "library %s has Fortran%s sources"\
                     " but no Fortran compiler found" % (lib_name, ver)
-
+            '''
             if fcompiler is not None:
                 fcompiler.extra_f77_compile_args = build_info.get('extra_f77_compile_args') or []
                 fcompiler.extra_f90_compile_args = build_info.get('extra_f90_compile_args') or []
+                '''
 
         macros = build_info.get('macros')
         include_dirs = build_info.get('include_dirs')
@@ -267,7 +268,7 @@ class build_shlib(build_clib):
         shlib_libraries = []
         for libinfo in build_info.get('libraries',[]):
             if isinstance(libinfo, basestring):
-                shlib_libraries.append(libinfo)
+                shlib_libraries.append(convert_ulist([libinfo])[0])
             else:
                 shlib_libraries.append(libinfo[0])
 
