@@ -118,19 +118,9 @@ def sysdevel_support_path(filename):
     return os.path.join(os.path.dirname(__file__), 'support', filename)
 
 
-def is_string(item):
-    return isinstance(item, basestring)
 
-
-def is_sequence(seq):
-    if is_string(seq):
-        return False
-    try:
-        len(seq)
-    except:
-        return False
-    return True
-
+########################################
+## Duplicates of NumPy utilities (in case numpy is not used)
 
 cxx_ext_match = re.compile(r'.*[.](cpp|cxx|cc)\Z',re.I).match
 fortran_ext_match = re.compile(r'.*[.](f90|f95|f77|for|ftn|f)\Z',re.I).match
@@ -154,6 +144,38 @@ def _get_f90_modules(source):
     f.close()
     return modules
 
+def is_string(item):
+    return isinstance(item, basestring)
+
+def all_strings(lst):
+    """Return True if all items in lst are string objects. """
+    for item in lst:
+        if not is_string(item):
+            return False
+    return True
+
+def is_sequence(seq):
+    if is_string(seq):
+        return False
+    try:
+        len(seq)
+    except:
+        return False
+    return True
+
+def has_f_sources(sources):
+    """Return True if sources contains Fortran files """
+    for source in sources:
+        if fortran_ext_match(source):
+            return True
+    return False
+
+def has_cxx_sources(sources):
+    """Return True if sources contains C++ files """
+    for source in sources:
+        if cxx_ext_match(source):
+            return True
+    return False
 
 def filter_sources(sources):
     """Return four lists of filenames containing
@@ -176,6 +198,8 @@ def filter_sources(sources):
         else:
             c_sources.append(source)
     return c_sources, cxx_sources, f_sources, fmodule_sources
+
+########################################
 
 
 def glob_insensitive(directory, file_pattern):

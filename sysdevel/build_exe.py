@@ -13,13 +13,13 @@ try:
     from numpy.distutils.command.build_clib import build_clib
     from numpy.distutils.misc_util import get_numpy_include_dirs
     from numpy.distutils import log
-    from numpy.distutils.misc_util import filter_sources, is_sequence
     have_numpy = True
 except:
     from distutils.command.build_clib import build_clib
     from distutils import log
 
-from util import convert_ulist, filter_sources, is_sequence
+from util import convert_ulist, has_f_sources, has_cxx_sources, \
+    filter_sources, is_sequence, all_strings
 
 
 class build_exe(build_clib):

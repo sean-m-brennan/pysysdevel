@@ -20,6 +20,7 @@ import glob
 
 from distutils.core import Command
 from distutils.command.clean import clean as old_clean
+from distutils import log
 
 have_numpy = False
 try:
@@ -436,6 +437,15 @@ class test(Command):
             self.tests = self.distribution.tests
 
     def run(self):
+        if self.distribution.subpackages != None:
+            for idx in range(len(sys.argv)):
+                if 'setup.py' in sys.argv[idx]:
+                    break
+            argv = list(sys.argv[idx+1:])
+            process_subpackages(build.distribution.parallel_build, 'test',
+                                build.build_base, self.distribution.subpackages,
+                                argv, False)
+
         if self.tests:
             self.run_command('build')
             build = self.get_finalized_command('build')
