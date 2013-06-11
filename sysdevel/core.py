@@ -18,9 +18,6 @@ import platform
 import subprocess
 import glob
 
-from distutils.core import Command
-from distutils import log
-
 have_numpy = False
 try:
     from numpy.distutils.numpy_distribution import NumpyDistribution as oldDistribution

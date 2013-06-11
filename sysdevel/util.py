@@ -771,7 +771,7 @@ def create_cunit_driver(unit, srcfile):
             '   CU_basic_run_tests();\n' +
             '   CU_cleanup_registry();\n' +
             '   return CU_get_error();\n' +
-            '}\n' +
+            '}\n'
             )
     o.close()
     return test_driver
@@ -791,7 +791,7 @@ def create_cppunit_driver(unit):
             '  runner.setOutputter( new CppUnit::CompilerOutputter( &runner.result(), std::cerr ) );\n' +
             '  bool wasSucessful = runner.run();\n' +
             '  return wasSucessful ? 0 : 1;\n' +
-            '}\n' +
+            '}\n'
             )
     o.close()
     return test_driver

@@ -6,8 +6,9 @@
 import os
 import sys
 from distutils.core import Command
+from distutils import log
 
-from extensions import FortranUnitTest, CppUnitTest
+from extensions import FortranUnitTest, CUnitTest, CppUnitTest
 from recur import process_subpackages
 import util
 
@@ -19,16 +20,10 @@ class test(Command):
 
     def initialize_options(self):
         self.tests = []
-        self.ftests = []
-        self.ctests = []
 
     def finalize_options(self):
         if not self.tests: 
             self.tests = self.distribution.tests
-        if not self.ftests: 
-            self.ftests = self.distribution.ftests
-        if not self.ctests: 
-            self.ctests = self.distribution.ctests
 
 
     def _get_python_tests(self):
@@ -36,7 +31,7 @@ class test(Command):
         if self.tests:
             for pkg, tests in self.tests:
                 pkgtests = []
-                for unit in units:
+                for unit in tests:
                     if isinstance(unit, basestring):
                         pkgtests.append(unit)
                 if len(pkgtests) > 0:
@@ -52,7 +47,7 @@ class test(Command):
         if self.tests:
             for pkg, tests in self.tests:
                 pkgtests = []
-                for unit in units:
+                for unit in tests:
                     if isinstance(unit, FortranUnitTest):
                         pkgtests.append(unit)
                 if len(pkgtests) > 0:
@@ -67,7 +62,8 @@ class test(Command):
         ctests = []
         if self.tests:
             for pkg, tests in self.tests:
-                for unit in units:
+                pkgtests = []
+                for unit in tests:
                     if isinstance(unit, CUnitTest):
                         pkgtests.append(unit)
                 if len(pkgtests) > 0:
@@ -82,7 +78,8 @@ class test(Command):
         cpptests = []
         if self.tests:
             for pkg, tests in self.tests:
-                for unit in units:
+                pkgtests = []
+                for unit in tests:
                     if isinstance(unit, CppUnitTest):
                         pkgtests.append(unit)
                 if len(pkgtests) > 0:
