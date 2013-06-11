@@ -19,15 +19,11 @@ import subprocess
 import glob
 
 from distutils.core import Command
-from distutils.command.clean import clean as old_clean
 from distutils import log
 
 have_numpy = False
 try:
     from numpy.distutils.numpy_distribution import NumpyDistribution as oldDistribution
-    from numpy.distutils.command.build import build as old_build
-    from numpy.distutils.command.install import install as old_install
-    from numpy.distutils.command.sdist import sdist as old_sdist
     from numpy.distutils.command import config, build_ext, install_headers
     from numpy.distutils.command import bdist_rpm, scons
     have_numpy = True
@@ -35,9 +31,6 @@ try:
 except ImportError, e:
     print 'NumPy not found. Failover to distutils alone.'
     from distutils.dist import Distribution as oldDistribution
-    from distutils.command.build import build as old_build
-    from distutils.command.install import install as old_install
-    from distutils.command.sdist import sdist as old_sdist
     from distutils.command import config, build_ext, install_headers, bdist_rpm
 
 import util
@@ -123,6 +116,7 @@ class CustomDistribution(oldDistribution):
         if self.tests != None:
             del old_attrs['tests']
 
+
         ## py2exe options
         self.ctypes_com_server = attrs.pop("ctypes_com_server", [])
         self.com_server = attrs.pop("com_server", [])
@@ -171,322 +165,6 @@ class CustomDistribution(oldDistribution):
 
 
 
-
-def process_package(fnctn, build_base, progress, pyexe, argv,
-                    pkg_name, pkg_dir, addtnl_args=[]):
-    sys.stdout.write(fnctn.upper() + 'ING ' + pkg_name + ' in ' + pkg_dir + ' ')
-    logging = True
-    if 'clean' in fnctn:
-        logging = False
-    log_file = os.path.join(build_base, pkg_name + '_' + fnctn + '.log')
-    if logging:
-        log = open(log_file, 'w')
-    else:
-        log = open(os.devnull, 'w')
-    try:
-        p = subprocess.Popen([pyexe, os.path.join(pkg_dir, 'setup.py'),
-                              ] + argv + addtnl_args,
-                             stdout=log, stderr=log)
-        status = progress(p)
-        log.close()
-    except KeyboardInterrupt:
-        p.terminate()
-        log.close()
-        status = 1
-    if status != 0:
-        sys.stdout.write(' failed')
-        if logging:
-            sys.stdout.write('; See ' + log_file)
-    else:
-        sys.stdout.write(' done')
-    sys.stdout.write('\n')           
-    return pkg_name, status
-
-
-def process_subpackages(parallel, fnctn, build_base, subpackages,
-                        argv, quit_on_error):
-    try:
-        if not parallel:
-            raise ImportError
-        ## parallel building
-        import pp
-        job_server = pp.Server()
-        results = [job_server.submit(process_package,
-                                     (fnctn, build_base, util.process_progress,
-                                      sys.executable, argv,) + sub,
-                                     (), ('os', 'subprocess',))
-                   for sub in subpackages]
-        has_failed = False
-        for result in results:
-            res_tpl = result()
-            if res_tpl is None:
-                raise Exception("Parallel build failed.")
-            pkg_name, status = res_tpl
-            if status != 0 and quit_on_error:
-                has_failed = True
-            if has_failed:
-                sys.exit(status)
-    except ImportError: ## serial building
-        for sub in subpackages:
-            args = (fnctn, build_base, util.process_progress,
-                    sys.executable, argv,) + sub
-            pkg_name, status = process_package(*args)
-            if status != 0 and quit_on_error:
-                sys.exit(status)
-
-
-
-class build(old_build):
-    '''
-    Subclass build command to support new commands.
-    '''
-    def has_pure_modules(self):
-        return self.distribution.has_pure_modules() or \
-            self.distribution.has_antlr_extensions() or \
-            self.distribution.has_sysdevel_support()
-
-    def has_scripts(self):
-        return self.distribution.has_scripts()
-
-    def has_c_libraries(self):
-        return self.distribution.has_c_libraries()
-
-    def has_shared_libraries(self):
-        return self.distribution.has_shared_libs()
-
-    def has_pypp_extensions(self):
-        return self.distribution.has_pypp_extensions()
-
-    def has_web_extensions(self):
-        return self.distribution.has_web_extensions()
-
-    def has_documents(self):
-        return self.distribution.has_documents()
-
-    def has_executables(self):
-        return self.distribution.has_executables()
-
-    def has_data(self):
-        return self.distribution.has_data_files() or \
-            self.distribution.has_data_directories()
-
-
-    ## Order is important
-    sub_commands = [('config_cc',      lambda *args: True),
-                    ('config_fc',      lambda *args: True),
-                    ('build_src',      old_build.has_ext_modules),
-                    ('build_py',       has_pure_modules),
-                    ('build_js',       has_web_extensions),
-                    ('build_clib',     has_c_libraries),
-                    ('build_shlib',    has_shared_libraries),
-                    ('build_ext',      old_build.has_ext_modules),
-                    ('build_pypp_ext', has_pypp_extensions),
-                    ('build_scripts',  has_scripts),
-                    ('build_doc',      has_documents),
-                    ('build_exe',      has_executables),
-                    ]
-
-
-    def run(self):
-        if self.distribution.subpackages != None:
-            if self.get_finalized_command('install').ran:
-                return  ## avoid build after install
-            try:
-                os.makedirs(self.build_base)
-            except:
-                pass
-            for idx in range(len(sys.argv)):
-                if 'setup.py' in sys.argv[idx]:
-                    break
-            argv = list(sys.argv[idx+1:])
-            if 'install' in argv:
-                argv.remove('install')
-            if 'clean' in argv:
-                argv.remove('clean')
-
-            process_subpackages(self.distribution.parallel_build, 'build',
-                                self.build_base, self.distribution.subpackages,
-                                argv, self.distribution.quit_on_error)
-
-            if self.has_pure_modules() or self.has_c_libraries() or \
-                    self.has_ext_modules() or self.has_shared_libraries() or \
-                    self.has_pypp_extensions() or self.has_web_extensions() or \
-                    self.has_documents() or self.has_executables() or \
-                    self.has_scripts() or self.has_data():
-                old_build.run(self)
-        else:
-            old_build.run(self)
-
-
-class install(old_install):
-    '''
-    Subclass install command to support new commands.
-    '''
-    def initialize_options (self):
-        old_install.initialize_options(self)
-        self.ran = False
-
-    def has_lib(self):
-        return old_install.has_lib(self) or self.distribution.has_shared_libs()
-
-    def has_exe(self):
-        return self.distribution.has_executables()
-
-    def has_data(self):
-        return self.distribution.has_data_files() or \
-            self.distribution.has_data_directories()
-
-    sub_commands = [('install_exe', has_exe),
-                    ('install_data', has_data),
-                    ('install_lib', has_lib),
-                    ('install_headers', old_install.has_headers),
-                    ('install_scripts', old_install.has_scripts),
-                    #('install_egg_info', lambda self:True),
-                    ]
-
-    def run(self):
-        if self.distribution.subpackages != None:
-            self.ran = True
-            build = self.get_finalized_command('build')
-            try:
-                os.makedirs(build.build_base)
-            except:
-                pass
-            for idx in range(len(sys.argv)):
-                if 'setup.py' in sys.argv[idx]:
-                    break
-            argv = list(sys.argv[idx+1:])
-            if 'build' in argv:
-                argv.remove('build')
-            if 'clean' in argv:
-                argv.remove('clean')
-
-            process_subpackages(build.distribution.parallel_build, 'install',
-                                build.build_base, self.distribution.subpackages,
-                                argv, build.distribution.quit_on_error)
-
-            if build.has_pure_modules() or build.has_c_libraries() or \
-                    build.has_ext_modules() or build.has_shared_libraries() or \
-                    build.has_pypp_extensions() or \
-                    build.has_web_extensions() or \
-                    build.has_documents() or build.has_executables() or \
-                    build.has_scripts() or build.has_data():
-                old_install.run(self)
-        else:
-            old_install.run(self)
-
-
-class clean(old_clean):
-    def run(self):
-        # Remove .pyc, .lreg and .sibling files
-        if hasattr(os, 'walk'):
-            for root, dirs, files in os.walk('.'):
-                for f in files:
-                    if f.endswith('.pyc') or \
-                            f.endswith('.lreg') or f.endswith('.sibling'):
-                        try:
-                            os.unlink(f)
-                        except:
-                            pass
-
-        # Remove generated directories
-        build = self.get_finalized_command('build')
-        build_dir = build.build_base
-        if os.path.exists(build_dir):
-            try:
-                shutil.rmtree(build_dir, ignore_errors=True)
-            except:
-                pass
-        if self.distribution.subpackages != None:
-            for idx in range(len(sys.argv)):
-                if 'setup.py' in sys.argv[idx]:
-                    break
-            argv = list(sys.argv[idx+1:])
-            process_subpackages(build.distribution.parallel_build, 'clean',
-                                build.build_base, self.distribution.subpackages,
-                                argv, False)
-
-        # Remove user-specified generated files
-        if self.distribution.generated_files != None:
-            for path in self.distribution.generated_files:
-                if os.path.isfile(path) or os.path.islink(path):
-                    try:
-                        os.unlink(path)
-                    except:
-                        pass
-                elif os.path.isdir(path):
-                    try:
-                        shutil.rmtree(path, ignore_errors=True)
-                    except:
-                        pass
-
-        old_clean.run(self)
-        util.delete_cache()
-
-
-class test(Command):
-    description = "unit testing"
-
-    user_options = []
-
-    def initialize_options(self):
-        self.tests = []
-
-    def finalize_options(self):
-        if not self.tests: 
-            self.tests = self.distribution.tests
-
-    def run(self):
-        if self.distribution.subpackages != None:
-            for idx in range(len(sys.argv)):
-                if 'setup.py' in sys.argv[idx]:
-                    break
-            argv = list(sys.argv[idx+1:])
-            process_subpackages(build.distribution.parallel_build, 'test',
-                                build.build_base, self.distribution.subpackages,
-                                argv, False)
-
-        if self.tests:
-            self.run_command('build')
-            build = self.get_finalized_command('build')
-            build_dir = build.build_base
-            buildpy = self.get_finalized_command('build_py')
-            src_dirs = buildpy.package_dir
-            environ = self.distribution.environment
-
-            pkg_dirs = [build_dir, build.build_lib,
-                        os.path.join(build_dir, 'python')]
-            lib_dirs = [build.build_temp]
-            try:
-                lib_dirs += environ['PATH']
-                # FIXME need boost, etc dlls for windows
-            except:
-                pass
-            try:
-                lib_dirs.append(os.path.join(environ['MINGW_DIR'], 'bin'))
-                lib_dirs.append(os.path.join(environ['MSYS_DIR'], 'bin'))
-                lib_dirs.append(os.path.join(environ['MSYS_DIR'], 'lib'))
-            except:
-                pass
-            postfix = '.'.join(build.build_temp.split('.')[1:])
-            for pkg, units in self.tests:
-                test_dir = os.path.join(build_dir, 'test_' + pkg)
-                if not os.path.exists(test_dir):
-                    util.copy_tree(os.path.join(src_dirs[pkg], 'test'),
-                                   test_dir, excludes=['.svn*', 'CVS*'])
-                f = open(os.path.join(test_dir, '__init__.py'), 'w')
-                f.write("__all__ = ['" +
-                        "', '".join(units) + "']\n")
-                f.close()
-                outfile = os.path.join(build_dir, 'test_' + pkg + '.py')
-                util.create_testscript('test_' + pkg, units, outfile, pkg_dirs)
-                wrap = util.create_test_wrapper(outfile, build_dir, lib_dirs)
-                log.info('running unit tests for ' + pkg)
-                util.check_call([wrap])
-
-
-
-
 ##################################################
 ## Almost verbatim from numpy.disutils.core
 ##################################################
@@ -513,44 +191,13 @@ except:
     pass
 
 
-
-class sdist(old_sdist):
-    def extend_filelist (self):
-        self.filelist.extend(glob.glob('third_party/*'))
-
-    def run (self):
-        if have_setuptools:
-            self.run_command('egg_info')
-            ei_cmd = self.get_finalized_command('egg_info')
-            self.filelist = ei_cmd.filelist
-            self.filelist.append(os.path.join(ei_cmd.egg_info,'SOURCES.txt'))
-            self.extend_filelist()
-            self.check_readme()
-            self.check_metadata()
-            self.make_distribution()
-            dist_files = getattr(self.distribution,'dist_files',[])
-            for file in self.archive_files:
-                data = ('sdist', '', file)
-                if data not in dist_files:
-                    dist_files.append(data)
-        else:
-            from distutils.filelist import FileList
-            self.filelist = FileList()
-            self.check_metadata()
-            self.get_file_list()
-            self.extend_filelist()
-            if self.manifest_only:
-                return
-            self.make_distribution()
-
-
-
 import warnings
 import distutils.core
 import distutils.dist
 
 import config_cc
 import config_fc
+import build
 import build_doc
 import build_js
 import build_py
@@ -560,12 +207,16 @@ import build_src
 import build_clib
 import build_shlib
 import build_exe
+import sdist
+import install
 import install_data
 import install_lib
 import install_clib
 import install_exe
+import clean
+import test
 
-my_cmdclass = {'build':            build,
+my_cmdclass = {'build':            build.build,
                'build_src':        build_src.build_src,
                'build_scripts':    build_scripts.build_scripts,
                'config_cc':        config_cc.config_cc,
@@ -585,10 +236,10 @@ my_cmdclass = {'build':            build,
                'install_clib':     install_clib.install_clib,
                'install_data':     install_data.install_data,
                'install_headers':  install_headers.install_headers,
-               'install':          install,
+               'install':          install.install,
                'bdist_rpm':        bdist_rpm.bdist_rpm,
-               'clean':            clean,
-               'test':             test,
+               'clean':            clean.clean,
+               'test':             test.test,
                }
 
 if have_numpy:

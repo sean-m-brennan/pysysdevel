@@ -73,7 +73,8 @@ class lib_config(config):
             except:
                 pass
         try:
-            incl_dir = util.find_header(self.hdr, locations, limit=limit)
+            if self.hdr:
+                incl_dir = util.find_header(self.hdr, locations, limit=limit)
             lib_dir, lib = util.find_library(self.lib, locations, limit=limit)
             self.found = True
         except Exception, e:
@@ -81,7 +82,8 @@ class lib_config(config):
                 print e
             return self.found
 
-        self.environment[self.lib.upper() + '_INCLUDE_DIR'] = incl_dir
+        if self.hdr:
+            self.environment[self.lib.upper() + '_INCLUDE_DIR'] = incl_dir
         self.environment[self.lib.upper() + '_LIB_DIR'] = lib_dir
         #self.environment[self.lib.upper() + '_SHLIB_DIR'] = lib_dir #FIXME
         self.environment[self.lib.upper() + '_LIB_FILES'] = [lib]

@@ -10,8 +10,6 @@ except:
 import util
 
 
-## Unit tests are tuples, consisting of a name and a list of unit test modules.
-
 ## Shared libraries, like static libraries, consist of
 ##  a name and a build_info dictionary.
 
@@ -140,3 +138,68 @@ class Executable(old_extension.Extension):
                                      export_symbols, swig_opts, depends,
                                      language, f2py_options, module_dirs,)
 
+
+## Unit test suites are tuples, consisting of a name and a list of unit tests:
+##  either python, fortran or c/c++.
+
+## Python unit tests are a list of unit test modules.
+
+
+class FortranUnitTest(Executable):
+    def __init__(self, testfile, extra_sources=[],
+                 include_dirs=None,
+                 define_macros=None,
+                 undef_macros=None,
+                 library_dirs=None,
+                 libraries=None,
+                 runtime_library_dirs=None,
+                 extra_objects=None,
+                 extra_compile_args=None,
+                 extra_link_args=None,
+                 export_symbols=None,
+                 swig_opts=None,
+                 depends=None,
+                 language=None,
+                 f2py_options=None,
+                 module_dirs=None,):
+        name = os.path.splitext(testfile)[0]
+        sources = [testfile] + extra_sources
+        Executable.__init__(self, name, sources,
+                            include_dirs, define_macros, undef_macros,
+                            util.convert_ulist(library_dirs),
+                            util.convert_ulist(libraries),
+                            util.convert_ulist(runtime_library_dirs),
+                            extra_objects,
+                            extra_compile_args, extra_link_args,
+                            export_symbols, swig_opts, depends,
+                            language, f2py_options, module_dirs,)
+
+
+class CppUnitTest(Executable):
+    def __init__(self, testfile, extra_sources=[],
+                 include_dirs=None,
+                 define_macros=None,
+                 undef_macros=None,
+                 library_dirs=None,
+                 libraries=None,
+                 runtime_library_dirs=None,
+                 extra_objects=None,
+                 extra_compile_args=None,
+                 extra_link_args=None,
+                 export_symbols=None,
+                 swig_opts=None,
+                 depends=None,
+                 language=None,
+                 f2py_options=None,
+                 module_dirs=None,):
+        name = os.path.splitext(testfile)[0]
+        sources = [testfile] + extra_sources
+        Executable.__init__(self, name, sources,
+                            include_dirs, define_macros, undef_macros,
+                            util.convert_ulist(library_dirs),
+                            util.convert_ulist(libraries),
+                            util.convert_ulist(runtime_library_dirs),
+                            extra_objects,
+                            extra_compile_args, extra_link_args,
+                            export_symbols, swig_opts, depends,
+                            language, f2py_options, module_dirs,)
