@@ -10,7 +10,7 @@ class configuration(lib_config):
     Find/install OpenMPI library
     """
     def __init__(self):
-        lib_config.__init__(self, "openmpi", "mpi.h", debug=True)
+        lib_config.__init__(self, "openmpi", "mpi.h", debug=False)
 
 
     def is_installed(self, environ, version):
