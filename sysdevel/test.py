@@ -96,6 +96,7 @@ class test(Command):
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])
+            build = self.get_finalized_command('build')
             process_subpackages(build.distribution.parallel_build, 'test',
                                 build.build_base, self.distribution.subpackages,
                                 argv, False)
