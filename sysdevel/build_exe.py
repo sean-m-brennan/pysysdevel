@@ -270,7 +270,10 @@ class build_exe(build_clib):
             # linking Fortran object files
             ########################################
 
-            link_compiler = compiler
+            if exe.link_with_fcompiler: # if using PROGRAM
+                link_compiler = fcompiler
+            else:
+                link_compiler = compiler
             if cxx_sources:
                 link_compiler = cxx_compiler
 
@@ -282,16 +285,19 @@ class build_exe(build_clib):
                 else:
                     shlib_libraries.append(libinfo[0])
 
-            ## Alternate ending
-            link_compiler.link(
+            linker_args = dict(
                 target_desc          = link_compiler.EXECUTABLE,
                 objects              = objects,
                 output_filename      = exe.name,
                 output_dir           = build_directory,
                 libraries            = shlib_libraries,
                 library_dirs         = library_dirs,
-                runtime_library_dirs = runtime_library_dirs,
                 debug                = self.debug,
                 extra_preargs        = extra_preargs,
                 extra_postargs       = extra_postargs,
                 )
+            if not exe.link_with_fcompiler:
+                args['runtime_library_dirs'] = runtime_library_dirs
+
+            ## Alternate ending
+            link_compiler.link(**linker_args)

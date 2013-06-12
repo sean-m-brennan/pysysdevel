@@ -127,9 +127,11 @@ class Executable(old_extension.Extension):
                  depends=None,
                  language=None,
                  f2py_options=None,
-                 module_dirs=None,):
+                 module_dirs=None,
+                 link_with_fcompiler=False,):
         self.config_fc = dict()
         self.source_languages = []
+        self.link_with_fcompiler = link_with_fcompiler
         old_extension.Extension.__init__(self, name, sources,
                                      include_dirs, define_macros, undef_macros,
                                      util.convert_ulist(library_dirs),
@@ -174,7 +176,7 @@ class FortranUnitTest(Executable):
                             extra_objects,
                             extra_compile_args, extra_link_args,
                             export_symbols, swig_opts, depends,
-                            language, f2py_options, module_dirs,)
+                            language, f2py_options, module_dirs, True)
 
 
 class CUnitTest(Executable):
