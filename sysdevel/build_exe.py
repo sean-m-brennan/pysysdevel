@@ -144,7 +144,7 @@ class build_exe(build_clib):
             if cxx_sources: source_languages.append('c++')
             if requiref90: source_languages.append('f90')
             elif f_sources: source_languages.append('f77')
-            #build_info['source_languages'] = source_languages
+            exe.source_languages = source_languages
 
             lib_file = compiler.library_filename(exe.name,
                                                  output_dir=build_directory)
@@ -155,37 +155,34 @@ class build_exe(build_clib):
             else:
                 log.info("building '%s' library", exe.name)
 
-            """ 
             if have_numpy:
-            config_fc = exe.config_fc or {}
-            if fcompiler is not None and config_fc:
-                log.info('using additional config_fc from setup script '\
-                             'for fortran compiler: %s' \
-                             % (config_fc,))
-                from numpy.distutils.fcompiler import new_fcompiler
-                fcompiler = new_fcompiler(compiler=fcompiler.compiler_type,
-                                          verbose=self.verbose,
-                                          dry_run=self.dry_run,
-                                          force=self.force,
-                                          requiref90=requiref90,
-                                          c_compiler=self.compiler)
-                if fcompiler is not None:
-                    dist = self.distribution
-                    base_config_fc = dist.get_option_dict('config_fc').copy()
-                    base_config_fc.update(config_fc)
-                    fcompiler.customize(base_config_fc)
+                config_fc = exe.config_fc or {}
+                if fcompiler is not None and config_fc:
+                    log.info('using additional config_fc from setup script '\
+                                 'for fortran compiler: %s' \
+                                 % (config_fc,))
+                    from numpy.distutils.fcompiler import new_fcompiler
+                    fcompiler = new_fcompiler(compiler=fcompiler.compiler_type,
+                                              verbose=self.verbose,
+                                              dry_run=self.dry_run,
+                                              force=self.force,
+                                              requiref90=requiref90,
+                                              c_compiler=self.compiler)
+                    if fcompiler is not None:
+                        dist = self.distribution
+                        base_config_fc = dist.get_option_dict('config_fc').copy()
+                        base_config_fc.update(config_fc)
+                        fcompiler.customize(base_config_fc)
 
                 # check availability of Fortran compilers
                 if (f_sources or fmodule_sources) and fcompiler is None:
                     raise DistutilsError, "library %s has Fortran sources"\
                         " but no Fortran compiler found" % (exe.name)
-            """
 
             macros = exe.define_macros
             include_dirs = exe.include_dirs
             if include_dirs is None:
                 include_dirs = []
-            extra_postargs = exe.extra_compile_args or []
 
             if have_numpy:
                 include_dirs.extend(get_numpy_include_dirs())
@@ -277,13 +274,21 @@ class build_exe(build_clib):
             if cxx_sources:
                 link_compiler = cxx_compiler
 
+            ## May be dependent on other libs we're builing
+            shlib_libraries = []
+            for libinfo in exe.libraries:
+                if isinstance(libinfo, basestring):
+                    shlib_libraries.append(convert_ulist([libinfo])[0])
+                else:
+                    shlib_libraries.append(libinfo[0])
+
             ## Alternate ending
             link_compiler.link(
                 target_desc          = link_compiler.EXECUTABLE,
                 objects              = objects,
                 output_filename      = exe.name,
                 output_dir           = build_directory,
-                libraries            = libraries,
+                libraries            = shlib_libraries,
                 library_dirs         = library_dirs,
                 runtime_library_dirs = runtime_library_dirs,
                 debug                = self.debug,

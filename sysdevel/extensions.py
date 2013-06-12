@@ -128,6 +128,8 @@ class Executable(old_extension.Extension):
                  language=None,
                  f2py_options=None,
                  module_dirs=None,):
+        self.config_fc = dict()
+        self.source_languages = []
         old_extension.Extension.__init__(self, name, sources,
                                      include_dirs, define_macros, undef_macros,
                                      util.convert_ulist(library_dirs),
