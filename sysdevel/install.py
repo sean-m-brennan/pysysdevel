@@ -3,6 +3,7 @@ modified 'install' command
 """
 
 import os
+import sys
 
 try:
     from numpy.distutils.command.install import install as old_install

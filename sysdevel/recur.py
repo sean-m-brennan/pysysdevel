@@ -6,6 +6,8 @@ import os
 import sys
 import subprocess
 
+import util
+
 
 def process_package(fnctn, build_base, progress, pyexe, argv,
                     pkg_name, pkg_dir, addtnl_args=[]):

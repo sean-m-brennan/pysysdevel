@@ -3,6 +3,7 @@ modified 'clean' command
 """
 
 import os
+import sys
 import shutil
 
 from distutils.command.clean import clean as old_clean

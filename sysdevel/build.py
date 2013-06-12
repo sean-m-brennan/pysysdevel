@@ -3,6 +3,7 @@ modified 'build' command
 """
 
 import os
+import sys
 
 try:
     from numpy.distutils.command.build import build as old_build
