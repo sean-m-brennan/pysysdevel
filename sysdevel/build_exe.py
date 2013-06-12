@@ -301,7 +301,7 @@ class build_exe(build_clib):
                 extra_postargs       = extra_postargs,
                 )
             if not exe.link_with_fcompiler:
-                args['runtime_library_dirs'] = runtime_library_dirs
+                linker_args['runtime_library_dirs'] = runtime_library_dirs
 
             ## Alternate ending
             link_compiler.link(**linker_args)
