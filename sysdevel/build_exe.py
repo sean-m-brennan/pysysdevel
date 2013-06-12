@@ -285,6 +285,10 @@ class build_exe(build_clib):
                 else:
                     shlib_libraries.append(libinfo[0])
 
+            if not hasattr(link_compiler, 'linker_exe') or \
+                    link_compiler.linker_exe is None:
+                link_compiler.linker_exe = [link_compiler.linker_so[0]]
+
             linker_args = dict(
                 target_desc          = link_compiler.EXECUTABLE,
                 objects              = objects,
