@@ -106,8 +106,6 @@ class test(Command):
             self.run_command('build')
             build = self.get_finalized_command('build')
             build_dir = build.build_base
-            buildpy = self.get_finalized_command('build_py')
-            src_dirs = buildpy.package_dir
             environ = self.distribution.environment
 
             pkg_dirs = [build_dir, build.build_lib,
@@ -129,8 +127,7 @@ class test(Command):
             for pkg, units in self._get_python_tests():
                 test_dir = os.path.join(build_dir, 'test_' + pkg)
                 if not os.path.exists(test_dir):
-                    util.copy_tree(os.path.join(src_dirs[pkg], 'test'),
-                                   test_dir, excludes=['.svn*', 'CVS*'])
+                    util.copy_tree('test', test_dir, excludes=['.svn*', 'CVS*'])
                 f = open(os.path.join(test_dir, '__init__.py'), 'w')
                 f.write("__all__ = ['" +
                         "', '".join(units) + "']\n")
@@ -175,7 +172,7 @@ class test(Command):
 
         ## C
         if self._has_c_tests():
-            raise Exception("C unit testing not yet supported.") #FIXME
+            sys.std_err.write("C unit testing is untested!") #FIXME
 
             from configure import cunit
             env = dict()
@@ -208,7 +205,7 @@ class test(Command):
 
         ## C++
         if self._has_cpp_tests():
-            raise Exception("C++ unit testing not yet supported.") #FIXME
+            sys.std_err.write("C++ unit testing is untested!") #FIXME
 
             from configure import cppunit
             env = dict()
