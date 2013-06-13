@@ -17,12 +17,19 @@ class install_data(old_data):
         self.data_dirs = self.distribution.data_dirs
         if self.data_files is None:
             self.data_files = []
-        install = self.get_finalized_command('install')
-        if install.prefix is None:
-            self.data_install_dir = os.path.join(install.install_base, 'share')
-        else:
-            self.data_install_dir = os.path.join(install.prefix, 'share')
+
  
+    def finalize_options(self):
+        if self.install_dir is None or not os.path.isabs(self.install_dir):
+            install = self.get_finalized_command('install')
+            if install.prefix is None:
+                self.data_install_dir = os.path.join(install.install_base, 'share')
+            else:
+                self.data_install_dir = os.path.join(install.prefix, 'share')
+        else:
+            self.data_install_dir = self.install_dir
+        old_data.finalize_options(self)
+
 
     def run (self):
         old_data.run(self)
