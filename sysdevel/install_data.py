@@ -20,19 +20,20 @@ class install_data(old_data):
 
  
     def finalize_options(self):
-        if self.install_dir is None or not os.path.isabs(self.install_dir):
-            install = self.get_finalized_command('install')
+        install = self.get_finalized_command('install')
+        if not hasattr(install, 'install_data'):
             if install.prefix is None:
                 self.data_install_dir = os.path.join(install.install_base, 'share')
             else:
                 self.data_install_dir = os.path.join(install.prefix, 'share')
         else:
-            self.data_install_dir = self.install_dir
+            self.data_install_dir = install.install_data
         old_data.finalize_options(self)
 
 
     def run (self):
         old_data.run(self)
+        util.mkdir(self.data_install_dir)
         if (not hasattr(self.distribution, 'using_py2exe') or \
                 not self.distribution.using_py2exe) and self.data_dirs:
            for tpl in self.data_dirs:
