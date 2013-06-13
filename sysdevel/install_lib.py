@@ -33,7 +33,7 @@ class install_lib(old_install_lib):
             target_dir = os.path.join(install.install_base, lib)
         else:
             target_dir = os.path.join(install.prefix, lib)
-        self.mkpath(target_dir)
+        util.mkdir(target_dir)
         if build_shlib.install_shared_libraries:
             for lib in build_shlib.install_shared_libraries:
                 target = target_dir + os.sep
