@@ -13,13 +13,15 @@ cwd = os.path.dirname(__file__)
 if cwd:
     os.chdir(cwd)
 
+from sysdevel.util import rcs_revision
+
 
 def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    setup(name         = 'sysdevel',
-          version      = '0.5.2',
+    setup(name         = 'pysysdevel',
+          version      = '0.' + str(rcs_revision()),
           description  = 'Simulation and Model Development with Python',
           author       = 'Sean M. Brennan',
           author_email = 'brennan@lanl.gov',
@@ -30,6 +32,7 @@ def main(argv=None):
                                        os.path.join('doc', '*.pdf'),
                                        os.path.join('support', '*.in'),
                                        os.path.join('support', '*.sh'),
+                                       os.path.join('support', '*.py'),
                                        os.path.join('support', '*.php'),
                                        os.path.join('support', '*.js'),
                                        os.path.join('support', '*.xrc'),

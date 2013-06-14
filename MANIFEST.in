@@ -1,0 +1,3 @@
+include *.in LICENSE NOTES HACKING*
+recursive-include sysdevel/doc *.pdf
+recursive-include sysdevel/support *.in *.sh *.py *.php *.js *.xrc

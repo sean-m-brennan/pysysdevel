@@ -225,7 +225,7 @@ def rcs_revision(rcs_type='git'):
     p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE, shell=shell)
     out = p.communicate()[0].strip()
     if p.wait() != 0:
-        raise Exception('Failed to get ')
+        raise Exception('Failed to get ' + rcs_type + ' version.')
     if rcs_type.lower() == 'git':
         return len(out.splitlines())
     elif rcs_type.lower() == 'hg' or rcs_type.lower() == 'mercurial':
@@ -235,6 +235,8 @@ def rcs_revision(rcs_type='git'):
         if end < 0:
             end = len(out)
         return int(out[out.find(':')+1:end], 10)
+    else:
+        return 0
 
 
 
