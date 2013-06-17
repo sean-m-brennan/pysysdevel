@@ -42,6 +42,7 @@ def process_package(fnctn, build_base, progress, pyexe, argv,
 
 def process_subpackages(parallel, fnctn, build_base, subpackages,
                         argv, quit_on_error):
+    failed_somewhere = False
     try:
         if not parallel:
             raise ImportError
@@ -59,14 +60,21 @@ def process_subpackages(parallel, fnctn, build_base, subpackages,
             if res_tpl is None:
                 raise Exception("Parallel build failed.")
             pkg_name, status = res_tpl
-            if status != 0 and quit_on_error:
+            if status != 0:
                 has_failed = True
-            if has_failed:
+        if has_failed:
+            failed_somewhere = True
+            if quit_on_error:
                 sys.exit(status)
+
     except ImportError: ## serial building
         for sub in subpackages:
             args = (fnctn, build_base, util.process_progress,
                     sys.executable, argv,) + sub
             pkg_name, status = process_package(*args)
-            if status != 0 and quit_on_error:
-                sys.exit(status)
+            if status != 0:
+                failed_somewhere = True
+                if quit_on_error:
+                    sys.exit(status)
+
+    return failed_somewhere

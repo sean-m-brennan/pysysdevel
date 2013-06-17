@@ -91,15 +91,17 @@ class test(Command):
 
 
     def run(self):
+        failed = False
         if self.distribution.subpackages != None:
             for idx in range(len(sys.argv)):
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])
             build = self.get_finalized_command('build')
-            process_subpackages(build.distribution.parallel_build, 'test',
-                                build.build_base, self.distribution.subpackages,
-                                argv, False)
+            failed = process_subpackages(build.distribution.parallel_build,
+                                         'test', build.build_base,
+                                         self.distribution.subpackages,
+                                         argv, False)
 
         ## PYTHON
         if self._has_python_tests():
@@ -136,7 +138,11 @@ class test(Command):
                 util.create_testscript('test_' + pkg, units, outfile, pkg_dirs)
                 wrap = util.create_test_wrapper(outfile, build_dir, lib_dirs)
                 log.info('Python unit tests for ' + pkg)
-                util.check_call([wrap])
+                try:
+                    util.check_call([wrap])
+                except Exception, e:
+                    failed = True
+                    print e
 
         ## FORTRAN
         if self._has_fortran_tests():
@@ -168,7 +174,11 @@ class test(Command):
             for pkg, units in self._get_fortran_tests():
                 log.info('Fortran unit tests for ' + pkg)
                 for unit in units:
-                    util.check_call([os.path.join(lib_dir, unit.name)])
+                    try:
+                        util.check_call([os.path.join(lib_dir, unit.name)])
+                    except Exception, e:
+                        failed = True
+                        print e
 
         ## C
         if self._has_c_tests():
@@ -201,7 +211,11 @@ class test(Command):
             for pkg, units in self._get_c_tests():
                 log.info('C unit tests for ' + pkg)
                 for unit in units:
-                    util.check_call([os.path.join(lib_dir, unit.name)])
+                    try:
+                        util.check_call([os.path.join(lib_dir, unit.name)])
+                    except Exception, e:
+                        failed = True
+                        print e
 
         ## C++
         if self._has_cpp_tests():
@@ -233,4 +247,11 @@ class test(Command):
             for pkg, units in self._get_cpp_tests():
                 log.info('C++ unit tests for ' + pkg)
                 for unit in units:
-                    util.check_call([os.path.join(lib_dir, unit.name)])
+                    try:
+                        util.check_call([os.path.join(lib_dir, unit.name)])
+                    except Exception, e:
+                        failed = True
+                        print e
+
+        if failed:
+            sys.exit(1)
