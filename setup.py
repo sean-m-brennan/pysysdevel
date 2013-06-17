@@ -16,7 +16,7 @@ if cwd:
 from sysdevel.util import rcs_revision
 rev = rcs_revision()
 if rev is None:
-    rev = 1
+    rev = '6.12'
 
 def main(argv=None):
     if argv is None:
