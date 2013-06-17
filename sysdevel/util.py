@@ -208,7 +208,19 @@ def glob_insensitive(directory, file_pattern):
     return glob.glob(os.path.join(directory, ''.join(map(either, file_pattern))))
 
 
-def rcs_revision(rcs_type='git'):
+def rcs_revision(rcs_type=None):
+    if rcs_type is None:
+        if os.path.exists('.git'):
+            rcs_type = 'git'
+        elif os.path.exists('.hg'):
+            rcs_type = 'hg'
+        elif os.path.exists('.svn'):
+            rcs_type = 'svn'
+        elif os.path.exists('CVS'):
+            raise Exception('Unsupported Revision Control System.')
+        else:  # tarball install
+            return None
+
     if rcs_type.lower() == 'git':
         cmd_line = ['git', 'rev-list', 'HEAD']
     elif rcs_type.lower() == 'hg' or rcs_type.lower() == 'mercurial':

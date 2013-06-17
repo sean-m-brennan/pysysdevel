@@ -14,14 +14,16 @@ if cwd:
     os.chdir(cwd)
 
 from sysdevel.util import rcs_revision
-
+rev = rcs_revision()
+if rev is None:
+    rev = 1
 
 def main(argv=None):
     if argv is None:
         argv = sys.argv
 
     setup(name         = 'pysysdevel',
-          version      = '0.' + str(rcs_revision()),
+          version      = '0.' + str(rev),
           description  = 'Simulation and Model Development with Python',
           author       = 'Sean M. Brennan',
           author_email = 'brennan@lanl.gov',
