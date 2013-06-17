@@ -23,10 +23,11 @@ Using Python 2.4 or 2.5 may also require:
   * httpsproxy_urllib2 (http://pypi.python.org/pypi/httpsproxy_urllib2)
 
 
-Build/Install
+Build/Install (assuming admin privileges)
   ```
   python setup.py build
-  python setup.py install``` (with admin privileges)
+  python setup.py install
+  ```
 
 
 

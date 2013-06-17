@@ -59,10 +59,12 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     if 'windows' in platform.system().lower() and \
             util.in_prerequisites('mingw', prerequisite_list) and \
             util.in_prerequisites('boost', prerequisite_list):
-        ## assuming boost-python is needed
+        ## FIXME only if boost-python is needed
         prerequisite_list.insert(0, 'msvcrt')
     if 'darwin' in platform.system().lower() and \
-            not util.in_prerequisites('macports', prerequisite_list):
+            not util.in_prerequisites('macports', prerequisite_list) and \
+            not util.in_prerequisites('homebrew', prerequisite_list):
+        ## FIXME only if building libraries/executables
         prerequisite_list.insert(0, 'homebrew')
 
     for help_name in prerequisite_list:
