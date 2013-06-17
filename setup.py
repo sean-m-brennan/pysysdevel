@@ -27,7 +27,7 @@ def main(argv=None):
           description  = 'Simulation and Model Development with Python',
           author       = 'Sean M. Brennan',
           author_email = 'brennan@lanl.gov',
-          url          = 'https://github.com/pysysdevel',
+          url          = 'https://github.com/sean-m-brennan/pysysdevel',
           packages     = ['sysdevel', 'sysdevel.configure',],
           package_data = {'sysdevel': ['sphinx_conf.py.in',
                                        'win_postinstall.py.in',

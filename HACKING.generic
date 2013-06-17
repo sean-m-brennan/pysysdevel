@@ -23,9 +23,10 @@ Required software:
 
 
    + SysDevel
-      Download/unarchive from https://github.com/pysysdevel/zipball/master
+      Download/unarchive from
+          https://github.com/sean-m-brennan/pysysdevel/zipball/master
         or
-      git clone https://github.com/pysysdevel.git
+      git clone https://github.com/sean-m-brennan/pysysdevel.git
 
       cd pysysdevel
       sudo python setup.py install
