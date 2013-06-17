@@ -15,17 +15,20 @@ import websocketclient
 
 
 class WSdataHandler(websocketclient.WebSocketHandler):
-    def __init__(self, parent):
+    def __init__(self, parent, callback=None):
         websocketclient.WebSocketHandler.__init__(self)
         self.app = parent
         self.log = logging.getConsoleLogger()
+        self.callback = callback
 
     def close(self):
         self.log.debug('Disconnected')
 
     def receive(self, data):
         self.log.debug('Received ' + data)
-        if data.lower().startswith('step'):
+        if self.callback:
+            self.callback(data)
+        elif data.lower().startswith('step'):
             self.app.step_in(int(data[4]), json.loads(data[6:]))
         elif data[:6].lower() == 'error:':
             self.app.error(data[6:])
@@ -34,16 +37,20 @@ class WSdataHandler(websocketclient.WebSocketHandler):
 
 
 class PHPdataHandler(object):
-    def __init__(self, app):
+    def __init__(self, app, callback=None):
         self.app = app
         self.log = logging.getConsoleLogger()
+        self.callback = callback
 
     def onError(self, msg):
         self.app.error(msg)
 
     def onCompletion(self, data):
         self.log.debug('Received ' + data)
-        self.app.step_in(int(data[4]), json.loads(data[6:]))
+        if self.callback:
+            self.callback(data)
+        else:
+            self.app.step_in(int(data[4]), json.loads(data[6:]))
 
     def onTimeout(self, msg):
         self.app.timeout()
@@ -68,10 +75,10 @@ class WebUI(object):
         self.log = logging.getConsoleLogger()
 
 
-    def __init_UI(self):
+    def __init_UI(self, data_callback=None):
         Window.addWindowCloseListener(self)
 
-        self.ws_dh = WSdataHandler(self)
+        self.ws_dh = WSdataHandler(self, data_callback)
         location = Window.getLocation()
         search = location.getSearch()[1:]
         params = '/'.join(search.split('&'))
@@ -80,7 +87,7 @@ class WebUI(object):
                                                   fallback=True)
         self.ws.connect(self.server)
 
-        self.php_dh = PHPdataHandler(self)
+        self.php_dh = PHPdataHandler(self, data_callback)
         self.php_script = self.resource + '.php'
 
 
