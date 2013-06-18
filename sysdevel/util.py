@@ -554,7 +554,7 @@ def fetch(website, remote, local):
 
 
 def zipextractall(zip_file):
-    ## zipfile.extractall not in 2.4
+    ## zip_file.extractall not in 2.4
     for name in zip_file.namelist():
         (dirname, filename) = os.path.split(name)
         if filename == '':
@@ -566,9 +566,9 @@ def zipextractall(zip_file):
 
     
 def tarextractall(tar_file):
-    ## tarfile.extractall not in 2.4
+    ## tar_file.extractall not in 2.4
     for tarinfo in tar_file:
-        tarfile.extract(tarinfo)
+        tar_file.extract(tarinfo)
 
     
 def unarchive(archive, target, archive_dir=download_dir):
