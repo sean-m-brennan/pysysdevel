@@ -171,7 +171,7 @@ class ServiceServer(object):
             logging.basicConfig(filename=log_file, filemode='w',
                                 format='%(asctime)s  %(name)s - %(message)s',
                                 level=log_level)
-        self.webserver = websocketserver.WebSocketServer(ServiceServiceSpawn,
+        self.webserver = websocketserver.WebSocketServer(ServiceSpawn,
                                                          WEBSOCKET_HOST,
                                                          WEBSOCKET_PORT,
                                                          WEBSOCKET_ORIGIN,

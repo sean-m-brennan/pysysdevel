@@ -4,5 +4,7 @@
 # emacs backups
 *~
 
-# Build directory
+# Temp directories and files
 /build
+/dist
+/MANIFEST

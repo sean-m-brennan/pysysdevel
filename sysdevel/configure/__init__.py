@@ -58,14 +58,22 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     prerequisite_list.insert(0, 'httpsproxy_urllib2_py')
     if 'windows' in platform.system().lower() and \
             util.in_prerequisites('mingw', prerequisite_list) and \
-            util.in_prerequisites('boost', prerequisite_list):
-        ## FIXME only if boost-python is needed
-        prerequisite_list.insert(0, 'msvcrt')
+            util.in_prerequisites('boost', prerequisite_list) and not \
+            util.in_prerequisites('msvcrt', prerequisite_list):
+        print "WARNING: if you're using the boost-python DLL, " + \
+            "also add 'msvcrt' as a prereuisite."
     if 'darwin' in platform.system().lower() and \
             not util.in_prerequisites('macports', prerequisite_list) and \
             not util.in_prerequisites('homebrew', prerequisite_list):
-        ## FIXME only if building libraries/executables
-        prerequisite_list.insert(0, 'homebrew')
+        if os.path.exists(os.path.join(os.path.sep,
+                                       'opt', 'local', 'share', 'macports')):
+            prerequisite_list.insert(0, 'macports')
+        elif os.path.exists(os.path.join(os.path.sep,
+                                         'usr', 'local', 'bin', 'brew')):
+            prerequisite_list.insert(0, 'homebrew')
+        else:
+            print "WARNING: neither MacPorts nor Homebrew detected. " +\
+                "All required libraries will be built locally."
 
     for help_name in prerequisite_list:
         environment = __configure_package(environment, help_name,
