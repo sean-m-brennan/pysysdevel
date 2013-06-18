@@ -1,6 +1,7 @@
 
-import sys
+import os
 import platform
+import sys
 
 from sysdevel.util import *
 from sysdevel.configuration import config
@@ -58,13 +59,14 @@ def port_prefix():
     return '/opt/local'
 
 def python_executable():
-    return os.path.join(port_prefix, 'bin', 'python')
+    return os.path.join(port_prefix(), 'bin', 'python')
 
 def switch_python():
     """Magically switch to macports python"""
-    env = sys.environ.copy()
+    env = os.environ.copy()
     env['PATH'] = [os.path.join(port_prefix(), 'bin'),
-                   os.path.join(port_prefix(), 'sbin'),] + env.get('PATH', [])
+                   os.path.join(port_prefix(), 'sbin'),] + [env.get('PATH', [])]
+    env['PATH'] = ':'.join(env['PATH']) # all env has to be strings only
     sys.stdout.write('Switching to MacPorts Python ')
     if VERBOSE:
         sys.stdout.write(python_executable() + ' ' + ' '.join(sys.argv))
