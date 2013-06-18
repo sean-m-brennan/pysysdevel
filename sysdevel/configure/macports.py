@@ -1,7 +1,7 @@
 
 import os
-import sys
 import platform
+import sys
 
 from sysdevel.util import *
 from sysdevel.configuration import config
