@@ -20,40 +20,47 @@ class configuration(config):
 
     def __init__(self):
         config.__init__(self, debug=False)
+        self.brews_found = False
 
 
     def is_installed(self, environ, version):
         self.found = system_uses_homebrew()
-        if self.found and \
-                not sys.executable in python_sys_executables():
-            switch_python()
-        return self.found
+        if self.found:
+            self.brews_found = os.path.exists(python_executable()) and \
+                os.path.exists(pip_executable())
+            if self.brews_found and \
+                    not sys.executable in python_sys_executables():
+                switch_python()
+        return self.found and self.brews_found
 
 
     def install(self, environ, version, locally=True):
         if not 'darwin' in platform.system().lower():
             return
+        mkdir(target_build_dir)
+        log = open(os.path.join(target_build_dir,
+                                'homebrew_build.log'), 'w')
         if not self.found:
-            log = open(os.path.join(target_build_dir,
-                                    'homebrew_build.log'), 'w')
             check_call('ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"',
                        stdout=log, stderr=log)
-            check_call(['brew', 'doctor'], stdout=log, stderr=log)
-            check_call(['brew', 'install', 'git'], stdout=log, stderr=log)
+        if not self.brews_found:
+            call(['brew', 'doctor'], stdout=log, stderr=log)
+            call(['brew', 'install', 'git'], stdout=log, stderr=log)
             for repo in self.repositories:
-                check_call(['brew', 'tap', repo], stdout=log, stderr=log)
-            check_call(['brew', 'install', 'python', '--universal',
+                call(['brew', 'tap', repo], stdout=log, stderr=log)
+            call(['brew', 'install', 'python', '--universal',
                         '--framework'], stdout=log, stderr=log)
-            check_call([pip_executable(), 'install', 'numpy'],
+            call([pip_executable(), 'install', 'numpy'],
                        stdout=log, stderr=log)
-            check_call([pip_executable(), 'install', 'distribute'],
+            call([pip_executable(), 'install', 'distribute'],
                        stdout=log, stderr=log)
-            check_call(['brew', 'install', 'sip'], stdout=log, stderr=log)
-            check_call(['brew', 'install', 'pyqt'], stdout=log, stderr=log)
-            check_call([pip_executable(), 'install', 'py2app'],
+            call(['brew', 'install', 'sip'], stdout=log, stderr=log)
+            call(['brew', 'install', 'pyqt'], stdout=log, stderr=log)
+            call([pip_executable(), 'install', 'py2app'],
                        stdout=log, stderr=log)
-            log.close()
-            switch_python()
+        log.close()
+        if not self.is_installed(environ, verson):
+            raise Exception("Homebrew installation failed.")
 
 
 def pip_executable():

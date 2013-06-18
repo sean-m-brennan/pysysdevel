@@ -1,4 +1,5 @@
 
+import os
 import sys
 import platform
 
@@ -11,18 +12,24 @@ class configuration(config):
     """
     def __init__(self):
         config.__init__(self, debug=False)
+        self.ports_found = False
 
 
     def is_installed(self, environ, version):
         self.found = system_uses_macports()
-        if self.found and sys.executable != python_executable():
-            switch_python()
-        return self.found
+        if self.found:
+            self.ports_found = os.path.exists(python_executable())
+            if self.ports_found and \
+                    not sys.executable in python_sys_executables():
+                switch_python()
+        return self.found and self.ports_found
 
 
     def install(self, environ, version, locally=True):
         if not 'darwin' in platform.system().lower():
             return
+        mkdir(target_build_dir)
+        log = open(os.path.join(target_build_dir, 'macports_setup.log'), 'w')
         if not self.found:
             if version is None:
                 version = '2.1.3'
@@ -37,8 +44,7 @@ class configuration(config):
                        '{"-L${prefix}/lib -Xlinker -headerpad_max_install_names"}')
             patch_file('/opt/local/etc/macports/macports.conf',
                        'build_arch  i386', '#', '')
-            log = open(os.path.join(target_build_dir,
-                                    'macports_setup.log'), 'w')
+        if not self.ports_found:
             admin_check_call(['port', 'install', 'python' + python_version,
                               'python_select'], stdout=log, stderr=log)
             admin_check_call(['port', 'select', '--set', 'python',
@@ -50,21 +56,25 @@ class configuration(config):
             admin_check_call(['port', 'install',
                               'py' + python_version + '-py2app-devel'],
                              stdout=log, stderr=log)
-            log.close()
-            switch_python()
+        log.close()
+        if not self.is_installed(environ, verson):
+            raise Exception("Macports installation failed.")
 
 
-def port_prefix():
-    return '/opt/local'
 
 def python_executable():
-    return os.path.join(port_prefix, 'bin', 'python')
+    return os.path.join(macports_prefix(), 'bin', 'python')
+
+
+def python_sys_executables():
+    return glob.glob(os.path.join(macports_prefix(), 'bin', 'python*'))
+
 
 def switch_python():
     """Magically switch to macports python"""
-    env = sys.environ.copy()
-    env['PATH'] = [os.path.join(port_prefix(), 'bin'),
-                   os.path.join(port_prefix(), 'sbin'),] + env.get('PATH', [])
+    env = os.environ.copy()
+    env['PATH'] = [os.path.join(macports_prefix(), 'bin'),
+                   os.path.join(macports_prefix(), 'sbin'),] + [env.get('PATH', '')]
     sys.stdout.write('Switching to MacPorts Python ')
     if VERBOSE:
         sys.stdout.write(python_executable() + ' ' + ' '.join(sys.argv))

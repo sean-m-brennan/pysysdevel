@@ -65,11 +65,9 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     if 'darwin' in platform.system().lower() and \
             not util.in_prerequisites('macports', prerequisite_list) and \
             not util.in_prerequisites('homebrew', prerequisite_list):
-        if os.path.exists(os.path.join(os.path.sep,
-                                       'opt', 'local', 'share', 'macports')):
+        if util.system_uses_macports():
             prerequisite_list.insert(0, 'macports')
-        elif os.path.exists(os.path.join(os.path.sep,
-                                         'usr', 'local', 'bin', 'brew')):
+        elif util.system_uses_homebrew():
             prerequisite_list.insert(0, 'homebrew')
         else:
             print "WARNING: neither MacPorts nor Homebrew detected. " +\

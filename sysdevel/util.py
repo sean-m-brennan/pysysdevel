@@ -12,16 +12,9 @@ import glob
 import struct
 import time
 import shutil
-import urllib
-import urllib2
-import httplib
-import socket
-import tempfile
 import tarfile
 import zipfile
 import subprocess
-import ctypes
-import string
 import re
 import distutils.sysconfig
 
@@ -560,21 +553,21 @@ def fetch(website, remote, local):
             sys.stdout.write('\n')
 
 
-def zipextractall(zipfile):
+def zipextractall(zip_file):
     ## zipfile.extractall not in 2.4
-    for name in zipfile.namelist():
+    for name in zip_file.namelist():
         (dirname, filename) = os.path.split(name)
         if filename == '':
             mkdir(dirname)
         else:
             f = open(name, 'w')
-            f.write(zipfile.read(name))
+            f.write(zip_file.read(name))
             f.close()
 
     
-def tarextractall(tarfile):
+def tarextractall(tar_file):
     ## tarfile.extractall not in 2.4
-    for tarinfo in tarfile:
+    for tarinfo in tar_file:
         tarfile.extract(tarinfo)
 
     
@@ -823,6 +816,7 @@ def programfiles_directories():
 
 
 def convert2unixpath(win_path):
+    import string
     if 'windows' in platform.system().lower():
         path = win_path.replace('\\', '/')
         for alpha in string.uppercase + string.lowercase:
@@ -1291,7 +1285,7 @@ def system_uses_macports():
     if 'darwin' in platform.system().lower():
         try:
             find_program('port')
-            return os.path.exists('/opt/local/etc/macports/macports.conf')
+            return os.path.exists(macports_prefix() + '/etc/macports/macports.conf')
         except:
             pass
     return False
@@ -1321,6 +1315,11 @@ def get_msvc_version():
             version = ('9', '0')
 
     return version, ms_id, name
+
+
+def macports_prefix():
+    path = find_program('port')
+    return os.path.dirname(os.path.dirname(path))
 
 
 def homebrew_prefix():
@@ -1377,11 +1376,16 @@ def global_install(what, website_tpl, winstaller=None,
 
 
 def as_admin():
+    import ctypes
     try:
         return os.geteuid() == 0
     except AttributeError:
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
 
+
+def call(cmd_line, *args, **kwargs):
+    return subprocess.call(cmd_line, *args, **kwargs)
+    
 
 def check_call(cmd_line, *args, **kwargs):
     status = subprocess.call(cmd_line, *args, **kwargs)
@@ -1876,6 +1880,10 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
     Identical to urllib.urlretrieve, except that it handles
     SSL, proxies ands redirects properly.
     '''
+    import urllib
+    import urllib2
+    import tempfile
+
     proxy_url = proxy
     if proxy_url is None:
         try:
