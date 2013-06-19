@@ -59,7 +59,7 @@ class configuration(config):
             call([pip_executable(), 'install', 'py2app'],
                        stdout=log, stderr=log)
         log.close()
-        if not self.is_installed(environ, verson):
+        if not self.is_installed(environ, version):
             raise Exception("Homebrew installation failed.")
 
 

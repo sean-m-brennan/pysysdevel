@@ -30,10 +30,10 @@ class configuration(config):
             return
         mkdir(target_build_dir)
         log = open(os.path.join(target_build_dir, 'macports_setup.log'), 'w')
+        python_version = '26'
         if not self.found:
             if version is None:
                 version = '2.1.3'
-            python_version = '26'
             website = ('https://distfiles.macports.org/MacPorts/',)
             src_dir = 'MacPorts-' + str(version)
             archive = src_dir + '.tar.gz'
@@ -44,6 +44,7 @@ class configuration(config):
                        '{"-L${prefix}/lib -Xlinker -headerpad_max_install_names"}')
             patch_file('/opt/local/etc/macports/macports.conf',
                        'build_arch  i386', '#', '')
+            admin_check_call(['port', 'selfupdate'], stdout=log, stderr=log)
         if not self.ports_found:
             admin_check_call(['port', 'install', 'python' + python_version,
                               'python_select'], stdout=log, stderr=log)
