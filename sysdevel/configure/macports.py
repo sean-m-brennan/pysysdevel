@@ -68,7 +68,11 @@ def python_executable():
 
 
 def python_sys_executables():
-    return glob.glob(os.path.join(macports_prefix(), 'bin', 'python*'))
+    exes = glob.glob(os.path.join(macports_prefix(), 'bin', 'python*'))
+    full_paths = []
+    for exe in exes:
+        full_paths.append(os.path.realpath(exe))
+    return full_paths
 
 
 def switch_python():

@@ -15,7 +15,7 @@ class configuration(config):
 
     repositories = ['Homebrew/homebrew-dupes',
                     'Homebrew/homebrew-science',
-                    #'Homebrew/homebrew-versions',
+                    'Homebrew/homebrew-versions',
                     'samueljohn/homebrew-python', ]
 
     def __init__(self):
@@ -37,6 +37,7 @@ class configuration(config):
     def install(self, environ, version, locally=True):
         if not 'darwin' in platform.system().lower():
             return
+        python_version = ''
         mkdir(target_build_dir)
         log = open(os.path.join(target_build_dir,
                                 'homebrew_build.log'), 'w')
@@ -48,7 +49,7 @@ class configuration(config):
             call(['brew', 'install', 'git'], stdout=log, stderr=log)
             for repo in self.repositories:
                 call(['brew', 'tap', repo], stdout=log, stderr=log)
-            call(['brew', 'install', 'python', '--universal',
+            call(['brew', 'install', 'python' + python_version, '--universal',
                         '--framework'], stdout=log, stderr=log)
             call([pip_executable(), 'install', 'numpy'],
                        stdout=log, stderr=log)
