@@ -16,11 +16,9 @@ All code in SysDevel is released under the Mozilla Public License 2.0
 
 This package requires:
   * Python 2.4 or greater (http://www.python.org)
-  * NumPy (http://www.numpy.org)
 
-Using Python 2.4 or 2.5 may also require:
-      (if you are downloading over https behind a proxy)
-  * httpsproxy_urllib2 (http://pypi.python.org/pypi/httpsproxy_urllib2)
+If Fortran is at all involved in your project:
+  * NumPy (http://www.numpy.org)
 
 
 Build/Install (assuming admin privileges)
@@ -30,10 +28,9 @@ Build/Install (assuming admin privileges)
   ```
 
 
-
 The 'HACKING.generic' file lists the minimum required software that
-users of *your* package (that itself uses sysdevel) will need. Include
+users of *your* project (that itself uses sysdevel) will need. Include
 it in your own 'HACKING' file.
 
 For information on using sysdevel, see the manual in the
-'sysdevel/docs' directory.
+'sysdevel/docs' directory. (Yeah, it don't exist yet.)

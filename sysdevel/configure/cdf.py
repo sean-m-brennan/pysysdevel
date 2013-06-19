@@ -49,6 +49,7 @@ class configuration(lib_config):
         try:
             incl_dir = find_header(self.hdr, base_dirs, limit=limit)
             lib_dir, lib = find_library(self.lib, base_dirs, limit=limit)
+            exe = find_program('cdfcompare',  base_dirs, limit=limit)
             self.found = True
         except Exception, e:
             if self.debug:
@@ -59,6 +60,9 @@ class configuration(lib_config):
         self.environment['CDF_LIB_DIR'] = lib_dir
         self.environment['CDF_LIB_FILES'] = [lib]
         self.environment['CDF_LIBRARIES'] = [lib_name]
+        os.environ['CDF_LIB'] = os.path.abspath(lib_dir)
+        os.environ['CDF_INC'] = os.path.abspath(incl_dir)
+        os.environ['CDF_BIN'] = os.path.abspath(os.path.dirname(exe))
         return self.found
 
 

@@ -15,7 +15,7 @@ Required software:
        - numpy (http://sourceforge.net/projects/numpy/files/NumPy)
 	   Download/run the installer that fits your python version
 
-     * Mac OSX: (replacing '26' with the desired python version)
+     * Mac OSX:
        - XCode (http://developer.apple.com/technologies/tools/)
 
        If using MacPorts:
@@ -64,8 +64,13 @@ SysDevel does the rest, but in case something goes wrong, we also use the follow
          OR
 
        - MacPorts (http://www.macports.org)
-           Follow the instructions at http://guide.macports.org (see NOTES file)
+           Follow the instructions at http://guide.macports.org (also see our NOTES file)
            Then run:
              sudo port install python26 python_select
              sudo port select --set python python26
              sudo port install py26-numpy
+
+
+   + Using Python 2.4 or 2.5 may also require:
+        (if you are downloading over https behind a proxy)
+      * httpsproxy_urllib2 (http://pypi.python.org/pypi/httpsproxy_urllib2)
