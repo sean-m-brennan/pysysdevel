@@ -75,6 +75,7 @@ def switch_python():
     env = os.environ.copy()
     env['PATH'] = [os.path.join(macports_prefix(), 'bin'),
                    os.path.join(macports_prefix(), 'sbin'),] + [env.get('PATH', '')]
+    env['PATH'] = ':'.join(env['PATH'])
     sys.stdout.write('Switching to MacPorts Python ')
     if VERBOSE:
         sys.stdout.write(python_executable() + ' ' + ' '.join(sys.argv))

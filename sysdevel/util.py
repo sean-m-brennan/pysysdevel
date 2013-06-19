@@ -557,9 +557,9 @@ def zipextractall(zip_file):
     ## zip_file.extractall not in 2.4
     for name in zip_file.namelist():
         (dirname, filename) = os.path.split(name)
-        if filename == '':
+        if not os.path.exists(dirname):
             mkdir(dirname)
-        else:
+        if not filename == '':
             f = open(name, 'w')
             f.write(zip_file.read(name))
             f.close()

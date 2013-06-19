@@ -124,14 +124,19 @@ class py_config(config):
 
 
     def install(self, environ, version, locally=True):
+        import urllib2
         if not self.found:
             website = 'https://pypi.python.org/packages/source/' + \
                 self.pkg[0] + '/' + self.pkg + '/'
             if version is None:
                 version = self.version
             src_dir = self.pkg + '-' + str(version)
-            archive = src_dir + '.tar.gz' 
-            util.install_pypkg(src_dir, website, archive, locally=locally)
+            archive = src_dir + '.tar.gz'
+            try:
+                util.install_pypkg(src_dir, website, archive, locally=locally)
+            except urllib2.HTTPError:
+                archive = src_dir + '.zip'
+                util.install_pypkg(src_dir, website, archive, locally=locally)
             if not self.is_installed(environ, version):
                 raise Exception(self.pkg + ' installation failed.')
 
