@@ -26,6 +26,18 @@ class configuration(lib_config):
 
         limit = False
         base_dirs = []
+        if 'CDF_BASE' in environ and environ['CDF_BASE']:
+            base_dirs.append(environ['CDF_BASE'])
+            limit = True
+        if 'CDF_LIB' in environ and environ['CDF_LIB']:
+            base_dirs.append(environ['CDF_LIB'])
+            limit = True
+        if 'CDF_INC' in environ and environ['CDF_INC']:
+            base_dirs.append(environ['CDF_INC'])
+            limit = True
+        if 'CDF_BIN' in environ and environ['CDF_BIN']:
+            base_dirs.append(environ['CDF_BIN'])
+            limit = True
         if 'CDF_LIB_DIR' in environ and environ['CDF_LIB_DIR']:
             base_dirs.append(environ['CDF_LIB_DIR'])
             limit = True
