@@ -4,6 +4,7 @@ Configuration classes
 
 import os
 import platform
+import traceback
 
 from sysdevel import util
 
@@ -79,7 +80,8 @@ class lib_config(config):
             self.found = True
         except Exception, e:
             if self.debug:
-                print e
+                print 'Exception: ' + str(e)
+                print traceback.print_exc()
             return self.found
 
         if self.hdr:
@@ -119,7 +121,8 @@ class py_config(config):
             self.found = True
         except Exception, e:
             if self.debug:
-                print e
+                print 'Exception: ' + str(e)
+                print traceback.print_exc()
         return self.found
 
 
@@ -186,7 +189,8 @@ class prog_config(config):
             self.found = True
         except Exception, e:
             if self.debug:
-                print e
+                print 'Exception: ' + str(e)
+                print traceback.print_exc()
             return self.found
 
         self.environment[self.exe.upper()] = program
