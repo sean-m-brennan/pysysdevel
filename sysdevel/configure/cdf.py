@@ -61,7 +61,7 @@ class configuration(lib_config):
         try:
             incl_dir = find_header(self.hdr, base_dirs, limit=limit)
             lib_dir, lib = find_library(self.lib, base_dirs, limit=limit)
-            exe = find_program('cdfcompare',  base_dirs, limit=limit)
+            exe = find_program('cdfcompare',  base_dirs)
             self.found = True
         except Exception, e:
             if self.debug:
