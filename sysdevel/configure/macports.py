@@ -11,7 +11,7 @@ class configuration(config):
     Find/fetch MacPorts
     """
     def __init__(self):
-        config.__init__(self, debug=False)
+        config.__init__(self, debug=True)
         self.ports_found = False
 
 
@@ -24,9 +24,9 @@ class configuration(config):
                 if exe.startswith(sys.exec_prefix):
                     exe_ok = True
                     break
-            if self.ports_found and exe_ok:
+            if self.ports_found and not exe_ok:
                 if self.debug:
-                    print sys.exec_prefix + "bin/python  not in  " + \
+                    print sys.exec_prefix + "/bin/python  not in  " + \
                         repr(python_sys_executables())
                 switch_python()
         return self.found and self.ports_found
