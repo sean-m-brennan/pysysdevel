@@ -19,8 +19,15 @@ class configuration(config):
         self.found = system_uses_macports()
         if self.found:
             self.ports_found = os.path.exists(python_executable())
-            if self.ports_found and \
-                    not sys.executable in python_sys_executables():
+            exe_ok = False
+            for exe in python_sys_executables():
+                if exe.startswith(sys.exec_prefix):
+                    exe_ok = True
+                    break
+            if self.ports_found and exe_ok:
+                if self.debug:
+                    print sys.exec_prefix + "bin/python  not in  " + \
+                        repr(python_sys_executables())
                 switch_python()
         return self.found and self.ports_found
 
@@ -55,7 +62,7 @@ class configuration(config):
                               'py' + python_version + '-numpy'],
                              stdout=log, stderr=log)
             admin_check_call(['port', 'install',
-                              'py' + python_version + '-py2app-devel'],
+                              'py' + python_version + '-py2app'],
                              stdout=log, stderr=log)
         log.close()
         if not self.is_installed(environ, verson):
