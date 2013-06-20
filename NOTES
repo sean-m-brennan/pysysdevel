@@ -21,6 +21,10 @@ Mac OSX
     WARNING: Running `port selfupdate` will wipe out these settings.
     NOTE: Python version 2.7 is broken in MacPorts. Do not use it.
 
+    If operating macports behind a proxy, edit proxy_http and friends
+    located near the bottom of /opt/local/etc/macports/macports.conf.
+
+
   + Homebrew
     GFortran 4.8 may be broken; fetch/install from
     http://cran.r-project.org/bin/macosx/tools/gfortran-4.2.3.pkg
