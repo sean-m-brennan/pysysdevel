@@ -29,62 +29,73 @@ WEBSOCKET_TLS_CERT = @@{WEBSOCKET_TLS_CERT}
 
 RESOURCE           = "@@{WEBSOCKET_RESOURCE}"
 SERVICE_NAME       = RESOURCE.upper()
-
-
-def json_handler(obj):
-    if type(obj) == datetime.datetime:
-        return obj.isoformat()
-    elif type(obj) == numpy.ndarray:
-        return obj.tolist()
-    else:
-        raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj))
+ADDTNL_RESOURCES   = "@@{WEBSOCKET_ADD_RESOURCES}".split(',')
 
 
 
 class ServiceQuery(websockethandler.WebHandlerService):
-    def __init__(self, dispatcher):
+    def __init__(self, dispatcher, extra_resource=None):
         websockethandler.WebHandlerService.__init__(self, SERVICE_NAME +
                                                     ' query service')
         self.socket_dispatch = dispatcher
-                
+        self.extra_resource = extra_resource.strip('/')
+
 
     def handle_message(self, message):
+        handled = False
+        self.log.debug('Resource ' + self.extra_resource + ' requested')
         try:
-            if message.lower().startswith('list_steps'):
-                if self.socket_dispatch != None:
-                    msg_tpls = query.list_steps(json.loads(message[11:]))
-                    if msg_tpls != None:
-                        for m in msg_tpls:
-                            self.socket_dispatch.send_data(
-                                'STEP' + str(m[0]) + 
-                                json.dumps(m[1]), default=json_handler)
-
-            elif message.lower().startswith('last_step'):
-                if self.socket_dispatch != None:
-                    msg = query.last_step(json.loads(message[10:]))
-                    if msg != None:
-                        self.socket_dispatch.send_data(
-                            'STEP' + str(query.max_steps+1) + 
-                            json.dumps(msg), default=json_handler)
-
-            elif message.lower().startswith('step'):
-                if self.socket_dispatch != None:
-                    step_num = int(message[4])
-                    try:
-                        func = getattr(query, 'step' + str(step_num))
-                        msg = func(json.loads(message[6:]))
-                        if msg != None:
-                            if isinstance(msg, Exception):
-                                self.socket_dispatch.send_data('ERROR:' +
-                                                               str(msg))
-                            else:
+            if self.extra_resource is None or self.extra_resource == '':
+                if message.lower().startswith('list_steps'):
+                    if self.socket_dispatch != None:
+                        msg_tpls = query.list_steps(json.loads(message[11:]))
+                        if msg_tpls != None:
+                            for m in msg_tpls:
                                 self.socket_dispatch.send_data(
-                                    'STEP' + str(step_num+1) + 
-                                    json.dumps(msg, default=json_handler))
-                    except AttributeError:
-                        self.log.debug("Unknown step: " + message)
+                                    'STEP' + str(m[0]) +
+                                    json.dumps(m[1],
+                                               default=websockethandler.json_handler))
+                    handled = True
+
+                elif message.lower().startswith('last_step'):
+                    if self.socket_dispatch != None:
+                        msg = query.last_step(json.loads(message[10:]))
+                        if msg != None:
+                            self.socket_dispatch.send_data(
+                                'STEP' + str(query.max_steps+1) +
+                                json.dumps(msg,
+                                           default=websockethandler.json_handler))
+                    handled = True
+
+                elif message.lower().startswith('step'):
+                    if self.socket_dispatch != None:
+                        step_num = int(message[4])
+                        try:
+                            func = getattr(query, 'step' + str(step_num))
+                            msg = func(json.loads(message[6:]))
+                            if msg != None:
+                                if isinstance(msg, Exception):
+                                    self.socket_dispatch.send_data('ERROR:' +
+                                                                   str(msg))
+                                else:
+                                    self.socket_dispatch.send_data(
+                                        'STEP' + str(step_num+1) + 
+                                        json.dumps(msg,
+                                                   default=websockethandler.json_handler))
+                        except AttributeError:
+                            self.log.debug("Unknown step: " + message)
+                    handled = True
 
             else:
+                for resource in ADDTNL_RESOURCES:
+                    if resource == self.extra_resource:
+                        handler = __import__(resource,
+                                             globals={"__name__": __name__})
+                        self.log.debug('Handling through ' + resource)
+                        if handler.handle_message(self, message):
+                            handled = True
+                            
+            if not handled:
                 self.log.debug("Unknown command: " + message)
         except Exception, e:
             #self.log.debug(str(e) + ' at %s:%d' % inspect.stack()[1][1:3])
@@ -120,7 +131,7 @@ class ServiceBatch(websockethandler.WebHandlerService):
         results = "RESULT:"
         try:
             results += json.dumps(query.last_step(self.parameters),
-                                  default=json_handler)
+                                  default=websockethandler.json_handler)
             if self.socket_dispatch != None:
                 self.socket_dispatch.send_data(results)
         except models.UnknownModelException, e:
@@ -145,14 +156,11 @@ class ServiceBatch(websockethandler.WebHandlerService):
 class ServiceSpawn(websockethandler.WebResourceFactory):
     def __call__(self, dispatcher, resource):
         service = None
-        res = resource
         if resource.startswith('/' + RESOURCE + '/'):
-            ## ignore further resource specification
-            service = ServiceQuery(dispatcher)
+            service = ServiceQuery(dispatcher, resource[len(RESOURCE)+2:])
             service.start()
         elif resource.startswith('/' + RESOURCE + '_batch/'):
-            res = resource[14:]
-            subs = res.split('/')
+            subs = resource[len(RESOURCE)+8:].split('/')
             params = dict()
             for sub in subs:
                 key_val = sub.split('=')
@@ -162,15 +170,9 @@ class ServiceSpawn(websockethandler.WebResourceFactory):
         return service
 
 
-class ServiceServer(object):
+class ServiceServer(websockethandler.WebServer):
     def __init__(self, log_file, log_level=logging.WARNING, verbose=False):
-        if log_file is None:  ## log to stdout
-            logging.basicConfig(format='%(asctime)s  %(name)s - %(message)s',
-                                level=log_level)
-        else:
-            logging.basicConfig(filename=log_file, filemode='w',
-                                format='%(asctime)s  %(name)s - %(message)s',
-                                level=log_level)
+        websockethandler.WebServer.__init__(self, log_file, log_level)
         self.webserver = websocketserver.WebSocketServer(ServiceSpawn,
                                                          WEBSOCKET_HOST,
                                                          WEBSOCKET_PORT,
@@ -242,6 +244,7 @@ def main(argv=None):
         if '-v' in argv or '--verbose' in argv:
             verbose = True
             level = logging.DEBUG
+        extras = []
         try:
             server = ServiceServer(None, logging.DEBUG, verbose)
             server.run()

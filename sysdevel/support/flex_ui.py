@@ -63,7 +63,7 @@ class FlexUI(object):
         ## Call self.__init_UI()
 
 
-    def __init_UI(self)
+    def __init_UI(self):
         if LOGGABLE:
             if self.debug_level == 4 or (self.debug_level >= 2 and self.no_gui):
                 logging.basicConfig(format='%(message)s', level=logging.DEBUG)

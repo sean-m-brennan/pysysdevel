@@ -28,7 +28,7 @@ $service_ext = $service_path["extension"];
 
 if (!file_exists($DISTRIB_PATH . $sep . $SERVICE)) {
   header('HTTP/1.1 500 Internal Server Error');
-  echo '<b>IMPACT Python service not properly set up:</b><br/>';
+  echo '<b>Python service not properly set up:</b><br/>';
   echo '<pre>    Looking for service in "' . $DISTRIB_PATH . '".</pre>';
   echo '<pre>    Using PYTHONPATH "' . $_ENV['PYTHONPATH'] . '".</pre>';
   echo '<pre>    Given parameters:  </pre>';
@@ -51,7 +51,7 @@ foreach ($steps as $step) {
 
 if ($args == '' || $step_method == '') {
   header('HTTP/1.1 400 Bad Request');
-  echo '<b>IMPACT Python service not given correct arguments:</b><br/>';
+  echo '<b>Python service not given correct arguments:</b><br/>';
   echo '<pre>    Given parameters:  </pre>';
   foreach ($input as $k => $p) {
     echo '<pre>        ' . $k . ' = ' . $p . '</pre>';

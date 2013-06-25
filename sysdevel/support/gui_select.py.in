@@ -111,7 +111,7 @@ def chooseBackend(preference=None, debug=False):
 
 
 
-def UIFactory(app, has_log, pkg=None)
+def UIFactory(app, has_log, pkg=None):
     be = chooseBackend(app.backend, app.debug_level)
     pkg_prefix = ''
     if pkg:
