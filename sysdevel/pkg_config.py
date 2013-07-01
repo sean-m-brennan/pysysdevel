@@ -93,6 +93,14 @@ class pkg_config(object):
         self.environment['COMPANY'] = self.COMPANY
         self.environment['COMPILER'] = 'gcc'
 
+        self.environment['WEBSOCKET_SERVER']        = ''
+        self.environment['WEBSOCKET_ORIGIN']        = ''
+        self.environment['WEBSOCKET_RESOURCE']      = ''
+        self.environment['WEBSOCKET_ADD_RESOURCES'] = ''
+        self.environment['WEBSOCKET_TLS_PKEY']      = 'None'
+        self.environment['WEBSOCKET_TLS_CERT']      = 'None'
+
+
 
     def get_prerequisites(self, argv):
         if 'windows' in platform.system().lower():

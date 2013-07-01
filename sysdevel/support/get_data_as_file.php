@@ -16,6 +16,8 @@ if ($file_ext == 'zip') {
   header('Content-Type: application/zip');
 } else if ($file_ext == 'json') {
   header('Content-Type: application/json');
+} else if ($file_ext == 'pdf') {
+  header('Content-Type: application/pdf');
 } else {
   header('Content-Type: application/octet-stream');
 }

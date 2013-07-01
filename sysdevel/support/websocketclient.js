@@ -10,7 +10,7 @@ function WebSocketsHandler( callback ) {
     };
 
     this.receive = function( data ) {
-        console.debug( 'Received ' + data );
+        //console.debug( 'Received ' + data );
         if ( this.callback )
             this.callback( data );
         else if ( data.substring(0, 6).toLowerCase() == 'error:' )
@@ -226,7 +226,7 @@ function ServerLink( server, resource, data_callback ){
     };
 
     this._send = function( msg ) {
-        console.debug( "Sending '" + msg + "'" );
+        //console.debug( "Sending '" + msg + "'" );
         if ( this.ws.isOpen() )
             this.ws_dh.send( msg );
         else {  // fallback to PHP
