@@ -10,7 +10,8 @@ function WebSocketsHandler( callback ) {
     };
 
     this.receive = function( data ) {
-        //console.debug( 'Received ' + data );
+	if ( DEBUG )
+            console.debug( 'Received ' + data );
         if ( this.callback )
             this.callback( data );
         else if ( data.substring(0, 6).toLowerCase() == 'error:' )
@@ -70,7 +71,7 @@ function AjaxHandler( callback ) {
 }
 
 
-function WebSocketsClient( resource, handler, fallback ) {
+function WebSocketsClient( resource, params, handler, fallback ) {
     this._opened = false;
     this.uri = '';
     this.resource = resource;
@@ -81,6 +82,7 @@ function WebSocketsClient( resource, handler, fallback ) {
     this.has_fallback = false;
     if ( fallback )
 	this.has_fallback = true;
+    // FIXME handle params
 
 
     this._detect_socket_support = function() {
@@ -205,14 +207,13 @@ function ServerLink( server, resource, data_callback ){
     this.ws_dh = new WebSocketsHandler( data_callback );
     var search = location.search.substring(1);
     var params = search.split('&').join('/');
-    var full_resource = resource + '/' + params;
-    this.ws = new WebSocketsClient( full_resource, this.ws_dh, true );
+    this.ws = new WebSocketsClient( resource, params, this.ws_dh, true );
     this.ws.connect( this.server );
 
     this.php_dh = new AjaxHandler( data_callback );
     this.php_script = resource + '.php';
 
-    this.send_to_server = function( msg_type, data ) {
+    this.sendToServer = function( msg_type, data ) {
 	msg = msg_type.toString().toLowerCase();
         if ( typeof data !== 'undefined' )
             msg += '=' + data.toString();
@@ -226,7 +227,8 @@ function ServerLink( server, resource, data_callback ){
     };
 
     this._send = function( msg ) {
-        //console.debug( "Sending '" + msg + "'" );
+        if ( DEBUG )
+	    console.debug( "Sending '" + msg + "'" );
         if ( this.ws.isOpen() )
             this.ws_dh.send( msg );
         else {  // fallback to PHP

@@ -90,17 +90,17 @@ def __configure_package(environment, help_name, skip, install, quiet):
     full_name = 'sysdevel.configure.' + help_name
     try:
         __import__(full_name)
-    except ImportError, e:
+    except ImportError:
         full_name = 'sysdevel.configure.' + help_name + '_py'
         try:
             __import__(full_name)
-        except ImportError, e:
+        except ImportError:
             full_name = 'sysdevel.configure.' + help_name + '_js'
             try:
                 __import__(full_name)
-            except ImportError, e:
+            except ImportError:
                 sys.stderr.write('No setup helper module ' + base + '\n')
-                raise e
+                raise ImportError('No configuration for ' + help_name)
     return __run_helper__(environment, help_name, full_name,
                           req_version, skip, install, quiet)
 
