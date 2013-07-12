@@ -851,7 +851,7 @@ def is_out_of_date(target, source, additional=[]):
  
 
 def configure_files(var_dict, directory_or_file_list,
-                    pattern='*.in', target_dir=None):
+                    pattern='*.in', target_dir=None, excludes=[]):
     '''
     Given a dictionary of environment variables,
     and either a list of files or a directory, an optional filename pattern
@@ -867,6 +867,9 @@ def configure_files(var_dict, directory_or_file_list,
         directory = directory_or_file_list
         matches = []
         for root, dirnames, filenames in os.walk(directory):
+            for ex in excludes:
+                if fnmatch.fnmatch(root, ex):
+                    continue
             for filename in fnmatch.filter(filenames, pattern):
                 matches.append((root, filename))
         remove_pattern = '.in'

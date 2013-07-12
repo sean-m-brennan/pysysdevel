@@ -99,11 +99,10 @@ class build_js(build_ext):
                     util.configure_file(environ, s,
                                         os.path.join(working_dir,
                                                      os.path.basename(s)))
-                ## Specifying public-folder is broken (see below)
-                util.copy_tree(os.path.join(src_dir, 'public'),
-                               os.path.join(working_dir, 'public'),
-                               update=True, verbose=self.distribution.verbose,
-                               excludes=['.svn', 'CVS'])
+                ## Special handling for 'public' directory
+                util.configure_files(environ, os.path.join(src_dir, 'public'),
+                                     '*', os.path.join(working_dir, 'public'),
+                                     excludes=['.svn', 'CVS'])
 
                 compiler = wext.compiler or \
                     environ['PYJSBUILD'] or self.pyjscompiler
@@ -122,9 +121,6 @@ class build_js(build_ext):
                 else:
                     cmd_line.append('--log-level=' + str(logging.ERROR))
                 cmd_line.append('--output=' + target)
-                ## RuntimeError: File not found '_pyjs.js' (bypassed above)
-                #cmd_line.append('--public-folder=' +
-                #                os.path.join(src_dir, 'public'))
                 cmd_line.append(wext.name)
 
                 os.chdir(working_dir)
