@@ -1,6 +1,11 @@
 SysDevel
 --------
 
+TL;DR: Install with
+  ```
+  python -c "$(curl -fsSL https://raw.github.com/sean-m-brennan/pysysdevel/master/get_pysysdevel.py)"
+  ```
+
 SysDevel is a Python package that assists software development in
 three related areas: model development, data visualization, and
 collaboration and distribution. This package facilitates multi-model
@@ -12,6 +17,7 @@ external libraries and application freezing.
 
 All code in SysDevel is released under the Mozilla Public License 2.0
 (see the 'LICENSE' file).
+Copyright 2013, Los Alamos National Security, LLC (see the 'COPYING' file).
 
 
 This package requires:

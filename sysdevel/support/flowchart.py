@@ -22,25 +22,5 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
 
-"""
-Flexible install_clib command
-"""
+import flowchart.js
 
-try:
-    from numpy.distutils.command.install_clib import install_clib
-
-except:
-    from distutils.core import Command
-
-    class install_clib(Command):
-        """
-        NumPy is not present, this is a dummy command.
-        """
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        pass
