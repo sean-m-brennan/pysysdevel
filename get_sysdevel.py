@@ -93,7 +93,7 @@ def _install_sysdevel(where):
         where = os.path.abspath(where)
     here = os.path.abspath(os.getcwd())
     os.chdir(where)
-    subprocess.check_call([sys.executable 'setup.py', 'install'], shell=shell)
+    subprocess.check_call([sys.executable, 'setup.py', 'install'], shell=shell)
     os.chdir(here)
     shutil.rmtree(where)
 
