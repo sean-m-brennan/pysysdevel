@@ -113,7 +113,7 @@ if __name__ == "__main__":
         which = raw_input('Do you want to install SysDevel into your default ' +
                           'Python site-packages? (y/N):')
         if which.lower() == 'y' or which.lower() == 'yes':
-            _install_sysdevel(os.path.join(where, 'pysysdevel')
+            _install_sysdevel(os.path.join(where, 'pysysdevel'))
         import sysdevel
         print 'SysDevel is now at ' + os.path.dirname(sysdevel.__file__)
 
