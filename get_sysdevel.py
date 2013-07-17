@@ -27,7 +27,7 @@ Fetch pysysdevel if neccessary.
 This is mainly intended for users who want to keep the sysdevel package *out*
  of their default site-packages.
 Either import this script, or fetch/install sysdevel by running:
-`python -c "$(curl -fsSL https://raw.github.com/sean-m-brennan/pysysdevel/master/get_pysysdevel.py)"`
+`python -c "$(curl -fsSL https://raw.github.com/sean-m-brennan/pysysdevel/master/get_sysdevel.py)"`
 """
 
 import os

@@ -3,7 +3,7 @@ SysDevel
 
 TL;DR: Install with
   ```
-  python -c "$(curl -fsSL https://raw.github.com/sean-m-brennan/pysysdevel/master/get_pysysdevel.py)"
+  python -c "$(curl -fsSL https://raw.github.com/sean-m-brennan/pysysdevel/master/get_sysdevel.py)"
   ```
 
 SysDevel is a Python package that assists software development in
