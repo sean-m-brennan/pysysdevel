@@ -8,6 +8,7 @@ class configuration(prog_config):
     """
     def __init__(self):
         prog_config.__init__(self, 'wxglade', debug=False)
+        self.environment['WXGLADE'] = None
 
 
     def is_installed(self, environ, version):

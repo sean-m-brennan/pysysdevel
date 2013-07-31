@@ -171,7 +171,7 @@ class Executable(old_extension.Extension):
 ##  either python, fortran or c/c++.
 
 ## Python unit tests are a list of unit test modules.
-
+## Javascript unit tests are a list of QUnit HTML files.
 
 class FortranUnitTest(Executable):
     def __init__(self, testfile, extra_sources=[],

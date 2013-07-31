@@ -114,6 +114,22 @@ class test(Command):
         return len(self._get_cpp_tests()) > 0
 
 
+    def _get_js_tests(self):
+        jstests = []
+        if self.tests:
+            for pkg, tests in self.tests:
+                pkgtests = []
+                for unit in tests:
+                    if isinstance(unit, basestring) and unit.endswith('.html'):
+                        pkgtests.append(unit)
+                if len(pkgtests) > 0:
+                    jstests.append((pkg, pkgtests))
+        return jstests
+
+    def _has_js_tests(self):
+        return len(self._get_js_tests()) > 0
+
+
     def run(self):
         failed = False
         if self.distribution.subpackages != None:
@@ -276,6 +292,29 @@ class test(Command):
                     except Exception, e:
                         failed = True
                         print e
+
+        ## Javascript
+        if self._has_js_tests():
+            sys.std_err.write("Javascript unit testing is untested!") #FIXME
+
+            from configure import qunitsuite
+            env = dict()
+            if not qunitsuite.is_installed(env, None):
+                qunitsuite.install(env, None)
+
+            for pkg, units in self._get_js_tests():
+                for unit in units:
+                   suite = qunitsuite.QUnitSuite(unit)
+                   result = unittest.TextTestRunner(verbosity=2).run(suite)
+                   ## FIXME is this output needed?
+                   if len(result.errors) > 0:
+                       failed = true
+                       for error in result.errors:
+                           print error[1]
+                   if len(result.failures) > 0:
+                       failed = true
+                       for failure in result.failures:
+                           print failure[1]
 
         if failed:
             sys.exit(1)
