@@ -31,6 +31,7 @@ import sys
 import logging
 import subprocess
 import shutil
+import fnmatch
 import glob
 
 from distutils.errors import DistutilsExecError
@@ -147,13 +148,20 @@ class build_js(build_ext):
                 cmd_line.append('--output=' + target)
                 cmd_line.append(wext.name)
 
-                os.chdir(working_dir)
-                status = subprocess.call(cmd_line)
-                if status != 0:
-                    raise Exception("Command '" + str(cmd_line) +
-                                    "' returned non-zero exit status "
-                                    + str(status))
-                os.chdir(here)
+                if len(wext.sources) > 0:
+                    os.chdir(working_dir)
+                    status = subprocess.call(cmd_line)
+                    if status != 0:
+                        raise Exception("Command '" + str(cmd_line) +
+                                        "' returned non-zero exit status "
+                                        + str(status))
+                    os.chdir(here)
+
+            pubdir = os.path.join(working_dir, 'public')
+            excludes = ['.svn', 'CVS']
+            if len(wext.sources) < 1:  ## PYJS do not run
+                util.copy_tree(pubdir, target, excludes=excludes,
+                               verbose=self.distribution.verbose)
 
             for filename in wext.extra_public_files:
                 filepath = util.sysdevel_support_path(filename + '.in')
@@ -171,6 +179,24 @@ class build_js(build_ext):
                 util.copy_tree(js_dir, os.path.join(target,
                                                     util.javascript_dir))
 
-            if not os.path.lexists(os.path.join(target, 'index.html')):
+            ## pyjs processing ignores hidden files in public
+            hidden = []
+            for root, dirnames, filenames in os.walk(pubdir):
+                for ex in excludes:
+                    if fnmatch.fnmatch(root, ex):
+                        continue
+                for filename in fnmatch.filter(filenames, ".??*"):
+                    hidden.append(os.path.join(root[len(pubdir)+1:], filename))
+            for filepath in hidden:
+                targetfile = os.path.join(target, filepath)
+                if not os.path.exists(targetfile):
+                    shutil.copyfile(os.path.join(pubdir, filepath), targetfile)
+
+            if not os.path.lexists(os.path.join(target, 'index.html')) and \
+                    os.path.lexists(os.path.join(target, wext.name + '.html')):
                 shutil.copyfile(os.path.join(target, wext.name + '.html'),
                                 os.path.join(target, 'index.html'))
+            if not os.path.lexists(os.path.join(target, 'index.php')) and \
+                    os.path.lexists(os.path.join(target, wext.name + '.php')):
+                shutil.copyfile(os.path.join(target, wext.name + '.php'),
+                                os.path.join(target, 'index.php'))
