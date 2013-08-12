@@ -58,6 +58,8 @@ global_prefix = '/usr'
 download_dir  = 'third_party'
 local_search_paths = []
 javascript_dir = 'javascript'
+stylesheet_dir = 'stylesheets'
+script_dir = 'scripts'
 target_build_dir = 'build'
 windows_postinstall = 'postinstall.py'
 
@@ -1048,6 +1050,14 @@ def configure_file(var_dict, filepath, newpath=None, suffix='.in',
         new.write(line)
     orig.close()
     new.close()
+
+
+def recursive_chown(directory, uid, gid):
+    for root, dirnames, filenames in os.walk(directory):
+        for dirname in dirnames:
+            os.chown(os.path.join(root, dirname), uid, gid)
+        for filename in filenames:
+            os.chown(os.path.join(root, filename), uid, gid)
 
 
 def clean_generated_files():

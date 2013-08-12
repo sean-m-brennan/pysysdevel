@@ -3,14 +3,14 @@ import os
 import shutil
 
 from sysdevel.util import *
-from sysdevel.configuration import js_config
+from sysdevel.configuration import file_config
 
-class configuration(js_config):
+class configuration(file_config):
     """
     Fetch jQuery UI
     """
     def __init__(self):
-        js_config.__init__(self, dependencies=['jquery'], debug=False)
+        file_config.__init__(self, dependencies=['jquery'], debug=False)
 
 
     def install(self, environ, version, locally=True):

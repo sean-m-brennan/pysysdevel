@@ -1,0 +1,129 @@
+  /*
+   * Simple user registration, log-in and operation authentication framework
+   *
+   * Derived and altered from Usered at https://github.com/Pomax/Usered
+   */
+  /*
+   * Original copyright (c) Mike "Pomax" Kamermans, 2011.
+   *
+   * Permission is hereby granted, free of charge, to any person
+   * obtaining a copy of this software and associated documentation
+   * files (the "Software"), to deal in the Software without
+   * restriction, including without limitation the rights to use,
+   * copy, modify, merge, publish, distribute, sublicense, and/or sell
+   * copies of the Software, and to permit persons to whom the
+   * Software is furnished to do so, subject to the following
+   * conditions:
+   *
+   * The above copyright notice and this permission notice shall be
+   * included in all copies or substantial portions of the Software.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+   * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+   * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+   * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+   */
+  /*
+   * Subsequent copyright (c) 2013.  Los Alamos National Security, LLC.
+   *
+   * This material was produced under U.S. Government contract
+   * DE-AC52-06NA25396 for Los Alamos National Laboratory (LANL), which
+   * is operated by Los Alamos National Security, LLC for the
+   * U.S. Department of Energy. The U.S. Government has rights to use,
+   * reproduce, and distribute this software.  NEITHER THE GOVERNMENT
+   * NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS
+   * OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+   * If software is modified to produce derivative works, such modified
+   * software should be clearly marked, so as not to confuse it with the
+   * version available from LANL.
+   * 
+   * Licensed under the Mozilla Public License, Version 2.0 (the
+   * "License"); you may not use this file except in compliance with the
+   * License. You may obtain a copy of the License at
+   * http://www.mozilla.org/MPL/2.0/
+   * 
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+   * implied. See the License for the specific language governing
+   * permissions and limitations under the License.
+   */
+
+.error {
+   /*border: 2px solid red;*/
+   color: red;
+}
+
+row {
+   display: block;
+}
+
+.controlbox:before {
+   content: attr(name);
+   background-color: #FFF;
+   position: relative;
+   top: -0.8em;
+   left: 0.5em;
+   padding: 0px 0.5em 0px 0.5em;
+   color: black;
+}
+
+.controlbox {
+   border: 1px solid black;
+   margin: 1em;
+   margin-top: 8px;
+   padding: 5px;
+   position: relative;
+}
+
+.login {
+   color: black;
+   font-size: 75%;
+}
+
+.register {
+   position: absolute;
+   bottom: 5px;
+   left: 5px;
+}
+
+#registration {
+   width: 50%;
+   margin: 0 0 0 0;
+   padding-bottom: 30px;
+}
+
+.userpopup {
+   display: none;
+   position: fixed;  
+   _position: absolute;
+   z-index: 2;  
+   background: #fff;
+   width: 40%;
+   height: 30%;
+   margin: 0px;
+   opacity: 0.7;
+   top: 30%;
+   left: 30%;
+   align: center;
+   color: black;
+}
+
+div, table, tr, td {
+    margin: 0px; padding: 0px;
+}
+td {
+    vertical-align: top;
+}
+
+
+.notice {
+    font-style: italic; font-variant: small-caps;
+}
+
+a {
+    text-decoration: none;
+}

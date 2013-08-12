@@ -169,7 +169,7 @@ class py_config(config):
 
 
 
-class js_config(config):
+class file_config(config):
     def __init__(self, dependencies=[], debug=False):
         config.__init__(self, dependencies, debug)
 

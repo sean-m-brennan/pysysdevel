@@ -171,13 +171,24 @@ class build_js(build_ext):
                 if '.js' in filename:
                     targetfile = os.path.join(target,
                                               util.javascript_dir, filename)
+                if '.css' in filename:
+                    targetfile = os.path.join(target,
+                                              util.stylesheet_dir, filename)
                 if not os.path.exists(targetfile):
                     util.configure_file(environ, filepath, targetfile)
 
+            ## Copy over downloaded files
             js_dir = os.path.join(build.build_base, util.javascript_dir)
             if os.path.exists(js_dir):
                 util.copy_tree(js_dir, os.path.join(target,
                                                     util.javascript_dir))
+            css_dir = os.path.join(build.build_base, util.stylesheet_dir)
+            if os.path.exists(css_dir):
+                util.copy_tree(css_dir, os.path.join(target,
+                                                     util.stylesheet_dir))
+            php_dir = os.path.join(build.build_base, util.script_dir)
+            if os.path.exists(php_dir):
+                util.copy_tree(php_dir, target)
 
             ## pyjs processing ignores hidden files in public
             hidden = []
@@ -191,6 +202,11 @@ class build_js(build_ext):
                 targetfile = os.path.join(target, filepath)
                 if not os.path.exists(targetfile):
                     shutil.copyfile(os.path.join(pubdir, filepath), targetfile)
+
+            stat_info = os.stat(os.path.join(src_dir, 'public'))
+            uid = stat_info.st_uid
+            gid = stat_info.st_gid
+            util.recursive_chown(target, uid, gid)
 
             if not os.path.lexists(os.path.join(target, 'index.html')) and \
                     os.path.lexists(os.path.join(target, wext.name + '.html')):
