@@ -1,14 +1,15 @@
 """
-Copyright 2013.  Los Alamos National Security, LLC. This material was
-produced under U.S. Government contract DE-AC52-06NA25396 for Los
-Alamos National Laboratory (LANL), which is operated by Los Alamos
-National Security, LLC for the U.S. Department of Energy. The
-U.S. Government has rights to use, reproduce, and distribute this
-software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY,
-LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY
-FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-derivative works, such modified software should be clearly marked, so
-as not to confuse it with the version available from LANL.
+Copyright 2013.  Los Alamos National Security, LLC.
+This material was produced under U.S. Government contract
+DE-AC52-06NA25396 for Los Alamos National Laboratory (LANL), which is
+operated by Los Alamos National Security, LLC for the U.S. Department
+of Energy. The U.S. Government has rights to use, reproduce, and
+distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
+NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is
+modified to produce derivative works, such modified software should be
+clearly marked, so as not to confuse it with the version available
+from LANL.
 
 Licensed under the Mozilla Public License, Version 2.0 (the
 "License"); you may not use this file except in compliance with the
@@ -27,8 +28,10 @@ Configuration classes
 """
 
 import os
+import sys
 import platform
 import traceback
+import subprocess
 
 from sysdevel import util
 
@@ -223,3 +226,78 @@ class prog_config(config):
 
     def install(self, environ, version, locally=True):
         raise NotImplementedError(self.exe + ' installation')
+
+
+
+class nodejs_config(config):
+    def __init__(self, module, dependencies=['node'], debug=False):
+        if not 'node' in dependencies:
+            dependencies.append('node')
+        config.__init__(self, dependencies, debug)
+        self.module = module
+
+
+    def is_installed(self, environ, version=None):
+        cmd_line = [environ['NPM'], 'list', self.module.lower()]
+        return self.__check_installed(cmd_line) or \
+            self.__check_installed(cmd_line + ['-g'])
+
+
+    def __check_installed(self, cmd_line):
+        p = subprocess.Popen(cmd_line,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        if '(empty)' in out:
+            return False
+        return True
+
+
+    def install(self, environ, version, locally=True):
+        if not self.found:
+            pre = []
+            post = []
+            if not locally:
+                if not 'windows' in platform.system().lower() and \
+                        not util.system_uses_homebrew():
+                    pre.append('sudo')
+                post.append('-g')
+
+            if self.debug:
+                log = sys.stdout
+            else:
+                log_file = os.path.join(util.target_build_dir,
+                                        'node-' + self.module.lower() + '.log')
+                log = open(log_file, 'w')
+
+            cmd_line = pre + [environ['NPM'], 'update'] + post
+            try:
+                p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
+                status = util.process_progress(p)
+            except KeyboardInterrupt,e:
+                p.terminate()
+                log.close()
+                raise e
+            if status != 0:
+                log.close()
+                sys.stdout.write(' failed; See ' + log_file)
+                raise Exception('NPM update is required, but could not be ' +
+                                'installed; See ' + log_file)
+
+            cmd_line = pre + [environ['NPM'], 'install', 'node-webgl'] + post
+            try:
+                p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
+                status = util.process_progress(p)
+            except KeyboardInterrupt,e:
+                p.terminate()
+                log.close()
+                raise e
+            if status != 0:
+                log.close()
+                if log_file:
+                    sys.stdout.write(' failed; See ' + log_file)
+                    raise Exception('Node-' + self.module + ' is required, ' +
+                                    'but could not be installed; See ' + log_file)
+                else:
+                    sys.stdout.write(' failed')
+                    raise Exception('Node-' + self.module + ' is required, ' +
+                                    'but could not be installed.')
