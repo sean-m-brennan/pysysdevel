@@ -36,12 +36,14 @@ import warnings
 
 ########################################
 ## Data resources
+##  Dynamic mounting of resources at run-time
+
 
 class Storage(object):
-    def mount(*args, **kwargs):
+    def mount(self, *args, **kwargs):
         raise NotImplementedError('Mount type unknown')
 
-    def unmount(*args, **kwargs):
+    def unmount(self, *args, **kwargs):
         raise NotImplementedError('Mount type unknown')
 
 
@@ -62,7 +64,7 @@ class SshStorage(Storage):
         self.remove_local = False
 
 
-    def mount():
+    def mount(self):
         """
         Mount a remote filesystem using sshfs.
         Must have previously configured and loaded passwordless ssh keys.
@@ -78,7 +80,7 @@ class SshStorage(Storage):
             raise subprocess.CalledProcessError(status, cmd_line)
 
 
-    def umount():
+    def umount(self):
         if os.path.exists(self.where):
             cmd_line = ['fusermount', '-u', self.where]
             status = subprocess.call(cmd_line)
@@ -100,7 +102,7 @@ class NfsStorage(Storage):
         self.remove_local = False
 
 
-    def mount():
+    def mount(self):
         """
         Mount a remote filesystem using nfs.
         Target must exist and host and local uids or guids must agree.
@@ -121,7 +123,7 @@ class NfsStorage(Storage):
             raise subprocess.CalledProcessError(status, cmd_line)
 
 
-    def umount():
+    def umount(self):
         if os.path.exists(self.where):
             cmd_line = ['umount', self.where]
             status = subprocess.call(cmd_line)
@@ -148,8 +150,7 @@ class SmbStorage(Storage):
                           '*not* what you want. Try CifsStorage for ' + \
                           'Windows shares instead.')
 
-
-    def mount():
+    def mount(self):
         """
         Mount a remote filesystem using samba.
         For 'passwordless' mounting:
@@ -174,7 +175,7 @@ class SmbStorage(Storage):
             raise subprocess.CalledProcessError(status, cmd_line)
 
 
-    def umount():
+    def umount(self):
         if os.path.exists(self.where):
             cmd_line = ['umount', self.where]
             if 'windows' in platform.system().lower():
@@ -203,7 +204,7 @@ class CifsStorage(Storage):
         self.remove_local = False
 
 
-    def mount():
+    def mount(self):
         """
         Mount a remote filesystem using cifs (Active Directory).
         For 'passwordless' mounting:
@@ -238,7 +239,7 @@ class CifsStorage(Storage):
             raise subprocess.CalledProcessError(status, cmd_line)
 
 
-    def umount():
+    def umount(self):
         if os.path.exists(self.where):
             cmd_line = ['umount', self.where]
             if 'windows' in platform.system().lower():
@@ -254,5 +255,24 @@ class CifsStorage(Storage):
 
 ########################################
 ## Computation resources
+##  Dynamic allocation of parallel processing
 
+
+class Computation(object):
+    def this(self):
+        raise NotImplementedError('Parallel compute type unknown')
+
+    def that(self):
+        raise NotImplementedError('Parallel compute type unknown')
+
+
+#parallel python w/ autodiscovery
+
+#mpich2
+
+#openmpi
+
+#pvm?
+
+#bsp
 

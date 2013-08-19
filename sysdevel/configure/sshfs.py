@@ -13,10 +13,9 @@ class configuration(prog_config):
     def install(self, environ, version, locally=True):
         if not self.found:
             website = ('https://www.eldos.com/files/sftpnetdrive2/')
-            # FIXME no local install
             # FIXME no good Windows solution
             global_install('sshfs', website,
-                           winstaller='SftpNetDriveFree.exe',
+                           #winstaller='SftpNetDriveFree.exe',
                            brew='sshfs', port='sshfs',
                            deb='sshfs', rpm='fuse-sshfs')
             if not self.is_installed(environ, version):
