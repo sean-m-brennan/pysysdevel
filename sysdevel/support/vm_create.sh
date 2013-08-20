@@ -27,7 +27,7 @@
 ## Create a self-contained virtual machine
 ##
 ## REQUIRES: wget, python, lighttpd, and
-##   createrepo if using CentOS, or debarchiver if using Debian, and
+##   createrepo if using CentOS, or debarchiver + dput if using Debian, and
 ##   virtualbox, or qemu-kvm/libvirt
 ##
 ## Also needs:
@@ -61,10 +61,9 @@ function create_repository {
     repo_dir="$2"
     cd "${repo_dir}"
     if [ "${TARGET_OS}" = "CENTOS" ]; then
-	createrepo ./ --update
+	createrepo ./ --update 1>&2
     else
-	debarchiver --addoverride --autoscanall
-	#FIXME needs config file??
+	debarchiver --addoverride --autoscanall --input ${PWD} --dest ${PWD} 1>&2
     fi
     cd $here
     port=$(printf 8%03d ${number})
@@ -75,7 +74,7 @@ server.bind = "localhost"
 server.use-ipv6 = "disable"
 dir-listing.activate = "enable" 
 EOF
-    lighttpd -D -f ${VM_WORKING_DIR}/lighttpd_${number}.conf &
+    lighttpd -D -f ${VM_WORKING_DIR}/lighttpd_${number}.conf 1>&2 &
     server_pid=$!
     echo "Serve repository at ${repo_dir} on port ${port} at pid ${server_pid}" 1>&2
     echo "${server_pid}"  ## return value
@@ -211,10 +210,11 @@ function tftp_cleanup {
     set +e
     for pid in "${VM_SERVER_PIDS[@]}"; do
 	if [ "${pid}" != "" ]; then
-	    kill ${pid} >/dev/null
+	    kill ${pid} >/dev/null 2>&1
 	fi
     done
     killall python >/dev/null 2>&1
+    killall lighttpd >/dev/null 2>&1
 }
 
 
@@ -248,6 +248,7 @@ function vbox_init {
 	NIC=Am79C970A
 	NIC_TYPE=pcnet
     fi
+    killall VBoxSVC >/dev/null 1>&2
     set -e
 
     VBOX_DEF="${VBOX_VM_DIR}/VirtualBox.xml"
@@ -258,7 +259,10 @@ function vbox_init {
     mv ${VBOX_DEF} ${VBOX_DEF}.old
     sed "s|^\(.*\)defaultMachineFolder=\"[^\"]*\"\(.*\)$|\1defaultMachineFolder=\"${VBOX_VM_DIR}\"\2|" ${VBOX_DEF}.old >${VBOX_DEF}
     VBOX_DIR=$(dirname "${VBOX_DEF}")
-    echo "Using VirtualBox installation at ${VBOX_DIR}" 1>&2
+    echo "Using VirtualBox from ${VBOX_DIR}" 1>&2
+    if $VERBOSE; then
+	cat ${VBOX_DEF} | grep defaultMachineFolder 1>&2
+    fi
 
     if [ ! -d "${VBOX_VM_DIR}/${VM_NAME}" ]; then
 	here="${PWD}"
