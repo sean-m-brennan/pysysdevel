@@ -1922,6 +1922,7 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
     import urllib
     import urllib2
     import tempfile
+    import traceback
 
     proxy_url = proxy
     if proxy_url is None:
@@ -1940,47 +1941,53 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
     opener = urllib2.build_opener(proxies)
     urllib2.install_opener(opener)
 
-    req = urllib2.Request(url=url, data=data)
-    fp = urllib2.urlopen(req)
     try:
-        headers = fp.info()
-        if filename:
-            tfp = open(filename, 'wb')
-        else:
-            tfp = tempfile.NamedTemporaryFile(delete=False)
-            filename = tfp.name
-
+        req = urllib2.Request(url=url, data=data)
+        fp = urllib2.urlopen(req)
         try:
-            result = filename, headers
-            bs = 1024*8
-            size = -1
-            read = 0
-            blocknum = 0
-            if "content-length" in headers:
-                size = int(headers["Content-Length"])
-            if progress:
-                progress(blocknum, bs, size)
+            headers = fp.info()
+            if filename:
+                tfp = open(filename, 'wb')
+            else:
+                tfp = tempfile.NamedTemporaryFile(delete=False)
+                filename = tfp.name
 
-            while True:
-                block = fp.read(bs)
-                if not block or block == "":
-                    break
-                read += len(block)
-                tfp.write(block)
-                blocknum += 1
+            try:
+                result = filename, headers
+                bs = 1024*8
+                size = -1
+                read = 0
+                blocknum = 0
+                if "content-length" in headers:
+                    size = int(headers["Content-Length"])
                 if progress:
                     progress(blocknum, bs, size)
+
+                while True:
+                    block = fp.read(bs)
+                    if not block or block == "":
+                        break
+                    read += len(block)
+                    tfp.write(block)
+                    blocknum += 1
+                    if progress:
+                        progress(blocknum, bs, size)
+            finally:
+                tfp.close()
         finally:
-            tfp.close()
-    finally:
-        fp.close()
-    del fp
-    del tfp
+            fp.close()
+        del fp
+        del tfp
+    except urllib2.HTTPError, e:
+        e.reason = url + ': ' + e.reason
+        sys.stderr.write("HTTP Error connecting to " + url + ":\n")
+        raise
+
 
     if size >= 0 and read < size:
-        raise urllib.ContentTooShortError("retrieval incomplete: "
+        raise urllib.ContentTooShortError("%s: retrieval incomplete: "
                                           "got only %i out of %i bytes" %
-                                          (read, size), result)
+                                          (url, read, size), result)
 
     return result
 
