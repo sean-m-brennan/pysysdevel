@@ -1979,7 +1979,7 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
         del fp
         del tfp
     except urllib2.HTTPError, e:
-        e.reason = url + ': ' + e.reason
+        e.strerror = url + ': ' + e.strerror
         sys.stderr.write("HTTP Error connecting to " + url + ":\n")
         raise
 
