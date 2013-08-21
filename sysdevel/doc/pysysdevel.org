@@ -1,8 +1,8 @@
 #+LaTeX_CLASS: book
 #+LaTeX_CLASS_OPTIONS: [letterpaper,twoside]
 #+LaTeX_HEADER: \usepackage{lmodern}
-#+LaTeX_HEADER: \usepackage{microtype}
-#+TITLE:     Modeling with Python
+#+LaTeX_HEADER: \usepackage{courier}
+#+TITLE:     Simulation and Model Development with Python
 #+AUTHOR:    Sean M. Brennan
 #+EMAIL:     brennan@lanl.gov
 #+DATE:      2013
@@ -14,4 +14,173 @@
 #+EXPORT_EXCLUDE_TAGS: noexport
 #+LINK_UP:   
 #+LINK_HOME: https://github.com/sean-m-brennan/pysysdevel
+
+* Introduction
+
+In scientific simulations, modeling one aspect of a
+system can be quite informative, and usually simplifies
+the problem, making it more tractable. However, when
+singular models are not enough, integrating multiple
+models into a complex, coherent, system-wide
+simulation can be an arduous task, particularly when
+those models have been developed separately and have
+no apparent coupling.
+
+pysysdevel is a Python package that assists with the
+development of such multi-model simulation software.
+This pure python package helps in three major areas of
+code development: model coupling, data visualization,
+and distribution for collaboration.
+
+
+** Modelling and Simulation
+
+** Data Visualization
+
+** Collaboration and Distribution
+
+The research implicit in such intricate simulation is for
+nothing if it cannot be replicated. Other software like
+Emacs' Org mode, seeks to enable such reproducible
+research focusing on publication where code is
+incorporated but secondary. The pysysdevel build utility
+instead focuses on complex software interactions and
+dependencies and dynamic presentation. Thus in the
+interest of comprehensive collaborative distribution of
+your software, pysysdevel handles not only building
+your package, including C/C++ extensions, shared
+libraries, and even executables, but also downloading,
+building, and installing external Python packages,
+native libraries, executables, compilers, and other tools.
+
+Python packages such as Sphinx (for documentation),
+Tools like CMake, MinGW,
+
+Libraries such as HDF5, GNU Scientific Library,
+
+Because this functionality is likely required to put your
+external dependencies in place, we'll describe its use in-
+depth next.
+
+
+* Extension to distutils: =core.py=
+
+We are assuming that you already have some models to
+couple, and as such already have some libraries or
+other python packages as dependencies. This chapter
+shows you how to automatically download, build, locally
+install, and even distribute shared libraries and native
+executables in an easily extensible way.
+
+This portion of pysysdevel grew out of a need to build
+an extensive python package consistently across a
+multitude of restrictive environments. Therefore, our
+build utility assumes nothing about the system on which
+we're building, except that Python is available.
+
+Typically a package is built with the invocation
+
+python setup.py build
+
+and installed to the system's site packages location with
+
+python setup.py install
+
+just as with standard distutils. In fact, all the
+customizations of distutils, such as '--prefix' or '--home'
+are supported.
+
+For a very simple package with no dependencies, the
+setup.py file will be indistinguishable from that used
+with distutils. However, pysysdevel provides a number
+of features that greatly reduce the burden of correctly
+setting up a build environment:
+
+
+** Shared libraries: =build_shlib.py=
+
+** Native executables: =build_exe.py=
+
+** Documentation: =build_doc.py=
+
+** Unit testing: =test.py=
+
+** External packages and libraries: =configure/*=
+
+*** CMake-style extensions
+
+*** Yum, apt, macports, homebrew, and windows installers
+
+** Easily frozen exes and apps
+
+*** py2exe and py2app made even simpler
+
+
+* Multi-model simulation development: =support/*=
+
+** Tying simulation models together
+
+*** the Model-View-Controller pattern
+
+**** Data model - transformative objects
+
+Python dictionary attribute access - adding arbitrary data
+
+src_python{validate()}
+
+Data organization: HDF5, SQL
+
+Accessing storage: =networked_resources.py=
+
+
+**** Data controller - manipulation
+
+src_python{provides()} and src_python{requires()}
+
+
+**** Data view
+
+src_python{requires()}: end of the pipeline
+
+src_python{__dir__()}: easy JSON dump
+
+
+** Running a pipeline
+
+*** 
+
+
+* HTML5 Web development
+
+** Web GUIs
+
+From python to javascript with pyjs
+
+Data transfer with WebSockets and JSON
+
+Data handling with WebWorkers
+
+Pipeline construction with jsPlumb
+
+WebGL
+
+
+** Desktop GUIs
+
+Node.js =+= node-webgl
+
+Why not Pyjamas Desktop
+
+Alternate Python Desktop GUI: wxPython
+
+
+* Putting it all together
+
+** Data acquisition and user input
+
+** Evaluating individual data pipelines
+
+** Comparing pipelines
+
+** Complex visualizations
 

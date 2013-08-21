@@ -11,11 +11,11 @@ class configuration(prog_config):
     Find/install Node.js
     """
     def __init__(self):
-        prog_config.__init__(self, 'node', debug=False)
+        prog_config.__init__(self, 'node', debug=True)
 
 
     def null(self):
-        self.environment[self.exe.upper()] = None
+        prog_config.null(self)
         self.environment['NPM'] = None
 
 

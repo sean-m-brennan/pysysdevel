@@ -1978,12 +1978,13 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
             fp.close()
         del fp
         del tfp
-    except urllib2.HTTPError, e:
-        e.msg = url + ': ' + e.msg
-        #if hasattr(e, 'reason'):
-        #    e.reason = url + ': ' + e.reason
-        #else:
-        #    sys.stderr.write("HTTP Error connecting to " + url + ":\n")
+    except urllib2.URLError, e:
+        if hasattr(e, 'message'):
+            e.message = url + ": " + e.message
+        elif hasattr(e, 'reason'):
+            e.reason = url + ": " + e.reason
+        else:
+            sys.stderr.write("HTTP Error connecting to " + url + ":\n")
         raise
 
 
