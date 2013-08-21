@@ -11,7 +11,7 @@ class configuration(prog_config):
     Find/install Node.js
     """
     def __init__(self):
-        prog_config.__init__(self, 'node', debug=True)
+        prog_config.__init__(self, 'node', debug=False)
 
 
     def null(self):
@@ -47,7 +47,7 @@ class configuration(prog_config):
             # FIXME no local install
             global_install('Node.js', website,
                            winstaller='node-v' + version + '-' + arch + 'msi',
-                           brew='node, npm', port='nodejs',
-                           deb='nodejs', rpm='nodejs')
+                           brew='node, npm', port='nodejs, npm',
+                           deb='nodejs, npm', rpm='nodejs, npm')
             if not self.is_installed(environ, version):
                 raise Exception('Node.js installation failed.')

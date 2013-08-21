@@ -19,6 +19,7 @@ class configuration(lib_config):
             if locally or 'windows' in platform.system().lower():
                 src_dir = 'glfw-' + str(version)
                 archive = src_dir + '.zip'
+                #FIXME this is a CMake build
                 autotools_install(environ, website, archive, src_dir, locally)
             else:
                 global_install('GLFW', website,
