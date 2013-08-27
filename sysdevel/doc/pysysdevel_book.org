@@ -1,19 +1,81 @@
-#+LaTeX_CLASS: book
-#+LaTeX_CLASS_OPTIONS: [letterpaper,twoside]
-#+LaTeX_HEADER: \usepackage{lmodern}
-#+LaTeX_HEADER: \usepackage{courier}
+# Copyright 2013.  Los Alamos National Security, LLC.
+# This material was produced under U.S. Government contract
+# DE-AC52-06NA25396 for Los Alamos National Laboratory (LANL), which is
+# operated by Los Alamos National Security, LLC for the U.S. Department
+# of Energy. The U.S. Government has rights to use, reproduce, and
+# distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
+# NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is
+# modified to produce derivative works, such modified software should be
+# clearly marked, so as not to confuse it with the version available
+# from LANL.
+# 
+# Licensed under the Mozilla Public License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/2.0/
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# permissions and limitations under the License.
+
 #+TITLE:     Simulation and Model Development with Python
 #+AUTHOR:    Sean M. Brennan
 #+EMAIL:     brennan@lanl.gov
 #+DATE:      2013
+
+# Export to Docbook
+# Hint: put something like this in your .emacs file:
+#  (require 'org-docbook)
+#  (setq org-export-docbook-xsl-fo-proc-command "/usr/bin/fop -fo \"%i\" -pdf \"%o\"")
+#  (setq org-export-docbook-xslt-proc-command "/usr/bin/java -classpath /usr/share/java/saxon.jar com.icl.saxon.StyleSheet -o \"%o\" \"%i\" \"%s\"")
+#  (setq org-export-docbook-xslt-stylesheet "/usr/share/sgml/docbook/xsl-stylesheets/fo/docbook.xsl"))
+
+# For org v8.0+, export to Texinfo,
+#  (require 'ox-texinfo)
+# then to DocBook:
+#  `makeinfo --docbook pysysdevel.texi`
+# then use Saxon:
+#  `/usr/bin/java -classpath /usr/share/java/saxon.jar com.icl.saxon.StyleSheet -o pysysdevel.fo pysysdevel.xml /usr/share/sgml/docbook/xsl-stylesheets/fo/docbook.xsl`
+# then Fop:
+#  '/usr/bin/fop -fo pysysdevel.fo -pdf pysysdevel.pdf
+
+# For Latex export:
+# (require 'org-latex)
+# (unless (boundp 'org-export-latex-classes)
+#   (setq org-export-latex-classes nil))
+# (add-to-list 'org-export-latex-classes
+#              '("short-book"
+#                "\\documentclass{book}"
+#                ("\\chapter{%s}" . "\\chapter*{%s}")
+#                ("\\section{%s}" . "\\section*{%s}")
+#                ("\\subsection{%s}" . "\\subsection*{%s}")
+#                ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+#              )
+
+
 #+LANGUAGE:  en
-#+OPTIONS:   H:3 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
-#+OPTIONS:   TeX:t LaTeX:nil skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+OPTIONS:   H:4 num:t toc:t \n:nil @:t ::t |:t ^:{} -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:auto skip:nil d:nil todo:t pri:nil tags:not-in-toc
 #+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 #+EXPORT_SELECT_TAGS: export
 #+EXPORT_EXCLUDE_TAGS: noexport
 #+LINK_UP:   
 #+LINK_HOME: https://github.com/sean-m-brennan/pysysdevel
+
+#+XSLT: docbook_custom.xsl
+
+#+LaTeX_CLASS: short-book
+#+LaTeX_CLASS_OPTIONS: [letterpaper,twoside]
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage{color}
+#+LaTeX_HEADER: \usepackage{lmodern}
+#+LaTeX_HEADER: \usepackage{courier}
+#+LaTeX_HEADER: \usepackage{wallpaper}
+#+LATEX: \CenterWallPaper{0.5}{pysysdevel_cover.png}
+
 
 * Introduction
 
@@ -80,11 +142,11 @@ we're building, except that Python is available.
 
 Typically a package is built with the invocation
 
-python setup.py build
+src_bash[:exports code]{python setup.py build}
 
 and installed to the system's site packages location with
 
-python setup.py install
+src_bash[:exports code]{python setup.py install}
 
 just as with standard distutils. In fact, all the
 customizations of distutils, such as '--prefix' or '--home'
@@ -126,7 +188,7 @@ setting up a build environment:
 
 Python dictionary attribute access - adding arbitrary data
 
-src_python{validate()}
+src_python[:exports code]{validate()}
 
 Data organization: HDF5, SQL
 
@@ -135,14 +197,16 @@ Accessing storage: =networked_resources.py=
 
 **** Data controller - manipulation
 
-src_python{provides()} and src_python{requires()}
+src_python[:exports code]{provides()} and src_python[:exports code]{requires()}
 
 
 **** Data view
 
-src_python{requires()}: end of the pipeline
+src_python[:exports code]{requires()}
+end of the pipeline
 
-src_python{__dir__()}: easy JSON dump
+src_python[:exports code]{__dir__()}
+easy JSON dump
 
 
 ** Running a pipeline

@@ -480,6 +480,7 @@ def find_file(filepattern, pathlist=[]):
     '''
     Find the full path of the specified file.
     '''
+    #FIXME handle case where filepattern is a path
     for path in local_search_paths + pathlist:
         if path != None and os.path.exists(path):
             if DEBUG:
@@ -1979,13 +1980,13 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
         del fp
         del tfp
     except urllib2.URLError, e:
-        sys.stderr.write("HTTP Error connecting to " + url + ":\n")
         if hasattr(e, 'reason'):
             e.reason = url + ": " + e.reason
         elif hasattr(e, 'msg'):
             e.msg = url + ": " + e.msg
+        else:
+            sys.stderr.write("HTTP Error connecting to " + url + ":\n")
         raise
-
 
     if size >= 0 and read < size:
         raise urllib.ContentTooShortError("%s: retrieval incomplete: "

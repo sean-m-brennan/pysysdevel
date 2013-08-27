@@ -1,0 +1,224 @@
+# Copyright 2013.  Los Alamos National Security, LLC.
+# This material was produced under U.S. Government contract
+# DE-AC52-06NA25396 for Los Alamos National Laboratory (LANL), which is
+# operated by Los Alamos National Security, LLC for the U.S. Department
+# of Energy. The U.S. Government has rights to use, reproduce, and
+# distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
+# NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is
+# modified to produce derivative works, such modified software should be
+# clearly marked, so as not to confuse it with the version available
+# from LANL.
+# 
+# Licensed under the Mozilla Public License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/2.0/
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# permissions and limitations under the License.
+
+#+TITLE:     Multi-Model Simulation Development with Python
+#+AUTHOR:    Sean M. Brennan
+#+EMAIL:     brennan@lanl.gov
+#+DATE:      2013
+
+#+LANGUAGE:  en
+#+OPTIONS:   H:4 num:t toc:nil \n:nil @:t ::t |:t ^:{} -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:auto skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:   
+#+LINK_HOME: https://github.com/sean-m-brennan/pysysdevel
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [letterpaper,twoside]
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage{color}
+#+LaTeX_HEADER: \usepackage{lmodern}
+#+LaTeX_HEADER: \usepackage{courier}
+
+
+#+BEGIN_ABSTRACT
+The =sysdevel= Python package assists multi-model simulation
+development through model coupling, data visualization and
+collaborative software distribution.
+#+END_ABSTRACT
+
+
+* Introduction
+
+In scientific simulations, modeling one aspect of a
+system can be quite informative, and usually simplifies
+the problem, making it more tractable. However, when
+singular models are not enough, integrating multiple
+models into a complex, coherent, system-wide
+simulation can be an arduous task, particularly when
+those models have been developed separately and have
+no apparent coupling.
+
+pysysdevel is a Python package that assists with the
+development of such multi-model simulation software.
+This pure python package helps in three major areas of
+code development: model coupling, data visualization,
+and distribution for collaboration.
+
+
+** Modelling and Simulation
+
+** Data Visualization
+
+** Collaboration and Distribution
+
+The research implicit in such intricate simulation is for
+nothing if it cannot be replicated. Other software like
+Emacs' Org mode, seeks to enable such reproducible
+research focusing on publication where code is
+incorporated but secondary. The pysysdevel build utility
+instead focuses on complex software interactions and
+dependencies and dynamic presentation. Thus in the
+interest of comprehensive collaborative distribution of
+your software, pysysdevel handles not only building
+your package, including C/C++ extensions, shared
+libraries, and even executables, but also downloading,
+building, and installing external Python packages,
+native libraries, executables, compilers, and other tools.
+
+Python packages such as Sphinx (for documentation),
+Tools like CMake, MinGW,
+
+Libraries such as HDF5, GNU Scientific Library,
+
+Because this functionality is likely required to put your
+external dependencies in place, we'll describe its use in-
+depth next.
+
+
+* Collaboration
+
+We are assuming that you already have some models to
+couple, and as such already have some libraries or
+other python packages as dependencies. This chapter
+shows you how to automatically download, build, locally
+install, and even distribute shared libraries and native
+executables in an easily extensible way.
+
+This portion of pysysdevel grew out of a need to build
+an extensive python package consistently across a
+multitude of restrictive environments. Therefore, our
+build utility assumes nothing about the system on which
+we're building, except that Python is available.
+
+Typically a package is built with the invocation
+
+=python setup.py build=
+
+and installed to the system's site packages location with
+
+=python setup.py install=
+
+just as with standard distutils. In fact, all the
+customizations of distutils, such as '--prefix' or '--home'
+are supported.
+
+For a very simple package with no dependencies, the
+setup.py file will be indistinguishable from that used
+with distutils. However, pysysdevel provides a number
+of features that greatly reduce the burden of correctly
+setting up a build environment:
+
+
+** Shared libraries: =build_shlib.py=
+
+** Native executables: =build_exe.py=
+
+** Documentation: =build_doc.py=
+
+** Unit testing: =test.py=
+
+** External packages and libraries: =configure/*=
+
+*** CMake-style extensions
+
+*** Yum, apt, macports, homebrew, and windows installers
+
+** Easily frozen exes and apps
+
+*** py2exe and py2app made even simpler
+
+
+* Multi-model simulation
+
+** Tying simulation models together
+
+*** the Model-View-Controller pattern
+
+**** Data model - transformative objects
+
+Python dictionary attribute access - adding arbitrary data
+
+src_python[]{validate()}
+
+Data organization: HDF5, SQL
+
+Accessing storage: =networked_resources.py=
+
+
+**** Data controller - manipulation
+
+src_python[]{provides()} and src_python[]{requires()}
+
+
+**** Data view
+
+#+BEGIN_SRC python
+requires()
+#+END_SRC
+end of the pipeline
+
+src_python[]{__dir__()}: easy JSON dump
+
+
+** Running a pipeline
+
+*** 
+
+
+* Visualization and sharing on the web
+
+** Web GUIs
+
+From python to javascript with pyjs
+
+Data transfer with WebSockets and JSON
+
+Data handling with WebWorkers
+
+Pipeline construction with jsPlumb
+
+WebGL
+
+
+** Desktop GUIs
+
+Node.js =+= node-webgl
+
+Why not Pyjamas Desktop
+
+Alternate Python Desktop GUI: wxPython
+
+
+* Conclusion
+
+** Data acquisition and user input
+
+** Evaluating individual data pipelines
+
+** Comparing pipelines
+
+** Complex visualizations
+

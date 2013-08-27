@@ -237,6 +237,8 @@ import install_clib
 import install_exe
 import clean
 import test
+import deps
+
 
 my_cmdclass = {'build':            build.build,
                'build_src':        build_src.build_src,
@@ -262,6 +264,7 @@ my_cmdclass = {'build':            build.build,
                'bdist_rpm':        bdist_rpm.bdist_rpm,
                'clean':            clean.clean,
                'test':             test.test,
+               'dependencies':     deps.deps,
                }
 
 if have_numpy:

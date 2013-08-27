@@ -18,9 +18,30 @@ rev = rcs_revision()
 if rev is None:
     rev = '6.12'
 
+
+def build_documentation():
+    ## In-place build
+    from sysdevel.build_org import make_doc as make_org
+    from sysdevel.build_docbook import make_doc as make_docbook
+        
+    make_org(os.path.join('sysdevel', 'doc',
+                          'pysysdevel_article.org'), mode='pdflatex')
+
+    xml_file = make_org(os.path.join('sysdevel', 'doc', 'pysysdevel_book.org'))
+    make_docbook(xml_file, stylesheet=os.path.join('sysdevel', 'doc',
+                                                   'docbook_custom.xsl'))
+
+
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
+
+    build_documentation()
+    if 'docs' in argv:
+        argv.remove('docs')
+        if len(argv) < 2:
+            exit(0)
 
     setup(name         = 'pysysdevel',
           version      = '0.' + str(rev),

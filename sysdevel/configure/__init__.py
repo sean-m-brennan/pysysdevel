@@ -52,8 +52,8 @@ def simplify_version(version):
         return ver_tpl[0] + '.' + ver_tpl[1]
 
 
-def configure_system(prerequisite_list, version, required_python_version='2.4',
-                     install=True, quiet=False):
+def configure_system(prerequisite_list, version,
+                     required_python_version='2.4', install=True, quiet=False):
     '''
     Given a list of required software and optionally a Python version,
     verify that python is the proper version and that
@@ -62,8 +62,8 @@ def configure_system(prerequisite_list, version, required_python_version='2.4',
     '''
     environment = util.read_cache()
     skip = False
-    for idx, arg in enumerate(sys.argv[:]):
-        if arg.startswith('clean'):
+    for idx, arg in enumerate(sys.argv[:]): #FIXME?? argv[:]):
+        if arg.startswith('clean') or arg.startswith('dependencies'):
             skip = True
             quiet = True
 
@@ -159,5 +159,10 @@ def __run_helper__(environment, short_name, long_name, version,
             raise Exception(help_name + ' cannot be found.')
         cfg.install(environment, version)
     env = dict(cfg.environment.items() + environment.items())
+    if not 'PREREQUISITES' in env:
+        env['PREREQUISITES'] = [short_name]
+    else:
+        tmp_env = env['PREREQUISITES'] + [short_name]
+        env['PREREQUISITES'] = list(set(tmp_env))
     util.save_cache(env)  ## intermediate cache
     return env
