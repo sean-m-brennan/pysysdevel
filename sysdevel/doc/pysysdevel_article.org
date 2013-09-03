@@ -98,6 +98,17 @@ external dependencies in place, we'll describe its use in-
 depth next.
 
 
+* Reproducible Research: related works
+
+Knuth and Literate Programming
+
+Emacs Org-mode
+
+Sweave
+
+runmycode.org
+
+
 * Collaboration
 
 We are assuming that you already have some models to

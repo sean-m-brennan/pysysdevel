@@ -6,6 +6,7 @@ Build and install sysdevel
 
 import os
 import sys
+import glob
 from distutils.core import setup
 
 # Just in case we are being called from a different directory
@@ -37,7 +38,8 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    build_documentation()
+    if not 'clean' in argv:
+        build_documentation()
     if 'docs' in argv:
         argv.remove('docs')
         if len(argv) < 2:
