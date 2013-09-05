@@ -19,7 +19,7 @@ class configuration(py_config):
                             'for Python versions < 2.6')
 
     def install(self, environ, version, locally=True):
-        if not breathe_found:
+        if not self.found:
             website = 'https://pypi.python.org/packages/source/b/breathe/'
             if version is None:
                 version = self.version
