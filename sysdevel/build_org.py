@@ -44,11 +44,13 @@ import util
 
 def make_doc(src_file, target_dir=None, mode='docbook'):
     if target_dir is None:
-        target_dir = os.path.dirname(src_file)
+        pth = os.path.relpath(os.path.dirname(src_file)).split(os.sep)[1:]
+        target_dir = os.path.join(util.target_build_dir, *pth)
 
     emacs_exe = util.find_program('emacs')
     src_dir = os.path.abspath(os.path.dirname(src_file))
     util.mkdir(target_dir)
+    util.copy_tree(src_dir, target_dir)
     cfg_filename = os.path.join(target_dir, '.emacs')
     cfg = open(cfg_filename, 'w')
     cfg.write("(require 'org-latex)\n" +
@@ -71,9 +73,12 @@ def make_doc(src_file, target_dir=None, mode='docbook'):
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     _, err = p.communicate()
     version_eight = False
-    last = err.split('\n')[-2]
-    if int(last[:last.index('.')]) > 7:
-        version_eight = True
+    try:
+        last = err.split('\n')[-2]
+        if int(last[:last.index('.')]) > 7:
+            version_eight = True
+    except:
+        raise Exception("Emacs does not have Org mode support.")
 
     ## Emacs Org mode export
     cmd_line = [emacs_exe, '--batch',
@@ -91,7 +96,7 @@ def make_doc(src_file, target_dir=None, mode='docbook'):
         result_files = [base_filename + '.html']
     else:
         if version_eight:
-            # FIXME or texinfo for org v8.0+
+            # FIXME  texinfo for org v8.0+
             raise Exception("Emacs Org mode v8.0+ is not (yet) supported")
         else:
             cmd_line.append("--execute='(org-export-as-docbook nil)'")

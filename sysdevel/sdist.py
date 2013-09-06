@@ -27,6 +27,9 @@ permissions and limitations under the License.
 modified 'sdist' command
 """
 
+import sysdevel
+sysdevel.setup_setuptools()
+
 import os
 import glob
 import sys
@@ -37,7 +40,7 @@ except ImportError, e:
     from distutils.command.sdist import sdist as old_sdist
 
 
-if 'setuptools' in sys.modules:
+if sysdevel.using_setuptools:
     have_setuptools = True
     from setuptools import setup as old_setup
     # easy_install imports math, it may be picked up from cwd

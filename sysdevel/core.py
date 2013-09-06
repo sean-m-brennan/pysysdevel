@@ -27,16 +27,10 @@ permissions and limitations under the License.
 Custom setup
 """
 
-import sys
 import sysdevel
-if sysdevel.using_setuptools and sys.version_info > (2, 5):
-    ## setuptools is broken in at least Python 2.4
-    try:
-        ## Must be first (get the monkeypatching out of the way)
-        import setuptools
-    except:
-        pass
+sysdevel.setup_setuptools()
 
+import sys
 import shutil
 import os
 import platform
@@ -55,8 +49,8 @@ except ImportError, e:
     from distutils.dist import Distribution as oldDistribution
     from distutils.command import config, build_ext, install_headers, bdist_rpm
 
-import util
 
+import util
 
 
 class CustomDistribution(oldDistribution):
@@ -191,7 +185,7 @@ class CustomDistribution(oldDistribution):
 ## Almost verbatim from numpy.disutils.core
 ##################################################
 
-if 'setuptools' in sys.modules:
+if sysdevel.using_setuptools:
     have_setuptools = True
     from setuptools import setup as old_setup
     # easy_install imports math, it may be picked up from cwd
@@ -206,11 +200,12 @@ else:
     have_setuptools = False
 
 allows_py2app = False
-try:
-    from py2app.build_app import py2app
-    allows_py2app = True
-except:
-    pass
+if sysdevel.using_setuptools:
+    try:
+        from py2app.build_app import py2app
+        allows_py2app = True
+    except:
+        pass
 
 
 import warnings
@@ -339,6 +334,7 @@ def get_distribution(always=False):
     return dist
 
 
+
 def setup(**attr):
     if len(sys.argv)<=1 and not attr.get('script_args',[]):
         try:
@@ -412,6 +408,9 @@ def setup(**attr):
 
     # Use our custom Distribution class instead of distutils' one
     new_attr['distclass'] = CustomDistribution
+
+    if not sysdevel.using_setuptools and sysdevel.setuptools_in_use():
+        raise Exception("Spurious import of setuptools")
 
     return old_setup(**new_attr)
 

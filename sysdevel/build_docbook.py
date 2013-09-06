@@ -44,7 +44,8 @@ import util
 def make_doc(src_file, target_dir=None, resource_dir=None, stylesheet=None):
     src_file = os.path.abspath(src_file)
     if target_dir is None:
-        target_dir = os.path.dirname(src_file)
+        pth = os.path.relpath(os.path.dirname(src_file)).split(os.sep)[1:]
+        target_dir = os.path.join(util.target_build_dir, *pth)
     else:
         target_dir = os.path.abspath(target_dir)
     if resource_dir is None:
@@ -56,9 +57,7 @@ def make_doc(src_file, target_dir=None, resource_dir=None, stylesheet=None):
 
     fop_exe = util.find_program('fop')
     java_exe = util.find_program('java')
-    try:
-        saxon_exe = [util.find_program('saxon')]
-    except:
+    try:  ## prefer the jar
         classpaths = []
         try:
             for path in os.environ['CLASSPATH'].split(os.pathsep):
@@ -72,12 +71,16 @@ def make_doc(src_file, target_dir=None, resource_dir=None, stylesheet=None):
         saxon_jar = util.find_file('saxon*.jar',
                                    ['/usr/share/java', '/usr/local/share/java',
                                     '/opt/local/share/java',] + classpaths)
-        saxon_exe = [java_exe, '-classpath', saxon_jar]
+        resolver_jar = util.find_file('resolver*.jar',
+                                      ['/usr/share/java',
+                                       '/usr/local/share/java',
+                                       '/opt/local/share/java',] + classpaths)
+        saxon_exe = [java_exe,  '-classpath', resolver_jar, '-jar', saxon_jar]
+    except:
+        saxon_exe = [util.find_program('saxon')]
     if not os.path.exists(target_dir):
         util.mkdir(target_dir)
 
-    # FIXME Need xsl-stylesheets dir?
-    
     ## Need to respect relative paths
     here = os.getcwd()
     os.chdir(resource_dir)
@@ -85,8 +88,9 @@ def make_doc(src_file, target_dir=None, resource_dir=None, stylesheet=None):
     fo_src = os.path.join(target_dir, os.path.splitext(src_base)[0] + '.fo')
     pdf_dst = os.path.join(target_dir, os.path.splitext(src_base)[0] + '.pdf')
 
-    cmd_line = saxon_exe + ['com.icl.saxon.StyleSheet',
-                            '-o', fo_src, src_file, stylesheet]
+    cmd_line = saxon_exe + [src_file, '-o:' + fo_src, '-xsl:' + stylesheet]
+    if 'XML_CATALOG_FILES' in os.environ:
+        cmd_line += ['-catalog:' + os.environ['XML_CATALOG_FILES']]
     subprocess.check_call(" ".join(cmd_line), shell=True)
 
     cmd_line = [fop_exe, '-fo', fo_src, '-pdf', pdf_dst]

@@ -25,12 +25,13 @@ def build_documentation():
     from sysdevel.build_org import make_doc as make_org
     from sysdevel.build_docbook import make_doc as make_docbook
         
-    make_org(os.path.join('sysdevel', 'doc',
-                          'pysysdevel_article.org'), mode='pdflatex')
-
-    xml_file = make_org(os.path.join('sysdevel', 'doc', 'pysysdevel_book.org'))
-    make_docbook(xml_file, stylesheet=os.path.join('sysdevel', 'doc',
-                                                   'docbook_custom.xsl'))
+    xml_file = make_org(os.path.join('sysdevel', 'doc', 'sysdevel_book.org'))
+    try:
+        make_docbook(xml_file, stylesheet=os.path.join('sysdevel', 'doc',
+                                                       'docbook_custom.xsl'))
+    except Exception, e:
+        print "Could not build the manual. Requires emacs and docbook."
+        print e
 
 
 

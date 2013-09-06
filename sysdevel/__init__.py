@@ -39,14 +39,41 @@ __all__ = ['pkg_config', 'core', 'extensions',
            'configuration', 'configure',]
 
 import os
+import sys
 
 config_dir = os.path.join(os.path.dirname(__file__), 'configure')
 support_dir = os.path.join(os.path.dirname(__file__), 'support')
-using_setuptools = False
+
+using_setuptools = False  ## monkeypatching is evil
 
 def use_setuptools():
     global using_setuptools
-    using_setuptools = True
+    if sys.version_info > (2, 5): ## setuptools is broken in at least Python 2.4
+        try:
+            import setuptools
+            using_setuptools = True
+        except:
+            pass
+
+def setuptools_in_use():
+    for k in sys.modules.keys():
+        if k.startswith('setuptools'):
+            return True
+    return False
+
+def setup_setuptools():
+    ## MUST be called before distutils (get the monkeypatching out of the way)
+    global using_setuptools
+    if using_setuptools:
+        try:
+            import setuptools
+            reload(setuptools.dist)  ## in case it was already loaded
+            using_setuptools = True
+            print "Using setuptools."
+        except:
+            using_setuptools = False
+            print "Setuptools is not available."
+
 
 from configure import configure_system, FatalError
 
