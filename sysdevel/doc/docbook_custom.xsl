@@ -4,12 +4,9 @@
     version="1.0">
 
   <!-- Catalog resolver finds this -->
-  <xsl:import href="fo/docbook.xsl"/>
+  <xsl:import href="http://docbook.sourceforge.net/release/xsl-ns/current/fo/docbook.xsl"/>
 
-  <xsl:import href="../support/custom_titlepage.xsl"/>
-
-  <!-- Uncomment and adjust if using a local tree. -->
-  <xsl:param name="xsl_base_path">xsl-stylesheets</xsl:param>
+  <xsl:import href="custom_titlepage.xsl"/>
 
   <!-- If 'yes', this adds a watermark. -->
   <xsl:param name="draft.mode" select="no"/>

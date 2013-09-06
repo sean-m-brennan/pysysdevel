@@ -31,6 +31,7 @@ permissions and limitations under the License.
 import os
 import sys
 import glob
+import shutil
 import subprocess
 
 try:
@@ -41,19 +42,13 @@ except:
 import util
 
 
-def make_doc(src_file, target_dir=None, resource_dir=None, stylesheet=None):
-    src_file = os.path.abspath(src_file)
+def make_doc(src_file, target_dir=None, stylesheet=None):
+    src_dir = os.path.abspath(os.path.dirname(src_file))
     if target_dir is None:
         pth = os.path.relpath(os.path.dirname(src_file)).split(os.sep)[1:]
         target_dir = os.path.join(util.target_build_dir, *pth)
-    else:
-        target_dir = os.path.abspath(target_dir)
-    if resource_dir is None:
-        resource_dir = os.path.abspath(os.path.dirname(src_file))
     if stylesheet is None:
-        stylesheet = util.find_file(os.path.join('fo', 'docbook.xsl'))
-    else:
-        stylesheet = os.path.abspath(stylesheet)
+        stylesheet = 'http://docbook.sourceforge.net/release/fo/docbook.xsl'
 
     fop_exe = util.find_program('fop')
     java_exe = util.find_program('java')
@@ -75,20 +70,27 @@ def make_doc(src_file, target_dir=None, resource_dir=None, stylesheet=None):
                                       ['/usr/share/java',
                                        '/usr/local/share/java',
                                        '/opt/local/share/java',] + classpaths)
-        saxon_exe = [java_exe,  '-classpath', resolver_jar, '-jar', saxon_jar]
+        saxon_exe = [java_exe,  '-classpath',
+                     os.pathsep.join([saxon_jar, resolver_jar]),
+                     'net.sf.saxon.Transform']
     except:
         saxon_exe = [util.find_program('saxon')]
     if not os.path.exists(target_dir):
         util.mkdir(target_dir)
+    support = glob.glob(os.path.join(os.path.dirname(__file__),
+                                     'support', '*.xsl'))
+    for s in support:
+        shutil.copy(s, target_dir)
+    util.copy_tree(src_dir, target_dir)
 
     ## Need to respect relative paths
     here = os.getcwd()
-    os.chdir(resource_dir)
+    os.chdir(target_dir)
     src_base = os.path.basename(src_file)
-    fo_src = os.path.join(target_dir, os.path.splitext(src_base)[0] + '.fo')
-    pdf_dst = os.path.join(target_dir, os.path.splitext(src_base)[0] + '.pdf')
+    fo_src = os.path.splitext(src_base)[0] + '.fo'
+    pdf_dst = os.path.splitext(src_base)[0] + '.pdf'
 
-    cmd_line = saxon_exe + [src_file, '-o:' + fo_src, '-xsl:' + stylesheet]
+    cmd_line = saxon_exe + [src_base, '-o:' + fo_src, '-xsl:' + stylesheet]
     if 'XML_CATALOG_FILES' in os.environ:
         cmd_line += ['-catalog:' + os.environ['XML_CATALOG_FILES']]
     subprocess.check_call(" ".join(cmd_line), shell=True)

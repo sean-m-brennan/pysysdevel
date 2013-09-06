@@ -87,10 +87,6 @@
   <!-- title page image -->
   <xsl:param name="cover_image"/>
 
-  <!-- XSL stylesheet tree base URI -->
-  <xsl:param name="xsl_base_path">http://docbook.sourceforge.net/release</xsl:param>
-
-
   <!-- custom titlepage with image -->
   <xsl:template name="user.pagemasters">
     <xsl:variable name="image_path">
@@ -98,7 +94,7 @@
 	<xsl:when test="$cover_image">
 	  <xsl:value-of select="$cover_image"/>
 	</xsl:when>
-	<xsl:otherwise><xsl:value-of select="$xsl_base_path"/>/images/blank.png</xsl:otherwise>
+	<xsl:otherwise>http://docbook.sourceforge.net/release/images/blank.png</xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
 
