@@ -6,7 +6,7 @@
    -moz-box-shadow: 2px 2px 19px #aaa;
    -moz-border-radius:0.5em;
    border-radius:0.5em;
-   opacity:0.8;
+   /*opacity:0.8;*/
    filter:alpha(opacity=80);
    line-height:5em;
    text-align:center;
@@ -27,7 +27,7 @@
    -moz-box-shadow: 2px 2px 19px #aaa;
    -moz-border-radius:0.5em;
    border-radius:0.5em;
-   opacity:0.8;
+   /*opacity:0.8;*/
    filter:alpha(opacity=80);
    /*width:5em; height:5em;*/
    line-height:5em;
@@ -48,7 +48,7 @@
    -moz-box-shadow: 2px 2px 19px #aaa;
    -moz-border-radius:0.5em;
    border-radius:0.5em;
-   opacity:0.8;
+   /*opacity:0.8;*/
    filter:alpha(opacity=80);
    width:80%; 
    z-index:30;
@@ -60,7 +60,7 @@
 }
 
 .nostep {
-   opacity:0.8;
+   /*opacity:0.8;*/
    filter:alpha(opacity=80);
    width:80%; 
    z-index:30;
