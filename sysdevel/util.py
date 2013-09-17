@@ -1980,13 +1980,16 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
         del fp
         del tfp
     except urllib2.URLError, e:
-        if hasattr(e, 'reason'):
-            e.reason = url + ": " + e.reason
-        elif hasattr(e, 'msg'):
-            e.msg = url + ": " + e.msg
-        else:
+        try:
+            if hasattr(e, 'reason'):
+                e.reason = url + ": " + e.reason
+            elif hasattr(e, 'msg'):
+                e.msg = url + ": " + e.msg
+            else:
+                sys.stderr.write("HTTP Error connecting to " + url + ":\n")
+        except:
             sys.stderr.write("HTTP Error connecting to " + url + ":\n")
-        raise
+        raise e
 
     if size >= 0 and read < size:
         raise urllib.ContentTooShortError("%s: retrieval incomplete: "
