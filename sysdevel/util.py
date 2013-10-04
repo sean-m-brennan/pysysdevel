@@ -317,7 +317,7 @@ def find_program(name, pathlist=[], limit=False):
     if not limit:
         pathlist += path_env + local_search_paths
     for path in pathlist:
-        if path != None and os.path.exists(path):
+        if path != None and (os.path.exists(path) or glob.glob(path)):
             for p in [path, os.path.join(path, 'bin')]:
                 if DEBUG:
                     print 'Searching ' + p + ' for ' + name
