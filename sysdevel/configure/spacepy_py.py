@@ -14,10 +14,10 @@ class configuration(py_config):
 
     def install(self, environ, version, locally=True):
         if not self.found:
-            website = 'http://downloads.sourceforge.net/project/spacepy/' + \
-                'spacepy/spacepy-' + str(version) + '/'
             if version is None:
                 version = self.version
+            website = 'http://downloads.sourceforge.net/project/spacepy/' + \
+                'spacepy/spacepy-' + str(version) + '/'
             src_dir = 'spacepy-' + str(version)
             archive = src_dir + '.tar.gz' 
             install_pypkg(src_dir, website, archive, locally=locally)

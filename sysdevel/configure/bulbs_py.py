@@ -10,7 +10,9 @@ class configuration(py_config):
     Find/install Bulbs
     """
     def __init__(self):
-        py_config.__init__(self, 'bulbs', '0.2.2', debug=False)
+        py_config.__init__(self, 'bulbs', '0.3.14', debug=False,
+                           dependencies=['omnijson', 'pyyaml', 'dateutil',
+                                         'argparse', ('httplib2', '0.7.2')])
 
 
     def install(self, environ, version, locally=True):
