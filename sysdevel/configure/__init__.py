@@ -30,6 +30,7 @@ Entry point for finding/installing required libraries
 import os
 import sys
 import platform
+import traceback
 
 from sysdevel import util
 
@@ -60,49 +61,57 @@ def configure_system(prerequisite_list, version,
     other required software is installed.
     Install missing prerequisites that have an installer defined.
     '''
-    environment = util.read_cache()
-    skip = False
-    for idx, arg in enumerate(sys.argv[:]): #FIXME?? argv[:]):
-        if arg.startswith('clean') or arg.startswith('dependencies'):
-            skip = True
-            quiet = True
+    environment = dict()
+    try:
+        environment = util.read_cache()
+        skip = False
+        for idx, arg in enumerate(sys.argv[:]): #FIXME?? argv[:]):
+            if arg.startswith('clean') or arg.startswith('dependencies'):
+                skip = True
+                quiet = True
 
-    pyver = simplify_version(platform.python_version())
-    reqver = simplify_version(required_python_version)
-    if pyver < reqver:
-        raise FatalError('Python version >= ' + reqver + ' is required.  ' +
-                         'You are running version ' + pyver)
+        pyver = simplify_version(platform.python_version())
+        reqver = simplify_version(required_python_version)
+        if pyver < reqver:
+            raise FatalError('Python version >= ' + reqver + ' is required.  ' +
+                             'You are running version ' + pyver)
 
-    if not quiet:
-        sys.stdout.write('CONFIGURE  ')
-        if len(environment):
-            sys.stdout.write('(from cache)')
-        sys.stdout.write('\n')
-    environment['PACKAGE_VERSION'] = version
+        if not quiet:
+            sys.stdout.write('CONFIGURE  ')
+            if len(environment):
+                sys.stdout.write('(from cache)')
+            sys.stdout.write('\n')
+        environment['PACKAGE_VERSION'] = version
 
-    prerequisite_list.insert(0, 'httpsproxy_urllib2_py')
-    if 'windows' in platform.system().lower() and \
-            util.in_prerequisites('mingw', prerequisite_list) and \
-            util.in_prerequisites('boost', prerequisite_list) and not \
-            util.in_prerequisites('msvcrt', prerequisite_list):
-        print "WARNING: if you're using the boost-python DLL, " + \
-            "also add 'msvcrt' as a prereuisite."
-    if 'darwin' in platform.system().lower() and \
-            not util.in_prerequisites('macports', prerequisite_list) and \
-            not util.in_prerequisites('homebrew', prerequisite_list):
-        if util.system_uses_macports():
-            prerequisite_list.insert(0, 'macports')
-        elif util.system_uses_homebrew():
-            prerequisite_list.insert(0, 'homebrew')
-        else:
-            print "WARNING: neither MacPorts nor Homebrew detected. " +\
-                "All required libraries will be built locally."
+        prerequisite_list.insert(0, 'httpsproxy_urllib2_py')
+        if 'windows' in platform.system().lower() and \
+           util.in_prerequisites('mingw', prerequisite_list) and \
+           util.in_prerequisites('boost', prerequisite_list) and not \
+           util.in_prerequisites('msvcrt', prerequisite_list):
+            print "WARNING: if you're using the boost-python DLL, " + \
+                "also add 'msvcrt' as a prereuisite."
+        if 'darwin' in platform.system().lower() and \
+           not util.in_prerequisites('macports', prerequisite_list) and \
+           not util.in_prerequisites('homebrew', prerequisite_list):
+            if util.system_uses_macports():
+                prerequisite_list.insert(0, 'macports')
+            elif util.system_uses_homebrew():
+                prerequisite_list.insert(0, 'homebrew')
+            else:
+                print "WARNING: neither MacPorts nor Homebrew detected. " +\
+                    "All required libraries will be built locally."
 
-    for help_name in prerequisite_list:
-        environment = __configure_package(environment, help_name,
-                                          skip, install, quiet)
-    util.save_cache(environment)
-
+        for help_name in prerequisite_list:
+            environment = __configure_package(environment, help_name,
+                                              skip, install, quiet)
+        util.save_cache(environment)
+    except Exception, e:
+        log = open('config.err', 'w')
+        #TODO logging module is probably the way to go instead
+        log.write('Configuration error:\n' + traceback.format_exc())
+        log.close()
+        sys.stdout.write('Configuration error. Prerequisites might be present, so building anyway...\n')
+        #FIXME advise on running 'setup.py dependencies' and installing by hand
     return environment
 
 
