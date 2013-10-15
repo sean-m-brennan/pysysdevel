@@ -8,4 +8,4 @@ class configuration(py_config):
     """
     def __init__(self):
         py_config.__init__(self, 'keyring', '1.4',
-                           dependencies=['hgtools'], debug=False)
+                           dependencies=['pytest-runner',], debug=False)
