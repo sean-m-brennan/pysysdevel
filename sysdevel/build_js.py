@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -42,7 +44,7 @@ try:
 except:
     from distutils.command.build_ext import build_ext
 
-import util
+from . import util
 
 
 class build_js(build_ext):
@@ -94,8 +96,8 @@ class build_js(build_ext):
         ## TODO: use pyjs module directly (instead of 'pyjsbuild')
         for wext in self.web_ext_modules:
             if self.distribution.verbose:
-                print 'building web extension "' + \
-                    os.path.join(wext.public_subdir, wext.name) + '" sources'
+                print('building web extension "' + \
+                    os.path.join(wext.public_subdir, wext.name) + '" sources')
 
             target = os.path.abspath(os.path.join(build.build_base, 'http',
                                                   wext.public_subdir))
@@ -133,8 +135,7 @@ class build_js(build_ext):
                 compiler = wext.compiler or \
                     environ['PYJSBUILD'] or self.pyjscompiler
                 if compiler is None:
-                    raise DistutilsExecError, \
-                        "no value pyjsbuild executable found or given"
+                    raise DistutilsExecError("no value pyjsbuild executable found or given")
                 cmd_line = [os.path.abspath(compiler)]
                 for arg in wext.extra_compile_args:
                     if 'debug' in arg.lower():

@@ -69,7 +69,7 @@ if 'windows' in platform.system().lower():
                 self.ReportServiceStatus(win32service.SERVICE_RUNNING)
                 self.run()
                 #win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
-            except Exception, x:
+            except Exception as x:
                 self.SvcStop()
 
 
@@ -87,23 +87,23 @@ if 'windows' in platform.system().lower():
                                                     self._svc_display_name_,
                                                     startType=win32service.SERVICE_AUTO_START
                                                     )
-                    print 'Install ok'
+                    print('Install ok')
                     win32serviceutil.StartService(self._svc_name_)
-                    print 'Start ok'
-                except Exception, x:
-                    print str(x)
+                    print('Start ok')
+                except Exception as x:
+                    print(str(x))
 
 
         def force_stop(self):
             try:
                 win32serviceutil.StopService(self._svc_name_)
-                print 'Start ok'
-            except Exception, x:
-                print str(x)
+                print('Start ok')
+            except Exception as x:
+                print(str(x))
             try:
                 win32serviceutil.RemoveService(self._svc_name_)
-            except Exception, x:
-                print str(x)
+            except Exception as x:
+                print(str(x))
 
 
         def sleep(self, sec):
@@ -165,7 +165,7 @@ else:  ## UNIX assumed
                 if pid > 0:
                     # exit first parent
                     sys.exit(0) 
-            except OSError, e: 
+            except OSError as e: 
                 sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
                 sys.exit(1)
 	
@@ -180,7 +180,7 @@ else:  ## UNIX assumed
                 if pid > 0:
                     # exit from second parent
                     sys.exit(0) 
-            except OSError, e: 
+            except OSError as e: 
                 sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
                 sys.exit(1) 
 	
@@ -249,7 +249,7 @@ else:  ## UNIX assumed
                     while True:
                         os.kill(pid, signal.SIGKILL)
                         time.sleep(0.1)
-                except OSError, err:
+                except OSError as err:
                     err = str(err)
                     if err.find("No such process") < 0:
                         sys.stderr.write(err)
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         def run(self):
             idx = 0
             while idx < 10:
-                print self._svc_name_ + " daemon running: " + str(self.running)
+                print(self._svc_name_ + " daemon running: " + str(self.running))
                 self.sleep(10)
                 idx += 1
 

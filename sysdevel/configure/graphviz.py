@@ -57,9 +57,9 @@ class configuration(lib_config):
             incl_dir = find_header(self.hdr, base_dirs, limit=limit)
             lib_dir, lib = find_library(self.lib, base_dirs, limit=limit)
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['GRAPHVIZ_INCLUDE_DIR'] = incl_dir

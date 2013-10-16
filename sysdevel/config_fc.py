@@ -73,7 +73,7 @@ try:
                 for c in cmd_list:
                     v = getattr(c,a)
                     if v is not None:
-                        if not isinstance(v, basestring): v = v.compiler_type
+                        if not isinstance(v, str): v = v.compiler_type
                         if v not in l: l.append(v)
                 if not l: v1 = None
                 else: v1 = l[0]

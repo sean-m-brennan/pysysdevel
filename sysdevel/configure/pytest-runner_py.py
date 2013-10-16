@@ -16,8 +16,8 @@ class configuration(py_config):
         try:
             import ptr
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print 'Exception: ' + str(e)
-                print traceback.print_exc()
+                print('Exception: ' + str(e))
+                print(traceback.print_exc())
         return self.found

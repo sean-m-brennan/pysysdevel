@@ -47,9 +47,9 @@ class configuration(prog_config):
                                          "-classpath", os.path.abspath(jarfile),
                                          "org.antlr.Tool",]
             self.found = True
-        except Exception,e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
         return self.found
 
 

@@ -21,9 +21,9 @@ class configuration(prog_config):
             gcc = find_program('gcc')
             gxx = find_program('g++')
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['GCC'] = gcc

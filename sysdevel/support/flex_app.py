@@ -42,7 +42,7 @@ try:
     from flex_ui import FlexUI, multiline_text
     UserInterface = FlexUI
 
-except __OneTimeCustomException, e:
+except __OneTimeCustomException as e:
     ## Pyjamas
     from pyjamas import Window
     from pyjamas.ui.RootPanel import RootPanel

@@ -27,10 +27,10 @@ permissions and limitations under the License.
 WebSocket standalone server
 """
 
-import BaseHTTPServer
-import SimpleHTTPServer
-import SocketServer
-import httplib
+import http.server
+import http.server
+import socketserver
+import http.client
 import logging
 import socket
 import select
@@ -81,8 +81,8 @@ def get_ws_logger(cls, debug=False):
 
 
 class WebSocketServer(threading.Thread,
-                      SocketServer.ThreadingMixIn,
-                      BaseHTTPServer.HTTPServer):
+                      socketserver.ThreadingMixIn,
+                      http.server.HTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
@@ -122,7 +122,7 @@ class WebSocketServer(threading.Thread,
         self.__ws_is_shut_down = threading.Event()
         self.__ws_serving = False
 
-        SocketServer.BaseServer.__init__(self, (host, port),
+        socketserver.BaseServer.__init__(self, (host, port),
                                          WebSocketRequestHandler)
         self.wsdispatcher = WebsocketDispatch(resource_handler,
                                               self._logger, origin, permissive)
@@ -158,7 +158,7 @@ class WebSocketServer(threading.Thread,
             family, socktype, proto, canonname, sockaddr = addrinfo
             try:
                 socket_ = socket.socket(family, socktype)
-            except Exception, e:
+            except Exception as e:
                 self._logger.debug('WS Skip by failure: %r', e)
                 continue
             if self.using_tls:
@@ -185,7 +185,7 @@ class WebSocketServer(threading.Thread,
                 socket_.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 socket_.bind(self.server_address)
-            except Exception, e:
+            except Exception as e:
                 self._logger.debug('WS Skip by failure: %r', e)
                 socket_.close()
                 failed_sockets.append(socketinfo)
@@ -202,7 +202,7 @@ class WebSocketServer(threading.Thread,
             self._logger.debug('WS Listen on: %r', addrinfo)
             try:
                 socket_.listen(self.request_queue_size)
-            except Exception, e:
+            except Exception as e:
                 self._logger.debug('WS Skip by failure: %r', e)
                 socket_.close()
                 failed_sockets.append(socketinfo)
@@ -304,7 +304,7 @@ class WebsocketDispatch(dispatch.Dispatcher):
             try:
                 msg = request.ws_stream.receive_message()
                 service.handle_message(msg)
-            except Exception,e:
+            except Exception as e:
                 self.log.debug('WS receive: ' + str(e))
                 break
         try:
@@ -318,7 +318,7 @@ class WebsocketDispatch(dispatch.Dispatcher):
             for s in self.clients:
                 try:
                     s.send_message(data, binary=False)
-                except Exception, e:
+                except Exception as e:
                     self.log.debug('WS send: ' + str(e))
                     try:
                         self.clients.remove(s)
@@ -339,8 +339,8 @@ class WebsocketDispatch(dispatch.Dispatcher):
 
 
 
-class WebSocketRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
-    MessageClass = httplib.HTTPMessage
+class WebSocketRequestHandler(http.server.SimpleHTTPRequestHandler):
+    MessageClass = http.client.HTTPMessage
 
     def setup(self):
         """Override SocketServer.StreamRequestHandler.setup to wrap rfile
@@ -355,7 +355,7 @@ class WebSocketRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         # Call superclass's setup to prepare rfile, wfile, etc. See setup
         # definition on the root class SocketServer.StreamRequestHandler to
         # understand what this does.
-        SimpleHTTPServer.SimpleHTTPRequestHandler.setup(self)
+        http.server.SimpleHTTPRequestHandler.setup(self)
 
         self.rfile = memorizingfile.MemorizingFile(
             self.rfile,
@@ -367,12 +367,12 @@ class WebSocketRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.origin = server.origin
         self.port = server.port
         self.permissive = server.permissive
-        SimpleHTTPServer.SimpleHTTPRequestHandler.__init__(
+        http.server.SimpleHTTPRequestHandler.__init__(
             self, request, client_address, server)
 
 
     def parse_request(self):
-        if not SimpleHTTPServer.SimpleHTTPRequestHandler.parse_request(self):
+        if not http.server.SimpleHTTPRequestHandler.parse_request(self):
             return False
         host, port, resource = http_header_util.parse_uri(self.path)
         if resource is None:
@@ -408,14 +408,14 @@ class WebSocketRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     self.server.wsdispatcher,
                     allowDraft75=self.server.draft75,
                     strict=self.server.strict_draft75)
-            except handshake.VersionException, e:
+            except handshake.VersionException as e:
                 self._logger.info('WS handshake version error: %s', e)
                 self.send_response(common.HTTP_STATUS_BAD_REQUEST)
                 self.send_header(common.SEC_WEBSOCKET_VERSION_HEADER,
                                  e.supported_versions)
                 self.end_headers()
                 return False
-            except handshake.HandshakeException, e:
+            except handshake.HandshakeException as e:
                 # Handshake for ws(s) failed.
                 self._logger.info('WS handshake error: %s', e)
                 self.send_error(e.status)
@@ -423,7 +423,7 @@ class WebSocketRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
             request._dispatcher = self.server.wsdispatcher
             self.server.wsdispatcher.receive_data(request, resource)
-        except handshake.AbortedByUserException, e:
+        except handshake.AbortedByUserException as e:
             self._logger.info('WS handshake aborted: %s', e)
         return False
 

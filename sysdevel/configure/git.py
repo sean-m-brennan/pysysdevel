@@ -29,9 +29,9 @@ class configuration(prog_config):
         try:
             self.environment['GIT'] = find_program('git', base_dirs)
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
         return self.found
 
 

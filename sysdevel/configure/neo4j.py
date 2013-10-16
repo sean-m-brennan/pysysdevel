@@ -23,9 +23,9 @@ class configuration(prog_config):
             local_dir = os.path.join(target_build_dir, 'neo4j-*', 'bin')
             self.environment['NEO4J'] = find_program('neo4j', [local_dir])
             self.found = True
-        except Exception,e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
         return self.found
 
 

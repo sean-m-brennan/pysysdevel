@@ -34,7 +34,7 @@ Either import this script, or fetch/install sysdevel by running:
 import os
 import platform
 
-website = 'http://github.com/sean-m-brennan/pysysdevel'
+website = 'https://github.com/sean-m-brennan/pysysdevel'
 
 shell = False
 if 'windows' in platform.system().lower():
@@ -55,7 +55,7 @@ def _import_sysdevel(where, feedback=False):
 
         if not os.path.exists(os.path.join(where, 'pysysdevel')):
             if feedback:
-                print 'Fetching SysDevel from ' + website
+                print('Fetching SysDevel from ' + website)
             here = os.path.abspath(os.getcwd())
             os.chdir(where)
             if find_executable('git') is None:
@@ -64,10 +64,13 @@ def _import_sysdevel(where, feedback=False):
                 archive = 'pysysdevel.zip'
                 if not os.path.exists(archive):
                     if find_executable('wget') is None:
-                        print "WARNING: if you are behind a proxy, " +\
-                            "this download will hang."
-                        import urllib
-                        urllib.urlretrieve(website_zipfile, archive)
+                        print("WARNING: if you are behind a proxy, " +\
+                            "this download will hang.")
+                        try:
+                            from urllib.request import urlretrieve
+                        except ImportError:
+                            from urllib import urlretrieve
+                        urlretrieve(website_zipfile, archive)
                     else:  ## wget is available
                         subprocess.check_call(['wget', website_zipfile,
                                                '-O', archive], shell=shell)
@@ -102,21 +105,28 @@ def _install_sysdevel(where):
 
 
 if __name__ == "__main__":
-    print 'Installing SysDevel\n'
+    print('Installing SysDevel\n')
     try:
         import sysdevel
-        print 'SysDevel found at ' + os.path.dirname(sysdevel.__file__)
+        print('SysDevel found at ' + os.path.dirname(sysdevel.__file__))
     except:
-        print 'Enter the full path where you want SysDevel to reside locally'
-        where = raw_input('    or just hit enter if you are going to ' +
-                          'install it globally:')
+        print('Enter the full path where you want SysDevel to reside locally')
+        msg = '    or just hit enter if you are going to install it globally:'
+        try:
+            where = raw_input(msg)
+        except NameError:
+            where = eval(input(msg))
         _import_sysdevel(where, True)
-        which = raw_input('Do you want to install SysDevel into your default ' +
-                          'Python site-packages? (y/N):')
+        msg2 = 'Do you want to install SysDevel into your default ' + \
+               'Python site-packages? (y/N):'
+        try:
+            which = raw_input(msg2)
+        except NameError:
+            which = eval(input(msg2))
         if which.lower() == 'y' or which.lower() == 'yes':
             _install_sysdevel(os.path.join(where, 'pysysdevel'))
         import sysdevel
-        print 'SysDevel is now at ' + os.path.dirname(sysdevel.__file__)
+        print('SysDevel is now at ' + os.path.dirname(sysdevel.__file__))
 
 else:
     _import_sysdevel(os.path.abspath(os.path.dirname(__file__)))

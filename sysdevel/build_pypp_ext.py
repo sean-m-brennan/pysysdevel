@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -35,7 +37,7 @@ try:
 except:
     from distutils.command.build_ext import build_ext
 
-import util
+from . import util
 
 
 class build_pypp_ext(build_ext):
@@ -51,7 +53,7 @@ class build_pypp_ext(build_ext):
         self.run_command('build_src')
         build = self.get_finalized_command('build')
         if self.distribution.verbose:
-            print 'Creating Py++ code generators ...'
+            print('Creating Py++ code generators ...')
 
         my_build_temp = os.path.join(build.build_base, 'pypp')
         builders = []
@@ -79,7 +81,7 @@ class build_pypp_ext(build_ext):
                                                 pext.builder + '.py'),
                                    pext.binding_file):
                 if self.distribution.verbose:
-                    print '\tfor ' + pext.name
+                    print('\tfor ' + pext.name)
                 build_mod = my_build_temp.replace(os.sep, '.')
                 full_qual = build_mod + '.' + pext.builder
                 __import__(full_qual)

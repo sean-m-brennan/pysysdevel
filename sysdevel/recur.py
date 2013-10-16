@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -31,7 +33,7 @@ import os
 import sys
 import subprocess
 
-import util
+from . import util
 
 
 def process_package(fnctn, build_base, progress, pyexe, argv,

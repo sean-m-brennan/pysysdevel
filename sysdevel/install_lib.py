@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -36,7 +38,7 @@ import platform
 from distutils.command.install_lib import install_lib as old_install_lib
 from distutils.util import change_root, convert_path
 
-import util
+from . import util
 
 
 class install_lib(old_install_lib):

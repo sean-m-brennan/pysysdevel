@@ -48,7 +48,7 @@ class Query(object):
         valid = ['list_steps', 'last_step',]
         for num in range(1, self.max_steps+1):
             valid.append('step' + str(num))
-        for param in parameters.keys():
+        for param in list(parameters.keys()):
             if not param in valid:
                 return False
         return True
@@ -91,7 +91,7 @@ class Query(object):
                 import simplejson as json
             params = json.loads(json_str)
             results = self.last_step(params)
-            print json.dumps(results, default=json_handler)
+            print(json.dumps(results, default=json_handler))
         except ValueError:
             ## example: ./query.py --param1=val1 --param2 val2 --param3 = val3
             kwargs = dict()

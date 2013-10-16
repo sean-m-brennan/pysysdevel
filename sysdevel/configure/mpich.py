@@ -54,9 +54,9 @@ class configuration(lib_config):
             mpich_inc_dir = find_header(self.hdr, base_dirs,
                                         ['mpich2', 'mpich2-' + arch,])
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir

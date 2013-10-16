@@ -30,11 +30,11 @@ Custom events
 import gui_select
 
 
-(FATAL, ERROR, WARNING, INFO, DEBUG, NOTICE, MESSAGE) = range(7)
+(FATAL, ERROR, WARNING, INFO, DEBUG, NOTICE, MESSAGE) = list(range(7))
 primary_msgs = ['fatal', 'error', 'warning', 'info', 'debug',
                 'notice', 'message']
 
-(OK, CANCEL, INFORMATION, WARNING, QUESTION, ERROR) = range(6)
+(OK, CANCEL, INFORMATION, WARNING, QUESTION, ERROR) = list(range(6))
 
 class Event(object):
     """

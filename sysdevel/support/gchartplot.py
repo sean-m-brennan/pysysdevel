@@ -63,7 +63,7 @@ class Plotter(SimplePanel):
     def draw(self):
         idx = 0
         for s in self.series:
-            if 'z_values' in s.keys():
+            if 'z_values' in list(s.keys()):
                 self.plot3d(idx, s['name'], s['labels'],
                             s['x_values'], s['y_values'], s['z_values'],
                             s['x_ticks'], s['y_ticks'], s['z_ticks'])

@@ -16,9 +16,9 @@ class configuration(py_config):
         try:
             import mod_pywebsocket
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
         return self.found
 
 

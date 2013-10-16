@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -33,7 +35,7 @@ import platform
 import traceback
 import subprocess
 
-from sysdevel import util
+from . import util
 
 
 class config(object):
@@ -105,10 +107,11 @@ class lib_config(config):
                 incl_dir = util.find_header(self.hdr, locations, limit=limit)
             lib_dir, lib = util.find_library(self.lib, locations, limit=limit)
             self.found = True
-        except Exception, e:
+        except Exception:
             if self.debug:
-                print 'Exception: ' + str(e)
-                print traceback.print_exc()
+                e = sys.exc_info()[1]
+                print('Exception: ' + str(e))
+                print(traceback.print_exc())
             return self.found
 
         if self.hdr:
@@ -146,15 +149,16 @@ class py_config(config):
                 if util.compare_versions(ver, version) == -1:
                     return self.found
             self.found = True
-        except Exception, e:
+        except Exception:
             if self.debug:
-                print 'Exception: ' + str(e)
-                print traceback.print_exc()
+                e = sys.exc_info()[1]
+                print('Exception: ' + str(e))
+                print(traceback.print_exc())
         return self.found
 
 
     def install(self, environ, version, locally=True):
-        import urllib2
+        import urllib.request, urllib.error, urllib.parse
         if not self.found:
             website = 'https://pypi.python.org/packages/source/' + \
                 self.pkg[0] + '/' + self.pkg + '/'
@@ -164,7 +168,7 @@ class py_config(config):
             archive = src_dir + '.tar.gz'
             try:
                 util.install_pypkg(src_dir, website, archive, locally=locally)
-            except urllib2.HTTPError:
+            except Exception:
                 archive = src_dir + '.zip'
                 util.install_pypkg(src_dir, website, archive, locally=locally)
             if not self.is_installed(environ, version):
@@ -214,10 +218,11 @@ class prog_config(config):
         try:
             program = util.find_program(self.exe, locations, limit=limit)
             self.found = True
-        except Exception, e:
+        except Exception:
             if self.debug:
-                print 'Exception: ' + str(e)
-                print traceback.print_exc()
+                e = sys.exc_info()[1]
+                print('Exception: ' + str(e))
+                print(traceback.print_exc())
             return self.found
 
         self.environment[self.exe.upper()] = program
@@ -273,9 +278,10 @@ class nodejs_config(config):
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
                 status = util.process_progress(p)
-            except KeyboardInterrupt,e:
+            except KeyboardInterrupt:
                 p.terminate()
                 log.close()
+                e = sys.exc_info()[1]
                 raise e
             if status != 0:
                 log.close()
@@ -287,9 +293,10 @@ class nodejs_config(config):
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
                 status = util.process_progress(p)
-            except KeyboardInterrupt,e:
+            except KeyboardInterrupt:
                 p.terminate()
                 log.close()
+                e = sys.exc_info()[1]
                 raise e
             if status != 0:
                 log.close()

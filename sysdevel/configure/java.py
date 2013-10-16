@@ -44,9 +44,9 @@ class configuration(config):
             except:
                 pass
             self.found = True
-        except Exception,e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['JAVA'] = java_runtime

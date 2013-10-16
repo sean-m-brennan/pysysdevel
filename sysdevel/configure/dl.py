@@ -42,9 +42,9 @@ class configuration(lib_config):
             lib_dir, lib = find_library(self.lib, base_dirs,
                                         limit=limit, wildcard=False)
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['DL_INCLUDE_DIR'] = incl_dir

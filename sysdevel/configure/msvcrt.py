@@ -73,9 +73,9 @@ class configuration(config):
             debug_dir, _ = find_library('msvcr' + ver, msvcr_dbg_dirs,
                                         limit=limit)
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['MSVCRT_DIR'] = release_dir
@@ -95,7 +95,7 @@ class configuration(config):
                                  website[0] + ')\nthe ' + name + '.\n' +
                                  'Opening a browser to confirm download ...\n')
                 webbrowser.open(''.join(website))
-                raw_input('Press any key once the redistributable ' +
+                input('Press any key once the redistributable ' +
                           'package is installed')
             else:
                 raise Exception('MSVC runtime included as part of the OS, ' +

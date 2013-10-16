@@ -42,9 +42,9 @@ class configuration(lib_config):
             proj4_inc_dir = find_header(self.hdr, base_dirs)
             proj4_lib_dir, proj4_libs  = find_libraries(self.lib, base_dirs)
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['PROJ4_INCLUDE_DIR'] = proj4_inc_dir

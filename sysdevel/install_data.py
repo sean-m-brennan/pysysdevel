@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -28,12 +30,13 @@ permissions and limitations under the License.
 """
 
 import os
-import util
 
 try:
     from numpy.distutils.command.install_data import install_data as old_data
 except:
     from distutils.command.install_data import install_data as old_data
+
+from . import util
 
 
 class install_data(old_data):

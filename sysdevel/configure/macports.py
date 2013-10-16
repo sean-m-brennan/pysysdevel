@@ -26,8 +26,8 @@ class configuration(config):
                     break
             if self.ports_found and not exe_ok:
                 if self.debug:
-                    print sys.exec_prefix + "/bin/python  not in  " + \
-                        repr(python_sys_executables())
+                    print(sys.exec_prefix + "/bin/python  not in  " + \
+                        repr(python_sys_executables()))
                 switch_python()
         return self.found and self.ports_found
 

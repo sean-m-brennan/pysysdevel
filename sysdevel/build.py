@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -32,10 +34,10 @@ import sys
 
 try:
     from numpy.distutils.command.build import build as old_build
-except ImportError, e:
+except ImportError:
     from distutils.command.build import build as old_build
 
-from recur import process_subpackages
+from .recur import process_subpackages
 
 
 class build(old_build):

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -40,7 +42,7 @@ try:
 except:
     from distutils.command.build_py import build_py as _build_py
 
-import util
+from . import util
 
 
 class build_py(_build_py):
@@ -53,8 +55,7 @@ class build_py(_build_py):
         if type(package) is StringType:
             package = package.split('.')
         elif type(package) not in (ListType, TupleType):
-            raise TypeError, \
-                  "'package' must be a string (dot-separated), list, or tuple"
+            raise TypeError("'package' must be a string (dot-separated), list, or tuple")
 
         # Now put the module source file into the "build" area -- this is
         # easy, we just copy it somewhere under self.build_lib (the build

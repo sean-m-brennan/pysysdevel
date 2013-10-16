@@ -37,9 +37,9 @@ class configuration(py_config):
                 if compare_versions(ver, version) == -1:
                     return self.found
                 self.found = True
-            except Exception, e:
+            except Exception as e:
                 if self.debug:
-                    print e
+                    print(e)
                 return self.found
 
             self.environment['BASEMAP_DATA_PATHLIST'] = basemap_data_pathlist
@@ -74,7 +74,7 @@ class configuration(py_config):
         def __patch(self, basemap_dir):
             ## modify faulty pyproj data location
             problem_file = os.path.join(basemap_dir, 'pyproj.py')
-            print 'PATCH ' + problem_file
+            print('PATCH ' + problem_file)
             problem_exists = True
             pf = open(problem_file, 'r')
             for line in pf:

@@ -20,9 +20,9 @@ class configuration(prog_config):
                 return self.found
             self.environment['WXGLADE'] = find_program('wxglade')
             self.found = True
-        except Exception,e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
         return self.found
 
 

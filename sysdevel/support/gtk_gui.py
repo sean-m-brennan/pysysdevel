@@ -78,7 +78,7 @@ try:
                 __import__(self.implementation)
                 impl = sys.modules[self.implementation]
                 impl.gtkSetup(self, xpm_icon)
-            except Exception, e:
+            except Exception as e:
                 sys.stderr.write('Application ' + self.implementation +
                                  ' not enabled/available\n' + str(e) + '\n')
                 sys.exit(1)
@@ -98,7 +98,7 @@ try:
             dialog = gtk.AboutDialog()
             dialog.set_name(self.app.name)
             dialog.set_version(self.app.version)
-            dialog.set_copyright(u'Copyright © ' + self.app.copyright)
+            dialog.set_copyright('Copyright © ' + self.app.copyright)
             dialog.run()
             dialog.destroy()
 
@@ -113,5 +113,5 @@ try:
     ## end GTK_GUI
     ##############################
 
-except Exception, e:
-    print e
+except Exception as e:
+    print(e)

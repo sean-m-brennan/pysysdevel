@@ -70,9 +70,9 @@ class configuration(lib_config):
             if 'windows' in platform.system().lower():
                 lib_ver = perl_lib.split('.')[0].split('perl')[1]
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['PERL'] = perl_exe

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -43,7 +45,7 @@ except:
     from distutils.command.build_clib import build_clib
     from distutils import log
 
-from util import convert_ulist, has_f_sources, has_cxx_sources, \
+from .util import convert_ulist, has_f_sources, has_cxx_sources, \
     filter_sources, is_sequence, all_strings
 
 
@@ -151,10 +153,9 @@ class build_exe(build_clib):
 
             sources = exe.sources
             if sources is None or not is_sequence(sources):
-                raise DistutilsSetupError, \
-                    ("in 'libraries' option (library '%s'), " +
+                raise DistutilsSetupError(("in 'libraries' option (library '%s'), " +
                      "'sources' must be present and must be " +
-                     "a list of source filenames") % exe.name
+                     "a list of source filenames") % exe.name)
             sources = list(sources)
 
             c_sources, cxx_sources, f_sources, fmodule_sources \
@@ -201,8 +202,8 @@ class build_exe(build_clib):
 
                 # check availability of Fortran compilers
                 if (f_sources or fmodule_sources) and fcompiler is None:
-                    raise DistutilsError, "library %s has Fortran sources"\
-                        " but no Fortran compiler found" % (exe.name)
+                    raise DistutilsError("library %s has Fortran sources"\
+                        " but no Fortran compiler found" % (exe.name))
 
             macros = exe.define_macros
             include_dirs = exe.include_dirs
@@ -305,7 +306,7 @@ class build_exe(build_clib):
             ## May be dependent on other libs we're builing
             shlib_libraries = []
             for libinfo in exe.libraries:
-                if isinstance(libinfo, basestring):
+                if isinstance(libinfo, str):
                     shlib_libraries.append(convert_ulist([libinfo])[0])
                 else:
                     shlib_libraries.append(libinfo[0])

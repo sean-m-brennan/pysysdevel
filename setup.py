@@ -28,9 +28,10 @@ def build_documentation():
     xml_file = make_org(os.path.join('sysdevel', 'doc', 'sysdevel_book.org'))
     try:
         make_docbook(xml_file, stylesheet='docbook_custom.xsl')
-    except Exception, e:
-        print "Could not build the manual. Requires emacs and docbook."
-        print e
+    except Exception:
+        print("Could not build the manual. Requires emacs and docbook.")
+        e = sys.exc_info()[1]
+        print(e)
 
 
 

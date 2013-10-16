@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -33,8 +35,8 @@ import shutil
 
 from distutils.command.clean import clean as old_clean
 
-from recur import process_subpackages
-import util
+from .recur import process_subpackages
+from . import util
 
 
 class clean(old_clean):

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -38,7 +40,7 @@ try:
 except:
     from distutils.command.build_src import build_src as _build_src
 
-import util
+from . import util
 
 
 class build_src(_build_src):
@@ -62,7 +64,7 @@ class build_src(_build_src):
         if self.devel_support:
             for tpl in self.devel_support:
                 if self.distribution.verbose:
-                    print 'adding sysdevel support to ' + tpl[0]
+                    print('adding sysdevel support to ' + tpl[0])
                 target = os.path.abspath(os.path.join(self.build_lib,
                                                       *tpl[0].split('.')))
                 util.mkdir(target)
@@ -80,8 +82,8 @@ class build_src(_build_src):
             here = os.getcwd()
             for grammar in self.antlr_modules:
                 if self.distribution.verbose:
-                    print 'building antlr grammar "' + \
-                        grammar.name + '" sources'
+                    print('building antlr grammar "' + \
+                        grammar.name + '" sources')
                 ##TODO build in build_src, add to build_lib modules
                 target = os.path.abspath(os.path.join(self.build_lib,
                                                       grammar.directory))

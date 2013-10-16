@@ -31,7 +31,7 @@ import os
 try:
     import logging
     LOGGABLE = True
-except ImportError, e:
+except ImportError as e:
     sys.stderr.write("\nUnable to import the logging module." +
                      " Logging disabled.\n")
     sys.stderr.flush()

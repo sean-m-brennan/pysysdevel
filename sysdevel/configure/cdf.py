@@ -63,9 +63,9 @@ class configuration(lib_config):
             lib_dir, lib = find_library(self.lib, base_dirs, limit=limit)
             exe = find_program('cdfcompare',  base_dirs)
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['CDF_INCLUDE_DIR'] = incl_dir

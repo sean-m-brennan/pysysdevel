@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -32,10 +34,10 @@ import sys
 
 try:
     from numpy.distutils.command.install import install as old_install
-except ImportError, e:
+except ImportError:
     from distutils.command.install import install as old_install
 
-from recur import process_subpackages
+from .recur import process_subpackages
 
 
 class install(old_install):

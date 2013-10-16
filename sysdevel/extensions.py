@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -32,7 +34,7 @@ try:
 except:
     from distutils import extension as old_extension
 
-import util
+from . import util
 
 
 ## Shared libraries, like static libraries, consist of

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -33,9 +35,9 @@ import sys
 from distutils.core import Command
 from distutils import log
 
-from extensions import FortranUnitTest, CUnitTest, CppUnitTest
-from recur import process_subpackages
-import util
+from .extensions import FortranUnitTest, CUnitTest, CppUnitTest
+from .recur import process_subpackages
+from . import util
 
 
 class test(Command):
@@ -57,7 +59,7 @@ class test(Command):
             for pkg, tests in self.tests:
                 pkgtests = []
                 for unit in tests:
-                    if isinstance(unit, basestring):
+                    if isinstance(unit, str):
                         pkgtests.append(unit)
                 if len(pkgtests) > 0:
                     pytests.append((pkg, pkgtests))
@@ -121,7 +123,7 @@ class test(Command):
             for pkg, tests in self.tests:
                 pkgtests = []
                 for unit in tests:
-                    if isinstance(unit, basestring) and unit.endswith('.html'):
+                    if isinstance(unit, str) and unit.endswith('.html'):
                         pkgtests.append(unit)
                 if len(pkgtests) > 0:
                     jstests.append((pkg, pkgtests))
@@ -181,13 +183,14 @@ class test(Command):
                 log.info('Python unit tests for ' + pkg)
                 try:
                     util.check_call([wrap])
-                except Exception, e:
+                except Exception:
                     failed = True
-                    print e
+                    e = sys.exc_info()[1]
+                    print(e)
 
         ## FORTRAN
         if self._has_fortran_tests():
-            from configure import fruit
+            from .configure import fruit
             env = dict()
             if not fruit.is_installed(env, None):
                 fruit.install(env, None)
@@ -217,15 +220,16 @@ class test(Command):
                 for unit in units:
                     try:
                         util.check_call([os.path.join(lib_dir, unit.name)])
-                    except Exception, e:
+                    except Exception:
                         failed = True
-                        print e
+                        e = sys.exc_info()[1]
+                        print(e)
 
         ## C
         if self._has_c_tests():
             sys.std_err.write("C unit testing is untested!") #FIXME
 
-            from configure import cunit
+            from .configure import cunit
             env = dict()
             if not cunit.is_installed(env, None):
                 cunit.install(env, None)
@@ -254,15 +258,16 @@ class test(Command):
                 for unit in units:
                     try:
                         util.check_call([os.path.join(lib_dir, unit.name)])
-                    except Exception, e:
+                    except Exception:
                         failed = True
-                        print e
+                        e = sys.exc_info()[1]
+                        print(e)
 
         ## C++
         if self._has_cpp_tests():
             sys.std_err.write("C++ unit testing is untested!") #FIXME
 
-            from configure import cppunit
+            from .configure import cppunit
             env = dict()
             if not cppunit.is_installed(env, None):
                 cppunit.install(env, None)
@@ -290,15 +295,16 @@ class test(Command):
                 for unit in units:
                     try:
                         util.check_call([os.path.join(lib_dir, unit.name)])
-                    except Exception, e:
+                    except Exception:
                         failed = True
-                        print e
+                        e = sys.exc_info()[1]
+                        print(e)
 
         ## Javascript
         if self._has_js_tests():
             sys.std_err.write("Javascript unit testing is untested!") #FIXME
 
-            from configure import qunitsuite
+            from .configure import qunitsuite
             env = dict()
             if not qunitsuite.is_installed(env, None):
                 qunitsuite.install(env, None)
@@ -311,11 +317,11 @@ class test(Command):
                    if len(result.errors) > 0:
                        failed = true
                        for error in result.errors:
-                           print error[1]
+                           print(error[1])
                    if len(result.failures) > 0:
                        failed = true
                        for failure in result.failures:
-                           print failure[1]
+                           print(failure[1])
 
         if failed:
             sys.exit(1)

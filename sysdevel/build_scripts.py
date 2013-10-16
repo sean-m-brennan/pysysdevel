@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -38,7 +40,7 @@ try:
 except:
     from distutils.command.build_scripts import build_scripts as _build_scripts
 
-import util
+from . import util
 
 
 class build_scripts(_build_scripts):

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -27,7 +29,6 @@ permissions and limitations under the License.
 'build_docbook' command using emacs on org-mode files
 """
 
-
 import os
 import sys
 import glob
@@ -39,7 +40,7 @@ try:
 except:
     from distutils.command.build_ext import build_ext
 
-import util
+from . import util
 
 
 def make_doc(src_file, target_dir=None, stylesheet=None):

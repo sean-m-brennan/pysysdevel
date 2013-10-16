@@ -13,7 +13,7 @@ class configuration(config):
     """
 
     ## latest release or current svn checkout
-    (R2012a, SVN) = range(2)
+    (R2012a, SVN) = list(range(2))
     version_strs  = {R2012a: 'R2012a', SVN: 'svn'}
     version_zfill = 6
 
@@ -55,9 +55,9 @@ class configuration(config):
         else:
             try:
                 gmat_root = os.environ['GMAT_ROOT']
-            except Exception, e:
+            except Exception as e:
                 if self.debug:
-                    print e
+                    print(e)
                 return self.found
 
         if os.path.exists(gmat_root):
@@ -125,7 +125,7 @@ class configuration(config):
         # modify faulty MessageReceiver.hpp
         msg_rcvr = os.path.join(gmat_root, 'src', 'base', 'util',
                                 'MessageReceiver.hpp')
-        print 'Patch ' + msg_rcvr
+        print('Patch ' + msg_rcvr)
         if not os.path.exists(msg_rcvr + '.orig'):
             old_file = msg_rcvr + '.orig'
             os.rename(msg_rcvr, old_file)

@@ -24,7 +24,7 @@ class configuration(py_config):
                 if compare_versions(ver, version) == -1:
                     return self.found
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
         return self.found

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -44,19 +46,20 @@ try:
     from numpy.distutils.command import bdist_rpm, scons
     have_numpy = True
 
-except ImportError, e:
+except ImportError:
     try:
-        print 'NumPy not found. Failover to Distutils2 alone.'
+        print('NumPy not found. Failover to Distutils2 alone.')
         from distutils2.dist import Distribution as oldDistribution
         from distutils2.command import config, build_ext, install_headers, bdist_rpm
 
-    except ImportError, e:
-        print 'Distutils2 not found. Failover to old distutils.'
+    except ImportError:
+        print('Distutils2 not found. Failover to old distutils.')
         from distutils.dist import Distribution as oldDistribution
         from distutils.command import config, build_ext, install_headers, bdist_rpm
 
+        # TODO Python 3 'packaging' module
 
-import util
+from . import util
 
 
 class CustomDistribution(oldDistribution):
@@ -218,27 +221,27 @@ import warnings
 import distutils.core
 import distutils.dist
 
-import config_cc
-import config_fc
-import build
-import build_doc
-import build_js
-import build_py
-import build_scripts
-import build_pypp_ext
-import build_src
-import build_clib
-import build_shlib
-import build_exe
-import sdist
-import install
-import install_data
-import install_lib
-import install_clib
-import install_exe
-import clean
-import test
-import deps
+from . import config_cc
+from . import config_fc
+from . import build
+from . import build_doc
+from . import build_js
+from . import build_py
+from . import build_scripts
+from . import build_pypp_ext
+from . import build_src
+from . import build_clib
+from . import build_shlib
+from . import build_exe
+from . import sdist
+from . import install
+from . import install_data
+from . import install_lib
+from . import install_clib
+from . import install_exe
+from . import clean
+from . import test
+from . import deps
 
 
 my_cmdclass = {'build':            build.build,
@@ -289,7 +292,7 @@ if allows_py2app:
 
 
 def _dict_append(d, **kws):
-    for k,v in kws.items():
+    for k,v in list(kws.items()):
         if k not in d:
             d[k] = v
             continue
@@ -303,7 +306,7 @@ def _dict_append(d, **kws):
         elif util.is_string(dv):
             d[k] = dv + v
         else:
-            raise TypeError, repr(type(dv))
+            raise TypeError(repr(type(dv)))
 
 def _command_line_ok(_cache=[]):
     """ Return True if command line does not contain any
@@ -447,7 +450,8 @@ def _check_append_library(libraries, item):
                     return
     libraries.append(item)
 
-def _check_append_ext_library(libraries, (lib_name,build_info)):
+def _check_append_ext_library(libraries, xxx_todo_changeme):
+    (lib_name,build_info) = xxx_todo_changeme
     for item in libraries:
         if util.is_sequence(item):
             if item[0]==lib_name:

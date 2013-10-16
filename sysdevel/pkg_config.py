@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -30,7 +32,7 @@ Package specification
 import os
 import platform
 
-import util
+from . import util
 
 
 class pkg_config(object):
@@ -151,7 +153,7 @@ class pkg_config(object):
         return self.prerequisites, argv
 
     def additional_env(self, envir):
-        self.environment = dict(envir.items() + self.environment.items())
+        self.environment = dict(list(envir.items()) + list(self.environment.items()))
         return self.environment
 
     def get_source_files(self, *args):

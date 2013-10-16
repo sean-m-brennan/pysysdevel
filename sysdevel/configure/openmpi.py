@@ -53,9 +53,9 @@ class configuration(lib_config):
             openmpi_inc_dir = find_header(self.hdr, base_dirs,
                                           ['openmpi', 'openmpi-' + arch,])
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['OPENMPI_INCLUDE_DIR'] = openmpi_inc_dir

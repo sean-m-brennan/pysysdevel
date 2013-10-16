@@ -28,9 +28,9 @@ class configuration(prog_config):
             import ctypesgencore
             lib = os.path.dirname(os.path.dirname(ctypesgencore.__file__))
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['CTYPESGEN'] = exe

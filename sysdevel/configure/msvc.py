@@ -50,9 +50,9 @@ class configuration(config):
             nmake = find_program('nmake', msvc_dirs, limit=limit)
             msvc = find_program('cl', msvc_dirs, limit=limit)
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['MSVC_VARS'] = vcvars

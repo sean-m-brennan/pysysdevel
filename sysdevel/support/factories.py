@@ -64,7 +64,7 @@ class Definition(object):
     (which must be identical to the class name exclusing whitespace),
     a module name, and an optional test function.
     '''
-    def __init__(self, name, mod, test=lambda(x): True):
+    def __init__(self, name, mod, test=lambda x: True):
         self.name = name
         self.klass = ''.join(name.split())
         self.module = mod

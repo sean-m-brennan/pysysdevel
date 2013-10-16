@@ -28,6 +28,7 @@ Model-View-Controller base classes
 """
 
 import math
+import collections
 
 
 class UnknownModelException(Exception):
@@ -103,7 +104,7 @@ class DataController(object):
         Outputs; relevant attributes and properties.
         '''
         discard = dir(type('dummy', (object,), {}))  ## builtins
-        discard += [item for item in dir(self) if callable(item)]  ## methods
+        discard += [item for item in dir(self) if isinstance(item, collections.Callable)]  ## methods
         return [item for item in dir(self) if item not in discard]
         """  Followinf not supported under PyJS
         import inspect
@@ -264,9 +265,9 @@ class PlotSeries(DataViewer):
         else:
             step = (hi - lo) / 10
         try:
-            return range(lo, hi, step)
+            return list(range(lo, hi, step))
         except ValueError:
-            return range(lo, hi)
+            return list(range(lo, hi))
 
     @property
     def y_ticks(self):
@@ -284,9 +285,9 @@ class PlotSeries(DataViewer):
         else:
             step = (hi - lo) / 10
         try:
-            return range(lo, hi, step)
+            return list(range(lo, hi, step))
         except ValueError:
-            return range(lo, hi)
+            return list(range(lo, hi))
 
     @property
     def z_ticks(self):
@@ -301,6 +302,6 @@ class PlotSeries(DataViewer):
         else:
             step = (hi - lo) / 10
         try:
-            return range(lo, hi, step)
+            return list(range(lo, hi, step))
         except ValueError:
-            return range(lo, hi)
+            return list(range(lo, hi))

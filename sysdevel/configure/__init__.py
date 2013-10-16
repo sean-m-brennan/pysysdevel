@@ -88,8 +88,8 @@ def configure_system(prerequisite_list, version,
            util.in_prerequisites('mingw', prerequisite_list) and \
            util.in_prerequisites('boost', prerequisite_list) and not \
            util.in_prerequisites('msvcrt', prerequisite_list):
-            print "WARNING: if you're using the boost-python DLL, " + \
-                "also add 'msvcrt' as a prereuisite."
+            print("WARNING: if you're using the boost-python DLL, " + \
+                "also add 'msvcrt' as a prereuisite.")
         if 'darwin' in platform.system().lower() and \
            not util.in_prerequisites('macports', prerequisite_list) and \
            not util.in_prerequisites('homebrew', prerequisite_list):
@@ -98,14 +98,14 @@ def configure_system(prerequisite_list, version,
             elif util.system_uses_homebrew():
                 prerequisite_list.insert(0, 'homebrew')
             else:
-                print "WARNING: neither MacPorts nor Homebrew detected. " +\
-                    "All required libraries will be built locally."
+                print("WARNING: neither MacPorts nor Homebrew detected. " +\
+                    "All required libraries will be built locally.")
 
         for help_name in prerequisite_list:
             environment = __configure_package(environment, help_name,
                                               skip, install, quiet)
         util.save_cache(environment)
-    except Exception, e:
+    except Exception as e:
         log = open('config.err', 'w')
         #TODO logging module is probably the way to go instead
         log.write('Configuration error:\n' + traceback.format_exc())
@@ -117,7 +117,7 @@ def configure_system(prerequisite_list, version,
 
 def __configure_package(environment, help_name, skip, install, quiet):
     req_version = None
-    if not isinstance(help_name, basestring):
+    if not isinstance(help_name, str):
         req_version = help_name[1]
         help_name = help_name[0]
     base = help_name
@@ -148,7 +148,7 @@ def __run_helper__(environment, short_name, long_name, version,
     cfg = helper.configuration()
     for dep in cfg.dependencies:
         dep_name = dep
-        if not isinstance(dep, basestring):
+        if not isinstance(dep, str):
             dep_name = dep[0]
         if dep_name in configured:
             continue
@@ -167,7 +167,7 @@ def __run_helper__(environment, short_name, long_name, version,
         if not install:
             raise Exception(help_name + ' cannot be found.')
         cfg.install(environment, version)
-    env = dict(cfg.environment.items() + environment.items())
+    env = dict(list(cfg.environment.items()) + list(environment.items()))
     if not 'PREREQUISITES' in env:
         env['PREREQUISITES'] = [short_name]
     else:

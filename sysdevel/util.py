@@ -126,7 +126,7 @@ def delete_cache():
 
 def in_prerequisites(item, prereqs):
     for p in prereqs:
-         if not isinstance(p, basestring):
+         if not isinstance(p, str):
             if item == p[0]:
                 return True
          elif item == p:
@@ -165,7 +165,7 @@ def _get_f90_modules(source):
     return modules
 
 def is_string(item):
-    return isinstance(item, basestring)
+    return isinstance(item, str)
 
 def all_strings(lst):
     """Return True if all items in lst are string objects. """
@@ -278,7 +278,7 @@ def convert_ulist(str_list):
         return None
     converted = []
     for s in str_list:
-        if isinstance(s, unicode):
+        if isinstance(s, str):
             converted.append(''.join(chr(ord(c)) for c in s.decode('ascii')))
         else:
             converted.append(s)
@@ -299,7 +299,7 @@ def uniquify(seq, id_fctn=None):
 def flatten(seq):
     result = []
     for elt in seq:
-        if hasattr(elt, '__iter__') and not isinstance(elt, basestring):
+        if hasattr(elt, '__iter__') and not isinstance(elt, str):
             result.extend(flatten(elt))
         else:
             result.append(elt)
@@ -320,23 +320,23 @@ def find_program(name, pathlist=[], limit=False):
         if path != None and (os.path.exists(path) or glob.glob(path)):
             for p in [path, os.path.join(path, 'bin')]:
                 if DEBUG:
-                    print 'Searching ' + p + ' for ' + name
+                    print('Searching ' + p + ' for ' + name)
                 full = os.path.join(p, name)
                 if os.path.lexists(full):
                     if DEBUG:
-                        print 'Found ' + full
+                        print('Found ' + full)
                     return full
                 if os.path.lexists(full + '.exe'):
                     if DEBUG:
-                        print 'Found ' + full + '.exe'
+                        print('Found ' + full + '.exe')
                     return full + '.exe'
                 if os.path.lexists(full + '.bat'):
                     if DEBUG:
-                        print 'Found ' + full + '.bat'
+                        print('Found ' + full + '.bat')
                     return full + '.bat'
                 if os.path.lexists(full + '.cmd'):
                     if DEBUG:
-                        print 'Found ' + full + '.cmd'
+                        print('Found ' + full + '.cmd')
                     return full + '.bat'
     raise Exception(name + ' not found.')
 
@@ -364,7 +364,7 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
                 ext_paths = glob.glob(os.path.join(path, sub))
                 for ext_path in ext_paths:
                     if DEBUG:
-                        print 'Searching ' + ext_path + ' for ' + filepath
+                        print('Searching ' + ext_path + ' for ' + filepath)
                     filename = os.path.basename(filepath)
                     dirname = os.path.dirname(filepath)
                     for root, dirnames, filenames in os.walk(ext_path):
@@ -372,12 +372,12 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
                         for fn in filenames:
                             if dirname == '' and fnmatch.fnmatch(fn, filename):
                                 if DEBUG:
-                                    print 'Found ' + os.path.join(root, filename)
+                                    print('Found ' + os.path.join(root, filename))
                                 return root.rstrip(os.sep)
                             elif fnmatch.fnmatch(os.path.basename(rt), dirname) \
                                     and fnmatch.fnmatch(fn, filename):
                                 if DEBUG:
-                                    print 'Found ' + os.path.join(rt, filename)
+                                    print('Found ' + os.path.join(rt, filename))
                                 return os.path.dirname(rt).rstrip(os.sep)
     raise Exception(filename + ' not found.')
 
@@ -433,8 +433,8 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                     else:
                                         filename = prefix + name + def_suffix
                                     if DEBUG:
-                                        print 'Searching ' + root + \
-                                            ' for ' + filename
+                                        print('Searching ' + root + \
+                                            ' for ' + filename)
                                     libs = []
                                     for fn in filenames:
                                         if fnmatch.fnmatch(fn, filename):
@@ -446,20 +446,20 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                 else:
                                     filename = prefix + name + suffix
                                 if DEBUG:
-                                    print 'Searching ' + root + \
-                                        ' for ' + filename
+                                    print('Searching ' + root + \
+                                        ' for ' + filename)
                                 libs = []
                                 for fn in filenames:
                                     if fnmatch.fnmatch(fn, filename):
                                         if single:
                                             if DEBUG:
-                                                print 'Found at ' + root
+                                                print('Found at ' + root)
                                             return root.rstrip(os.sep), fn
                                         else:
                                             libs.append(fn)
                                 if len(libs) > 0:
                                     if DEBUG:
-                                        print 'Found at ' + root
+                                        print('Found at ' + root)
                                     return root.rstrip(os.sep), libs
     raise Exception(name + ' library not found.')
 
@@ -467,7 +467,7 @@ def libraries_from_components(components, path):
     libs = []
     for comp in components:
         if DEBUG:
-            print 'Searching ' + path + ' for ' + comp
+            print('Searching ' + path + ' for ' + comp)
         _, lib = find_library(comp, [path])
         name = os.path.splitext(lib)[0]
         if name.startswith('lib'):
@@ -484,11 +484,11 @@ def find_file(filepattern, pathlist=[]):
     for path in local_search_paths + pathlist:
         if path != None and os.path.exists(path):
             if DEBUG:
-                print 'Searching ' + path + ' for ' + filepattern
+                print('Searching ' + path + ' for ' + filepattern)
             for fn in os.listdir(path):
                 if fnmatch.fnmatch(fn, filepattern):
                     if DEBUG:
-                        print 'Found ' + os.path.join(path, fn)
+                        print('Found ' + os.path.join(path, fn))
                     return os.path.join(path, fn)
     raise Exception(filepattern + ' not found.')
 
@@ -646,7 +646,7 @@ def create_script_wrapper(pyscript, target_dir):
                 'export DYLD_LIBRARY_PATH=$path/lib:$path/lib64:$DYLD_LIBRARY_PATH\n' +
                 sys.executable + ' $path/bin/' + pyscript + ' $@\n')
         f.close()
-        os.chmod(dst_file, 0777)
+        os.chmod(dst_file, 0o777)
     return dst_file
 
 
@@ -655,7 +655,7 @@ def create_runscript(pkg, mod, target, extra):
         if extra is None:
             extra = ''
         if DEBUG:
-            print 'Creating runscript ' + target
+            print('Creating runscript ' + target)
         f = open(target, 'w')
         f.write("#!/usr/bin/env python\n" +
                 "# -*- coding: utf-8 -*-\n\n" +
@@ -686,7 +686,7 @@ def create_runscript(pkg, mod, target, extra):
                 "from " + pkg + " import " + mod + "\n" +
                 mod + ".main()\n")
         f.close()
-        os.chmod(target, 0777)
+        os.chmod(target, 0o777)
 
 
 def create_test_wrapper(pyscript, target_dir, lib_dirs):
@@ -716,13 +716,13 @@ def create_test_wrapper(pyscript, target_dir, lib_dirs):
                 'export DYLD_LIBRARY_PATH=' + dirlist + '$DYLD_LIBRARY_PATH\n' +
                 sys.executable + ' $loc/' + pyscript + ' $@\n')
     f.close()
-    os.chmod(dst_file, 0777)
+    os.chmod(dst_file, 0o777)
     return dst_file
 
 
 def create_testscript(tester, units, target, pkg_dirs):
     if DEBUG:
-        print 'Creating testscript ' + target
+        print('Creating testscript ' + target)
     f = open(target, 'w')
     f.write("#!/usr/bin/env python\n" +
             "# -*- coding: utf-8 -*-\n\n" +
@@ -741,7 +741,7 @@ def create_testscript(tester, units, target, pkg_dirs):
         f.write("from " + tester + "." + unit + " import *\n")
     f.write("\nimport unittest\nunittest.main()\n")
     f.close()
-    os.chmod(target, 0777)
+    os.chmod(target, 0o777)
 
 
 def create_fruit_driver(unit, srcfile):
@@ -936,16 +936,16 @@ def copy_tree(src, dst, preserve_mode=1, preserve_times=1, preserve_symlinks=0,
     from distutils import log
 
     if not dry_run and not os.path.isdir(src):
-        raise DistutilsFileError, \
-              "cannot copy tree '%s': not a directory" % src
+        raise DistutilsFileError("cannot copy tree '%s': not a directory" % src)
     try:
         names = os.listdir(src)
-    except os.error, (errno, errstr):
+    except OSError:
+        e = sys.exc_info()[1]
         if dry_run:
             names = []
         else:
-            raise DistutilsFileError, \
-                  "error listing files in '%s': %s" % (src, errstr)
+            raise DistutilsFileError("error listing files in '%s': %s" %
+                                     (src, e.strerror))
 
     if not dry_run:
         dir_util.mkpath(dst)
@@ -986,7 +986,7 @@ def copy_tree(src, dst, preserve_mode=1, preserve_times=1, preserve_symlinks=0,
     return outputs
 
 
-(DEFAULT_STYLE, AUTOMAKE_STYLE, AUTOCONF_STYLE) = range(3)
+(DEFAULT_STYLE, AUTOMAKE_STYLE, AUTOCONF_STYLE) = list(range(3))
 
 def nested_values(line, var_dict, d=0, style=DEFAULT_STYLE):
     var_dict = dict(environment_defaults, **var_dict)
@@ -1041,7 +1041,7 @@ def configure_file(var_dict, filepath, newpath=None, suffix='.in',
         ## i.e. original is older than existing generated file
         return
     if VERBOSE:
-        print 'Configuring ' + newpath
+        print('Configuring ' + newpath)
     orig = open(filepath, 'r')
     newdir = os.path.dirname(newpath)
     if not os.path.exists(newdir):
@@ -1094,12 +1094,12 @@ def compare_versions(actual, requested):
         actual = str(actual)
     if isinstance(requested, float):
         requested = str(requested)
-    if isinstance(actual, basestring):
+    if isinstance(actual, str):
         actual = actual.replace('_', '.')
         ver1 = tuple(actual.split('.'))
     else:
         ver1 = actual
-    if isinstance(requested, basestring):
+    if isinstance(requested, str):
         requested = requested.replace('_', '.')
         ver2 = tuple(requested.split('.'))
     else:
@@ -1138,7 +1138,8 @@ def install_pyscript(website, name, locally=True):
         sys.stdout.write('PREREQUISITE ' + name + ' ')
     try:
         shutil.copy(os.path.join(download_dir, name), target_dir)
-    except Exception,e:
+    except Exception:
+        e = sys.exc_info()[1]
         raise Exception('Unable to install ' + name + ': ' + str(e))
 
 
@@ -1194,9 +1195,10 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
                                  shell=shell)
             status = process_progress(p)
             log.close()
-        except KeyboardInterrupt,e:
+        except KeyboardInterrupt:
             p.terminate()
             log.close()
+            e = sys.exc_info()[1]
             raise e
         if status != 0:
             sys.stdout.write(' failed; See ' + log_file)
@@ -1210,8 +1212,9 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
             if not target_lib_dir in sys.path:
                 sys.path.insert(0, target_lib_dir)
         os.chdir(here)
-    except Exception,e:
+    except Exception:
         os.chdir(here)
+        e = sys.exc_info()[1]
         raise Exception('Unable to install ' + name + ': ' + str(e))
 
     if locally:
@@ -1280,7 +1283,7 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
                          addtnl_env=addtnl_env)
     else:
         os_environ = os.environ.copy()
-        os_environ = dict(os_environ.items() + addtnl_env.items())
+        os_environ = dict(list(os_environ.items()) + list(addtnl_env.items()))
         check_call(['./configure', '--prefix=' + prefix] + extra_cfg,
                    stdout=log, stderr=log, env=os_environ)
         check_call(['make'], stdout=log, stderr=log, env=os_environ)
@@ -1436,7 +1439,7 @@ def check_call(cmd_line, *args, **kwargs):
 def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None,
                      addtnl_env=dict()):
     if 'windows' in platform.system().lower():
-        if not isinstance(cmd_line, basestring):
+        if not isinstance(cmd_line, str):
             cmd_line = ' '.join(cmd_line)
         if not as_admin():
             from win32com.shell.shell import ShellExecuteEx
@@ -1451,8 +1454,8 @@ def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None,
             check_call([cmd_line], stdout=stdout, stderr=stderr, env=addtnl_env)
     else:
         os_environ = os.environ.copy()
-        os_environ = dict(os_environ.items() + addtnl_env.items())
-        if isinstance(cmd_line, basestring):
+        os_environ = dict(list(os_environ.items()) + list(addtnl_env.items()))
+        if isinstance(cmd_line, str):
             cmd_line = cmd_line.split()
         sudo_prefix = []
         if not as_admin():
@@ -1472,9 +1475,9 @@ def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None,
     os_environ = os.environ.copy()
     old_path = os_environ.get('PATH', '')
     os_environ['PATH'] = path.encode('ascii', 'ignore') #+ old_path #FIXME?
-    os_environ = dict(os_environ.items() + addtnl_env.items())
+    os_environ = dict(list(os_environ.items()) + list(addtnl_env.items()))
     shell = os.path.join(environ['MSYS_DIR'], 'bin', 'bash.exe')
-    if not isinstance(cmd_line, basestring):
+    if not isinstance(cmd_line, str):
         cmd_line = ' '.join(cmd_line)
     p = subprocess.Popen(shell + ' -c "' + cmd_line + '"',
                          env=os_environ, stdout=stdout, stderr=stderr)
@@ -1733,9 +1736,9 @@ def get_options(pkg_config, options):
         exe_opts = {'py2exe': {
                     'unbuffered': False,
                     'optimize': 2,
-                    'includes': flatten(pkg_config.dynamic_modules.values()) + \
+                    'includes': flatten(list(pkg_config.dynamic_modules.values())) + \
                         gtk_includes,
-                    'packages': flatten(pkg_config.required_pkgs.values()) + \
+                    'packages': flatten(list(pkg_config.required_pkgs.values())) + \
                         pkg_config.extra_pkgs,
                     'ignores': [],
                     'excludes': excludes,
@@ -1821,7 +1824,7 @@ def get_options(pkg_config, options):
         opts = {'py2app': {
             'optimize': 2,
             'includes': pkg_config.dynamic_modules,
-            'packages': pkg_config.required_pkgs.values() + \
+            'packages': list(pkg_config.required_pkgs.values()) + \
                 pkg_config.extra_pkgs,
             'iconfile': os.path.join(pkg_config.PACKAGE, pkg_config.image_dir,
                                      pkg_config.PACKAGE + '.icns'),
@@ -1868,14 +1871,14 @@ def get_options(pkg_config, options):
     else:
         directories = dict()
         data = dict()
-        for p, h in pkg_config.hierarchy.items():
+        for p, h in list(pkg_config.hierarchy.items()):
             pkg_name = pkg_config.names[p]
             directories[pkg_name] = os.path.join(pkg_config.PACKAGE,
                                                  pkg_config.directories[p])
             data[pkg_name] = pkg_config.package_files[p]
         specific_options = dict(
             package_dir = directories,
-            packages = flatten(pkg_config.names.values()) + \
+            packages = flatten(list(pkg_config.names.values())) + \
                 pkg_config.extra_pkgs,
             package_data = data,
             create_scripts = pkg_config.generated_scripts,
@@ -1920,8 +1923,8 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
     Identical to urllib.urlretrieve, except that it handles
     SSL, proxies ands redirects properly.
     '''
-    import urllib
-    import urllib2
+    import urllib.request, urllib.parse, urllib.error
+    import urllib.request, urllib.error, urllib.parse
     import tempfile
     import traceback
 
@@ -1938,13 +1941,13 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
                                 "argument, or provide a 'http_proxy' " +
                                 'environment variable.')
 
-    proxies = urllib2.ProxyHandler({'http': proxy_url, 'https': proxy_url})
-    opener = urllib2.build_opener(proxies)
-    urllib2.install_opener(opener)
+    proxies = urllib.request.ProxyHandler({'http': proxy_url, 'https': proxy_url})
+    opener = urllib.request.build_opener(proxies)
+    urllib.request.install_opener(opener)
 
     try:
-        req = urllib2.Request(url=url, data=data)
-        fp = urllib2.urlopen(req)
+        req = urllib.request.Request(url=url, data=data)
+        fp = urllib.request.urlopen(req)
         try:
             headers = fp.info()
             if filename:
@@ -1979,7 +1982,7 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
             fp.close()
         del fp
         del tfp
-    except urllib2.URLError, e:
+    except Exception: #FIXME  was urllib.error.URLError as e:
         try:
             if hasattr(e, 'reason'):
                 e.reason = url + ": " + e.reason
@@ -1992,7 +1995,7 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
         raise e
 
     if size >= 0 and read < size:
-        raise urllib.ContentTooShortError("%s: retrieval incomplete: "
+        raise urllib.error.ContentTooShortError("%s: retrieval incomplete: "
                                           "got only %i out of %i bytes" %
                                           (url, read, size), result)
 

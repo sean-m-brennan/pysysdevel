@@ -95,7 +95,7 @@ try:
                 __import__(self.implementation)
                 impl = sys.modules[self.implementation]
                 impl.wxSetup(self, xpm_icon)
-            except Exception, e:
+            except Exception as e:
                 sys.stderr.write('Application ' + self.implementation +
                                  ' not enabled/available\n' + str(e) + '\n')
                 sys.exit(1)
@@ -133,7 +133,7 @@ try:
 
         def onAbout(self, event):
             wx.MessageBox(self.app.name + ' version ' + self.app.version +
-                          '\n' + u'Copyright © ' + self.app.copyright,
+                          '\n' + 'Copyright © ' + self.app.copyright,
                           'About ' + self.app.short_name)
 
 
@@ -197,5 +197,5 @@ try:
     ## end WX_GUI
     ##############################
 
-except Exception, e:
-    print e
+except Exception as e:
+    print(e)

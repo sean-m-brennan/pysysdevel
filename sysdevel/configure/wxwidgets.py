@@ -32,9 +32,9 @@ class configuration(lib_config):
                 pass
             try:
                 wx_config = find_program('wx-config', locations)
-            except Exception, e:
+            except Exception as e:
                 if self.debug:
-                    print e
+                    print(e)
                 return self.found
         try:
             cppflags_cmd = [wx_config, '--cppflags']
@@ -45,9 +45,9 @@ class configuration(lib_config):
             process = subprocess.Popen(ldflags_cmd, stdout=subprocess.PIPE)
             ldflags = process.communicate()[0].split()
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['WX_CPP_FLAGS'] = cflags

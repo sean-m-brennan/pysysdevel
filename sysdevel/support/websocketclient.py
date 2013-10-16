@@ -98,7 +98,7 @@ class WebSocketClient(object):
     def send(self, message):
         try:
             self._ws.send(message)
-        except Exception,e:
+        except Exception as e:
             log.debug(str(e))
 
 
@@ -141,5 +141,5 @@ class WebSocketClient(object):
     def onMessage(self, evt):
         try:
             self.handler.receive(evt.data)
-        except Exception,e:
+        except Exception as e:
             log.debug(str(e))

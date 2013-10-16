@@ -45,9 +45,9 @@ class configuration(lib_config):
                                                       limit=limit)
             hdf5_inc_dir = find_header(self.hdr, base_dirs, limit=limit)
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         hdf5_lib_list = ['hdf5', 'hdf5_fortran', 'hdf5_cpp',

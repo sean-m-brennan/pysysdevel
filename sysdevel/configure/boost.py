@@ -67,9 +67,9 @@ class configuration(lib_config):
             if compare_versions(boost_version, required_version) == -1:
                 return self.found
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['BOOST_INCLUDE_DIR'] = incl_dir

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -34,6 +36,7 @@ import glob
 import shutil
 import platform
 import subprocess
+
 from distutils import dir_util
 
 try:
@@ -41,7 +44,7 @@ try:
 except:
     from distutils.command.build_ext import build_ext
 
-import util
+from . import util
 
 
 def create_breathe_stylesheet(dirname):
@@ -90,7 +93,7 @@ class build_doc(build_ext):
 
         for dext in self.distribution.doc_modules:
             if self.distribution.verbose:
-                print 'building documentation "' + dext.name + '" sources'
+                print('building documentation "' + dext.name + '" sources')
 
             doc_dir = os.path.abspath(dext.source_directory)
             extra_dirs = dext.extra_directories
@@ -233,9 +236,10 @@ class build_doc(build_ext):
                                         os.path.join(target, '.doctrees'),
                                         'html', None, status)
                     sphinx_app.build(True)
-                except Exception, e:
+                except Exception:
                     if build_verbose:
-                        print 'ERROR: ' + str(e)
+                        e = sys.exc_info()[1]
+                        print('ERROR: ' + str(e))
                     else:
                         pass
                 if not build_verbose:

@@ -23,9 +23,9 @@ class configuration(py_config):
             if compare_versions(ver, version) == -1:
                 return self.found
             self.found = True
-        except Exception, e:
+        except Exception as e:
             if self.debug:
-                print e
+                print(e)
             return self.found
 
         self.environment['MATPLOTLIB_DATA_FILES'] = \
@@ -65,5 +65,5 @@ class configuration(py_config):
                     root = root.replace(tail, 'mpl-data')
                     root = root[root.index('mpl-data'):]
                     d[root] = files
-                self.environment['MATPLOTLIB_DATA_FILES'] = d.items()
+                self.environment['MATPLOTLIB_DATA_FILES'] = list(d.items())
 

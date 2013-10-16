@@ -56,7 +56,7 @@ def use_setuptools():
             pass
 
 def setuptools_in_use():
-    for k in sys.modules.keys():
+    for k in list(sys.modules.keys()):
         if k.startswith('setuptools'):
             return True
     return False
@@ -69,11 +69,11 @@ def setup_setuptools():
             import setuptools
             reload(setuptools.dist)  ## in case it was already loaded
             using_setuptools = True
-            print "Using setuptools."
+            print("Using setuptools.")
         except:
             using_setuptools = False
-            print "Setuptools is not available."
+            print("Setuptools is not available.")
 
 
-from configure import configure_system, FatalError
+from .configure import configure_system, FatalError
 

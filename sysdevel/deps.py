@@ -68,7 +68,7 @@ class deps(Command):
                     raise Exception('Dependency check failed for ' + pkg_name)
                 p_list = out[out.find(token)+len(token):]
                 if self.show_subpackages:
-                    print pkg_name.upper() + ':  ' + str(p_list)
+                    print(pkg_name.upper() + ':  ' + str(p_list))
                 prereqs += p_list.split(',')
             while 'None' in prereqs:
                 prereqs.remove('None')
@@ -78,4 +78,4 @@ class deps(Command):
         if len(prereqs) == 0:
             prereqs = ['None']
         prereqs = list(set(prereqs))
-        print token + ','.join(prereqs)
+        print(token + ','.join(prereqs))

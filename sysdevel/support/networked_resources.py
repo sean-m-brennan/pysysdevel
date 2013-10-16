@@ -92,7 +92,7 @@ class SshStorage(Storage):
 
 
 class NfsStorage(Storage):
-     def __init__(self, host, remote_path, local_path=None):
+    def __init__(self, host, remote_path, local_path=None):
         Storage.__init__(self)
         self.host = host
         self.path = remote_path
@@ -135,7 +135,7 @@ class NfsStorage(Storage):
 
 
 class SmbStorage(Storage):
-     def __init__(self, host, share, remote_user=None, local_path=None):
+    def __init__(self, host, share, remote_user=None, local_path=None):
         Storage.__init__(self)
         self.host = host
         self.path = share
@@ -189,8 +189,8 @@ class SmbStorage(Storage):
 
 
 class CifsStorage(Storage):
-     def __init__(self, host, share, remote_user=None, domain=None,
-                  local_path=None):
+    def __init__(self, host, share, remote_user=None, domain=None,
+                 local_path=None):
         Storage.__init__(self)
         self.host = host
         self.path = remote_path
@@ -275,4 +275,5 @@ class Computation(object):
 #pvm?
 
 #bsp
+
 

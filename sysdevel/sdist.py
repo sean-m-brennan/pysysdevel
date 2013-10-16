@@ -36,7 +36,7 @@ import sys
 
 try:
     from numpy.distutils.command.sdist import sdist as old_sdist
-except ImportError, e:
+except ImportError:
     from distutils.command.sdist import sdist as old_sdist
 
 
