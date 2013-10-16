@@ -45,9 +45,15 @@ try:
     have_numpy = True
 
 except ImportError, e:
-    print 'NumPy not found. Failover to distutils alone.'
-    from distutils.dist import Distribution as oldDistribution
-    from distutils.command import config, build_ext, install_headers, bdist_rpm
+    try:
+        print 'NumPy not found. Failover to Distutils2 alone.'
+        from distutils2.dist import Distribution as oldDistribution
+        from distutils2.command import config, build_ext, install_headers, bdist_rpm
+
+    except ImportError, e:
+        print 'Distutils2 not found. Failover to old distutils.'
+        from distutils.dist import Distribution as oldDistribution
+        from distutils.command import config, build_ext, install_headers, bdist_rpm
 
 
 import util
@@ -410,7 +416,7 @@ def setup(**attr):
     new_attr['distclass'] = CustomDistribution
 
     if not sysdevel.using_setuptools and sysdevel.setuptools_in_use():
-        raise Exception("Spurious import of setuptools")
+        raise Exception("Spurious import of setuptools. Failure in build.")
 
     return old_setup(**new_attr)
 

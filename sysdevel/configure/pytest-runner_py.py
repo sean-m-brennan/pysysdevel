@@ -9,3 +9,15 @@ class configuration(py_config):
     def __init__(self):
         py_config.__init__(self, 'pytest-runner', '2.0',
                            dependencies=['hgtools',], debug=False)
+        #FIXME setuptools dependency
+
+
+    def is_installed(self, environ, version=None):
+        try:
+            import ptr
+            self.found = True
+        except Exception, e:
+            if self.debug:
+                print 'Exception: ' + str(e)
+                print traceback.print_exc()
+        return self.found
