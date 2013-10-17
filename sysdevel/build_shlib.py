@@ -192,7 +192,7 @@ class build_shlib(build_clib):
                 '''
 
         macros = build_info.get('macros')
-        include_dirs = build_info.get('include_dirs')
+        include_dirs = convert_ulist(build_info.get('include_dirs'))
         if include_dirs is None:
             include_dirs = []
         extra_postargs = build_info.get('extra_compiler_args') or []

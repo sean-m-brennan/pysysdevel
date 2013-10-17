@@ -450,8 +450,8 @@ def _check_append_library(libraries, item):
                     return
     libraries.append(item)
 
-def _check_append_ext_library(libraries, xxx_todo_changeme):
-    (lib_name,build_info) = xxx_todo_changeme
+def _check_append_ext_library(libraries, lib_info_tuple):
+    (lib_name, build_info) = lib_info_tuple
     for item in libraries:
         if util.is_sequence(item):
             if item[0]==lib_name:

@@ -121,9 +121,9 @@ class build_exe(build_clib):
 
         exes = []
         for exe in self.executables:
-            libraries = exe.libraries or []
-            library_dirs = exe.library_dirs or []
-            runtime_library_dirs = exe.runtime_library_dirs or []
+            libraries = convert_ulist(exe.libraries or [])
+            library_dirs = convert_ulist(exe.library_dirs or [])
+            runtime_library_dirs = convert_ulist(exe.runtime_library_dirs or [])
             extra_preargs = exe.extra_compile_args or []
             extra_postargs = exe.extra_link_args or []
 
