@@ -1965,8 +1965,8 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
 
             try:
                 result = filename, headers
-                bs = 1024*8
                 size = -1
+                bs = 1024*8
                 read = 0
                 blocknum = 0
                 if "content-length" in headers:
@@ -1991,7 +1991,8 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
         del tfp
     except URLError:
         e = sys.exc_info()[1]
-        sys.stderr.write("HTTP Error connecting to " + url + ": " + str(e))
+        sys.stderr.write("HTTP Error connecting to " + url + ":\n")
+        raise e
 
     if size >= 0 and read < size:
         raise ContentTooShortError("%s: retrieval incomplete: "

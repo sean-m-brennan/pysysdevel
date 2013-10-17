@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
