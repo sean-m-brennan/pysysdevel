@@ -57,7 +57,7 @@ class test(Command):
             for pkg, tests in self.tests:
                 pkgtests = []
                 for unit in tests:
-                    if isinstance(unit, str):
+                    if util.is_string(unit):
                         pkgtests.append(unit)
                 if len(pkgtests) > 0:
                     pytests.append((pkg, pkgtests))
@@ -121,7 +121,7 @@ class test(Command):
             for pkg, tests in self.tests:
                 pkgtests = []
                 for unit in tests:
-                    if isinstance(unit, str) and unit.endswith('.html'):
+                    if util.is_string(unit) and unit.endswith('.html'):
                         pkgtests.append(unit)
                 if len(pkgtests) > 0:
                     jstests.append((pkg, pkgtests))

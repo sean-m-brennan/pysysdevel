@@ -124,9 +124,23 @@ def delete_cache():
         os.remove(cache)
 
 
+def u(x):
+    if sys.version < '3':
+        import codecs
+        return codecs.unicode_escape_decode(x)[0]
+    else:
+        return x
+
+def is_string(item):
+    try:
+        return isinstance(item, basestring)
+    except NameError:
+        return isinstance(item, str)
+
+
 def in_prerequisites(item, prereqs):
     for p in prereqs:
-         if not isinstance(p, str):
+         if not is_string(p):
             if item == p[0]:
                 return True
          elif item == p:
@@ -163,9 +177,6 @@ def _get_f90_modules(source):
             # break  # XXX can we assume that there is one module per file?
     f.close()
     return modules
-
-def is_string(item):
-    return isinstance(item, str)
 
 def all_strings(lst):
     """Return True if all items in lst are string objects. """
@@ -278,7 +289,7 @@ def convert_ulist(str_list):
         return None
     converted = []
     for s in str_list:
-        if isinstance(s, str):
+        if is_string(s):
             converted.append(''.join(chr(ord(c)) for c in s.decode('ascii')))
         else:
             converted.append(s)
@@ -299,7 +310,7 @@ def uniquify(seq, id_fctn=None):
 def flatten(seq):
     result = []
     for elt in seq:
-        if hasattr(elt, '__iter__') and not isinstance(elt, str):
+        if hasattr(elt, '__iter__') and not is_string(elt):
             result.extend(flatten(elt))
         else:
             result.append(elt)
@@ -1094,12 +1105,12 @@ def compare_versions(actual, requested):
         actual = str(actual)
     if isinstance(requested, float):
         requested = str(requested)
-    if isinstance(actual, str):
+    if is_string(actual):
         actual = actual.replace('_', '.')
         ver1 = tuple(actual.split('.'))
     else:
         ver1 = actual
-    if isinstance(requested, str):
+    if is_string(requested):
         requested = requested.replace('_', '.')
         ver2 = tuple(requested.split('.'))
     else:
@@ -1439,7 +1450,7 @@ def check_call(cmd_line, *args, **kwargs):
 def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None,
                      addtnl_env=dict()):
     if 'windows' in platform.system().lower():
-        if not isinstance(cmd_line, str):
+        if not is_string(cmd_line):
             cmd_line = ' '.join(cmd_line)
         if not as_admin():
             from win32com.shell.shell import ShellExecuteEx
@@ -1455,7 +1466,7 @@ def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None,
     else:
         os_environ = os.environ.copy()
         os_environ = dict(list(os_environ.items()) + list(addtnl_env.items()))
-        if isinstance(cmd_line, str):
+        if is_string(cmd_line):
             cmd_line = cmd_line.split()
         sudo_prefix = []
         if not as_admin():
@@ -1477,7 +1488,7 @@ def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None,
     os_environ['PATH'] = path.encode('ascii', 'ignore') #+ old_path #FIXME?
     os_environ = dict(list(os_environ.items()) + list(addtnl_env.items()))
     shell = os.path.join(environ['MSYS_DIR'], 'bin', 'bash.exe')
-    if not isinstance(cmd_line, str):
+    if not is_string(cmd_line):
         cmd_line = ' '.join(cmd_line)
     p = subprocess.Popen(shell + ' -c "' + cmd_line + '"',
                          env=os_environ, stdout=stdout, stderr=stderr)

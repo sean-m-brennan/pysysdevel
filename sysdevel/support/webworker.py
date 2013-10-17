@@ -50,7 +50,11 @@ class WebWorker(object):
           Function given must be gloabl and implement onMessage as above.
         """
         self.module = self.function = None
-        if isinstance(module_or_function, str):
+        try:
+            is_mod = isinstance(module_or_function, basestring):
+        except NameError:
+            is_mod = isinstance(module_or_function, str):
+        if is_mod:
             self.module = module_or_function
         else:
             self.function = module_or_function

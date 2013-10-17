@@ -43,7 +43,7 @@ except:
     from distutils.command.build_clib import build_clib
     from distutils import log
 
-from .util import convert_ulist, filter_sources, is_sequence
+from .util import convert_ulist, filter_sources, is_sequence, is_string
 
 
 class build_shlib(build_clib):
@@ -291,7 +291,7 @@ class build_shlib(build_clib):
         ## May be dependent on other libs we're builing
         shlib_libraries = []
         for libinfo in build_info.get('libraries',[]):
-            if isinstance(libinfo, str):
+            if is_string(libinfo):
                 shlib_libraries.append(convert_ulist([libinfo])[0])
             else:
                 shlib_libraries.append(libinfo[0])

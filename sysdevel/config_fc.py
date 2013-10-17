@@ -33,6 +33,8 @@ try:
     from numpy.distutils import log
     from numpy.distutils.command.config_compiler import config_fc as old_cfg_fc
 
+    from .util import is_string
+
     class config_fc(old_cfg_fc):
         def initialize_options(self):
             old_cfg_fc.initialize_options(self)
@@ -73,7 +75,7 @@ try:
                 for c in cmd_list:
                     v = getattr(c,a)
                     if v is not None:
-                        if not isinstance(v, str): v = v.compiler_type
+                        if not is_string(v): v = v.compiler_type
                         if v not in l: l.append(v)
                 if not l: v1 = None
                 else: v1 = l[0]

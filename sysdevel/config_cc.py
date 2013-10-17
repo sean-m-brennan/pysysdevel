@@ -35,6 +35,8 @@ try:
 except:
     from distutils.command.config_compiler import config_cc as old_config_cc
 
+from .util import is_string
+
 
 class config_cc(old_config_cc):
     def finalize_options(self):
@@ -58,7 +60,7 @@ class config_cc(old_config_cc):
             for c in cmd_list:
                 v = getattr(c,a)
                 if v is not None:
-                    if not isinstance(v, str): v = v.compiler_type
+                    if not is_string(v): v = v.compiler_type
                     if v not in l: l.append(v)
             if not l: v1 = None
             else: v1 = l[0]

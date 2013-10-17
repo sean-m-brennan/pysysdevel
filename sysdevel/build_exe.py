@@ -44,7 +44,7 @@ except:
     from distutils import log
 
 from .util import convert_ulist, has_f_sources, has_cxx_sources, \
-    filter_sources, is_sequence, all_strings
+    filter_sources, is_sequence, is_string, all_strings
 
 
 class build_exe(build_clib):
@@ -304,7 +304,7 @@ class build_exe(build_clib):
             ## May be dependent on other libs we're builing
             shlib_libraries = []
             for libinfo in exe.libraries:
-                if isinstance(libinfo, str):
+                if is_string(libinfo):
                     shlib_libraries.append(convert_ulist([libinfo])[0])
                 else:
                     shlib_libraries.append(libinfo[0])

@@ -139,7 +139,11 @@ class ServiceBatch(websockethandler.WebHandlerService):
         self.socket_dispatch = dispatcher
         self.parameters = dict()
         try:
-            if isinstance(param_dict, basestring):
+            is_json = isinstance(param_dict, basestring)
+        except NameError:
+            is_json = isinstance(param_dict, str)
+        try:
+            if is_json:
                 param_dict = json.loads(param_dict)
             if query.validate_parameters(param_dict):
                 self.parameters = param_dict

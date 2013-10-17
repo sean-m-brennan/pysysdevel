@@ -117,7 +117,7 @@ def configure_system(prerequisite_list, version,
 
 def __configure_package(environment, help_name, skip, install, quiet):
     req_version = None
-    if not isinstance(help_name, str):
+    if not util.is_string(help_name):
         req_version = help_name[1]
         help_name = help_name[0]
     base = help_name
@@ -148,7 +148,7 @@ def __run_helper__(environment, short_name, long_name, version,
     cfg = helper.configuration()
     for dep in cfg.dependencies:
         dep_name = dep
-        if not isinstance(dep, str):
+        if not util.is_string(dep):
             dep_name = dep[0]
         if dep_name in configured:
             continue
