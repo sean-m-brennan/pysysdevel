@@ -1921,10 +1921,17 @@ def post_setup(pkg_config, options):
 def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
     '''
     Identical to urllib.urlretrieve, except that it handles
-    SSL, proxies ands redirects properly.
+    SSL, proxies, and redirects properly.
     '''
-    import urllib.request, urllib.parse, urllib.error
-    import urllib.request, urllib.error, urllib.parse
+    try:
+        from urllib.request import ProxyHandler, build_opener, install_opener
+        from urllib.request import Request, urlopen
+        from urllib.error import URLError, ContentTooShortError
+    except ImportError:
+        from urllib2 import ProxyHandler, build_opener, install_opener
+        from urllib2 import Request, urlopen, URLError
+        from urllib import ContentTooShortError
+
     import tempfile
     import traceback
 
@@ -1941,13 +1948,13 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
                                 "argument, or provide a 'http_proxy' " +
                                 'environment variable.')
 
-    proxies = urllib.request.ProxyHandler({'http': proxy_url, 'https': proxy_url})
-    opener = urllib.request.build_opener(proxies)
-    urllib.request.install_opener(opener)
+    proxies = ProxyHandler({'http': proxy_url, 'https': proxy_url})
+    opener = build_opener(proxies)
+    install_opener(opener)
 
     try:
-        req = urllib.request.Request(url=url, data=data)
-        fp = urllib.request.urlopen(req)
+        req = Request(url=url, data=data)
+        fp = urlopen(req)
         try:
             headers = fp.info()
             if filename:
@@ -1982,22 +1989,14 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
             fp.close()
         del fp
         del tfp
-    except Exception: #FIXME  was urllib.error.URLError as e:
-        try:
-            if hasattr(e, 'reason'):
-                e.reason = url + ": " + e.reason
-            elif hasattr(e, 'msg'):
-                e.msg = url + ": " + e.msg
-            else:
-                sys.stderr.write("HTTP Error connecting to " + url + ":\n")
-        except:
-            sys.stderr.write("HTTP Error connecting to " + url + ":\n")
-        raise e
+    except URLError:
+        e = sys.exc_info()[1]
+        sys.stderr.write("HTTP Error connecting to " + url + ": " + str(e))
 
     if size >= 0 and read < size:
-        raise urllib.error.ContentTooShortError("%s: retrieval incomplete: "
-                                          "got only %i out of %i bytes" %
-                                          (url, read, size), result)
+        raise ContentTooShortError("%s: retrieval incomplete: "
+                                   "got only %i out of %i bytes" %
+                                   (url, read, size), result)
 
     return result
 
