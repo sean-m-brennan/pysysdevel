@@ -17,7 +17,7 @@ class configuration(file_config):
 
     def install(self, environ, version, locally=True):
         if version is None:
-            version = '1.5.1'
+            version = '1.5.3'
         website = 'https://raw.github.com/sporritt/jsPlumb/master/dist/js/'
         js_file = 'jquery.jsPlumb-' + version + '-min.js'
         js_dir = os.path.join(target_build_dir, javascript_dir)
