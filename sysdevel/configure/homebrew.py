@@ -28,8 +28,9 @@ class configuration(config):
         if self.found:
             self.brews_found = os.path.exists(python_executable()) and \
                 os.path.exists(pip_executable())
+            exe = os.path.realpath(sys.executable)
             if self.brews_found and \
-                    not sys.executable in python_sys_executables():
+                    not exe in python_sys_executables():
                 switch_python()
         return self.found and self.brews_found
 
@@ -76,7 +77,11 @@ def python_sys_executables():
     return glob.glob(
         os.path.join(homebrew_prefix(), 'Cellar', 'python', '*',
                      'Frameworks', 'Python.framework', 'Versions', '*',
-                     'Resources', 'Python.app', 'Contents', 'MacOS', 'Python'))
+                     'bin', 'python*')) + \
+        glob.glob(os.path.join(homebrew_prefix(), 'Cellar', 'python', '*',
+                               'Frameworks', 'Python.framework', 'Versions',
+                               '*', 'Resources', 'Python.app', 'Contents',
+                               'MacOS', 'Python'))
 
 
 def switch_python():
