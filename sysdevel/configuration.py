@@ -156,7 +156,6 @@ class py_config(config):
 
 
     def install(self, environ, version, locally=True):
-        import urllib.request, urllib.error, urllib.parse
         if not self.found:
             website = 'https://pypi.python.org/packages/source/' + \
                 self.pkg[0] + '/' + self.pkg + '/'
