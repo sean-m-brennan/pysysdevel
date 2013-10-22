@@ -12,7 +12,7 @@ class configuration(py_config):
     def __init__(self):
         py_config.__init__(self, 'bulbs', '0.3.14', debug=False,
                            dependencies=['omnijson', 'pyyaml', 'dateutil',
-                                         'argparse', ('httplib2', '0.7.2')])
+                                         'argparse', 'httplib2'])
 
 
     def install(self, environ, version, locally=True):
