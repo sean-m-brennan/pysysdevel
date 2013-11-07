@@ -1,0 +1,30 @@
+
+from ..prerequisites import *
+from ..configuration import lib_config
+
+class configuration(lib_config):
+    """
+    Find/install GLFW
+    """
+    def __init__(self):
+        lib_config.__init__(self, "glfw", "glfw3.h", debug=False)
+
+
+    def install(self, environ, version, locally=True):
+        if not self.found:
+            if version is None:
+                version = '3.0.1'
+            website = ('http://downloads.sourceforge.net/project/glfw/',
+                       'glfw/' + str(version) + '/')
+            if locally or 'windows' in platform.system().lower():
+                src_dir = 'glfw-' + str(version)
+                archive = src_dir + '.zip'
+                #FIXME this is a CMake build
+                autotools_install(environ, website, archive, src_dir, locally)
+            else:
+                global_install('GLFW', website,
+                               brew='glfw', port='glfw-devel',
+                               deb='libglfw-dev', rpm='glfw-devel')
+                #FIXME no such on CentOS/RHEL
+            if not self.is_installed(environ, version):
+                raise Exception('GLFW installation failed.')
