@@ -29,15 +29,17 @@ class configuration(py_config):
                                                          [pyjs_bin])
             sys.path.insert(0, pyjs_lib)
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
             try:
                 import pyjs
                 self.environment['PYJSBUILD'] = find_program('pyjsbuild')
                 self.found = True
-            except Exception as e:
+            except Exception:
                 if self.debug:
+                    e = sys.exc_info()[1]
                     print(e)
         return self.found
 
@@ -69,7 +71,7 @@ class configuration(py_config):
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
                 status = process_progress(p)
-            except KeyboardInterrupt as e:
+            except KeyboardInterrupt:
                 p.terminate()
                 log.close()
                 raise e
@@ -86,7 +88,7 @@ class configuration(py_config):
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
                 status = process_progress(p)
                 log.close()
-            except KeyboardInterrupt as e:
+            except KeyboardInterrupt:
                 p.terminate()
                 log.close()
                 raise e

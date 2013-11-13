@@ -32,8 +32,9 @@ class configuration(lib_config):
                 pass
             try:
                 wx_config = find_program('wx-config', locations)
-            except Exception as e:
+            except Exception:
                 if self.debug:
+                    e = sys.exc_info()[1]
                     print(e)
                 return self.found
         try:
@@ -45,8 +46,9 @@ class configuration(lib_config):
             process = subprocess.Popen(ldflags_cmd, stdout=subprocess.PIPE)
             ldflags = process.communicate()[0].split()
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
             return self.found
 

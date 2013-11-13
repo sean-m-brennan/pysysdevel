@@ -15,8 +15,9 @@ class configuration(py_config):
         try:
             import pyplusplus
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
         return self.found
 

@@ -34,8 +34,9 @@ class configuration(prog_config):
             self.environment['GCCXML'] = find_program('gccxml', base_dirs,
                                                       limit=limit)
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
         return self.found
 

@@ -69,7 +69,7 @@ if 'windows' in platform.system().lower():
                 self.ReportServiceStatus(win32service.SERVICE_RUNNING)
                 self.run()
                 #win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
-            except Exception as x:
+            except Exception:
                 self.SvcStop()
 
 
@@ -90,20 +90,23 @@ if 'windows' in platform.system().lower():
                     print('Install ok')
                     win32serviceutil.StartService(self._svc_name_)
                     print('Start ok')
-                except Exception as x:
-                    print(str(x))
+                except Exception:
+                    e = sys.exc_info()[1]
+                    print(str(e))
 
 
         def force_stop(self):
             try:
                 win32serviceutil.StopService(self._svc_name_)
                 print('Start ok')
-            except Exception as x:
-                print(str(x))
+            except Exception:
+                e = sys.exc_info()[1]
+                print(str(e))
             try:
                 win32serviceutil.RemoveService(self._svc_name_)
-            except Exception as x:
-                print(str(x))
+            except Exception:
+                e = sys.exc_info()[1]
+                print(str(e))
 
 
         def sleep(self, sec):
@@ -165,7 +168,8 @@ else:  ## UNIX assumed
                 if pid > 0:
                     # exit first parent
                     sys.exit(0) 
-            except OSError as e: 
+            except OSError:
+                e = sys.exc_info()[1]
                 sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
                 sys.exit(1)
 	
@@ -180,7 +184,8 @@ else:  ## UNIX assumed
                 if pid > 0:
                     # exit from second parent
                     sys.exit(0) 
-            except OSError as e: 
+            except OSError:
+                e = sys.exc_info()[1]
                 sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
                 sys.exit(1) 
 	
@@ -249,8 +254,9 @@ else:  ## UNIX assumed
                     while True:
                         os.kill(pid, signal.SIGKILL)
                         time.sleep(0.1)
-                except OSError as err:
-                    err = str(err)
+                except OSError:
+                    e = sys.exc_info()[1]
+                    err = str(e)
                     if err.find("No such process") < 0:
                         sys.stderr.write(err)
                         sys.exit(1)

@@ -78,7 +78,8 @@ try:
                 __import__(self.implementation)
                 impl = sys.modules[self.implementation]
                 impl.gtkSetup(self, xpm_icon)
-            except Exception as e:
+            except Exception:
+                e = sys.exc_info()[1]
                 sys.stderr.write('Application ' + self.implementation +
                                  ' not enabled/available\n' + str(e) + '\n')
                 sys.exit(1)
@@ -113,5 +114,6 @@ try:
     ## end GTK_GUI
     ##############################
 
-except Exception as e:
+except Exception:
+    e = sys.exc_info()[1]
     print(e)

@@ -28,8 +28,9 @@ class configuration(prog_config):
             import ctypesgencore
             lib = os.path.dirname(os.path.dirname(ctypesgencore.__file__))
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
             return self.found
 

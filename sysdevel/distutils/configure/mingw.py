@@ -43,8 +43,9 @@ class configuration(config):
                     gcc = find_program('mingw32-gcc', locations)
                     mingw_root = os.path.abspath(os.path.join(
                             os.path.dirname(gcc), '..'))
-                except Exception as e:
+                except Exception:
                     if self.debug:
+                        e = sys.exc_info()[1]
                         print(e)
                     return self.found
 
@@ -55,8 +56,9 @@ class configuration(config):
             gxx = find_program('mingw32-g++', [mingw_root], limit=limit)
             gfort = find_program('mingw32-gfortran', [mingw_root], limit=limit)
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
             return self.found
 

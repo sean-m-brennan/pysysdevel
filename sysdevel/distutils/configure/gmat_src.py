@@ -55,8 +55,9 @@ class configuration(config):
         else:
             try:
                 gmat_root = os.environ['GMAT_ROOT']
-            except Exception as e:
+            except Exception:
                 if self.debug:
+                    e = sys.exc_info()[1]
                     print(e)
                 return self.found
 

@@ -50,8 +50,9 @@ class configuration(config):
             nmake = find_program('nmake', msvc_dirs, limit=limit)
             msvc = find_program('cl', msvc_dirs, limit=limit)
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
             return self.found
 

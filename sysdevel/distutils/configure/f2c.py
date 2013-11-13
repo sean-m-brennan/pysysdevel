@@ -20,8 +20,9 @@ class configuration(config):
             incl_dir = find_header('f2c.h')
             ## f2c lib is built into libgfortran
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
             return self.found
         self.environment['F2C_INCLUDE_DIR'] = incl_dir

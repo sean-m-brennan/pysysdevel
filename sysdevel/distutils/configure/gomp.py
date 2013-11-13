@@ -23,8 +23,9 @@ class configuration(lib_config):
             self.environment['GOMP_LIBRARY_DIR'] = gomp_lib_dir
             self.environment['GOMP_LIBRARY'] = gomp_lib
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
         return self.found
 

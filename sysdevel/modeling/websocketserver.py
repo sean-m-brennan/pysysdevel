@@ -158,7 +158,8 @@ class WebSocketServer(threading.Thread,
             family, socktype, proto, canonname, sockaddr = addrinfo
             try:
                 socket_ = socket.socket(family, socktype)
-            except Exception as e:
+            except Exception:
+                e = sys.exc_info()[1]
                 self._logger.debug('WS Skip by failure: %r', e)
                 continue
             if self.using_tls:
@@ -185,7 +186,8 @@ class WebSocketServer(threading.Thread,
                 socket_.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 socket_.bind(self.server_address)
-            except Exception as e:
+            except Exception:
+                e = sys.exc_info()[1]
                 self._logger.debug('WS Skip by failure: %r', e)
                 socket_.close()
                 failed_sockets.append(socketinfo)
@@ -202,7 +204,8 @@ class WebSocketServer(threading.Thread,
             self._logger.debug('WS Listen on: %r', addrinfo)
             try:
                 socket_.listen(self.request_queue_size)
-            except Exception as e:
+            except Exception:
+                e = sys.exc_info()[1]
                 self._logger.debug('WS Skip by failure: %r', e)
                 socket_.close()
                 failed_sockets.append(socketinfo)
@@ -304,7 +307,8 @@ class WebsocketDispatch(dispatch.Dispatcher):
             try:
                 msg = request.ws_stream.receive_message()
                 service.handle_message(msg)
-            except Exception as e:
+            except Exception:
+                e = sys.exc_info()[1]
                 self.log.debug('WS receive: ' + str(e))
                 break
         try:
@@ -318,7 +322,8 @@ class WebsocketDispatch(dispatch.Dispatcher):
             for s in self.clients:
                 try:
                     s.send_message(data, binary=False)
-                except Exception as e:
+                except Exception:
+                    e = sys.exc_info()[1]
                     self.log.debug('WS send: ' + str(e))
                     try:
                         self.clients.remove(s)
@@ -408,22 +413,25 @@ class WebSocketRequestHandler(httpserver.SimpleHTTPRequestHandler):
                     self.server.wsdispatcher,
                     allowDraft75=self.server.draft75,
                     strict=self.server.strict_draft75)
-            except handshake.VersionException as e:
+            except handshake.VersionException:
+                e = sys.exc_info()[1]
                 self._logger.info('WS handshake version error: %s', e)
                 self.send_response(common.HTTP_STATUS_BAD_REQUEST)
                 self.send_header(common.SEC_WEBSOCKET_VERSION_HEADER,
                                  e.supported_versions)
                 self.end_headers()
                 return False
-            except handshake.HandshakeException as e:
+            except handshake.HandshakeException:
                 # Handshake for ws(s) failed.
+                e = sys.exc_info()[1]
                 self._logger.info('WS handshake error: %s', e)
                 self.send_error(e.status)
                 return False
 
             request._dispatcher = self.server.wsdispatcher
             self.server.wsdispatcher.receive_data(request, resource)
-        except handshake.AbortedByUserException as e:
+        except handshake.AbortedByUserException:
+            e = sys.exc_info()[1]
             self._logger.info('WS handshake aborted: %s', e)
         return False
 

@@ -118,8 +118,9 @@ def chooseBackend(preference=None, debug=False):
                 BACKEND <<= 1
             else:
                 break
-        except Exception, e:
+        except Exception:
             if debug:
+                e = sys.exc_info()[1]
                 sys.stderr.write(BackendNames[BACKEND][:-3] +
                                  ': ' + str(e) + '\n')
             tried |= BACKEND

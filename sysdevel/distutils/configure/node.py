@@ -26,8 +26,9 @@ class configuration(prog_config):
             try:
                 program = find_program('npm', locations, limit=True)
                 self.environment['NPM'] = program
-            except Exception as e:
+            except Exception:
                 if self.debug:
+                    e = sys.exc_info()[1]
                     print('Exception: ' + str(e))
                     print(traceback.print_exc())
                 return False

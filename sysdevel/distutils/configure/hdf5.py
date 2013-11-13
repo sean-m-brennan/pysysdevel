@@ -45,8 +45,9 @@ class configuration(lib_config):
                                                       limit=limit)
             hdf5_inc_dir = find_header(self.hdr, base_dirs, limit=limit)
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
             return self.found
 

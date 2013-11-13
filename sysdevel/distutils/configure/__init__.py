@@ -106,13 +106,14 @@ def configure_system(prerequisite_list, version,
             environment = __configure_package(environment, help_name,
                                               skip, install, quiet)
         prerequisites.save_cache(environment)
-    except Exception as e:
+    except Exception:
+        #e = sys.exc_info()[1]
         log = open('config.err', 'w')
         #TODO logging module is probably the way to go instead
         log.write('Configuration error:\n' + traceback.format_exc())
         log.close()
-        sys.stdout.write('Configuration error. Prerequisites might be present, so building anyway...\n')
-        #FIXME advise on running 'setup.py dependencies' and installing by hand
+        sys.stderr.write('Configuration error. Prerequisites might be present, so building anyway...\n')
+        sys.stderr.write("If the build fails, run 'python setup.py dependencies' and install the listed packages by hand.\n")
     return environment
 
 
@@ -122,20 +123,27 @@ def __configure_package(environment, help_name, skip, install, quiet):
         req_version = help_name[1]
         help_name = help_name[0]
     base = help_name
-    full_name = 'sysdevel.configure.' + help_name
+    package = 'sysdevel.distutils.configure.'
+    full_name = package + help_name
+    if help_name == 'hdf5':
+        import sysdevel.distutils.configure.hdf5
     try:
         __import__(full_name)
     except ImportError:
-        full_name = 'sysdevel.configure.' + help_name + '_py'
+        print sys.exc_info()[1]
+        full_name = package + help_name + '_py'
         try:
             __import__(full_name)
         except ImportError:
-            full_name = 'sysdevel.configure.' + help_name + '_js'
+            print sys.exc_info()[1]
+            full_name = package + help_name + '_js'
             try:
                 __import__(full_name)
             except ImportError:
+                exc_class, exc, tb = sys.exc_info()
+                new_exc = ImportError('No configuration for ' + help_name)
                 sys.stderr.write('No setup helper module ' + base + '\n')
-                raise ImportError('No configuration for ' + help_name)
+                raise new_exc.__class__, new_exc, tb
     return __run_helper__(environment, help_name, full_name,
                           req_version, skip, install, quiet)
 

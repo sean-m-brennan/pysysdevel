@@ -57,8 +57,9 @@ class configuration(lib_config):
             incl_dir = find_header(self.hdr, base_dirs, limit=limit)
             lib_dir, lib = find_library(self.lib, base_dirs, limit=limit)
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
             return self.found
 

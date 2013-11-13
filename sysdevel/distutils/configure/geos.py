@@ -48,8 +48,9 @@ class configuration(lib_config):
             if compare_versions(ver, version) == -1:
                 return self.found
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
             return self.found
 

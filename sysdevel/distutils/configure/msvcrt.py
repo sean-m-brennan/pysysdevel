@@ -73,8 +73,9 @@ class configuration(config):
             debug_dir, _ = find_library('msvcr' + ver, msvcr_dbg_dirs,
                                         limit=limit)
             self.found = True
-        except Exception as e:
+        except Exception:
             if self.debug:
+                e = sys.exc_info()[1]
                 print(e)
             return self.found
 
