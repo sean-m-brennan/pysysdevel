@@ -126,7 +126,7 @@ def _ctype2declaration(key, name):
 
 def _generate_header(filename, custom_types):
     hdr = open(filename, 'w')
-    guard = filename.replace('.', '_').upper()
+    guard = os.path.basename(filename).replace('.', '_').upper()
     hdr.write('#ifndef ' + guard + '\n')
     hdr.write('#define ' + guard + '\n\n')
     for t in custom_types:
@@ -213,3 +213,7 @@ def get_header_version(hdr_file, define_val):
                     ') in ' + hdr_file)
 
 
+
+
+if __name__ == '__main__':
+    generate_ctypes_header(sys.argv)
