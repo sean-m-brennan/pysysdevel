@@ -3,7 +3,9 @@ import os
 import platform
 
 from ..prerequisites import *
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
+from .. import options
 
 class configuration(lib_config):
     """
@@ -16,7 +18,7 @@ class configuration(lib_config):
 
 
     def is_installed(self, environ, version=None):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
 
         base_dirs = []
         limit = False
@@ -57,14 +59,13 @@ class configuration(lib_config):
 
 
     def install(self, environ, version, locally=True):
-        global local_search_paths
         if not self.found:
             if 'windows' in platform.system().lower():
                 here = os.path.abspath(os.getcwd())
                 if locally:
-                    prefix = os.path.abspath(target_build_dir)
-                    if not prefix in local_search_paths:
-                        local_search_paths.append(prefix)
+                    prefix = os.path.abspath(options.target_build_dir)
+                    if not prefix in options.local_search_paths:
+                        options.add_local_search_path(prefix)
                 else:
                     prefix = global_prefix
                 ## MinGW shell strips backslashes

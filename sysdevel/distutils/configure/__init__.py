@@ -32,8 +32,11 @@ import sys
 import platform
 import traceback
 
-from .. import prerequisites
-from ... import util
+from ..prerequisites import read_cache, save_cache, in_prerequisites
+from ..prerequisites import system_uses_macports, system_uses_homebrew
+from ..filesystem import mkdir
+from .. import options
+from ...util import is_string
 
 
 class FatalError(SystemExit):
@@ -55,19 +58,21 @@ def simplify_version(version):
 
 
 def configure_system(prerequisite_list, version,
-                     required_python_version='2.4', install=True, quiet=False):
+                     required_python_version='2.4', install=True, quiet=False,
+                     sublevel=0):
     '''
     Given a list of required software and optionally a Python version,
     verify that python is the proper version and that
     other required software is installed.
     Install missing prerequisites that have an installer defined.
     '''
+    options.set_top_level(sublevel)
     environment = dict()
     try:
-        environment = prerequisites.read_cache()
+        environment = read_cache()
         skip = False
         for idx, arg in enumerate(sys.argv[:]): #FIXME?? argv[:]):
-            if arg.startswith('clean') or arg.startswith('dependencies'):
+            if arg.startswith('clean'):
                 skip = True
                 quiet = True
 
@@ -86,64 +91,68 @@ def configure_system(prerequisite_list, version,
 
         prerequisite_list.insert(0, 'httpsproxy_urllib2')
         if 'windows' in platform.system().lower() and \
-           prerequisites.in_prerequisites('mingw', prerequisite_list) and \
-           prerequisites.in_prerequisites('boost', prerequisite_list) and not \
-           prerequisites.in_prerequisites('msvcrt', prerequisite_list):
-            print("WARNING: if you're using the boost-python DLL, " + \
-                "also add 'msvcrt' as a prereuisite.")
+           in_prerequisites('mingw', prerequisite_list) and \
+           in_prerequisites('boost', prerequisite_list) and not \
+           in_prerequisites('msvcrt', prerequisite_list):
+            sys.stderr.write("WARNING: if you're using the boost-python DLL, " +
+                             "also add 'msvcrt' as a prerequisite.\n")
         if 'darwin' in platform.system().lower() and \
-           not prerequisites.in_prerequisites('macports', prerequisite_list) and \
-           not prerequisites.in_prerequisites('homebrew', prerequisite_list):
-            if prerequisites.system_uses_macports():
+           not in_prerequisites('macports', prerequisite_list) and \
+           not in_prerequisites('homebrew', prerequisite_list):
+            if system_uses_macports():
                 prerequisite_list.insert(0, 'macports')
-            elif prerequisites.system_uses_homebrew():
+            elif system_uses_homebrew():
                 prerequisite_list.insert(0, 'homebrew')
             else:
-                print("WARNING: neither MacPorts nor Homebrew detected. " +\
-                    "All required libraries will be built locally.")
+                sys.stderr.write("WARNING: neither MacPorts nor Homebrew " +
+                                 "detected. All required libraries will be " +
+                                 "built locally.\n")
 
         for help_name in prerequisite_list:
             environment = __configure_package(environment, help_name,
                                               skip, install, quiet)
-        prerequisites.save_cache(environment)
+        save_cache(environment)
     except Exception:
-        #e = sys.exc_info()[1]
-        log = open('config.err', 'w')
-        #TODO logging module is probably the way to go instead
-        log.write('Configuration error:\n' + traceback.format_exc())
+        logfile = os.path.join(options.target_build_dir, 'config.err')
+        if not os.path.exists(options.target_build_dir):
+            mkdir(options.target_build_dir)
+        if sublevel == 0:
+            log = open(logfile, 'w')
+        else:
+            log = open(logfile, 'a')
+        log.write('** Configuration error. **\n' + 
+                  "If the build fails, run 'python setup.py dependencies " + 
+                  "--show'\nand install the listed packages by hand.\n" +
+                  traceback.format_exc())
         log.close()
-        sys.stderr.write('Configuration error. Prerequisites might be present, so building anyway...\n')
-        sys.stderr.write("If the build fails, run 'python setup.py dependencies' and install the listed packages by hand.\n")
+        sys.stderr.write('Configuration error; see ' + logfile + ' for details.\n' +
+                         'Prerequisites might be present, so building anyway...\n')
+    sys.path.insert(0, os.path.join(options.target_build_dir,
+                                    options.local_lib_dir))
     return environment
 
 
 def __configure_package(environment, help_name, skip, install, quiet):
     req_version = None
-    if not util.is_string(help_name):
+    if not is_string(help_name):
         req_version = help_name[1]
         help_name = help_name[0]
-    base = help_name
-    package = 'sysdevel.distutils.configure.'
+    base = help_name = help_name.strip()
+    package = __package__ + '.'
     full_name = package + help_name
-    if help_name == 'hdf5':
-        import sysdevel.distutils.configure.hdf5
     try:
-        __import__(full_name)
+        __import__(full_name, globals=globals())
     except ImportError:
-        print sys.exc_info()[1]
         full_name = package + help_name + '_py'
         try:
-            __import__(full_name)
+            __import__(full_name, globals=globals())
         except ImportError:
-            print sys.exc_info()[1]
             full_name = package + help_name + '_js'
             try:
-                __import__(full_name)
+                __import__(full_name, globals=globals())
             except ImportError:
-                exc_class, exc, tb = sys.exc_info()
-                new_exc = ImportError('No configuration for ' + help_name)
                 sys.stderr.write('No setup helper module ' + base + '\n')
-                raise new_exc.__class__, new_exc, tb
+                raise ImportError('No configuration found for ' + help_name)
     return __run_helper__(environment, help_name, full_name,
                           req_version, skip, install, quiet)
 
@@ -157,13 +166,13 @@ def __run_helper__(environment, short_name, long_name, version,
     cfg = helper.configuration()
     for dep in cfg.dependencies:
         dep_name = dep
-        if not util.is_string(dep):
+        if not is_string(dep):
             dep_name = dep[0]
         if dep_name in configured:
             continue
         environment = __configure_package(environment, dep,
                                           skip, install, quiet)
-        prerequisites.save_cache(environment)
+        save_cache(environment)
     if not quiet:
         sys.stdout.write('Checking for ' + short_name + ' ')
         if not version is None:
@@ -182,5 +191,5 @@ def __run_helper__(environment, short_name, long_name, version,
     else:
         tmp_env = env['PREREQUISITES'] + [short_name]
         env['PREREQUISITES'] = list(set(tmp_env))
-    prerequisites.save_cache(env)  ## intermediate cache
+    save_cache(env)  ## intermediate cache
     return env

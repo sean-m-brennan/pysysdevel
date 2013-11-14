@@ -5,6 +5,7 @@ import sys
 
 from ..prerequisites import *
 from ..configuration import config
+from .. import options
 
 class configuration(config):
     """
@@ -21,7 +22,7 @@ class configuration(config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         if 'MINGW_CC' in environ:
             raise Exception('MS Visual C *and* MinGW both specified ' +
                             'as the chosen compiler.')

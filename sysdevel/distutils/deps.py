@@ -35,47 +35,71 @@ import inspect
 from distutils.core import Command
 
 from .prerequisites import RequirementsFinder
+from .configure import configure_system
+from.filesystem import mkdir
+from . import options
 from ..util import is_string
 
 
 class deps(Command):
     description = "package dependencies"
-    user_options = [('show-subpackages', 's',
+    user_options = [('show', 's', 'show the dependencies'),
+                    ('show-subpackages', None,
                      'show the dependencies of individual sub-packages'),
                     ('sublevel=', None, 'sub-package level'),]
 
 
     def initialize_options(self):
+        self.show = False
         self.show_subpackages = False
         self.sublevel = 0
 
     def finalize_options(self):
         if self.sublevel is None:
             self.sublevel = 0
+        self.sublevel = int(self.sublevel)
+        if self.show_subpackages:
+            self.show = True
         self.requirements = []  ## may contain (dep_name, version) tuples
 
 
     def run(self):
+        options.set_top_level(self.sublevel)
         token = 'Package dependencies: '
+        logfile = os.path.join(options.target_build_dir, 'config.out')
+        if self.sublevel == 0:
+            if os.path.exists(logfile):
+                os.remove(logfile)
+            if os.path.exists(os.path.join(options.target_build_dir, 'config.err')):
+                os.remove(os.path.join(options.target_build_dir, 'config.err'))
         if self.distribution.subpackages != None:
             for idx in range(len(sys.argv)):
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])
-            build = self.get_finalized_command('build')
             shell=False
             if 'windows' in platform.system().lower():
                 shell = True
             for (pkg_name, pkg_dir) in self.distribution.subpackages:
                 rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
                 if rf.is_sysdevel_build:  ## depth may be greater than one
-                    p = subprocess.Popen([sys.executable,
-                                          os.path.join(pkg_dir, 'setup.py'),
-                                         ] + argv + ['--sublevel=' +
-                                                     str(self.sublevel + 1)],
-                                         stdout=subprocess.PIPE,
+                    cmd = [sys.executable,
+                           os.path.join(pkg_dir, 'setup.py'),
+                           ] + argv + ['--sublevel=' + str(self.sublevel + 1)]
+                    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE,
                                          shell=shell)
-                    out = p.communicate()[0].strip()
+                    out, err = p.communicate()
+                    out = out.strip()
+                    err = err.strip()
+                    if not os.path.exists(options.target_build_dir):
+                        mkdir(options.target_build_dir)
+                    log = open(logfile, 'a')
+                    if out:
+                        log.write(out + '\n')
+                    if err:
+                        log.write(err + '\n')
+                    log.close
                     if p.wait() != 0:
                         raise Exception('Dependency check failed for ' +
                                         pkg_name)
@@ -98,16 +122,30 @@ class deps(Command):
             self.requirements = ['None']
         self.requirements = list(set(self.requirements))
 
-        #FIXME check for tuples with duplicate elt 0
-        deps_list = list(set([r[0] if not is_string(r) else r
-                              for r in self.requirements]))
+        unversioned = list(set([r for r in self.requirements if is_string(r)]))
+        versioned = list(set([r for r in self.requirements
+                              if not is_string(r)]))
+        ## check for tuples w/ duplicate 1st element
+        cluster = dict()
+        for r in versioned:
+            if r[0] in cluster:
+                if r[1] > cluster[r[0]]:
+                    cluster[r[0]] = r[1]
+            else:
+                cluster[r[0]] = r[1]
+        versioned = cluster.items()
+        deps_list = unversioned + [r[0] for r in versioned]
+        self.requirements = versioned + unversioned
+
         if self.sublevel == 0:
-            if self.show_subpackages:
-                print(token + ', '.join(deps_list))
-            from sysdevel.distutils import configure_system
-            env_old = self.distribution.environment
-            env = configure_system(self.requirements, self.distribution.version)
-            self.distribution.environment = dict(list(env_old.items()) +
-                                                 list(env.items()))
-        else:
+            if self.show:
+                print(self.distribution.metadata.name + ' ' +
+                      token + ', '.join(deps_list))
+            else:
+                env_old = self.distribution.environment
+                env = configure_system(self.requirements,
+                                       self.distribution.version)
+                self.distribution.environment = dict(list(env_old.items()) +
+                                                     list(env.items()))
+        else:  ## sysdevel subpackage, collect via stdout (see above)
             print(token + ', '.join(deps_list))

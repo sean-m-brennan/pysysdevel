@@ -60,7 +60,8 @@ except ImportError:
 from .numpy_utils import *
 from ..util import is_string
 from .building import convert_ulist
-from.prerequisites import default_py2exe_library
+from sysdevel.distutils import options
+
 
 
 class CustomDistribution(oldDistribution):
@@ -162,7 +163,7 @@ class CustomDistribution(oldDistribution):
         self.windows = attrs.pop("windows", [])
         self.console = attrs.pop("console", [])
         self.isapi = attrs.pop("isapi", [])
-        self.zipfile = attrs.pop("zipfile", default_py2exe_library)
+        self.zipfile = attrs.pop("zipfile", options.default_py2exe_library)
 
         oldDistribution.__init__(self, old_attrs)
 
@@ -257,7 +258,8 @@ from . import test
 from . import deps
 
 
-my_cmdclass = {'build':            build.build,
+my_cmdclass = {'dependencies':     deps.deps,
+               'build':            build.build,
                'build_src':        build_src.build_src,
                'build_scripts':    build_scripts.build_scripts,
                'config_cc':        config_cc.config_cc,
@@ -281,7 +283,6 @@ my_cmdclass = {'build':            build.build,
                'bdist_rpm':        bdist_rpm.bdist_rpm,
                'clean':            clean.clean,
                'test':             test.test,
-               'dependencies':     deps.deps,
                }
 
 if have_numpy:

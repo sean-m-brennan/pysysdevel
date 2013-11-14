@@ -2,8 +2,9 @@
 import os
 import shutil
 
-from ..prerequisites import *
+from ..fetching import fetch
 from ..configuration import file_config
+from .. import options
 
 class configuration(file_config):
     """
@@ -18,11 +19,11 @@ class configuration(file_config):
             version = '2.1.0'
         website = 'http://github.com/DmitryBaranovskiy/raphael/raw/master/'
         js_file = 'raphael-min.js'
-        js_dir = os.path.join(target_build_dir, javascript_dir)
+        js_dir = os.path.join(options.target_build_dir, options.javascript_dir)
         js_target = 'raphael.min.js'
         if not os.path.exists(js_dir):
             os.makedirs(js_dir)
         if not os.path.exists(os.path.join(js_dir, js_file)):
             fetch(website, js_file, js_file)
-            shutil.copy(os.path.join(download_dir, js_file),
+            shutil.copy(os.path.join(options.download_dir, js_file),
                         os.path.join(js_dir, js_target))

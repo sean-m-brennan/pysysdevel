@@ -3,6 +3,7 @@ import platform
 
 from ..prerequisites import *
 from ..configuration import lib_config
+from .. import options
 
 class configuration(lib_config):
     """
@@ -13,7 +14,7 @@ class configuration(lib_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         base_dirs = []
         limit = False
         if 'PROJ4_LIB_DIR' in environ and environ['PROJ4_LIB_DIR']:

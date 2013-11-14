@@ -2,7 +2,7 @@
 import os
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import global_install
 from ..configuration import prog_config
 
 class configuration(prog_config):

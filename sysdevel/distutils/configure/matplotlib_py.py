@@ -1,8 +1,9 @@
 
 import os
 
-from ..prerequisites import *
+from ..prerequisites import compare_versions, install_pypkg
 from ..configuration import py_config
+from .. import options
 
 class configuration(py_config):
     """
@@ -17,6 +18,7 @@ class configuration(py_config):
 
 
     def is_installed(self, environ, version):
+        options.set_debug(self.debug)
         try:
             import matplotlib
             ver = matplotlib.__version__
@@ -25,8 +27,7 @@ class configuration(py_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['MATPLOTLIB_DATA_FILES'] = \
@@ -58,8 +59,7 @@ class configuration(py_config):
                 head, tail = os.path.split(datapath)
                 d = {}
                 for root, dirs, files in os.walk(datapath):
-                    # Need to explicitly remove cocoa_agg files or py2exe complains
-                    # NOTE I dont know why, but do as previous version
+                    # Need to explicitly remove cocoa_agg files
                     if 'Matplotlib.nib' in files:
                         files.remove('Matplotlib.nib')
                     files = [os.path.join(root, filename) for filename in files]

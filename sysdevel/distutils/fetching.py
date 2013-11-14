@@ -32,11 +32,11 @@ import sys
 import tarfile
 import zipfile
 
-from . import filesystem
+from .filesystem import mkdir
+from . import options
 
 
 download_file = ''
-download_dir  = 'third_party'
 
 
 def set_downloading_file(dlf):
@@ -51,18 +51,18 @@ def download_progress(count, block_size, total_size):
     Callback for displaying progress for use with urlretrieve()
     '''
     percent = int(count * block_size * 100 / total_size)
-    if VERBOSE:
+    if options.VERBOSE:
         sys.stdout.write("\rFETCHING " + download_file + "  %2d%%" % percent)
         sys.stdout.flush()
 
 
 def fetch(website, remote, local):
-    filesystem.mkdir(download_dir)
+    mkdir(options.download_dir)
     set_downloading_file(remote)
-    if not os.path.exists(os.path.join(download_dir, local)):
-        urlretrieve(website + remote, os.path.join(download_dir, local),
+    if not os.path.exists(os.path.join(options.download_dir, local)):
+        urlretrieve(website + remote, os.path.join(options.download_dir, local),
                     download_progress)
-        if VERBOSE:
+        if options.VERBOSE:
             sys.stdout.write('\n')
 
 
@@ -71,7 +71,7 @@ def zipextractall(zip_file):
     for name in zip_file.namelist():
         (dirname, filename) = os.path.split(name)
         if not os.path.exists(dirname):
-            filesystem.mkdir(dirname)
+            mkdir(dirname)
         if not filename == '':
             f = open(name, 'w')
             f.write(zip_file.read(name))
@@ -84,21 +84,25 @@ def tarextractall(tar_file):
         tar_file.extract(tarinfo)
 
     
-def unarchive(archive, target, archive_dir=download_dir):
+def unarchive(archive, target, archive_dir=None):
+    if archive_dir is None:
+        archive_dir = options.download_dir
     here = os.path.abspath(os.getcwd())
-    if not os.path.exists(os.path.join(target_build_dir, target)):
-        filesystem.mkdir(target_build_dir)
-        os.chdir(target_build_dir)
+    if not os.path.isabs(archive_dir):
+        archive_dir = os.path.join(here, archive_dir)
+    if not os.path.exists(os.path.join(options.target_build_dir, target)):
+        mkdir(options.target_build_dir)
+        os.chdir(options.target_build_dir)
         if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
-            z = tarfile.open(os.path.join(here, archive_dir, archive), 'r:gz')
+            z = tarfile.open(os.path.join(archive_dir, archive), 'r:gz')
             tarextractall(z)
             z.close()
         elif archive.endswith('.tar.bz2'):
-            z = tarfile.open(os.path.join(here, archive_dir, archive), 'r:bz2')
+            z = tarfile.open(os.path.join(archive_dir, archive), 'r:bz2')
             tarextractall(z)
             z.close()
         elif archive.endswith('.zip'):
-            z = zipfile.ZipFile(os.path.join(here, archive_dir, archive), 'r')
+            z = zipfile.ZipFile(os.path.join(archive_dir, archive), 'r')
             zipextractall(z)
             z.close()
         else:

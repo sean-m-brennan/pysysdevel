@@ -1,6 +1,7 @@
 
 from ..prerequisites import *
 from ..configuration import prog_config
+from .. import options
 
 class configuration(prog_config):
     """
@@ -16,7 +17,7 @@ class configuration(prog_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         limit = False
         locations = []
         if 'CTYPESGEN' in environ and environ['CTYPESGEN']:
@@ -30,8 +31,7 @@ class configuration(prog_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['CTYPESGEN'] = exe
@@ -40,7 +40,6 @@ class configuration(prog_config):
 
 
     def install(self, environ, version, locally=True):
-        global local_search_paths
         if not self.found:
             website = 'http://pypi.python.org/packages/source/c/ctypesgen/'
             if version is None:
@@ -49,8 +48,8 @@ class configuration(prog_config):
             install_pypkg('ctypesgen-' + version, website, archive,
                           locally=locally)
             if locally:
-                prefix = os.path.abspath(target_build_dir)
-                if not prefix in local_search_paths:
-                    local_search_paths.append(prefix)
+                prefix = os.path.abspath(options.target_build_dir)
+                if not prefix in options.local_search_paths:
+                    options.add_local_search_path(prefix)
             if not self.is_installed(environ, version):
                 raise Exception('ctypesgen installation failed.')

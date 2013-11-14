@@ -2,7 +2,8 @@
 import glob
 import os
 
-from ..prerequisites import *
+from ..prerequisites import install_pypkg
+from ..fetching import fetch, unarchive
 from ..configuration import py_config
 
 class configuration(py_config):

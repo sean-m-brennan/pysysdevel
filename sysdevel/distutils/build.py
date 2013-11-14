@@ -74,7 +74,8 @@ class build(old_build):
 
 
     ## Order is important
-    sub_commands = [('config_cc',      lambda *args: True),
+    sub_commands = [('dependencies',   lambda *args: True),
+                    ('config_cc',      lambda *args: True),
                     ('config_fc',      lambda *args: True),
                     ('build_src',      old_build.has_ext_modules),
                     ('build_py',       has_pure_modules),
@@ -106,7 +107,7 @@ class build(old_build):
             if 'clean' in argv:
                 argv.remove('clean')
 
-            #FIXME run dependencies
+            self.get_finalized_command('dependencies').run(self)
 
             process_subpackages(self.distribution.parallel_build, 'build',
                                 self.build_base, self.distribution.subpackages,

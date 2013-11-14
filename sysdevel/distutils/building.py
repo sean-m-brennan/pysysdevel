@@ -31,16 +31,31 @@ import os
 import sys
 import platform
 import fnmatch
+import time
 
 from ..util import is_string
+from .filesystem import mkdir
 
 
-def process_progress(p):
+environment_defaults = dict({
+        'WX_ENABLED'   : False,
+        'GTK_ENABLED'  : False,
+        'QT4_ENABLED'  : False,
+        'QT3_ENABLED'  : False,
+        'FLTK_ENABLED' : False,
+        'TK_ENABLED'   : False,
+        })
+
+(DEFAULT_STYLE, AUTOMAKE_STYLE, AUTOCONF_STYLE) = list(range(3))
+
+
+
+def process_progress(p, verbose=False):
     max_dots = 10
     prev = dots = 0
     status = p.poll()
     while status is None:
-        if VERBOSE:
+        if verbose:
             prev = dots
             dots += 1
             dots %= max_dots
@@ -50,7 +65,7 @@ def process_progress(p):
             sys.stdout.flush()
         time.sleep(0.2)
         status = p.poll()
-    if VERBOSE:
+    if verbose:
         sys.stdout.write('\b' * dots)
         sys.stdout.write('.' * max_dots)
         sys.stdout.flush()
@@ -179,8 +194,6 @@ def configure_files(var_dict, directory_or_file_list,
 
 
 
-(DEFAULT_STYLE, AUTOMAKE_STYLE, AUTOCONF_STYLE) = list(range(3))
-
 def nested_values(line, var_dict, d=0, style=DEFAULT_STYLE):
     var_dict = dict(environment_defaults, **var_dict)
 
@@ -219,7 +232,7 @@ def nested_values(line, var_dict, d=0, style=DEFAULT_STYLE):
 
 
 def configure_file(var_dict, filepath, newpath=None, suffix='.in',
-                   style=DEFAULT_STYLE):
+                   style=DEFAULT_STYLE, verbose=False):
     '''
     Given a dictionary of environment variables and a path,
     replace all occurrences of @@{VAR} with the value of the VAR key.
@@ -233,7 +246,7 @@ def configure_file(var_dict, filepath, newpath=None, suffix='.in',
             (os.path.getmtime(filepath) < os.path.getmtime(newpath)):
         ## i.e. original is older than existing generated file
         return
-    if VERBOSE:
+    if verbose:
         print('Configuring ' + newpath)
     orig = open(filepath, 'r')
     newdir = os.path.dirname(newpath)

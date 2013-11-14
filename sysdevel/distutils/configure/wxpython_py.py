@@ -37,7 +37,7 @@ class configuration(py_config):
                            deb='python-wxgtk python-wxtools',
                            rpm='wxPython-devel')
             if system_uses_homebrew():
-                target  = os.path.join(homebrew_prefix(), 'lib',
+                target = os.path.join(homebrew_prefix(), 'lib',
                                        'python'+'.'.join(get_python_version()),
                                        'site-packages', 'wx')
                 if not os.path.exists(target):

@@ -2,9 +2,11 @@
 import os
 import platform
 import glob
+import subprocess
 
 from ..prerequisites import *
 from ..configuration import config
+from .. import options
 
 class configuration(config):
     """
@@ -23,7 +25,7 @@ class configuration(config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         try:
             locations = glob.glob(os.path.join('C:' + os.sep + 'OpenSCG',
                                                'openjdk*'))
@@ -46,8 +48,7 @@ class configuration(config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['JAVA'] = java_runtime
@@ -81,7 +82,6 @@ class configuration(config):
 
 
     def __check_java_version(self, java_cmd, version_list):
-        import subprocess
         cmd_line = [java_cmd, '-version']
         p = subprocess.Popen(cmd_line,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)

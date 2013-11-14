@@ -38,14 +38,15 @@ try:
 except:
     from distutils.command.build_ext import build_ext
 
-from .prerequisites import target_build_dir, find_program
-from .fielsystem import mkdir, copy_tree
+from .prerequisites import find_program
+from .filesystem import mkdir, copy_tree
+from . import options
 
 
 def make_doc(src_file, target_dir=None, mode='docbook'):
     if target_dir is None:
         pth = os.path.relpath(os.path.dirname(src_file)).split(os.sep)[1:]
-        target_dir = os.path.join(target_build_dir, *pth)
+        target_dir = os.path.join(options.target_build_dir, *pth)
 
     emacs_exe = find_program('emacs')
     src_dir = os.path.abspath(os.path.dirname(src_file))

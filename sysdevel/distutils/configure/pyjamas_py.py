@@ -6,6 +6,8 @@ import subprocess
 
 from ..prerequisites import *
 from ..configuration import py_config
+from ..fetching import fetch, unarchive
+from .. import options
 
 class configuration(py_config):
     """
@@ -20,13 +22,12 @@ class configuration(py_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         try:
             pyjamas_root = os.environ['PYJAMAS_ROOT']
             pyjs_bin = os.path.join(pyjamas_root, 'bin')
             pyjs_lib = os.path.join(pyjamas_root, 'build', 'lib')
-            self.environment['PYJSBUILD'] = find_program('pyjsbuild',
-                                                         [pyjs_bin])
+            self.environment['PYJSBUILD'] = find_program('pyjsbuild', [pyjs_bin])
             sys.path.insert(0, pyjs_lib)
             self.found = True
         except Exception:
@@ -39,8 +40,7 @@ class configuration(py_config):
                 self.found = True
             except Exception:
                 if self.debug:
-                    e = sys.exc_info()[1]
-                    print(e)
+                    print(sys.exc_info()[1])
         return self.found
 
 
@@ -53,16 +53,16 @@ class configuration(py_config):
             src_dir = 'pyjamas-' + version
             fetch(website, version, archive)
             unarchive(archive, src_dir)
-            if VERBOSE:
+            if options.VERBOSE:
                 sys.stdout.write('PREREQUISITE pyjamas ')
 
-            working_dir = os.path.join(target_build_dir, src_dir)
+            working_dir = os.path.join(options.target_build_dir, src_dir)
             if not os.path.exists(working_dir):
-                os.rename(glob.glob(os.path.join(target_build_dir,
+                os.rename(glob.glob(os.path.join(options.target_build_dir,
                                                  '*pyjs*'))[0], working_dir)
 
             ## Unique two-step installation
-            log_file = os.path.join(target_build_dir, 'pyjamas.log')
+            log_file = os.path.join(options.target_build_dir, 'pyjamas.log')
             log = open(log_file, 'w')
             here = os.path.abspath(os.getcwd())
             os.chdir(working_dir)
@@ -70,7 +70,7 @@ class configuration(py_config):
             cmd_line = [sys.executable, 'bootstrap.py',]
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = process_progress(p)
+                status = process_progress(p, options.VERBOSE)
             except KeyboardInterrupt:
                 p.terminate()
                 log.close()
@@ -86,7 +86,7 @@ class configuration(py_config):
                 cmd_line = sudo_prefix + cmd_line + ['install']
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = process_progress(p)
+                status = process_progress(p, options.VERBOSE)
                 log.close()
             except KeyboardInterrupt:
                 p.terminate()
@@ -94,7 +94,7 @@ class configuration(py_config):
                 raise e
             self.check_install(status, log, log_file)
 
-            if VERBOSE:
+            if options.VERBOSE:
                 sys.stdout.write(' done\n')
             os.chdir(here)
             search_path = []

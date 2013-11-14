@@ -37,7 +37,8 @@ from distutils.command.install_lib import install_lib as old_install_lib
 from distutils.util import change_root, convert_path
 
 from .filesystem import mkdir
-from prerequisites import DEBUG, local_lib_dir, get_module_location
+from .prerequisites import get_module_location
+from . import options
 
 
 class install_lib(old_install_lib):
@@ -53,7 +54,7 @@ class install_lib(old_install_lib):
         build = self.get_finalized_command('build')
         build_shlib = self.get_finalized_command('build_shlib')
         install = self.get_finalized_command('install')
-        self.verbose = DEBUG
+        self.verbose = options.DEBUG
 
         if install.prefix is None:
             target_dir = os.path.join(install.install_base, lib)
@@ -68,7 +69,8 @@ class install_lib(old_install_lib):
 
         if self.distribution.extra_install_modules:
             ## prefer updated packages
-            local_pkgs_dir = os.path.join(build.build_base, local_lib_dir)
+            local_pkgs_dir = os.path.join(build.build_base,
+                                          options.local_lib_dir)
             insertions = 0
             if os.path.exists(local_pkgs_dir):
                 sys.path.insert(0, os.path.abspath(local_pkgs_dir))

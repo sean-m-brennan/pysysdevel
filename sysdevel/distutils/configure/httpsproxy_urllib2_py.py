@@ -1,7 +1,6 @@
 
 import sys
 
-from ..prerequisites import *
 from ..configuration import py_config
 
 class configuration(py_config):

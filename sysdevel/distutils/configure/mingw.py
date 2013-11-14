@@ -4,6 +4,7 @@ import platform
 
 from ..prerequisites import *
 from ..configuration import config
+from .. import options
 
 class configuration(config):
     """
@@ -23,7 +24,7 @@ class configuration(config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         if 'MSVC' in environ:
             raise Exception('MinGW *and* MS Visual C both specified ' +
                             'as the chosen compiler.')
@@ -58,8 +59,7 @@ class configuration(config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['MINGW_DIR']     = mingw_root

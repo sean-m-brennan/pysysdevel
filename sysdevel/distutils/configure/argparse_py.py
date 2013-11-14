@@ -1,5 +1,5 @@
 
-from ..prerequisites import *
+from ..prerequisites import install_pypkg
 from ..configuration import py_config
 
 class configuration(py_config):

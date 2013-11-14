@@ -3,7 +3,7 @@ import os
 import sys
 import glob
 
-from ..prerequisites import *
+from ..prerequisites import compare_versions, install_pypkg, patch_file
 from ..configuration import py_config
 
 class configuration(py_config):
@@ -39,8 +39,7 @@ class configuration(py_config):
                 self.found = True
             except Exception:
                 if self.debug:
-                    e = sys.exc_info()[1]
-                    print(e)
+                    print(sys.exc_info()[1])
                 return self.found
 
             self.environment['BASEMAP_DATA_PATHLIST'] = basemap_data_pathlist

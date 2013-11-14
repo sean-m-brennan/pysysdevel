@@ -143,21 +143,20 @@ class build_doc(build_ext):
                               excludes=['.svn', 'CVS', '.git', '.hg*'])
 
                 ## Configure rst files
-                building.configure_files(environ, src_dir, '*.rst', working_dir)
+                configure_files(environ, src_dir, '*.rst', working_dir)
 
                 if os.path.exists(os.path.join(doc_dir, dext.doxygen_cfg)):
                     ## Doxygen + breathe
                     'Config ' + os.path.join(doc_dir, dext.doxygen_cfg)
-                    building.configure_file(environ,
-                                        os.path.join(doc_dir, dext.doxygen_cfg),
-                                        os.path.join(working_dir,
-                                                     dext.doxygen_cfg),
-                                        style=dext.style)
+                    configure_file(environ,
+                                   os.path.join(doc_dir, dext.doxygen_cfg),
+                                   os.path.join(working_dir, dext.doxygen_cfg),
+                                   style=dext.style)
                     for s in dext.doxygen_srcs:
-                        building.configure_file(environ,
-                                                os.path.join(doc_dir, s),
-                                                os.path.join(working_dir, s),
-                                                style=dext.style)
+                        configure_file(environ,
+                                       os.path.join(doc_dir, s),
+                                       os.path.join(working_dir, s),
+                                       style=dext.style)
                     try:
                         doxygen_exe = find_program('doxygen')
                     except:
@@ -209,8 +208,8 @@ class build_doc(build_ext):
                 elif os.path.dirname(dext.sphinx_config) == '':
                     dext.sphinx_config =  os.path.join(doc_dir,
                                                        dext.sphinx_config)
-                building.configure_file(environ, dext.sphinx_config,
-                                    os.path.join(working_dir, 'conf.py'))
+                configure_file(environ, dext.sphinx_config,
+                               os.path.join(working_dir, 'conf.py'))
                 import warnings
                 try:
                     import sphinx

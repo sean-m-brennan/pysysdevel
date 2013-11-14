@@ -2,8 +2,9 @@
 import os
 import shutil
 
-from ..prerequisites import *
+from ..fetching import fetch, unarchive
 from ..configuration import file_config
+from .. import options
 
 class configuration(file_config):
     """
@@ -16,7 +17,7 @@ class configuration(file_config):
     def install(self, environ, version, locally=True):
         if not version:
             version = '1-9-4-1'
-        php_dir = os.path.join(target_build_dir, script_dir)
+        php_dir = os.path.join(options.target_build_dir, options.script_dir)
         if not os.path.exists(php_dir):
             os.makedirs(php_dir)
         website = 'http://phpliteadmin.googlecode.com/files/'
@@ -25,5 +26,5 @@ class configuration(file_config):
         if not os.path.exists(script):
             fetch(website, archive, archive)
             unarchive(archive, script)
-            shutil.move(os.path.join(target_build_dir, script),
+            shutil.move(os.path.join(options.target_build_dir, script),
                         os.path.join(php_dir, script))

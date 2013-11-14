@@ -1,10 +1,4 @@
 
-import subprocess
-import sys
-import os
-import platform
-
-from ..prerequisites import *
 from ..configuration import nodejs_config
 
 class configuration(nodejs_config):

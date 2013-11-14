@@ -5,6 +5,7 @@ import platform
 
 from ..prerequisites import *
 from ..configuration import lib_config
+from .. import options
 
 class configuration(lib_config):
     """
@@ -20,7 +21,7 @@ class configuration(lib_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         try:
             wx_config = os.environ['WX_CONFIG']
         except:
@@ -34,8 +35,7 @@ class configuration(lib_config):
                 wx_config = find_program('wx-config', locations)
             except Exception:
                 if self.debug:
-                    e = sys.exc_info()[1]
-                    print(e)
+                    print(sys.exc_info()[1])
                 return self.found
         try:
             cppflags_cmd = [wx_config, '--cppflags']
@@ -48,8 +48,7 @@ class configuration(lib_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['WX_CPP_FLAGS'] = cflags

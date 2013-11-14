@@ -35,6 +35,8 @@ import fnmatch
 import struct
 import glob
 import time
+import traceback
+import site
 import ast
 
 try:
@@ -44,48 +46,9 @@ except ImportError:
 
 from .filesystem import mkdir
 from .building import process_progress
-
-
-default_path_prefixes = ['/usr', '/usr/local', '/opt/local',
-                         ] + glob.glob('C:\\Python*\\')
-
-
-local_lib_dir = 'python'
-global_prefix = '/usr'
-javascript_dir = 'javascript'
-stylesheet_dir = 'stylesheets'
-script_dir = 'scripts'
-target_build_dir = 'build'
-windows_postinstall = 'postinstall.py'
-
-default_py2exe_library = 'library.zip'
-
-environment_defaults = dict({
-        'WX_ENABLED'   : False,
-        'GTK_ENABLED'  : False,
-        'QT4_ENABLED'  : False,
-        'QT3_ENABLED'  : False,
-        'FLTK_ENABLED' : False,
-        'TK_ENABLED'   : False,
-        })
-
-
-VERBOSE = False
-DEBUG = False
-
-def set_verbose(b):
-    global VERBOSE
-    VERBOSE = b
-
-def set_debug(b):
-    global DEBUG
-    DEBUG = b
-
-def set_build_dir(dir):
-    global target_build_dir
-    target_build_dir = dir
-
-
+from .fetching import fetch, unarchive
+from ..util import is_string
+from . import options
 
 
 class PrerequisiteError(Exception):
@@ -144,37 +107,35 @@ class RequirementsFinder(ast.NodeVisitor):
 
 ## Caching ###################
 
-local_search_paths = []
-
 def read_cache():
-    global local_search_paths
-    cache_file = os.path.join(target_build_dir, '.cache')
+    cache_file = os.path.join(options.target_build_dir, '.cache')
     if os.path.exists(cache_file):
         cache = open(cache_file, 'rb')
         cached = json.load(cache)
-        local_search_paths = cached['local_search_paths']
+        options.set_local_search_paths(cached['local_search_paths'])
         environ = cached['environment']
         cache.close()
-        if len(local_search_paths) == 0:
-            local_search_paths = [os.path.abspath(target_build_dir)]
+        if len(options.local_search_paths) == 0:
+            options.set_local_search_paths(
+                [os.path.abspath(options.target_build_dir)])
         return environ
     return dict()
 
 def save_cache(environ):
-    cache_file = os.path.join(target_build_dir, '.cache')
-    if not os.path.isdir(target_build_dir):
-        if os.path.exists(target_build_dir):
-            os.remove(target_build_dir)
-        mkdir(target_build_dir)
+    cache_file = os.path.join(options.target_build_dir, '.cache')
+    if not os.path.isdir(options.target_build_dir):
+        if os.path.exists(options.target_build_dir):
+            os.remove(options.target_build_dir)
+        mkdir(options.target_build_dir)
     cache = open(cache_file, 'wb')
     cached = dict()
-    cached['local_search_paths'] = local_search_paths
+    cached['local_search_paths'] = options.local_search_paths
     cached['environment'] = environ
     json.dump(cached, cache)
     cache.close()
 
 def delete_cache():
-    cache = os.path.join(target_build_dir, '.cache')
+    cache = os.path.join(options.target_build_dir, '.cache')
     if os.path.exists(cache):
         os.remove(cache)
 
@@ -190,27 +151,27 @@ def find_program(name, pathlist=[], limit=False):
     except:
         path_env = []
     if not limit:
-        pathlist += path_env + local_search_paths
+        pathlist += path_env + options.local_search_paths
     for path in pathlist:
         if path != None and (os.path.exists(path) or glob.glob(path)):
             for p in [path, os.path.join(path, 'bin')]:
-                if DEBUG:
+                if options.DEBUG:
                     print('Searching ' + p + ' for ' + name)
                 full = os.path.join(p, name)
                 if os.path.lexists(full):
-                    if DEBUG:
+                    if options.DEBUG:
                         print('Found ' + full)
                     return full
                 if os.path.lexists(full + '.exe'):
-                    if DEBUG:
+                    if options.DEBUG:
                         print('Found ' + full + '.exe')
                     return full + '.exe'
                 if os.path.lexists(full + '.bat'):
-                    if DEBUG:
+                    if options.DEBUG:
                         print('Found ' + full + '.bat')
                     return full + '.bat'
                 if os.path.lexists(full + '.cmd'):
-                    if DEBUG:
+                    if options.DEBUG:
                         print('Found ' + full + '.cmd')
                     return full + '.bat'
     raise Exception(name + ' not found.')
@@ -231,14 +192,14 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
     for path_expr in extra_paths:
         pathlist += glob.glob(path_expr)
     if not limit:
-        pathlist += default_path_prefixes + local_search_paths
+        pathlist += options.default_path_prefixes + options.local_search_paths
     filename = filepath
     for path in pathlist:
         if path != None and os.path.exists(path):
             for sub in subdirs:
                 ext_paths = glob.glob(os.path.join(path, sub))
                 for ext_path in ext_paths:
-                    if DEBUG:
+                    if options.DEBUG:
                         print('Searching ' + ext_path + ' for ' + filepath)
                     filename = os.path.basename(filepath)
                     dirname = os.path.dirname(filepath)
@@ -246,12 +207,12 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
                         rt = os.path.normpath(root)
                         for fn in filenames:
                             if dirname == '' and fnmatch.fnmatch(fn, filename):
-                                if DEBUG:
+                                if options.DEBUG:
                                     print('Found ' + os.path.join(root, filename))
                                 return root.rstrip(os.sep)
                             elif fnmatch.fnmatch(os.path.basename(rt), dirname) \
                                     and fnmatch.fnmatch(fn, filename):
-                                if DEBUG:
+                                if options.DEBUG:
                                     print('Found ' + os.path.join(rt, filename))
                                 return os.path.dirname(rt).rstrip(os.sep)
     raise Exception(filename + ' not found.')
@@ -293,7 +254,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
     for path_expr in extra_paths:
         pathlist += glob.glob(path_expr)
     if not limit:
-        pathlist += default_path_prefixes + local_search_paths
+        pathlist += options.default_path_prefixes + options.local_search_paths
     for path in pathlist:
         if path != None and os.path.exists(path):
             for subpath in default_lib_paths:
@@ -307,7 +268,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                         filename = prefix + name + '*' + def_suffix
                                     else:
                                         filename = prefix + name + def_suffix
-                                    if DEBUG:
+                                    if options.DEBUG:
                                         print('Searching ' + root + \
                                             ' for ' + filename)
                                     libs = []
@@ -320,20 +281,20 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                     filename = prefix + name + '*' + suffix
                                 else:
                                     filename = prefix + name + suffix
-                                if DEBUG:
+                                if options.DEBUG:
                                     print('Searching ' + root + \
                                         ' for ' + filename)
                                 libs = []
                                 for fn in filenames:
                                     if fnmatch.fnmatch(fn, filename):
                                         if single:
-                                            if DEBUG:
+                                            if options.DEBUG:
                                                 print('Found at ' + root)
                                             return root.rstrip(os.sep), fn
                                         else:
                                             libs.append(fn)
                                 if len(libs) > 0:
-                                    if DEBUG:
+                                    if options.DEBUG:
                                         print('Found at ' + root)
                                     return root.rstrip(os.sep), libs
     raise Exception(name + ' library not found.')
@@ -342,7 +303,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
 def libraries_from_components(components, path):
     libs = []
     for comp in components:
-        if DEBUG:
+        if options.DEBUG:
             print('Searching ' + path + ' for ' + comp)
         _, lib = find_library(comp, [path])
         name = os.path.splitext(lib)[0]
@@ -357,13 +318,13 @@ def find_file(filepattern, pathlist=[]):
     Find the full path of the specified file.
     '''
     #FIXME handle case where filepattern is a path
-    for path in local_search_paths + pathlist:
+    for path in options.local_search_paths + pathlist:
         if path != None and os.path.exists(path):
-            if DEBUG:
+            if options.DEBUG:
                 print('Searching ' + path + ' for ' + filepattern)
             for fn in os.listdir(path):
                 if fnmatch.fnmatch(fn, filepattern):
-                    if DEBUG:
+                    if options.DEBUG:
                         print('Found ' + os.path.join(path, fn))
                     return os.path.join(path, fn)
     raise Exception(filepattern + ' not found.')
@@ -539,20 +500,21 @@ def get_os():
 
 
 def install_pyscript(website, name, locally=True):
-    if not os.path.exists(download_dir):
-        os.makedirs(download_dir)
+    if not os.path.exists(options.download_dir):
+        os.makedirs(options.download_dir)
     if locally:
-        target_dir = os.path.join(os.path.abspath(target_build_dir), local_lib_dir)
+        target_dir = os.path.join(os.path.abspath(options.target_build_dir),
+                                  options.local_lib_dir)
     else:
         target_dir = get_python_lib()
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
     fetch(website, name, name)
-    if VERBOSE:
+    if options.VERBOSE:
         sys.stdout.write('PREREQUISITE ' + name + ' ')
     try:
-        shutil.copy(os.path.join(download_dir, name), target_dir)
+        shutil.copy(os.path.join(options.download_dir, name), target_dir)
     except Exception:
         e = sys.exc_info()[1]
         raise Exception('Unable to install ' + name + ': ' + str(e))
@@ -567,15 +529,15 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
     if src_dir is None:
         src_dir = name
     here = os.path.abspath(os.getcwd())
-    target_dir = os.path.abspath(target_build_dir)
-    target_lib_dir = os.path.join(target_dir, local_lib_dir)
+    target_dir = os.path.abspath(options.target_build_dir)
+    target_lib_dir = os.path.join(target_dir, options.local_lib_dir)
 
     fetch(website, archive, archive)
     unarchive(archive, src_dir)
     if patch:
         patch(os.path.join(target_dir, src_dir))
 
-    if VERBOSE:
+    if options.VERBOSE:
         sys.stdout.write('PREREQUISITE ' + name + ' ')
     if not os.path.exists(target_lib_dir):
         os.makedirs(target_lib_dir)
@@ -608,7 +570,7 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
         try:
             p = subprocess.Popen(cmd_line, env=environ, stdout=log, stderr=log,
                                  shell=shell)
-            status = process_progress(p)
+            status = process_progress(p, options.VERBOSE)
             log.close()
         except KeyboardInterrupt:
             p.terminate()
@@ -620,7 +582,7 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
             raise Exception(name + ' is required, but could not be ' +
                             'installed; See ' + log_file)
         else:
-            if VERBOSE:
+            if options.VERBOSE:
                 sys.stdout.write(' done\n')
         if locally:
             site.addsitedir(target_lib_dir)
@@ -629,8 +591,8 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
         os.chdir(here)
     except Exception:
         os.chdir(here)
-        e = sys.exc_info()[1]
-        raise Exception('Unable to install ' + name + ': ' + str(e))
+        raise Exception('Unable to install ' + name + ':\n' +
+                        str(sys.exc_info()[1]) + '\n' + traceback.format_exc())
 
     if locally:
         return target_lib_dir
@@ -645,20 +607,20 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
 
 def autotools_install(environ, website, archive, src_dir, locally=True,
                       extra_cfg=[], addtnl_env=dict()):
-    global local_search_paths
     here = os.path.abspath(os.getcwd())
     fetch(''.join(website), archive, archive)
     unarchive(archive, src_dir)
 
     if locally:
-        prefix = os.path.abspath(target_build_dir)
-        if not prefix in local_search_paths:
-            local_search_paths.append(prefix)
+        prefix = os.path.abspath(options.target_build_dir)
+        if not prefix in options.local_search_paths:
+            options.add_local_search_path(prefix)
     else:
-        prefix = global_prefix
+        prefix = options.global_prefix
     prefix = convert2unixpath(prefix)  ## MinGW shell strips backslashes
 
-    build_dir = os.path.join(target_build_dir, src_dir)  ## build in-place
+    build_dir = os.path.join(options.target_build_dir,
+                             src_dir)  ## build in-place
     mkdir(build_dir)
     os.chdir(build_dir)
     log = open('build.log', 'w')
@@ -669,20 +631,26 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
                          addtnl_env=addtnl_env)
         mingw_check_call(environ, ['make'], stdout=log, stderr=log,
                          addtnl_env=addtnl_env)
-        mingw_check_call(environ, ['make', 'install'], stdout=log, stderr=log,
-                         addtnl_env=addtnl_env)
+        try:
+            mingw_check_call(environ, ['make', 'install'],
+                             stdout=log, stderr=log, addtnl_env=addtnl_env)
+        except:
+            pass
     else:
         os_environ = os.environ.copy()
         os_environ = dict(list(os_environ.items()) + list(addtnl_env.items()))
         check_call(['./configure', '--prefix=' + prefix] + extra_cfg,
                    stdout=log, stderr=log, env=os_environ)
         check_call(['make'], stdout=log, stderr=log, env=os_environ)
-        if locally:
-            check_call(['make', 'install'], stdout=log, stderr=log,
-                       env=os_environ)
-        else:
-            admin_check_call(['make', 'install'], stdout=log, stderr=log,
-                             addtnl_env=addtnl_env)
+        try:
+            if locally:
+                check_call(['make', 'install'], stdout=log, stderr=log,
+                           env=os_environ)
+            else:
+                admin_check_call(['make', 'install'], stdout=log, stderr=log,
+                                 addtnl_env=addtnl_env)
+        except:
+            pass
     log.close()
     os.chdir(here)
 
@@ -765,11 +733,11 @@ def global_install(what, website_tpl, winstaller=None,
                    brew=None, port=None, deb=None, rpm=None):
     sys.stdout.write('INSTALLING ' + what + ' in the system\n')
     sys.stdout.flush()
-    mkdir(target_build_dir)
-    log = open(os.path.join(target_build_dir, what + '.log'), 'w')
+    mkdir(options.target_build_dir)
+    log = open(os.path.join(options.target_build_dir, what + '.log'), 'w')
     if 'windows' in platform.system().lower() and winstaller:
         fetch(''.join(website_tpl), winstaller, winstaller)
-        installer = os.path.join(download_dir, winstaller)
+        installer = os.path.join(options.download_dir, winstaller)
         try:
             admin_check_call(installer, stdout=log, stderr=log)
         except:

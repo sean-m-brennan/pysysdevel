@@ -4,7 +4,9 @@ import platform
 import subprocess
 
 from ..prerequisites import *
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
+from .. import options
 
 class configuration(lib_config):
     """
@@ -23,7 +25,7 @@ class configuration(lib_config):
         else:
             required_version = version.replace('.', '_')
 
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         base_dirs = []
         limit = False
         if 'BOOST_LIB_DIR' in environ and environ['BOOST_LIB_DIR']:
@@ -94,7 +96,6 @@ class configuration(lib_config):
 
 
     def install(self, environ, version, locally=True):
-        global local_search_paths
         if not self.found:
             if version is None:
                 version = '1_44_0'
@@ -114,8 +115,8 @@ class configuration(lib_config):
 
                 if locally:
                     prefix = os.path.abspath(target_build_dir)
-                    if not prefix in local_search_paths:
-                        local_search_paths.append(prefix)
+                    if not prefix in options.local_search_paths:
+                        options.add_local_search_path(prefix)
                 else:
                     prefix = global_prefix
 

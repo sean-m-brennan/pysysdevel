@@ -1,5 +1,4 @@
 
-import subprocess
 import platform
 import sys
 import os
@@ -7,6 +6,8 @@ import glob
 
 from ..prerequisites import *
 from ..configuration import config
+from ..filesystem import mkdir
+from .. import options
 
 class configuration(config):
     """
@@ -24,6 +25,7 @@ class configuration(config):
 
 
     def is_installed(self, environ, version):
+        options.set_debug(self.debug)
         self.found = system_uses_homebrew()
         if self.found:
             self.brews_found = os.path.exists(python_executable()) and \

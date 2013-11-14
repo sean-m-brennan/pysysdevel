@@ -4,6 +4,7 @@ import platform
 
 from ..prerequisites import *
 from ..configuration import lib_config
+from .. import options
 
 class configuration(lib_config):
     """
@@ -14,7 +15,7 @@ class configuration(lib_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         base_dirs = []
         limit = False
         if 'HDF5_LIB_DIR' in environ and environ['HDF5_LIB_DIR']:
@@ -47,8 +48,7 @@ class configuration(lib_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         hdf5_lib_list = ['hdf5', 'hdf5_fortran', 'hdf5_cpp',

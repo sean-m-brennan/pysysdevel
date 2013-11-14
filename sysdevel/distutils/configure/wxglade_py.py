@@ -1,6 +1,7 @@
 
-from ..prerequisites import *
+from ..prerequisites import find_program, compare_versions, install_pypkg
 from ..configuration import prog_config
+from .. import options
 
 class configuration(prog_config):
     """
@@ -12,7 +13,7 @@ class configuration(prog_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         try:
             import wxglade.common
             ver = wxglade.common.version
@@ -22,8 +23,7 @@ class configuration(prog_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
         return self.found
 
 

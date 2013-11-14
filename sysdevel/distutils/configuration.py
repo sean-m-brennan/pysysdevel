@@ -33,7 +33,10 @@ import platform
 import traceback
 import subprocess
 
-from . import prerequisites, filesystem, building
+from .prerequisites import *
+from .filesystem import glob_insensitive
+from .building import process_progress
+from . import options
 
 
 class config(object):
@@ -65,12 +68,12 @@ class lib_config(config):
         self.environment[self.lib.upper() + '_INCLUDE_DIR'] = None
         self.environment[self.lib.upper() + '_LIB_DIR'] = None
         self.environment[self.lib.upper() + '_SHLIB_DIR'] = None
-        self.environment[self.lib.upper() + '_LIB_FILES'] = None
-        self.environment[self.lib.upper() + '_LIBRARIES'] = None
+        self.environment[self.lib.upper() + '_LIB_FILES'] = []
+        self.environment[self.lib.upper() + '_LIBRARIES'] = []
 
 
     def is_installed(self, environ, version=None):
-        building.set_debug(self.debug)
+        options.set_debug(self.debug)
 
         locations = []
         limit = False
@@ -92,9 +95,9 @@ class lib_config(config):
                 locations.append(os.environ[self.lib.upper() + '_ROOT'])
             except:
                 pass
-            for d in prerequisites.programfiles_directories():
+            for d in programfiles_directories():
                 locations.append(os.path.join(d, 'GnuWin32'))
-                locations += filesystem.glob_insensitive(d, self.lib + '*')
+                locations += glob_insensitive(d, self.lib + '*')
             try:
                 locations.append(environ['MINGW_DIR'])
                 locations.append(environ['MSYS_DIR'])
@@ -102,14 +105,12 @@ class lib_config(config):
                 pass
         try:
             if self.hdr:
-                incl_dir = prerequisites.find_header(self.hdr, locations, limit=limit)
-            lib_dir, lib = prerequisites.find_library(self.lib, locations, limit=limit)
+                incl_dir = find_header(self.hdr, locations, limit=limit)
+            lib_dir, lib = find_library(self.lib, locations, limit=limit)
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print('Exception: ' + str(e))
-                print(traceback.print_exc())
+                print(sys.exc_info()[1])
             return self.found
 
         if self.hdr:
@@ -144,14 +145,12 @@ class py_config(config):
                 ver = impl.version
                 check_version = True
             if check_version:
-                if prerequisites.compare_versions(ver, version) == -1:
+                if compare_versions(ver, version) == -1:
                     return self.found
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print('Exception: ' + str(e))
-                print(traceback.print_exc())
+                print(sys.exc_info()[1])
         return self.found
 
 
@@ -164,10 +163,10 @@ class py_config(config):
             src_dir = self.pkg + '-' + str(version)
             archive = src_dir + '.tar.gz'
             try:
-                prerequisites.install_pypkg(src_dir, website, archive, locally=locally)
+                install_pypkg(src_dir, website, archive, locally=locally)
             except Exception:
                 archive = src_dir + '.zip'
-                prerequisites.install_pypkg(src_dir, website, archive, locally=locally)
+                install_pypkg(src_dir, website, archive, locally=locally)
             if not self.is_installed(environ, version):
                 raise Exception(self.pkg + ' installation failed.')
 
@@ -194,7 +193,7 @@ class prog_config(config):
 
 
     def is_installed(self, environ, version=None):
-        building.set_debug(self.debug)
+        options.set_debug(self.debug)
         limit = False
         locations = []
         if self.exe.upper() in environ and environ[self.exe.upper()]:
@@ -213,13 +212,11 @@ class prog_config(config):
                 pass
 
         try:
-            program = prerequisites.find_program(self.exe, locations, limit=limit)
+            program = find_program(self.exe, locations, limit=limit)
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print('Exception: ' + str(e))
-                print(traceback.print_exc())
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment[self.exe.upper()] = program
@@ -260,21 +257,21 @@ class nodejs_config(config):
             post = []
             if not locally:
                 if not 'windows' in platform.system().lower() and \
-                        not prerequisites.system_uses_homebrew():
+                        not system_uses_homebrew():
                     pre.append('sudo')
                 post.append('-g')
 
             if self.debug:
                 log = sys.stdout
             else:
-                log_file = os.path.join(building.target_build_dir,
+                log_file = os.path.join(options.target_build_dir,
                                         'node-' + self.module.lower() + '.log')
                 log = open(log_file, 'w')
 
             cmd_line = pre + [environ['NPM'], 'update'] + post
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = prerequisites.process_progress(p)
+                status = process_progress(p, options.VERBOSE)
             except KeyboardInterrupt:
                 p.terminate()
                 log.close()
@@ -289,7 +286,7 @@ class nodejs_config(config):
             cmd_line = pre + [environ['NPM'], 'install', 'node-webgl'] + post
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = prerequisites.process_progress(p)
+                status = process_progress(p, options.VERBOSE)
             except KeyboardInterrupt:
                 p.terminate()
                 log.close()

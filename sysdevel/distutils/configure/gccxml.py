@@ -4,6 +4,7 @@ import platform
 
 from ..prerequisites import *
 from ..configuration import prog_config
+from .. import options
 
 class configuration(prog_config):
     """
@@ -15,7 +16,7 @@ class configuration(prog_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         limit = False
         base_dirs = []
         if 'GCCXML' in environ and environ['GCCXML']:
@@ -36,21 +37,19 @@ class configuration(prog_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
         return self.found
 
 
     def install(self, environ, version, locally=True):
-        global local_search_paths
         if not self.found:
             if locally or ('darwin' in platform.system().lower() and
                            system_uses_homebrew()):
                 here = os.path.abspath(os.getcwd())
                 if locally:
-                    prefix = os.path.abspath(target_build_dir)
-                    if not prefix in local_search_paths:
-                        local_search_paths.append(prefix)
+                    prefix = os.path.abspath(options.target_build_dir)
+                    if not prefix in options.local_search_paths:
+                        options.add_local_search_path(prefix)
                 else:
                     prefix = global_prefix
                 ## MinGW shell strips backslashes

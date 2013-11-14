@@ -3,8 +3,9 @@ import os
 import struct
 import traceback
 
-from ..prerequisites import *
+from ..prerequisites import find_program, global_install
 from ..configuration import prog_config
+from .. import options
 
 class configuration(prog_config):
     """
@@ -20,6 +21,7 @@ class configuration(prog_config):
 
 
     def is_installed(self, environ, version=None):
+        options.set_debug(self.debug)
         prev = prog_config.is_installed(self, environ, version)
         if prev:
             locations = [os.path.dirname(self.environment[self.exe.upper()])]
@@ -28,9 +30,8 @@ class configuration(prog_config):
                 self.environment['NPM'] = program
             except Exception:
                 if self.debug:
-                    e = sys.exc_info()[1]
-                    print('Exception: ' + str(e))
-                    print(traceback.print_exc())
+                    print(sys.exc_info()[1])
+                    #print(traceback.print_exc())
                 return False
         return prev
         

@@ -1,6 +1,7 @@
 
 from ..prerequisites import *
 from ..configuration import lib_config
+from .. import options
 
 class configuration(lib_config):
     """
@@ -17,7 +18,7 @@ class configuration(lib_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         try:
             gomp_lib_dir, gomp_lib  = find_library('gomp')
             self.environment['GOMP_LIBRARY_DIR'] = gomp_lib_dir
@@ -25,8 +26,7 @@ class configuration(lib_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
         return self.found
 
 

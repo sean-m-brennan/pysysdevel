@@ -4,7 +4,9 @@ import platform
 import subprocess
 
 from ..prerequisites import *
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
+from .. import options
 
 class configuration(lib_config):
     """
@@ -17,7 +19,7 @@ class configuration(lib_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         lib_name = 'cdf'
         if 'windows' in platform.system().lower():
             lib_name += 'NativeLibrary'
@@ -65,8 +67,7 @@ class configuration(lib_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['CDF_INCLUDE_DIR'] = incl_dir
@@ -80,7 +81,6 @@ class configuration(lib_config):
 
 
     def install(self, environ, version, locally=True):
-        global local_search_paths
         if not self.found:
             if version is None:
                 version = '34_1'
@@ -88,9 +88,9 @@ class configuration(lib_config):
             if locally or not 'darwin' in platform.system().lower():
                 here = os.path.abspath(os.getcwd())
                 if locally:
-                    prefix = os.path.abspath(target_build_dir)
-                    if not prefix in local_search_paths:
-                        local_search_paths.append(prefix)
+                    prefix = os.path.abspath(options.target_build_dir)
+                    if not prefix in options.local_search_paths:
+                        options.add_local_search_path(prefix)
                 else:
                     prefix = global_prefix
                 ## MinGW shell strips backslashes
@@ -112,7 +112,7 @@ class configuration(lib_config):
                 fetch(''.join(website) + web_subdir, archive, archive)
                 unarchive(archive, src_dir)
 
-                build_dir = os.path.join(target_build_dir, src_dir)
+                build_dir = os.path.join(options.target_build_dir, src_dir)
                 os.chdir(build_dir)
                 log = open('build.log', 'w')
                 if 'windows' in platform.system().lower():

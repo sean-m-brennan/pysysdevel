@@ -1,7 +1,7 @@
 
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import autotools_install, global_install
 from ..configuration import lib_config
 
 class configuration(lib_config):

@@ -1,21 +1,24 @@
 
 import os
-from ..prerequisites import *
-from ...configuration import prog_config
+import sys
+from .. import options
+from ..prerequisites import programfiles_directories
+from ..fetching import fetch, unarchive
+from ..configuration import prog_config
+
 
 class configuration(prog_config):
     """
     Find/install ANTLR (supports v2, v3, or v4)
     """
     def __init__(self):
-        prog_config.__init__(self, 'antlr',
-                             dependencies=['java'], debug=False)
+        prog_config.__init__(self, 'antlr', dependencies=['java'], debug=False)
 
 
     def is_installed(self, environ, version):
         if version is None:
             version = '3.1.2'
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         limit = False
         antlr_root = None
         if 'ANTLR' in environ and environ['ANTLR']:
@@ -49,8 +52,7 @@ class configuration(prog_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
         return self.found
 
 
@@ -65,12 +67,12 @@ class configuration(prog_config):
             unarchive( archive, src_dir)
             jarfile = os.path.join(target_build_dir, src_dir + '.jar')
             if locally:
-                shutil.copy(os.path.join(target_build_dir, src_dir,
+                shutil.copy(os.path.join(options.target_build_dir, src_dir,
                                          'lib', src_dir + '.jar'), jarfile)
             else:
                 jarfile = os.path.join(environ['JAVA_HOME'], 'lib',
                                        src_dir + '.jar')
-                shutil.copy(os.path.join(target_build_dir, src_dir,
+                shutil.copy(os.path.join(options.target_build_dir, src_dir,
                                          'lib', src_dir + '.jar'), jarfile)
             self.environment['ANTLR'] = [environ['JAVA'],
                                          "-classpath", os.path.abspath(jarfile),

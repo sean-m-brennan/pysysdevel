@@ -6,6 +6,7 @@ Build and install sysdevel
 
 import os
 import sys
+import traceback
 from distutils.core import setup
 
 # Just in case we are being called from a different directory
@@ -19,8 +20,9 @@ if rev is None:
     rev = '6.12'
 
 
-if not 'clean' in sys.argv:
-    ## In-place build
+if not 'clean' in sys.argv and \
+   not '--no-docs' in sys.argv and not '--without-documentation' in sys.argv:
+    ## In-place build; always build documentation
     from sysdevel.distutils.build_org import make_doc as make_org
     from sysdevel.distutils.build_docbook import make_doc as make_docbook
         
@@ -28,14 +30,18 @@ if not 'clean' in sys.argv:
     try:
         make_docbook(xml_file, stylesheet='docbook_custom.xsl')
     except Exception:
-        print("Could not build the manual. Requires emacs and docbook.")
-        e = sys.exc_info()[1]
-        print(e)
+        print(sys.exc_info()[1])
+        print("Could not build the manual. "+
+              "Requires emacs, docbook, xsltproc or saxon, and fop.")
 
-if 'docs' in sys.argv:
-    argv.remove('docs')
-    if len(argv) < 2:
-        exit(0)
+
+if '--no-docs' in sys.argv:
+    argv.remove('--no-docs')
+if '--without-documentation' in sys.argv:
+    argv.remove('--without-documentation')
+
+
+
 
 setup(name         = 'pysysdevel',
       version      = '0.' + str(rev),

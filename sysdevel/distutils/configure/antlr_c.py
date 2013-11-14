@@ -1,5 +1,5 @@
 
-from ..prerequisites import *
+from ..prerequisites import autotools_install
 from ..configuration import lib_config
 
 class configuration(lib_config):
@@ -9,7 +9,7 @@ class configuration(lib_config):
     def __init__(self):
         lib_config.__init__(self, "antlr3c", "antlr3.h", debug=False)
 
-    ## FIXME ANTLR v2 & v4
+    ## TODO ANTLR v2 & v4
 
     def install(self, environ, version, locally=True):
         if not self.found:

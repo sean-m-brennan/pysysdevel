@@ -5,6 +5,7 @@ import sys
 
 from ..prerequisites import *
 from ..configuration import config
+from .. import options
 
 class configuration(config):
     """
@@ -16,6 +17,7 @@ class configuration(config):
 
 
     def is_installed(self, environ, version):
+        options.set_debug(self.debug)
         self.found = system_uses_macports()
         if self.found:
             self.ports_found = os.path.exists(python_executable())

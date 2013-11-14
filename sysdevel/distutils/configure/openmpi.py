@@ -4,6 +4,7 @@ import platform
 
 from ..prerequisites import *
 from ..configuration import lib_config
+from .. import options
 
 class configuration(lib_config):
     """
@@ -14,7 +15,7 @@ class configuration(lib_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         openmpi_lib_list = ['mpi', 'mpi_cxx', 'mpi_f90']
         arch = 'i686'
         if struct.calcsize('P') == 8:

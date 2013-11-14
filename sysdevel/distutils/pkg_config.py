@@ -32,26 +32,27 @@ import sys
 import platform
 import warnings
 
-from . import prerequisites
+from .prerequisites import read_cache
 from ..util import flatten
+from . import options
 
 
 #FIXME unify argv, environ and options handling
 
 def handle_arguments(argv, option_list=[]):
     if '--quiet' in argv:
-        set_verbose(False)
+        options.set_verbose(False)
     if '--debug' in argv:
-        set_debug(True)
+        options.set_debug(True)
         argv.remove('--debug')
 
     option_plus_list = list(option_list)
     option_plus_list.append('doc')
 
-    options = dict()
-    options['bundle'] = False
-    options['runscript'] = ''
-    options['ziplib'] = None
+    opts = dict()
+    opts['bundle'] = False
+    opts['runscript'] = ''
+    opts['ziplib'] = None
 
     bundle = False
     if 'py2exe' in argv:
@@ -63,7 +64,7 @@ def handle_arguments(argv, option_list=[]):
     for arg in argv:
         if arg == '-b' or arg == '--build_base':
             idx = argv.index(arg)
-            set_build_dir(argv[idx+1])
+            options.set_build_dir(argv[idx+1])
 
         if arg.startswith('--app='):
             app = runscript = arg[6:].lower()
@@ -79,77 +80,77 @@ def handle_arguments(argv, option_list=[]):
             break
         if arg.startswith('--ziplib'):
             if '=' in arg:
-                options['ziplib'] = arg[9:]
-                if options['ziplib'][-4:] != '.zip':
-                    options['ziplib'] += '.zip'
+                opts['ziplib'] = arg[9:]
+                if opts['ziplib'][-4:] != '.zip':
+                    opts['ziplib'] += '.zip'
             else:
-                options['ziplib'] = default_py2exe_library
+                opts['ziplib'] = options.default_py2exe_library
             
     if bundle and app != '' and runscript != '':
-        options['bundle'] = bundle
-        options['runscript'] = runscript
-        options['app'] = app
+        opts['bundle'] = bundle
+        opts['runscript'] = runscript
+        opts['app'] = app
 
-    options['install_dir'] = sys.prefix
+    opts['install_dir'] = sys.prefix
     data_directory = 'share'
     data_override = False
     for idx, arg in enumerate(argv[:]):
         if arg.startswith('--prefix='):
-            options['install_dir'] = arg[9:]
+            opts['install_dir'] = arg[9:]
         elif arg.startswith('--home='):
-            options['install_dir'] = arg[7:]
+            opts['install_dir'] = arg[7:]
         elif arg.startswith('--user='):
-            options['install_dir'] = arg[7:]
+            opts['install_dir'] = arg[7:]
         elif arg.startswith('--install-data='):
             path = arg[15:]
             if os.path.isabs(path):
-                options['data_install_dir'] = path
+                opts['data_install_dir'] = path
                 data_override = True  ## always overrides the above prefixes
             else:
                 data_directory = path
         elif arg.startswith('build_') and arg[6:] in option_plus_list:
-            options[arg[6:]] = True
+            opts[arg[6:]] = True
             if not 'build' in argv:
                 argv.insert(idx, 'build')
             argv.remove(arg)
         elif arg.startswith('install_') and arg[8:] in option_plus_list:
-            options[arg[8:]] = True
+            opts[arg[8:]] = True
             if not 'install' in argv:
                 argv.insert(idx, 'install')
             argv.remove(arg)
         elif arg.startswith('clean_') and arg[8:] in option_plus_list:
-            options[arg[8:]] = True
+            opts[arg[8:]] = True
             if not 'clean' in argv:
                 argv.insert(idx, 'clean')
             argv.remove(arg)
     if not data_override:
-        options['data_install_dir'] = os.path.join(options['install_dir'],
-                                                   data_directory)
+        opts['data_install_dir'] = os.path.join(opts['install_dir'],
+                                                data_directory)
 
     build_all = True
     for opt in option_list:  ## do not build docs by default
-        if opt in options:
+        if opt in opts:
             build_all = False
     if build_all:
         for opt in option_list:
-            options[opt] = True
+            opts[opt] = True
            
-    if 'doc' in options:
-        options['documentation'] = True
+    if 'doc' in opts:
+        opts['documentation'] = True
     else:
-        options['documentation'] = False
+        opts['documentation'] = False
 
-    return options, argv
+    return opts, argv
 
 
-def get_options(pkg_config, options):
+def get_options(pkg_config, opts):
     '''
     pkg_config is a 'mydistutils.pkg_config' object.
     options from 'handle_arguments' above.
     '''
     target_os = platform.system().lower()  ## disallow cross-compile
-    is_bundle = options['bundle']
-    runscript = options['runscript']
+    is_bundle = opts['bundle']
+    runscript = opts['runscript']
 
     ##############################
     ## Windows plus py2exe
@@ -167,8 +168,8 @@ def get_options(pkg_config, options):
                                  pkg_config.PACKAGE + '.ico')
     
         addtnl_files = []
-        addtnl_files += pkg_config.get_data_files(options['app'])
-        addtnl_files += pkg_config.get_extra_data_files(options['app'])
+        addtnl_files += pkg_config.get_data_files(opts['app'])
+        addtnl_files += pkg_config.get_extra_data_files(opts['app'])
         addtnl_files += [('.', [icon_file])]
         addtnl_files += [('.', pkg_config.get_missing_libraries())]
         icon_res = [(0, icon_file)]
@@ -195,7 +196,7 @@ def get_options(pkg_config, options):
 
 
         file_bundling = 1
-        if 'app_type' in options and options['app_type'] == 'console':
+        if 'app_type' in opts and opts['app_type'] == 'console':
             file_bundling = 3
 
         exe_opts = {'py2exe': {
@@ -208,7 +209,7 @@ def get_options(pkg_config, options):
                     'ignores': [],
                     'excludes': excludes,
                     'dll_excludes': dll_excludes,
-                    'dist_dir': os.path.join('bin_dist', options['app']),
+                    'dist_dir': os.path.join('bin_dist', opts['app']),
                     'typelibs': [],
                     'compressed': False,
                     'xref': False,
@@ -223,7 +224,7 @@ def get_options(pkg_config, options):
                     'icon_resources': icon_res,
                     'bitmap_resources': [],
                     'other_resources': [],
-                    'dest_base': options['app'],
+                    'dest_base': opts['app'],
                     'company_name': pkg_config.COMPANY,
                     }]
 
@@ -241,7 +242,7 @@ def get_options(pkg_config, options):
             os.environ['PATH'] += os.pathsep + lib[0]
             os.environ['PATH'] += os.pathsep + os.path.join(lib[0], '..', 'bin')
 
-        if 'app_type' in options and options['app_type'] == 'console':
+        if 'app_type' in opts and opts['app_type'] == 'console':
             specific_options = dict(
                 console = exe_target,
                 package_dir = {pkg_config.PACKAGE: pkg_config.PACKAGE},
@@ -249,7 +250,7 @@ def get_options(pkg_config, options):
                 package_data = pkg_data,
                 data_files = addtnl_files,
                 options = exe_opts,
-                zipfile = options['ziplib'],
+                zipfile = opts['ziplib'],
                 )
         else:
             specific_options = dict(
@@ -259,7 +260,7 @@ def get_options(pkg_config, options):
                 package_data = pkg_data,
                 data_files = addtnl_files,
                 options = exe_opts,
-                zipfile = options['ziplib'],
+                zipfile = opts['ziplib'],
                 )
 
         return specific_options
@@ -353,7 +354,7 @@ def get_options(pkg_config, options):
         if target_os == 'windows':
             specific_options['bdist_wininst'] = {
                 'bitmap': pkg_config.logo_bmp_path,
-                'install_script': windows_postinstall,
+                'install_script': options.windows_postinstall,
                 'keep_temp': True,
                 'user_access_control': 'auto',
                 }
@@ -363,15 +364,15 @@ def get_options(pkg_config, options):
 
 
 
-def post_setup(pkg_config, options):
-    bundled = options['bundle']
+def post_setup(pkg_config, opts):
+    bundled = opts['bundle']
     if bundled:
         os_name = platform.system().lower()
-        dist_dir = os.path.join('bin_dist', options['app'])
+        dist_dir = os.path.join('bin_dist', opts['app'])
         current = os.getcwd()
         os.chdir(dist_dir)
-        archive = options['app'] + '_' + os_name + '_' + pkg_config.RELEASE + '.zip'
-        if pkg_config.PACKAGE != options['app']:
+        archive = opts['app'] + '_' + os_name + '_' + pkg_config.RELEASE + '.zip'
+        if pkg_config.PACKAGE != opts['app']:
             archive = pkg_config.PACKAGE + '_' + archive
         z = zipfile.ZipFile(os.path.join(current, 'bin_dist', archive),
                             'w', zipfile.ZIP_DEFLATED)
@@ -480,7 +481,7 @@ class pkg_config(object):
 
     def get_prerequisites(self, argv):
         if 'windows' in platform.system().lower():
-            environ = prerequisites.read_cache()
+            environ = read_cache()
             if 'COMPILER' in environ:
                 compiler = environ['COMPILER']
             else:

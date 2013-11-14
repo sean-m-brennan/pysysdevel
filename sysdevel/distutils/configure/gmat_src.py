@@ -5,7 +5,9 @@ import shutil
 import traceback
 
 from ..prerequisites import *
+from ..fetching import fetch, unarchive
 from ..configuration import config
+from .. import options
 
 class configuration(config):
     """
@@ -46,8 +48,7 @@ class configuration(config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
-
+        options.set_debug(self.debug)
         locations = []
         limit = False
         if 'GMAT_ROOT' in environ and environ['GMAT_ROOT']:
@@ -94,7 +95,7 @@ class configuration(config):
             import pysvn
             svn_repo = 'https://gmat.svn.sourceforge.net/svnroot/gmat/trunk'
             client = pysvn.Client()
-            src_dir = os.path.join(target_build_dir, 'gmat-svn-src')
+            src_dir = os.path.join(options.target_build_dir, 'gmat-svn-src')
             data_dir = os.path.join(src_dir, 'application')
             if not os.path.exists(src_dir):
                 client.checkout(svn_repo, src_dir)
@@ -113,8 +114,8 @@ class configuration(config):
             data_archive = data_dir + '.zip'
             fetch(''.join(website), data_archive, data_archive)
             unarchive(data_archive, data_dir)
-            src_dir = os.path.join(target_build_dir, src_dir)
-            data_dir = os.path.join(target_build_dir, data_dir)
+            src_dir = os.path.join(options.target_build_dir, src_dir)
+            data_dir = os.path.join(options.target_build_dir, data_dir)
 
         self.environment['GMAT_VERSION'] = version
         self.environment['GMAT_ROOT'] = os.path.abspath(src_dir)

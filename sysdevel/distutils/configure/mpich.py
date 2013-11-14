@@ -4,6 +4,7 @@ import platform
 
 from ..prerequisites import *
 from ..configuration import lib_config
+from .. import options
 
 class configuration(lib_config):
     """
@@ -14,7 +15,7 @@ class configuration(lib_config):
 
 
     def is_installed(self, environ, version):
-        set_debug(self.debug)
+        options.set_debug(self.debug)
         mpich_lib_list = ['mpich', 'mpichcxx', 'mpichf90']
         if 'windows' in platform.system().lower():
             mpich_lib_list = ['mpi', 'mpicxx', 'fmpich2g']
@@ -56,8 +57,7 @@ class configuration(lib_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir

@@ -34,7 +34,10 @@ __all__ = ['core', 'extensions', 'pkg_config', 'configuration', 'configure',
            'recur', 'sdist', 'submodules', 'util', 'test', 'tree',
            ]
 
+import os
 import sys
+import glob
+
 
 using_setuptools = False  ## monkeypatching is evil
 
@@ -61,13 +64,95 @@ def setup_setuptools():
             import setuptools
             reload(setuptools.dist)  ## in case it was already loaded
             using_setuptools = True
-            print("Using setuptools.")
+            sys.stderr.write("Using setuptools.\n")
         except:
             using_setuptools = False
-            print("Setuptools is not available.")
+            sys.stderr.write("Setuptools is not available.\n")
+
+
+class _Options(object):
+    default_path_prefixes = ['/usr', '/usr/local', '/opt/local',
+                             ] + glob.glob('C:\\Python*\\')
+    global_prefix = '/usr'
+
+    ## immutable
+    local_lib_dir = 'python'
+    javascript_dir = 'javascript'
+    stylesheet_dir = 'stylesheets'
+    script_dir = 'scripts'
+    windows_postinstall = 'postinstall.py'
+    default_py2exe_library = 'library.zip'
+
+    def __init__(self):
+        ## mutable
+        self._local_search_paths = []
+        self._default_download_dir  = 'third_party'
+        self._target_download_dir  = self._default_download_dir
+        self._default_build_dir = 'build'
+        self._target_build_dir = self._default_build_dir
+        self._VERBOSE = False
+        self._DEBUG = False
+
+    @property
+    def VERBOSE(self):
+        return self._VERBOSE
+
+    def set_verbose(self, b):
+        self._VERBOSE = b
+
+    @property
+    def DEBUG(self):
+        return self._DEBUG
+
+    def set_debug(self, b):
+        self._DEBUG = b
+
+    @property
+    def local_search_paths(self):
+        return self._local_search_paths
+
+    def set_local_search_paths(self, p):
+        self._local_search_paths = list(p)
+
+    def add_local_search_path(self, p):
+        self._local_search_paths.append(p)
+
+    @property
+    def default_build_dir(self):
+        return self._default_build_dir
+
+    def set_build_dir(self, d):
+        self._default_build_dir = d
+
+    @property
+    def download_dir(self):
+        return self._target_download_dir
+
+    @property
+    def default_download_dir(self):
+        return self._target_download_dir
+
+    def set_download_dir(self, d):
+        self._default_download_dir = d
+
+    @property
+    def target_build_dir(self):
+        return self._target_build_dir
+
+    def set_top_level(self, num):
+        base_dir = os.path.realpath(os.path.abspath(
+            os.path.sep.join(['..' for i in range(num)])))
+        self._target_build_dir = os.path.join(base_dir, self.default_build_dir)
+        self._target_download_dir = os.path.join(base_dir,
+                                                 self.default_download_dir)
+        return self._target_build_dir
+
+options = _Options()
 
 
 from .core import setup
 from .extensions import *
 from .configure import configure_system, FatalError
 from .pkg_config import pkg_config, handle_arguments, get_options, post_setup
+
+

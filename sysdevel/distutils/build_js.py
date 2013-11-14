@@ -44,9 +44,9 @@ except:
 
 from .filesystem import mkdir, copy_tree, recursive_chown
 from .prerequisites import find_program
-from .prerequisites import javascript_dir, stylesheet_dir, script_dir
 from .building import configure_file, configure_files
-from sysdevel import client_support_dir
+from . import options
+from .. import client_support_dir
 
 
 class build_js(build_ext):
@@ -172,21 +172,21 @@ class build_js(build_ext):
                 targetfile = os.path.join(target, filename)
                 if '.js' in filename:
                     targetfile = os.path.join(target,
-                                              javascript_dir, filename)
+                                              options.javascript_dir, filename)
                 if '.css' in filename:
                     targetfile = os.path.join(target,
-                                              stylesheet_dir, filename)
+                                              options.stylesheet_dir, filename)
                 if not os.path.exists(targetfile):
                     configure_file(environ, filepath, targetfile)
 
             ## Copy over downloaded files
-            js_dir = os.path.join(build.build_base, javascript_dir)
+            js_dir = os.path.join(build.build_base, options.javascript_dir)
             if os.path.exists(js_dir):
-                copy_tree(js_dir, os.path.join(target, javascript_dir))
-            css_dir = os.path.join(build.build_base, stylesheet_dir)
+                copy_tree(js_dir, os.path.join(target, options.javascript_dir))
+            css_dir = os.path.join(build.build_base, options.stylesheet_dir)
             if os.path.exists(css_dir):
-                copy_tree(css_dir, os.path.join(target, stylesheet_dir))
-            php_dir = os.path.join(build.build_base, script_dir)
+                copy_tree(css_dir, os.path.join(target, options.stylesheet_dir))
+            php_dir = os.path.join(build.build_base, options.script_dir)
             if os.path.exists(php_dir):
                 copy_tree(php_dir, target)
 
@@ -206,7 +206,7 @@ class build_js(build_ext):
             stat_info = os.stat(os.path.join(src_dir, 'public'))
             uid = stat_info.st_uid
             gid = stat_info.st_gid
-            filesystem.recursive_chown(target, uid, gid)
+            recursive_chown(target, uid, gid)
 
             if not os.path.lexists(os.path.join(target, 'index.html')) and \
                     os.path.lexists(os.path.join(target, wext.name + '.html')):

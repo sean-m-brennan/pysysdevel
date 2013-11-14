@@ -2,7 +2,8 @@
 import os
 import shutil
 
-from ..prerequisites import *
+from ..fetching import fetch, unarchive
+from ..filesystem import mkdir
 from ..configuration import config
 
 

@@ -2,7 +2,7 @@
 import os
 import sys
 
-from ..prerequisites import *
+from ..prerequisites import install_pypkg, patch_file
 from ..configuration import py_config
 
 class configuration(py_config):

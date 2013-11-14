@@ -38,49 +38,55 @@ try:
 except:
     from distutils.command.build_ext import build_ext
 
-from .prerequisites import target_build_dir, find_program
+from .prerequisites import find_program, find_file
 from .filesystem import mkdir, copy_tree
+from . import options
 
 
 def make_doc(src_file, target_dir=None, stylesheet=None):
+    (XSLTPROC, JAVA_SAXON, NET_SAXON) = range(3)
+
     src_dir = os.path.abspath(os.path.dirname(src_file))
     if target_dir is None:
         pth = os.path.relpath(os.path.dirname(src_file)).split(os.sep)[1:]
-        target_dir = os.path.join(target_build_dir, *pth)
+        target_dir = os.path.join(options.target_build_dir, *pth)
     if stylesheet is None:
         stylesheet = 'http://docbook.sourceforge.net/release/fo/docbook.xsl'
 
     fop_exe = find_program('fop')
     java_exe = find_program('java')
-    try:  ## prefer the jar
-        classpaths = []
-        try:
-            for path in os.environ['CLASSPATH'].split(os.pathsep):
-                classpaths.append(os.path.dirname(path))
-        except:
-            pass
-        try:
-            classpaths.append(os.path.join(os.environ['JAVA_HOME'], 'lib'))
-        except:
-            pass
-        saxon_jar = find_file('saxon*.jar',
-                              ['/usr/share/java', '/usr/local/share/java',
-                               '/opt/local/share/java',] + classpaths)
-        resolver_jar = find_file('resolver*.jar',
-                                 ['/usr/share/java',
-                                  '/usr/local/share/java',
-                                  '/opt/local/share/java',] + classpaths)
-        saxon_exe = [java_exe,  '-classpath',
-                     os.pathsep.join([saxon_jar, resolver_jar]),
-                     'net.sf.saxon.Transform']
+    try:  ## prefer xsltproc
+        xslt_exe = [find_program('xsltproc')]
+        which = XSLTPROC
     except:
-        saxon_exe = [find_program('saxon')]
+        try:
+            classpaths = []
+            try:
+                for path in os.environ['CLASSPATH'].split(os.pathsep):
+                    classpaths.append(os.path.dirname(path))
+            except:
+                pass
+            try:
+                classpaths.append(os.path.join(os.environ['JAVA_HOME'], 'lib'))
+            except:
+                pass
+            saxon_jar = find_file('saxon*.jar',
+                                  ['/usr/share/java', '/usr/local/share/java',
+                                   '/opt/local/share/java',] + classpaths)
+            resolver_jar = find_file('resolver*.jar',
+                                     ['/usr/share/java',
+                                      '/usr/local/share/java',
+                                      '/opt/local/share/java',] + classpaths)
+            xslt_exe = [java_exe, '-classpath',
+                        os.pathsep.join([saxon_jar, resolver_jar]),
+                        '-jar', saxon_jar]
+            which = JAVA_SAXON
+        except:
+            xslt_exe = [find_program('saxon')]
+            which = NET_SAXON
+
     if not os.path.exists(target_dir):
         mkdir(target_dir)
-    support = glob.glob(os.path.join(os.path.dirname(__file__),
-                                     'support', '*.xsl'))
-    for s in support:
-        shutil.copy(s, target_dir)
     copy_tree(src_dir, target_dir)
 
     ## Need to respect relative paths
@@ -90,9 +96,14 @@ def make_doc(src_file, target_dir=None, stylesheet=None):
     fo_src = os.path.splitext(src_base)[0] + '.fo'
     pdf_dst = os.path.splitext(src_base)[0] + '.pdf'
 
-    cmd_line = saxon_exe + [src_base, '-o:' + fo_src, '-xsl:' + stylesheet]
-    if 'XML_CATALOG_FILES' in os.environ:
-        cmd_line += ['-catalog:' + os.environ['XML_CATALOG_FILES']]
+    if which == XSLTPROC:
+        cmd_line = xslt_exe + ['-xinclude', '-o', fo_src, stylesheet, src_base]
+    elif which == JAVA_SAXON:
+        cmd_line = xslt_exe + ['-o', fo_src, src_base, stylesheet]
+    else:
+        cmd_line = xslt_exe + [src_base, '-o:' + fo_src, '-xsl:' + stylesheet]
+        if 'XML_CATALOG_FILES' in os.environ:
+            cmd_line += ['-catalog:' + os.environ['XML_CATALOG_FILES']]
     subprocess.check_call(" ".join(cmd_line), shell=True)
 
     cmd_line = [fop_exe, '-fo', fo_src, '-pdf', pdf_dst]

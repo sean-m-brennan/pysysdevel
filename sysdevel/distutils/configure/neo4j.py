@@ -4,7 +4,9 @@ import platform
 import os
 
 from ..prerequisites import *
+from ..fetching import fetch, unarchive
 from ..configuration import prog_config
+from .. import options
 
 class configuration(prog_config):
     """
@@ -16,17 +18,16 @@ class configuration(prog_config):
 
 
     def is_installed(self, environ, version):
+        options.set_debug(self.debug)
         if version is None:
             version = '1.9.4'
-        set_debug(self.debug)
         try:
             local_dir = os.path.join(target_build_dir, 'neo4j-*', 'bin')
             self.environment['NEO4J'] = find_program('neo4j', [local_dir])
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
         return self.found
 
 

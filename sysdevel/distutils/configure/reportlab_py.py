@@ -1,5 +1,7 @@
 
-from ..prerequisites import *
+import sys
+
+from ..prerequisites import compare_versions
 from ..configuration import py_config
 
 
@@ -24,6 +26,5 @@ class configuration(py_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
         return self.found
