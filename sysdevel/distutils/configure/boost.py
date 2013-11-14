@@ -114,13 +114,13 @@ class configuration(lib_config):
                 unarchive(archive, src_dir)
 
                 if locally:
-                    prefix = os.path.abspath(target_build_dir)
+                    prefix = os.path.abspath(options.target_build_dir)
                     if not prefix in options.local_search_paths:
                         options.add_local_search_path(prefix)
                 else:
                     prefix = global_prefix
 
-                os.chdir(os.path.join(target_build_dir, src_dir))
+                os.chdir(os.path.join(options.target_build_dir, src_dir))
                 log = open('build.log', 'w')
                 err = open('build.errors', 'w')
                 ## unique build process

@@ -271,7 +271,7 @@ class nodejs_config(config):
             cmd_line = pre + [environ['NPM'], 'update'] + post
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = process_progress(p, options.VERBOSE)
+                status = process_progress(p)
             except KeyboardInterrupt:
                 p.terminate()
                 log.close()
@@ -286,7 +286,7 @@ class nodejs_config(config):
             cmd_line = pre + [environ['NPM'], 'install', 'node-webgl'] + post
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = process_progress(p, options.VERBOSE)
+                status = process_progress(p)
             except KeyboardInterrupt:
                 p.terminate()
                 log.close()

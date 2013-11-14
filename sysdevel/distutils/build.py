@@ -107,7 +107,8 @@ class build(old_build):
             if 'clean' in argv:
                 argv.remove('clean')
 
-            self.get_finalized_command('dependencies').run(self)
+            ## always check dependencies
+            self.get_finalized_command('dependencies').run()
 
             process_subpackages(self.distribution.parallel_build, 'build',
                                 self.build_base, self.distribution.subpackages,

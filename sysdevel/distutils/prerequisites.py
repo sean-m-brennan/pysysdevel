@@ -570,7 +570,7 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
         try:
             p = subprocess.Popen(cmd_line, env=environ, stdout=log, stderr=log,
                                  shell=shell)
-            status = process_progress(p, options.VERBOSE)
+            status = process_progress(p)
             log.close()
         except KeyboardInterrupt:
             p.terminate()

@@ -29,11 +29,11 @@ class configuration(py_config):
             pyjs_lib = os.path.join(pyjamas_root, 'build', 'lib')
             self.environment['PYJSBUILD'] = find_program('pyjsbuild', [pyjs_bin])
             sys.path.insert(0, pyjs_lib)
+            import pyjs
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             try:
                 import pyjs
                 self.environment['PYJSBUILD'] = find_program('pyjsbuild')
@@ -70,7 +70,7 @@ class configuration(py_config):
             cmd_line = [sys.executable, 'bootstrap.py',]
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = process_progress(p, options.VERBOSE)
+                status = process_progress(p)
             except KeyboardInterrupt:
                 p.terminate()
                 log.close()
@@ -86,7 +86,7 @@ class configuration(py_config):
                 cmd_line = sudo_prefix + cmd_line + ['install']
             try:
                 p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
-                status = process_progress(p, options.VERBOSE)
+                status = process_progress(p)
                 log.close()
             except KeyboardInterrupt:
                 p.terminate()

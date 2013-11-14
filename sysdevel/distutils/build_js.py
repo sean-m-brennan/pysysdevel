@@ -93,8 +93,6 @@ class build_js(build_ext):
         build = self.get_finalized_command('build')
         environ = self.distribution.environment
 
-        import pyjs
-        ## TODO: use pyjs module directly (instead of 'pyjsbuild')
         for wext in self.web_ext_modules:
             if self.distribution.verbose:
                 print('building web extension "' + \
@@ -124,33 +122,35 @@ class build_js(build_ext):
                     if os.path.getmtime(ref) < os.path.getmtime(src):
                         reprocess = True
             if reprocess:
-                for s in wext.sources:
-                    configure_file(environ, s,
-                                        os.path.join(working_dir,
-                                                     os.path.basename(s)))
                 ## Special handling for 'public' directory
                 configure_files(environ, os.path.join(src_dir, 'public'),
-                                     '*', os.path.join(working_dir, 'public'),
-                                     excludes=['.svn', 'CVS'])
-
-                compiler = environ['PYJSBUILD'] or self.pyjscompiler
-                if compiler is None:
-                    raise DistutilsExecError("no value pyjsbuild executable found or given")
-                cmd_line = [os.path.abspath(compiler)]
-                for arg in wext.extra_compile_args:
-                    if 'debug' in arg.lower():
-                        cmd_line.append('--debug')
-                        cmd_line.append('--print-statements')
-                    else:
-                        cmd_line.append(arg)
-                if self.distribution.verbose:
-                    cmd_line.append('--log-level=' + str(logging.INFO))
-                else:
-                    cmd_line.append('--log-level=' + str(logging.ERROR))
-                cmd_line.append('--output=' + target)
-                cmd_line.append(wext.name)
+                                '*', os.path.join(working_dir, 'public'),
+                                excludes=['.svn', 'CVS'])
 
                 if len(wext.sources) > 0:
+                    for s in wext.sources:
+                        configure_file(environ, s,
+                                       os.path.join(working_dir,
+                                                    os.path.basename(s)))
+                    import pyjs
+                    ## TODO: use pyjs module directly (instead of 'pyjsbuild')
+                    compiler = environ['PYJSBUILD'] or self.pyjscompiler
+                    if compiler is None:
+                        raise DistutilsExecError("no value pyjsbuild executable found or given")
+                    cmd_line = [os.path.abspath(compiler)]
+                    for arg in wext.extra_compile_args:
+                        if 'debug' in arg.lower():
+                            cmd_line.append('--debug')
+                            cmd_line.append('--print-statements')
+                        else:
+                            cmd_line.append(arg)
+                    if self.distribution.verbose:
+                        cmd_line.append('--log-level=' + str(logging.INFO))
+                    else:
+                        cmd_line.append('--log-level=' + str(logging.ERROR))
+                    cmd_line.append('--output=' + target)
+                    cmd_line.append(wext.name)
+
                     os.chdir(working_dir)
                     status = subprocess.call(cmd_line)
                     if status != 0:
@@ -161,7 +161,7 @@ class build_js(build_ext):
 
             pubdir = os.path.join(working_dir, 'public')
             excludes = ['.svn', 'CVS']
-            if len(wext.sources) < 1:  ## PYJS do not run
+            if len(wext.sources) < 1:  ## PYJS did not run
                 copy_tree(pubdir, target, excludes=excludes,
                           verbose=self.distribution.verbose)
 

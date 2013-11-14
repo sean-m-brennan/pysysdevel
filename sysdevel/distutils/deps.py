@@ -66,12 +66,14 @@ class deps(Command):
     def run(self):
         options.set_top_level(self.sublevel)
         token = 'Package dependencies: '
-        logfile = os.path.join(options.target_build_dir, 'config.out')
+        outlog = os.path.join(options.target_build_dir, 'config.out')
+        errlog = os.path.join(options.target_build_dir, 'config.err')
         if self.sublevel == 0:
-            if os.path.exists(logfile):
-                os.remove(logfile)
-            if os.path.exists(os.path.join(options.target_build_dir, 'config.err')):
-                os.remove(os.path.join(options.target_build_dir, 'config.err'))
+            if os.path.exists(outlog):
+                os.remove(outlog)
+            if os.path.exists(errlog):
+                os.remove(errlog)
+
         if self.distribution.subpackages != None:
             for idx in range(len(sys.argv)):
                 if 'setup.py' in sys.argv[idx]:
@@ -83,9 +85,13 @@ class deps(Command):
             for (pkg_name, pkg_dir) in self.distribution.subpackages:
                 rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
                 if rf.is_sysdevel_build:  ## depth may be greater than one
+                    dep_args = ['--sublevel=' + str(self.sublevel + 1)]
+                    if not 'dependencies' in argv:
+                        dep_args = ['dependencies',
+                                    '--sublevel=' + str(self.sublevel + 1)]
                     cmd = [sys.executable,
                            os.path.join(pkg_dir, 'setup.py'),
-                           ] + argv + ['--sublevel=' + str(self.sublevel + 1)]
+                           ] + argv + dep_args
                     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE,
                                          shell=shell)
@@ -94,16 +100,22 @@ class deps(Command):
                     err = err.strip()
                     if not os.path.exists(options.target_build_dir):
                         mkdir(options.target_build_dir)
-                    log = open(logfile, 'a')
+                    log = open(outlog, 'a')
                     if out:
-                        log.write(out + '\n')
-                    if err:
-                        log.write(err + '\n')
+                        log.write(pkg_name.upper() + ':\n')
+                        log.write(out + '\n\n')
                     log.close
+                    log = open(errlog, 'a')
+                    if err:
+                        log.write(pkg_name.upper() + ':\n')
+                        log.write(err + '\n\n')
+                    log.close()
                     if p.wait() != 0:
                         raise Exception('Dependency check failed for ' +
                                         pkg_name)
-                    p_list = out[out.find(token)+len(token):]
+                    begin = out.find(token)
+                    end = out.find('\n', begin)
+                    p_list = out[begin+len(token):end]
                     if self.show_subpackages:
                         print(pkg_name.upper() + ':  ' + str(p_list))
                     self.requirements += p_list.split(',')
@@ -141,7 +153,7 @@ class deps(Command):
             if self.show:
                 print(self.distribution.metadata.name + ' ' +
                       token + ', '.join(deps_list))
-            else:
+            if not self.show or 'build' in sys.argv:
                 env_old = self.distribution.environment
                 env = configure_system(self.requirements,
                                        self.distribution.version)
