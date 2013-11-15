@@ -65,9 +65,10 @@ class lib_config(config):
 
 
     def null(self):
-        self.environment[self.lib.upper() + '_INCLUDE_DIR'] = None
-        self.environment[self.lib.upper() + '_LIB_DIR'] = None
-        self.environment[self.lib.upper() + '_SHLIB_DIR'] = None
+        self.environment[self.lib.upper() + '_INCLUDE_DIR'] = ''
+        self.environment[self.lib.upper() + '_LIB_DIR'] = ''
+        self.environment[self.lib.upper() + '_DEF_FILES'] = []
+        self.environment[self.lib.upper() + '_SHLIB_DIR'] = ''
         self.environment[self.lib.upper() + '_LIB_FILES'] = []
         self.environment[self.lib.upper() + '_LIBRARIES'] = []
 
@@ -77,6 +78,10 @@ class lib_config(config):
 
         locations = []
         limit = False
+        if self.lib.upper() + '_SHLIB_DIR' in environ and \
+                environ[self.lib.upper() + '_SHLIB_DIR']:
+            locations.append(environ[self.lib.upper() + '_SHLIB_DIR'])
+            limit = True
         if self.lib.upper() + '_LIB_DIR' in environ and \
                 environ[self.lib.upper() + '_LIB_DIR']:
             locations.append(environ[self.lib.upper() + '_LIB_DIR'])
@@ -106,7 +111,11 @@ class lib_config(config):
         try:
             if self.hdr:
                 incl_dir = find_header(self.hdr, locations, limit=limit)
-            lib_dir, lib = find_library(self.lib, locations, limit=limit)
+            lib_dir, libs = find_library(self.lib, locations, limit=limit)
+            def_dir, defs = '', []
+            if 'windows' in platform.system().lower():
+                def_dir, defs = find_definitions(self.lib, locations,
+                                                 limit=limit)
             self.found = True
         except Exception:
             if self.debug:
@@ -115,9 +124,10 @@ class lib_config(config):
 
         if self.hdr:
             self.environment[self.lib.upper() + '_INCLUDE_DIR'] = incl_dir
-        self.environment[self.lib.upper() + '_LIB_DIR'] = lib_dir
-        #self.environment[self.lib.upper() + '_SHLIB_DIR'] = lib_dir #FIXME
-        self.environment[self.lib.upper() + '_LIB_FILES'] = [lib]
+        self.environment[self.lib.upper() + '_LIB_DIR'] = def_dir
+        self.environment[self.lib.upper() + '_DEF_FILES'] = defs
+        self.environment[self.lib.upper() + '_SHLIB_DIR'] = lib_dir
+        self.environment[self.lib.upper() + '_LIB_FILES'] = libs
         self.environment[self.lib.upper() + '_LIBRARIES'] = [self.lib]
         return self.found
 

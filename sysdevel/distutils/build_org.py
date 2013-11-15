@@ -97,7 +97,7 @@ def make_doc(src_file, target_dir=None, mode='docbook'):
         result_files = [base_filename + '.html']
     else:
         if version_eight:
-            # FIXME  texinfo for org v8.0+
+            ## TODO  texinfo for org v8.0+
             raise Exception("Emacs Org mode v8.0+ is not (yet) supported")
         else:
             cmd_line.append("--execute='(org-export-as-docbook nil)'")
@@ -113,16 +113,41 @@ def make_doc(src_file, target_dir=None, mode='docbook'):
 
 
 class build_org(build_ext):
-    '''
-    Build org-mode documentation
-    '''
-    def run(self):
-        if not self.distribution.doc_dir:
-            return
+    description = "Transform Emacs Org-mode documentation"
+    user_options = [('latex', None, 'transform org to latex'),
+                    ('html', None, 'transform org to html'),
+                    ('docbook', None,
+                     'transform org to docbook xml (default)'),]
 
+    def initialize_options(self):
+        self.latex = False
+        self.html = False
+        self.docbook = False
+        self.mode = 'docbook'
+
+    def finalize_options(self):
+        if not self.latex and not self.html:
+            self.docbook = True
+        if self.latex:
+            self.mode = 'latex'
+        if self.html:
+            self.mode = 'html'
+        if self.docbook:
+            self.mode = 'docbook'
+
+
+    def run(self):
         build = self.get_finalized_command('build')
         target = os.path.abspath(os.path.join(build.build_base, 'docs'))
 
-        #FIXME options latex -> *.tex, html -> *.html, docbook -> *.xml
+        for dext in self.distribution.doc_modules:
+            if dext.org_mode:  ## must be provided to trigger this
+                for src in glob.glob(os.path.join(dext.source_directory,
+                                                  '*.org')):
+                    make_doc(src, target, dext.org_modemode)
+
+        if not self.distribution.doc_dir:
+            return
+
         for src in glob.glob(os.path.join(self.distribution.doc_dir, '*.org')):
-            make_doc(src, target)
+            make_doc(src, target, self.mode)

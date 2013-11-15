@@ -1,11 +1,13 @@
 
 import os
 import sys
+import shutil
+
 from .. import options
 from ..prerequisites import programfiles_directories
 from ..fetching import fetch, unarchive
 from ..configuration import prog_config
-
+from .. import options
 
 class configuration(prog_config):
     """
@@ -65,7 +67,7 @@ class configuration(prog_config):
             archive = src_dir + '.tar.gz'
             fetch(website, archive, archive)
             unarchive( archive, src_dir)
-            jarfile = os.path.join(target_build_dir, src_dir + '.jar')
+            jarfile = os.path.join(options.target_build_dir, src_dir + '.jar')
             if locally:
                 shutil.copy(os.path.join(options.target_build_dir, src_dir,
                                          'lib', src_dir + '.jar'), jarfile)

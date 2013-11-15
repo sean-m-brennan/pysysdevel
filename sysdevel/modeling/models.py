@@ -191,7 +191,7 @@ class GenericPlot(DataViewer):
         self.series.append(s)
 
 
-    def plot(self):   ## FIXME (untested)
+    def plot(self):
         import pylab as plot
 
         fig = plot.figure()

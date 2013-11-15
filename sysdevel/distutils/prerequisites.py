@@ -78,7 +78,7 @@ class RequirementsFinder(ast.NodeVisitor):
                             self.variables[
                                 str(target.elts[idx].id)] = node.value.elts[idx]
                         # elif type(node.value) == ast.Call:
-                        #    FIXME evaluate ast.Call
+                        #    TODO evaluate ast.Call
     
     def visit_keyword(self, node):
         if self.is_sysdevel_build:
@@ -228,6 +228,52 @@ def find_library(name, extra_paths=[], extra_subdirs=[],
                           limit, True, wildcard=wildcard)
 
 
+def find_definitions(name, extra_paths=[], extra_subdirs=[],
+                     limit=False, single=False, wildcard=True):
+    '''
+    Find the containing directory and definitions filenames of
+    the given library. Windows only.
+    '''
+    def_suffixes = ['.dll.a', '.lib']
+    prefixes = ['', 'lib']
+    subdirs = []
+    for sub in extra_subdirs:
+        subdirs += [sub]
+    subdirs += ['']  ## lastly, widen search
+    pathlist = []
+    for path_expr in extra_paths:
+        pathlist += glob.glob(path_expr)
+    if not limit:
+        pathlist += options.default_path_prefixes + options.local_search_paths
+    for path in pathlist:
+        if path != None and os.path.exists(path):
+            for sub in subdirs:
+                for root, dirnames, filenames in \
+                    os.walk(os.path.join(path, sub)):
+                    for prefix in prefixes:
+                        for def_suffix in def_suffixes:
+                            if wildcard:
+                                filename = prefix + name + '*' + def_suffix
+                            else:
+                                filename = prefix + name + def_suffix
+                            if options.DEBUG:
+                                print('Searching ' + root + ' for ' + filename)
+                            defs = []
+                            for fn in filenames:
+                                if fnmatch.fnmatch(fn, filename):
+                                    if single:
+                                        if options.DEBUG:
+                                            print('Found at ' + root)
+                                        return root.rstrip(os.sep), [fn]
+                                    else:
+                                        defs.append(fn)
+                            if len(defs) > 0:
+                                if options.DEBUG:
+                                    print('Found at ' + root)
+                                return root.rstrip(os.sep), defs
+    raise Exception(name + ' library definitions not found.')
+
+
 def find_libraries(name, extra_paths=[], extra_subdirs=[],
                    limit=False, single=False, wildcard=True):
     '''
@@ -235,13 +281,10 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
     of the given library. For Windows, it is important to not have a
     trailing path separator.
     '''
-    ## FIXME for Windows, separate definitions (*.dll.a, *.lib) from libs (*.dll, *.a) as libname_SHLIB_DIR
     default_lib_paths = ['lib64', 'lib', '']
     suffixes = ['.so', '.a']
     prefixes = ['', 'lib']
-    definitions = []
     if 'windows' in platform.system().lower():
-        def_suffixes = ['.dll.a', '.lib']
         suffixes = ['.dll', '.a']
         default_lib_paths.append('bin')
     if 'darwin' in platform.system().lower():
@@ -262,20 +305,6 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                     for root, dirnames, filenames in \
                             os.walk(os.path.join(path, subpath, sub)):
                         for prefix in prefixes:
-                            if 'windows' in platform.system().lower():
-                                for def_suffix in def_suffixes:
-                                    if wildcard:
-                                        filename = prefix + name + '*' + def_suffix
-                                    else:
-                                        filename = prefix + name + def_suffix
-                                    if options.DEBUG:
-                                        print('Searching ' + root + \
-                                            ' for ' + filename)
-                                    libs = []
-                                    for fn in filenames:
-                                        if fnmatch.fnmatch(fn, filename):
-                                            definitions.append((root.rstrip(os.sep), fn))
-                                    #FIXME return to caller
                             for suffix in suffixes:
                                 if wildcard:
                                     filename = prefix + name + '*' + suffix
@@ -290,7 +319,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                         if single:
                                             if options.DEBUG:
                                                 print('Found at ' + root)
-                                            return root.rstrip(os.sep), fn
+                                            return root.rstrip(os.sep), [fn]
                                         else:
                                             libs.append(fn)
                                 if len(libs) > 0:
@@ -317,12 +346,16 @@ def find_file(filepattern, pathlist=[]):
     '''
     Find the full path of the specified file.
     '''
-    #FIXME handle case where filepattern is a path
+    suffix = ''
+    if os.path.sep in filepattern:
+        idx = filepattern.rfind(os.path.sep)
+        suffix = filepattern[:idx]
+        filepattern = filepattern[idx+1:]
     for path in options.local_search_paths + pathlist:
         if path != None and os.path.exists(path):
             if options.DEBUG:
                 print('Searching ' + path + ' for ' + filepattern)
-            for fn in os.listdir(path):
+            for fn in os.listdir(os.path.join(path, suffix)):
                 if fnmatch.fnmatch(fn, filepattern):
                     if options.DEBUG:
                         print('Found ' + os.path.join(path, fn))
@@ -524,7 +557,7 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
                   patch=None, extra_cmds=[], extra_args=[]):
     compiler = []
     if 'windows' in platform.system().lower():
-        # FIXME on windows only if using mingw
+        # TODO iff windows is using mingw:
         compiler.append('--compiler=mingw32')
     if src_dir is None:
         src_dir = name
@@ -832,7 +865,7 @@ def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None,
         os.path.join(environ['MINGW_DIR'], 'bin') + ';'
     os_environ = os.environ.copy()
     old_path = os_environ.get('PATH', '')
-    os_environ['PATH'] = path.encode('ascii', 'ignore') #+ old_path #FIXME?
+    os_environ['PATH'] = path.encode('ascii', 'ignore') + os.pathsep + old_path
     os_environ = dict(list(os_environ.items()) + list(addtnl_env.items()))
     shell = os.path.join(environ['MSYS_DIR'], 'bin', 'bash.exe')
     if not is_string(cmd_line):

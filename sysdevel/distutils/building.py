@@ -98,7 +98,7 @@ def create_script_wrapper(pyscript, target_dir):
                 'export DYLD_LIBRARY_PATH=$path/lib:$path/lib64:$DYLD_LIBRARY_PATH\n' +
                 sys.executable + ' $path/bin/' + pyscript + ' $@\n')
         f.close()
-        os.chmod(dst_file, 0x777)
+        os.chmod(dst_file, int('777', 8))
     return dst_file
 
 
@@ -138,7 +138,7 @@ def create_runscript(pkg, mod, target, extra):
                 "from " + pkg + " import " + mod + "\n" +
                 mod + ".main()\n")
         f.close()
-        os.chmod(target, 0x777)
+        os.chmod(target, int('777', 8))
 
 
 

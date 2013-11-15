@@ -112,17 +112,27 @@ def make_doc(src_file, target_dir=None, stylesheet=None):
 
 
 class build_docbook(build_ext):
-    '''
-    Build pdfs from docbook xml
-    '''
-    def run(self):
-        if not self.distribution.doc_dir:
-            return
+    description = "Build pdfs from docbook xml"
+    user_options = [('stylesheet=', None, 'stylesheet to use'),]
 
+
+    def initialize_options(self):
+        self.stylesheet = None
+
+    def run(self):
         build = self.get_finalized_command('build')
         target = os.path.abspath(os.path.join(build.build_base, 'docs'))
 
-        # FIXME filename or (filename, stylesheet) from self.distribution
-        xml_files = glob.glob(os.path.join(self.distribution.doc_dir, '*.xml'))
-        for xfile in xml_files:
-            make_docs(xfile, target)
+        for dext in self.distribution.doc_modules:
+            if dext.docbook_stylesheet:  ## must be provided to trigger this
+                for xfile in glob.glob(os.path.join(dext.source_directory,
+                                                    '*.xml')):
+                    make_docs(xfile, target, dext.docbook_stylesheet)
+
+        if not self.distribution.doc_dir:
+            return
+
+        ## default location
+        for xfile in glob.glob(os.path.join(self.distribution.doc_dir,
+                                            '*.xml')):
+            make_docs(xfile, target, self.stylesheet)

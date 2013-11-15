@@ -83,7 +83,7 @@ class DocExtension(old_extension.Extension):
     def __init__(self, name, source_dir, sphinx_cfg=None,
                  doxy_cfg=None, doxy_srcs=[], extra_docs = [],
                  extra_directories=[], no_sphinx=False,
-                 style=DEFAULT_STYLE):
+                 style=DEFAULT_STYLE, docbook_xsl='', org_xform=''):
         old_extension.Extension.__init__(self, name, [])
         self.source_directory = source_dir
         self.sphinx_config = sphinx_cfg
@@ -93,6 +93,8 @@ class DocExtension(old_extension.Extension):
         self.extra_directories = extra_directories
         self.without_sphinx = no_sphinx
         self.style = style
+        self.docbook_stylesheet = docbook_xsl
+        self.org_mode = org_xform
 
 
 class AntlrGrammar(old_extension.Extension):

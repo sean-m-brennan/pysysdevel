@@ -29,6 +29,10 @@ Factory that produces factories
 
 import sys
 import functools
+try:
+    from configparser import RawConfigParser
+except:
+    from ConfigParser import RawConfigParser
 
 
 class FactoryException(Exception):
@@ -84,6 +88,10 @@ class DefinitionList(list):
         <module>ex</module>
       </definition>
     </definitions>
+    INI must be in the form:
+    [example]
+    MODULE = ex
+    TEST = lambda(x): x == 1
     '''
     def __init__(self, no_default):
         list.__init__(self)
@@ -118,9 +126,24 @@ class DefinitionList(list):
         return lst
         
     @classmethod
-    def from_ini(cls, list_str, no_default=False):
+    def from_xml_file(cls, xml_file, no_default=False):
+        f = open(xml_file, 'r')
+        contents = f.read()
+        f.close()
+        return cls.from_xml(contents, no_default)
+        
+    @classmethod
+    def from_ini_file(cls, cfg_file, no_default=False):
         lst = cls(no_default)
-        # FIXME read from ini string
+        config = RawConfigParser()
+        if config.read([cfg_file]) != []:
+            for section in config.sections():
+                try:
+                    test = config.get(section, 'TEST')
+                except:
+                    test = 'lambda(x): True'
+                lst.append(Definition(section, config.get(section, 'MODULE'),
+                                      eval(test)))
         return lst
 
     @staticmethod

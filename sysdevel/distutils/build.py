@@ -62,9 +62,6 @@ class build(old_build):
     def has_web_extensions(self):
         return self.distribution.has_web_extensions()
 
-    def has_documents(self):
-        return self.distribution.has_documents()
-
     def has_executables(self):
         return self.distribution.has_executables()
 
@@ -85,12 +82,14 @@ class build(old_build):
                     ('build_ext',      old_build.has_ext_modules),
                     ('build_pypp_ext', has_pypp_extensions),
                     ('build_scripts',  has_scripts),
-                    ('build_doc',      has_documents),
+                    ('build_doc',      lambda *args: True),
                     ('build_exe',      has_executables),
                     ]
 
 
     def run(self):
+        old_build.run(self)
+
         if self.distribution.subpackages != None:
             if self.get_finalized_command('install').ran:
                 return  ## avoid build after install
@@ -106,20 +105,3 @@ class build(old_build):
                 argv.remove('install')
             if 'clean' in argv:
                 argv.remove('clean')
-
-            ## always check dependencies
-            self.get_finalized_command('dependencies').run()
-
-            process_subpackages(self.distribution.parallel_build, 'build',
-                                self.build_base, self.distribution.subpackages,
-                                argv, self.distribution.quit_on_error)
-
-            if self.has_pure_modules() or self.has_c_libraries() or \
-                    self.has_ext_modules() or self.has_shared_libraries() or \
-                    self.has_pypp_extensions() or self.has_web_extensions() or \
-                    self.has_documents() or self.has_executables() or \
-                    self.has_scripts() or self.has_data():
-                old_build.run(self)
-        else:
-            old_build.run(self)
-

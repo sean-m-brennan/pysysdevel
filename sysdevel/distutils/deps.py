@@ -114,7 +114,7 @@ class deps(Command):
                         raise Exception('Dependency check failed for ' +
                                         pkg_name)
                     begin = out.find(token)
-                    end = out.find('\n', begin)
+                    end = out.find('\n', begin)+1
                     p_list = out[begin+len(token):end]
                     if self.show_subpackages:
                         print(pkg_name.upper() + ':  ' + str(p_list))

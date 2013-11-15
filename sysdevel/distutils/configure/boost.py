@@ -13,10 +13,16 @@ class configuration(lib_config):
     Find/install Boost
     """
     def __init__(self):
-        lib_config.__init__(self, "archive", "archive.h",
-                            debug=False)
+        lib_config.__init__(self, "boost", "", debug=False)
         if 'windows' in platform.system().lower():
-            self.dependencies = ['mingw'] # FIXME msvc build also
+            self.dependencies = ['mingw'] ## TODO msvc build also
+
+
+    def null(self):
+        self.environment['BOOST_INCLUDE_DIR'] = ''
+        self.environment['BOOST_LIB_DIR'] = ''
+        self.environment['BOOST_LIB_FILES'] = []
+        self.environment['BOOST_LIBRARIES'] = []
 
 
     def is_installed(self, environ, version):
@@ -71,8 +77,7 @@ class configuration(lib_config):
             self.found = True
         except Exception:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['BOOST_INCLUDE_DIR'] = incl_dir
