@@ -33,13 +33,11 @@ import platform
 import traceback
 import subprocess
 import imp
-import tarfile
-import zipfile
 import traceback
 
 from .prerequisites import *
 from .filesystem import glob_insensitive
-from .fetching import urlretrieve, fetch
+from .fetching import urlretrieve, fetch, open_archive
 from .building import process_progress
 from . import options
 
@@ -362,22 +360,7 @@ class pypi_config(py_config):
                 fetch(pypi_url(name), archive, archive)
             except:
                 raise Exception('Cannot download source for ' + pkg)
-            archive_dir = options.download_dir
-            if archive.endswith('.tgz') or archive.endswith('.tar.gz') or \
-               archive.endswith('.tar.Z'):
-                z = tarfile.open(os.path.join(archive_dir, archive), 'r:gz')
-                names = z.getnames()
-            elif archive.endswith('.tar.bz2'):
-                z = tarfile.open(os.path.join(archive_dir, archive), 'r:bz2')
-                names = z.getnames()
-            elif archive.endswith('.tar'):
-                z = tarfile.open(os.path.join(archive_dir, archive), 'r:')
-                names = z.getnames()
-            elif archive.endswith('.zip'):
-                z = zipfile.ZipFile(os.path.join(archive_dir, archive), 'r')
-                names = z.namelist()
-            else:
-                raise Exception('Unsupported archive compression: ' + archive)
+            z, names = open_archive(archive)
             try:
                 extract_dir = os.path.join(options.target_build_dir, '.' + pkg)
                 member = [s for s in names if 'setup.py' in s][0]

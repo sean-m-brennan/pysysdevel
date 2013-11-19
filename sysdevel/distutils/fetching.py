@@ -31,6 +31,7 @@ import os
 import sys
 import tarfile
 import zipfile
+import zlib
 
 from .filesystem import mkdir
 from . import options
@@ -83,6 +84,35 @@ def tarextractall(tar_file):
     for tarinfo in tar_file:
         tar_file.extract(tarinfo)
 
+
+def open_archive(archive, archive_dir=None):
+    if archive_dir is None:
+        archive_dir = options.download_dir
+    if archive.endswith('.tar.Z'):
+        ## Ugly, but neccessary (neither gzip not zlib packages work)
+        here = os.path.abspath(os.getcwd())
+        os.chdir(archive_dir)
+        os.system('gunzip ' + archive)
+        os.chdir(here)
+        archive = archive[:-2]
+
+    if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
+        z = tarfile.open(os.path.join(archive_dir, archive), 'r:gz')
+        names = z.getnames()
+    elif archive.endswith('.tar.bz2'):
+        z = tarfile.open(os.path.join(archive_dir, archive), 'r:bz2')
+        names = z.getnames()
+    elif archive.endswith('.tar'):
+        z = tarfile.open(os.path.join(archive_dir, archive), 'r:')
+        names = z.getnames()
+    elif archive.endswith('.zip'):
+        z = zipfile.ZipFile(os.path.join(archive_dir, archive), 'r')
+        names = z.namelist()
+    else:
+        raise Exception('Unsupported archive compression: ' + archive)
+
+    return z, names
+
     
 def unarchive(archive, target, archive_dir=None):
     if archive_dir is None:
@@ -93,25 +123,12 @@ def unarchive(archive, target, archive_dir=None):
     if not os.path.exists(os.path.join(options.target_build_dir, target)):
         mkdir(options.target_build_dir)
         os.chdir(options.target_build_dir)
-        if archive.endswith('.tgz') or archive.endswith('.tar.gz') or \
-           archive.endswith('.tar.Z'):
-            z = tarfile.open(os.path.join(archive_dir, archive), 'r:gz')
-            tarextractall(z)
-            z.close()
-        elif archive.endswith('.tar.bz2'):
-            z = tarfile.open(os.path.join(archive_dir, archive), 'r:bz2')
-            tarextractall(z)
-            z.close()
-        elif archive.endswith('.tar'):
-            z = tarfile.open(os.path.join(archive_dir, archive), 'r:')
-            tarextractall(z)
-            z.close()
-        elif archive.endswith('.zip'):
-            z = zipfile.ZipFile(os.path.join(archive_dir, archive), 'r')
+        z, _ = open_archive(archive, archive_dir)
+        if archive.endswith('.zip'):
             zipextractall(z)
-            z.close()
         else:
-            raise Exception('Unsupported archive compression: ' + archive)
+            tarextractall(z)
+        z.close()
         os.chdir(here)
 
 
