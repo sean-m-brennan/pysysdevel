@@ -101,12 +101,16 @@ def unarchive(archive, target, archive_dir=None):
             z = tarfile.open(os.path.join(archive_dir, archive), 'r:bz2')
             tarextractall(z)
             z.close()
+        elif archive.endswith('.tar'):
+            z = tarfile.open(os.path.join(archive_dir, archive), 'r:')
+            tarextractall(z)
+            z.close()
         elif archive.endswith('.zip'):
             z = zipfile.ZipFile(os.path.join(archive_dir, archive), 'r')
             zipextractall(z)
             z.close()
         else:
-            raise Exception('Unrecognized archive compression: ' + archive)
+            raise Exception('Unsupported archive compression: ' + archive)
         os.chdir(here)
 
 
@@ -183,9 +187,8 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
         del fp
         del tfp
     except URLError:
-        e = sys.exc_info()[1]
         sys.stderr.write("HTTP Error connecting to " + url + ":\n")
-        raise e
+        raise
 
     if size >= 0 and read < size:
         raise ContentTooShortError("%s: retrieval incomplete: "

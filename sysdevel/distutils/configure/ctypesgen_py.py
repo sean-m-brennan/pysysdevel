@@ -5,7 +5,7 @@ from .. import options
 
 class configuration(prog_config):
     """
-    Find/install ctypesgen package
+    Find/install ctypesgen package (not using pypi due to compilications)
     """
     def __init__(self):
         prog_config.__init__(self, 'ctypesgen.py', debug=False)

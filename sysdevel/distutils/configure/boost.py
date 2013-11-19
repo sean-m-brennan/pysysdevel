@@ -6,6 +6,7 @@ import subprocess
 from ..prerequisites import *
 from ..fetching import fetch, unarchive
 from ..configuration import lib_config
+from ..headers import get_header_version
 from .. import options
 
 class configuration(lib_config):
@@ -30,6 +31,8 @@ class configuration(lib_config):
             required_version = '1_44_0'
         else:
             required_version = version.replace('.', '_')
+
+        #FIXME not detecting
 
         options.set_debug(self.debug)
         base_dirs = []

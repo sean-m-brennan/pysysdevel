@@ -7,7 +7,7 @@ from .. import options
 
 class configuration(py_config):
     """
-    Find/install Matplotlib
+    Find/install Matplotlib (special handling)
     """
     def __init__(self):
         py_config.__init__(self, 'matplotlib', '1.2.0', debug=False)

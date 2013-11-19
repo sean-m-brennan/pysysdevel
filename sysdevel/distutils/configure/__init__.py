@@ -32,11 +32,14 @@ import sys
 import platform
 import traceback
 
-from ..prerequisites import read_cache, save_cache, in_prerequisites
-from ..prerequisites import system_uses_macports, system_uses_homebrew
+from ..prerequisites import *
+from ..configuration import dynamic_module, latest_pypi_version, pypi_exceptions
 from ..filesystem import mkdir
 from .. import options
 from ...util import is_string
+
+
+DEBUG_PYPI = True
 
 
 class FatalError(SystemExit):
@@ -47,6 +50,7 @@ class FatalError(SystemExit):
         sys.stderr.write('FatalError: ' + what + '\n')
         sys.stderr.flush()
         os._exit(-1)
+
 
 
 def simplify_version(version):
@@ -71,7 +75,7 @@ def configure_system(prerequisite_list, version,
     try:
         environment = read_cache()
         skip = False
-        for idx, arg in enumerate(sys.argv[:]): #FIXME?? argv[:]):
+        for idx, arg in enumerate(sys.argv[:]):
             if arg.startswith('clean'):
                 skip = True
                 quiet = True
@@ -142,26 +146,40 @@ def __configure_package(environment, help_name, skip, install, quiet):
     full_name = package + help_name
     try:
         __import__(full_name, globals=globals())
+        helper = sys.modules[full_name]
     except ImportError:
-        full_name = package + help_name + '_py'
+        full_name = package + help_name + '_js'
         try:
             __import__(full_name, globals=globals())
+            helper = sys.modules[full_name]
         except ImportError:
-            full_name = package + help_name + '_js'
+            full_name = package + help_name + '_py'
             try:
                 __import__(full_name, globals=globals())
+                helper = sys.modules[full_name]
             except ImportError:
-                sys.stderr.write('No setup helper module ' + base + '\n')
-                raise ImportError('No configuration found for ' + help_name)
-    return __run_helper__(environment, help_name, full_name,
+                try:
+                    ## grab it from the Python Package Index
+                    if base in pypi_exceptions.keys():
+                        name, deps = pypi_exceptions[base]
+                        helper = dynamic_module(base, req_version, deps,
+                                                DEBUG_PYPI, name)
+                    else:
+                        helper = dynamic_module(base, req_version,
+                                                debug=DEBUG_PYPI)
+                except:
+                    if DEBUG_PYPI:
+                        traceback.print_exc()
+                    sys.stderr.write('No setup helper module ' + base + '\n')
+                    raise ImportError('No configuration found for ' + help_name)
+    return __run_helper__(environment, help_name, helper,
                           req_version, skip, install, quiet)
 
 
 configured = []
 
-def __run_helper__(environment, short_name, long_name, version,
+def __run_helper__(environment, short_name, helper, version,
                    skip, install, quiet):
-    helper = sys.modules[long_name]
     configured.append(short_name)
     cfg = helper.configuration()
     for dep in cfg.dependencies:

@@ -13,6 +13,7 @@ class configuration(py_config):
     """
     Find/install Pyjamas
     """
+    ##TODO should be PyPI, but ugly due to fork
     def __init__(self):
         py_config.__init__(self, 'pyjs', '0.8.1a', debug=False)
 

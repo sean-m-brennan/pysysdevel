@@ -32,11 +32,37 @@ import sys
 import platform
 import traceback
 import subprocess
+import imp
+import tarfile
+import zipfile
+import traceback
 
 from .prerequisites import *
 from .filesystem import glob_insensitive
+from .fetching import urlretrieve, fetch
 from .building import process_progress
 from . import options
+
+
+#TODO: what does pip do for these?
+pypi_exceptions = {
+    'argparse':          ('argparse', []),  ## because it breaks the AST FIXME?
+    'dateutil':          ('python-dateutil', ['six']),
+    'ephem':             ('pyephem', None),
+    'fuzzy':             ('Fuzzy', None),
+    'jinja2':            ('Jinja2', None),
+    'pygments':          ('Pygments', None),
+    'pyyaml':            ('PyYAML', ['libyaml']),
+    'qunitsuite':        ('QUnitSuite', None),
+    'scipy':             ('scipy', ['gfortran',]), #'atlas'], #'lapack'?]),
+    'serial':            ('pyserial', None),
+    'shapely':           ('Shapely', ['geos']),
+    'sphinx':            ('Sphinx', ['docutils', 'jinja2', 'pygments',
+                                     'roman',]), # 'rst2pdf']), #FIXME
+    'sqlalchemy':        ('SQLAlchemy', None),
+    'usb':               ('pyusb', ['libusb']),
+}
+
 
 
 class config(object):
@@ -81,7 +107,6 @@ class lib_config(config):
         if self.lib.upper() + '_SHLIB_DIR' in environ and \
                 environ[self.lib.upper() + '_SHLIB_DIR']:
             locations.append(environ[self.lib.upper() + '_SHLIB_DIR'])
-            limit = True
         if self.lib.upper() + '_LIB_DIR' in environ and \
                 environ[self.lib.upper() + '_LIB_DIR']:
             locations.append(environ[self.lib.upper() + '_LIB_DIR'])
@@ -134,51 +159,6 @@ class lib_config(config):
 
     def install(self, environ, version, locally=True):
         raise NotImplementedError('lib' + self.lib + ' installation')
-
-
-
-class py_config(config):
-    def __init__(self, pkg, version, dependencies=[], debug=False):
-        config.__init__(self, dependencies, debug)
-        self.pkg = pkg
-        self.version = version
-
-
-    def is_installed(self, environ, version=None):
-        try:
-            impl = __import__(self.pkg.lower())
-            check_version = False
-            if hasattr(impl, '__version__'):
-                ver = impl.__version__
-                check_version = True
-            elif hasattr(impl, 'version'):
-                ver = impl.version
-                check_version = True
-            if check_version:
-                if compare_versions(ver, version) == -1:
-                    return self.found
-            self.found = True
-        except Exception:
-            if self.debug:
-                print(sys.exc_info()[1])
-        return self.found
-
-
-    def install(self, environ, version, locally=True):
-        if not self.found:
-            website = 'https://pypi.python.org/packages/source/' + \
-                self.pkg[0] + '/' + self.pkg + '/'
-            if version is None:
-                version = self.version
-            src_dir = self.pkg + '-' + str(version)
-            archive = src_dir + '.tar.gz'
-            try:
-                install_pypkg(src_dir, website, archive, locally=locally)
-            except Exception:
-                archive = src_dir + '.zip'
-                install_pypkg(src_dir, website, archive, locally=locally)
-            if not self.is_installed(environ, version):
-                raise Exception(self.pkg + ' installation failed.')
 
 
 
@@ -312,3 +292,172 @@ class nodejs_config(config):
                     sys.stdout.write(' failed')
                     raise Exception('Node-' + self.module + ' is required, ' +
                                     'but could not be installed.')
+
+
+
+class py_config(config):
+    def __init__(self, pkg, version, dependencies=[], debug=False,
+                 indexed_as=None):
+        config.__init__(self, dependencies, debug)
+        self.pkg = pkg
+        self.version = version
+        self.indexed = pkg
+        if indexed_as:
+            self.indexed = indexed_as
+
+
+    def is_installed(self, environ, version=None):
+        try:
+            impl = __import__(self.pkg.lower())
+            check_version = False
+            if hasattr(impl, '__version__'):
+                ver = impl.__version__
+                check_version = True
+            elif hasattr(impl, 'version'):
+                ver = impl.version
+                check_version = True
+            elif hasattr(impl, 'VERSION'):
+                ver = impl.VERSION
+                check_version = True
+            if check_version:
+                if compare_versions(ver, version) == -1:
+                    return self.found
+            self.found = True
+        except Exception:
+            if self.debug:
+                print(sys.exc_info()[1])
+        return self.found
+
+
+    def install(self, environ, version, locally=True):
+        if not self.found:
+            website = 'https://pypi.python.org/packages/source/' + \
+                self.indexed[0] + '/' + self.indexed + '/'
+            if version is None:
+                version = self.version
+            src_dir = self.indexed + '-' + str(version)
+            archive = src_dir + '.tar.gz'
+            try:
+                install_pypkg(src_dir, website, archive, locally=locally)
+            except Exception:
+                archive = src_dir + '.zip'
+                install_pypkg(src_dir, website, archive, locally=locally)
+            ## Urgent FIXME install check is not always working
+            #if not self.is_installed(environ, version):
+            #    raise Exception(self.pkg + ' installation failed.')
+
+
+
+class pypi_config(py_config):
+    def __init__(self, pkg, version, dependencies=None, debug=False,
+                 indexed_as=None):
+        name = pkg
+        if indexed_as:
+            name = indexed_as
+        if dependencies is None:
+            if version is None:
+                version = latest_pypi_version(name)
+            try:
+                archive = name + '-' + version + pypi_archive(name, version)
+                fetch(pypi_url(name), archive, archive)
+            except:
+                raise Exception('Cannot download source for ' + pkg)
+            archive_dir = options.download_dir
+            if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
+                z = tarfile.open(os.path.join(archive_dir, archive), 'r:gz')
+                names = z.getnames()
+            elif archive.endswith('.tar.bz2'):
+                z = tarfile.open(os.path.join(archive_dir, archive), 'r:bz2')
+                names = z.getnames()
+            elif archive.endswith('.tar'):
+                z = tarfile.open(os.path.join(archive_dir, archive), 'r:')
+                names = z.getnames()
+            elif archive.endswith('.zip'):
+                z = zipfile.ZipFile(os.path.join(archive_dir, archive), 'r')
+                names = z.namelist()
+            else:
+                raise Exception('Unsupported archive compression: ' + archive)
+            try:
+                extract_dir = os.path.join(options.target_build_dir, '.' + pkg)
+                member = [s for s in names if 'setup.py' in s][0]
+                z.extract(member, extract_dir)
+                rf = RequirementsFinder(os.path.join(extract_dir, member))
+                dependencies = rf.requires_list
+            except:
+                if debug:
+                    traceback.print_exc()
+            z.close()
+        py_config.__init__(self, pkg, version, dependencies, debug, indexed_as)
+
+
+    def install(self, environ, version, locally=True):
+        if not self.found:
+            py_config.install(self, environ,
+                              latest_pypi_version(self.indexed, version),
+                              locally)
+
+
+
+
+def dynamic_module(pkg, version=None, dependencies=None, debug=False,
+                   indexed_as=None):
+    module = imp.new_module(pkg + '_pypi')
+    code = "from " + __package__ + ".configuration import pypi_config\n" + \
+           "class configuration(pypi_config):\n" + \
+           "    def __init__(self):\n" + \
+           "        pypi_config.__init__(self, " + repr(pkg) + ", " + \
+           repr(version) + ", " + repr(dependencies) + ", " + \
+           repr(debug) + ", " + repr(indexed_as) + ")\n"
+    exec code in module.__dict__
+    return module
+
+
+def pypi_url(pkg):
+    ## This is what pip uses:
+    #return 'http://pypi.python.org/simple/' + pkg + '/'
+    ## This ensures that there are sources available:
+    return 'https://pypi.python.org/packages/source/' + pkg[0] + '/' + pkg + '/'
+
+
+def pypi_archive(which, version):
+    listing = os.path.join(options.target_build_dir, '.' + which + '_list')
+    if not os.path.exists(listing):
+        urlretrieve(pypi_url(which), listing)
+    f = open(listing, 'r')
+    contents = f.read()
+    f.close()
+    l = len(which + '-' + version)
+    idx = contents.find(which + '-' + version)
+    for archive in ['.zip', '.tar.bz2', '.tar.gz', '.tgz', '.tar']:
+        if contents[idx+l:].startswith(archive):
+            return archive
+    raise Exception('No source archive available for ' + which)
+
+
+def latest_pypi_version(which, requested_ver=None):
+    listing = os.path.join(options.target_build_dir, '.' + which + '_list')
+    urlretrieve(pypi_url(which), listing)
+    version = '0'
+    versions = []
+    f = open(listing, 'r')
+    contents = f.read()
+    f.close()
+    idx = contents.find(which + '-', 0)
+    l = len(which + '-')
+    while idx >= 0:
+        endl = contents.find('\n', idx)
+        end_t = contents.find('.tar', idx, endl)
+        end_z = contents.find('.zip', idx, endl)
+        if end_t > 0 and end_z > 0:
+            end = min(end_t, end_z)
+        else:
+            end = max(end_t, end_z)
+        if end > 0:
+            versions.append(contents[idx+l:end])
+        idx = contents.find(which + '-', end)
+    if requested_ver in versions:
+        return requested_ver
+    for ver in versions:
+        if compare_versions(version, ver) < 0:
+            version = ver
+    return version

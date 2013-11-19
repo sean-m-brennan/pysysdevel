@@ -6,6 +6,7 @@ class configuration(py_config):
     """
     Find/install rst2pdf
     """
+    ##TODO should be PyPI, seriously messed up
     def __init__(self):
         py_config.__init__(self, 'rst2pdf', '0.93',
                            dependencies=['docutils', 'reportlab',

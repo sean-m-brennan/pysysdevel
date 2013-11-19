@@ -68,8 +68,7 @@ class build_src(_build_src):
                 target = os.path.abspath(os.path.join(self.build_lib,
                                                       *tpl[0].split('.')))
                 mkdir(target)
-                source_dir = client_support_dir#os.path.abspath(os.path.join(
-                #os.path.dirname(__file__), '..', 'ui'))
+                source_dir = client_support_dir
                 for mod in tpl[1]:
                     src_file = os.path.join(source_dir, mod + '.py.in')
                     if not os.path.exists(src_file):

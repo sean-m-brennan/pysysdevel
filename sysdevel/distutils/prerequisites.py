@@ -38,6 +38,7 @@ import time
 import traceback
 import site
 import ast
+import re
 
 try:
     import json
@@ -56,16 +57,47 @@ class PrerequisiteError(Exception):
 
 
 class RequirementsFinder(ast.NodeVisitor):
-    def __init__(self, filepath=None):
+    keywords = ['requires', #'install_requires',
+                ]
+
+    def __init__(self, filepath=None, filedescriptor=None, codestring=None):
         ast.NodeVisitor.__init__(self)
         self.variables = {}
         self.is_sysdevel_build = False
         self.requires_list = []
         if filepath:
-            source = open(filepath, 'r')
-            code = source.read()
-            tree = ast.parse(code)
-            self.visit(tree)
+            self._load_from_path(filepath)
+        elif filedescriptor:
+            self._load_from_file(filedescriptor)
+        elif codestring:
+            self._load_from_string(codestring)
+
+
+    def _load_from_string(self, code):
+        tree = ast.parse(code)
+        self.visit(tree)
+        required = list(self.requires_list)
+        self.requires_list = []
+        for r in required:
+            if '=' in r:
+                idx = r.find('>')
+                if idx < 0:
+                    idx = r.find('=')
+                self.requires_list.append((r[:idx], r[idx+2:]))
+            else:
+                self.requires_list.append(r)
+
+
+    def _load_from_file(self, f):
+        code = f.read()
+        self._load_from_string(code)
+
+
+    def _load_from_path(self, p):
+        source = open(p, 'r')
+        self._load_from_file(source)
+        source.close()
+
 
     def visit_Assign(self, node):
         for target in node.targets:
@@ -83,11 +115,11 @@ class RequirementsFinder(ast.NodeVisitor):
     def visit_keyword(self, node):
         if self.is_sysdevel_build:
             return  ## will be ingoring these results anyway
-        if node.arg == 'requires':
-            if type(node.value) == ast.List:
-                self.requires_list = ast.literal_eval(node.value)
-            elif type(node.value) == ast.Name:
-                if node.value.id != node.arg:
+        for kw in self.keywords:
+            if node.arg == kw:
+                if type(node.value) == ast.List:
+                    self.requires_list = ast.literal_eval(node.value)
+                elif type(node.value) == ast.Name:
                     self.requires_list = ast.literal_eval(
                         self.variables[node.value.id])  ## fails on ast.Call
 
@@ -319,7 +351,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                         if single:
                                             if options.DEBUG:
                                                 print('Found at ' + root)
-                                            return root.rstrip(os.sep), [fn]
+                                            return root.rstrip(os.sep), fn
                                         else:
                                             libs.append(fn)
                                 if len(libs) > 0:
@@ -364,30 +396,44 @@ def find_file(filepattern, pathlist=[]):
 
 
 
+def version_str_split(v):
+    pattern = re.compile('(\d+)[_\.]?(\d+)*[_\.]?(\d+)*[\-_\.]?(\S+)*')
+    m = pattern.match(v)
+    if m:
+        strs = list(m.groups())
+    else:
+        strs = ['0', '0', '0', '']
+    for i in range(3):
+        if strs[i] is None:
+            strs[i] = 0
+        else:
+            strs[i] = int(strs[i])
+    if strs[3] is None:
+        strs[3] = ''
+    return tuple(strs)
+
 
 def compare_versions(actual, requested):
+    ## convert float to string
     if isinstance(actual, float):
         actual = str(actual)
     if isinstance(requested, float):
         requested = str(requested)
+    # convert string to tuple
     if is_string(actual):
-        actual = actual.replace('_', '.')
-        ver1 = tuple(actual.split('.'))
+        ver1 = version_str_split(actual)
     else:
         ver1 = actual
     if is_string(requested):
-        requested = requested.replace('_', '.')
-        ver2 = tuple(requested.split('.'))
+        ver2 = version_str_split(requested)
     else:
         ver2 = requested
+    ## special case
     if ver2 is None:
         if ver1 is None:
             return 0
         return 1  ## None == latest
-    while len(ver1) < len(ver2):
-        ver1 = ver1 + ('0',)
-    while len(ver1) > len(ver2):
-        ver2 = ver2 + ('0',)
+
     if ver1 < ver2:
         return -1
     if ver1 > ver2:
@@ -657,35 +703,39 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
     mkdir(build_dir)
     os.chdir(build_dir)
     log = open('build.log', 'w')
-    if 'windows' in platform.system().lower():
-        ## Assumes MinGW present, detected, and loaded in environment
-        mingw_check_call(environ, ['./configure', '--prefix="' + prefix + '"'] +
-                         extra_cfg, stdout=log, stderr=log,
-                         addtnl_env=addtnl_env)
-        mingw_check_call(environ, ['make'], stdout=log, stderr=log,
-                         addtnl_env=addtnl_env)
-        try:
-            mingw_check_call(environ, ['make', 'install'],
-                             stdout=log, stderr=log, addtnl_env=addtnl_env)
-        except:
-            pass
-    else:
-        os_environ = os.environ.copy()
-        os_environ = dict(list(os_environ.items()) + list(addtnl_env.items()))
-        check_call(['./configure', '--prefix=' + prefix] + extra_cfg,
-                   stdout=log, stderr=log, env=os_environ)
-        check_call(['make'], stdout=log, stderr=log, env=os_environ)
-        try:
-            if locally:
-                check_call(['make', 'install'], stdout=log, stderr=log,
-                           env=os_environ)
-            else:
-                admin_check_call(['make', 'install'], stdout=log, stderr=log,
-                                 addtnl_env=addtnl_env)
-        except:
-            pass
-    log.close()
-    os.chdir(here)
+    try:
+        if 'windows' in platform.system().lower():
+            ## Assumes MinGW present, detected, and loaded in environment
+            mingw_check_call(environ, ['./configure',
+                                       '--prefix="' + prefix + '"'] +
+                             extra_cfg, stdout=log, stderr=log,
+                             addtnl_env=addtnl_env)
+            mingw_check_call(environ, ['make'], stdout=log, stderr=log,
+                             addtnl_env=addtnl_env)
+            try:
+                mingw_check_call(environ, ['make', 'install'],
+                                 stdout=log, stderr=log, addtnl_env=addtnl_env)
+            except:
+                pass
+        else:
+            os_environ = os.environ.copy()
+            os_environ = dict(list(os_environ.items()) +
+                              list(addtnl_env.items()))
+            check_call(['./configure', '--prefix=' + prefix] + extra_cfg,
+                       stdout=log, stderr=log, env=os_environ)
+            check_call(['make'], stdout=log, stderr=log, env=os_environ)
+            try:
+                if locally:
+                    check_call(['make', 'install'], stdout=log, stderr=log,
+                               env=os_environ)
+                else:
+                    admin_check_call(['make', 'install'], stdout=log,
+                                     stderr=log, addtnl_env=addtnl_env)
+            except:
+                pass
+    finally:
+        log.close()
+        os.chdir(here)
 
 
 def system_uses_apt_get():
