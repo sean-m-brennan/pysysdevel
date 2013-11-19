@@ -12,6 +12,11 @@ class configuration(lib_config):
         lib_config.__init__(self, "gsl", "gsl_types.h", debug=False)
 
 
+    def is_installed(self, environ, version=None):
+        lib_config.is_installed(self, environ, version)
+        self.environment['GSL_LIBRARIES'] += ['gslcblas']
+
+
     def install(self, environ, version, locally=True):
         if not self.found:
             if version is None:

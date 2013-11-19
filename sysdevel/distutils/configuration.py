@@ -363,7 +363,8 @@ class pypi_config(py_config):
             except:
                 raise Exception('Cannot download source for ' + pkg)
             archive_dir = options.download_dir
-            if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
+            if archive.endswith('.tgz') or archive.endswith('.tar.gz') or \
+               archive.endswith('.tar.Z'):
                 z = tarfile.open(os.path.join(archive_dir, archive), 'r:gz')
                 names = z.getnames()
             elif archive.endswith('.tar.bz2'):
@@ -428,7 +429,7 @@ def pypi_archive(which, version):
     f.close()
     l = len(which + '-' + version)
     idx = contents.find(which + '-' + version)
-    for archive in ['.zip', '.tar.bz2', '.tar.gz', '.tgz', '.tar']:
+    for archive in ['.zip', '.tar.bz2', '.tar.gz', '.tgz', '.tar.Z', '.tar']:
         if contents[idx+l:].startswith(archive):
             return archive
     raise Exception('No source archive available for ' + which)

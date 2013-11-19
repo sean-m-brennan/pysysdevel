@@ -93,7 +93,8 @@ def unarchive(archive, target, archive_dir=None):
     if not os.path.exists(os.path.join(options.target_build_dir, target)):
         mkdir(options.target_build_dir)
         os.chdir(options.target_build_dir)
-        if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
+        if archive.endswith('.tgz') or archive.endswith('.tar.gz') or \
+           archive.endswith('.tar.Z'):
             z = tarfile.open(os.path.join(archive_dir, archive), 'r:gz')
             tarextractall(z)
             z.close()
