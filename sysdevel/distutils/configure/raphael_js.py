@@ -15,8 +15,6 @@ class configuration(file_config):
 
 
     def install(self, environ, version, locally=True):
-        if version is None:
-            version = '2.1.0'
         website = 'http://github.com/DmitryBaranovskiy/raphael/raw/master/'
         js_file = 'raphael-min.js'
         js_dir = os.path.join(options.target_build_dir, options.javascript_dir)

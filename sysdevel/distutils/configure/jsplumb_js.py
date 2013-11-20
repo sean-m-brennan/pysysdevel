@@ -3,7 +3,7 @@ import os
 import shutil
 
 from ..fetching import fetch
-from ..configuration import file_config
+from ..configuration import file_config, latest_version
 from .. import options
 
 class configuration(file_config):
@@ -17,10 +17,11 @@ class configuration(file_config):
 
 
     def install(self, environ, version, locally=True):
-        if version is None:
-            version = '1.5.3'
         website = 'https://raw.github.com/sporritt/jsPlumb/master/dist/js/'
-        js_file = 'jquery.jsPlumb-' + version + '-min.js'
+        file_pattern = 'jquery.jsPlumb-*-min.js'
+        version = latest_version('jsPlumb', website, file_pattern)
+        file_parts = file_pattern.split('*')
+        js_file = file_parts[0] + version + file_parts[1]
         js_dir = os.path.join(options.target_build_dir, options.javascript_dir)
         js_target = 'jquery.jsPlumb.min.js'
         if not os.path.exists(js_dir):

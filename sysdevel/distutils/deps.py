@@ -85,13 +85,15 @@ class deps(Command):
             for (pkg_name, pkg_dir) in self.distribution.subpackages:
                 rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
                 if rf.is_sysdevel_build:  ## depth may be greater than one
-                    dep_args = ['--sublevel=' + str(self.sublevel + 1)]
-                    if not 'dependencies' in argv:
-                        dep_args = ['dependencies',
+                    if rf.needs_early_config:
+                        print('Previewing dependencies for ' + pkg_name +
+                              ' configuration ...')
+                    dep_args = ['dependencies',
                                     '--sublevel=' + str(self.sublevel + 1)]
-                    cmd = [sys.executable,
-                           os.path.join(pkg_dir, 'setup.py'),
-                           ] + argv + dep_args
+                    ## do nothing else but check dependencies
+                    cmd = [sys.executable, os.path.join(pkg_dir, 'setup.py'),
+                           'dependencies',
+                           '--sublevel=' + str(self.sublevel + 1)]
                     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE,
                                          shell=shell)
@@ -116,11 +118,16 @@ class deps(Command):
                     begin = out.find(token)
                     end = out.find('\n', begin)+1
                     p_list = out[begin+len(token):end]
-                    if self.show_subpackages:
-                        print(pkg_name.upper() + ':  ' + str(p_list))
+                    if end == 0:
+                        p_list = out[begin+len(token):]
                     self.requirements += p_list.split(',')
+                    if self.show_subpackages:
+                        print(pkg_name.upper() + ':  ' + p_list)
                 else:
                     self.requirements += rf.requires_list
+                    if self.show_subpackages:
+                        print(pkg_name.upper() + ':  ' +
+                              ', '.join(rf.requires_list))
             while 'None' in self.requirements:
                 self.requirements.remove('None')
 

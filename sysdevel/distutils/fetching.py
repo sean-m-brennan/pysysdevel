@@ -89,11 +89,12 @@ def open_archive(archive, archive_dir=None):
     if archive_dir is None:
         archive_dir = options.download_dir
     if archive.endswith('.tar.Z'):
-        ## Ugly, but neccessary (neither gzip not zlib packages work)
-        here = os.path.abspath(os.getcwd())
-        os.chdir(archive_dir)
-        os.system('gunzip ' + archive)
-        os.chdir(here)
+        if not os.path.exists(os.path.join(archive_dir, archive[:-2])):
+            ## Ugly, but neccessary (neither gzip nor zlib packages work)
+            here = os.path.abspath(os.getcwd())
+            os.chdir(archive_dir)
+            os.system('gunzip ' + archive)
+            os.chdir(here)
         archive = archive[:-2]
 
     if archive.endswith('.tgz') or archive.endswith('.tar.gz'):
@@ -132,8 +133,8 @@ def unarchive(archive, target, archive_dir=None):
         os.chdir(here)
 
 
-
-def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
+def urlretrieve(url, filename=None, progress=None, data=None, proxy=None,
+                quiet=False):
     '''
     Identical to urllib.urlretrieve, except that it handles
     SSL, proxies, and redirects properly.
@@ -205,7 +206,8 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
         del fp
         del tfp
     except URLError:
-        sys.stderr.write("HTTP Error connecting to " + url + ":\n")
+        if not quiet:
+            sys.stderr.write("HTTP Error connecting to " + url + ":\n")
         raise
 
     if size >= 0 and read < size:

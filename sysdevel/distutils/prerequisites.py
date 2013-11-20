@@ -57,13 +57,15 @@ class PrerequisiteError(Exception):
 
 
 class RequirementsFinder(ast.NodeVisitor):
-    keywords = ['requires', #'install_requires',
-                ]
+    req_keywords = ['requires', #'install_requires',
+                    ]
+    cfg_keyword = 'configure_system'
 
     def __init__(self, filepath=None, filedescriptor=None, codestring=None):
         ast.NodeVisitor.__init__(self)
         self.variables = {}
         self.is_sysdevel_build = False
+        self.needs_early_config = False
         self.requires_list = []
         if filepath:
             self._load_from_path(filepath)
@@ -109,19 +111,25 @@ class RequirementsFinder(ast.NodeVisitor):
                         if type(node.value) == ast.Tuple:
                             self.variables[
                                 str(target.elts[idx].id)] = node.value.elts[idx]
-                        # elif type(node.value) == ast.Call:
-                        #    TODO evaluate ast.Call
-    
+                        #elif type(node.value) == ast.Call:
+                        #   TODO evaluate ast.Call for assignment
+            if type(node.value) == ast.Call:
+                if type(node.value.func) == ast.Name:
+                    if node.value.func.id == self.cfg_keyword:
+                        self.needs_early_config = True
+
+
     def visit_keyword(self, node):
         if self.is_sysdevel_build:
             return  ## will be ingoring these results anyway
-        for kw in self.keywords:
+        for kw in self.req_keywords:
             if node.arg == kw:
                 if type(node.value) == ast.List:
                     self.requires_list = ast.literal_eval(node.value)
                 elif type(node.value) == ast.Name:
                     self.requires_list = ast.literal_eval(
                         self.variables[node.value.id])  ## fails on ast.Call
+        
 
     def visit_Import(self, node):
         for name in node.names:
@@ -599,8 +607,8 @@ def install_pyscript(website, name, locally=True):
         raise Exception('Unable to install ' + name + ': ' + str(e))
 
 
-def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
-                  patch=None, extra_cmds=[], extra_args=[]):
+def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
+                                patch=None, extra_cmds=[], extra_args=[]):
     compiler = []
     if 'windows' in platform.system().lower():
         # TODO iff windows is using mingw:
@@ -611,8 +619,6 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
     target_dir = os.path.abspath(options.target_build_dir)
     target_lib_dir = os.path.join(target_dir, options.local_lib_dir)
 
-    fetch(website, archive, archive)
-    unarchive(archive, src_dir)
     if patch:
         patch(os.path.join(target_dir, src_dir))
 
@@ -681,6 +687,20 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
         return os.path.dirname(module.__file__)
     except:
         return get_python_lib()
+
+
+
+
+def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
+                  patch=None, extra_cmds=[], extra_args=[]):
+    if src_dir is None:
+        src_dir = name
+
+    fetch(website, archive, archive)
+    unarchive(archive, src_dir)
+
+    return install_pypkg_without_fetch(name, env, src_dir, locally,
+                                       patch, extra_cmds, extra_args)
 
 
 

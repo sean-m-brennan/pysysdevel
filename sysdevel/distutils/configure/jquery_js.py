@@ -15,10 +15,12 @@ class configuration(file_config):
 
 
     def install(self, environ, version, locally=True):
-        if version is None:
-            version = '1.9.1'
+        file_pattern = 'jquery-*.min.js'
         website = 'http://code.jquery.com/'
-        js_file = 'jquery-' + version + '.min.js'
+        if version is None:
+            version = latest_version('jquery', website, file_pattern)
+        file_parts = file_pattern.split('*')
+        js_file = file_parts[0] + version + file_parts[1]
         js_dir = os.path.join(options.target_build_dir, options.javascript_dir)
         js_target = 'jquery.min.js'
         if not os.path.exists(js_dir):

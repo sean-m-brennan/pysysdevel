@@ -71,8 +71,7 @@ class build(old_build):
 
 
     ## Order is important
-    sub_commands = [('dependencies',   lambda *args: True),
-                    ('config_cc',      lambda *args: True),
+    sub_commands = [('config_cc',      lambda *args: True),
                     ('config_fc',      lambda *args: True),
                     ('build_src',      old_build.has_ext_modules),
                     ('build_py',       has_pure_modules),
@@ -88,7 +87,8 @@ class build(old_build):
 
 
     def run(self):
-        old_build.run(self)
+        ## before anything else, always runs
+        self.run_command('dependencies')
 
         if self.distribution.subpackages != None:
             if self.get_finalized_command('install').ran:
@@ -105,3 +105,9 @@ class build(old_build):
                 argv.remove('install')
             if 'clean' in argv:
                 argv.remove('clean')
+
+            process_subpackages(self.distribution.parallel_build, 'build',
+                                self.build_base, self.distribution.subpackages,
+                                argv, self.distribution.quit_on_error)
+
+        old_build.run(self)

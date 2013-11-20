@@ -137,7 +137,7 @@ def _generate_header(filename, custom_types):
             full_type = repr(members[f][1])
             declaration = _ctype2declaration(full_type, field_id)
             comment = ''
-            if hasattr(t, 'comments'):
+            if hasattr(t, 'comments') and len(t.comments) <= f:
                 comment = t.comments[f]
             hdr.write('  ' + declaration + ';')
 

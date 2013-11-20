@@ -99,8 +99,11 @@ class lib_config(config):
 
     def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
+        default_lib_paths = ['lib64', 'lib', '']
+        default_include_paths = ['include', os.path.join(self.lib, 'include')]
 
-        locations = []
+        locations = [os.path.join(options.target_build_dir, d)
+                     for d in default_include_paths + default_lib_paths]
         limit = False
         if self.lib.upper() + '_SHLIB_DIR' in environ and \
                 environ[self.lib.upper() + '_SHLIB_DIR']:
@@ -134,6 +137,11 @@ class lib_config(config):
         try:
             if self.hdr:
                 incl_dir = find_header(self.hdr, locations, limit=limit)
+                default_lib_paths = ['lib64', 'lib', '']
+                for lib in default_lib_paths:
+                    locations.insert(0,
+                                     os.path.abspath(os.path.join(incl_dir,
+                                                                  '..', lib)))
             lib_dir, libs = find_library(self.lib, locations, limit=limit)
             def_dir, defs = '', []
             if 'windows' in platform.system().lower():
@@ -396,11 +404,23 @@ def dynamic_module(pkg, version=None, dependencies=None, debug=False,
     return module
 
 
-def pypi_url(pkg):
-    ## This is what pip uses:
-    #return 'http://pypi.python.org/simple/' + pkg + '/'
-    ## This ensures that there are sources available:
-    return 'https://pypi.python.org/packages/source/' + pkg[0] + '/' + pkg + '/'
+def is_pypi_listed(pkg):
+    listing = os.path.join(options.target_build_dir, '.' + pkg + '_list_test')
+    try:
+        urlretrieve(pypi_url(pkg, False), listing, quiet=True)
+        return True
+    except:
+        return False
+
+
+def pypi_url(pkg, src=True):
+    if src:
+        ## This ensures that there are sources available:
+        return 'https://pypi.python.org/packages/source/' + \
+            pkg[0] + '/' + pkg + '/'
+    else:
+        ## This is what pip uses:
+        return 'http://pypi.python.org/simple/' + pkg + '/'
 
 
 def pypi_archive(which, version):
@@ -445,3 +465,29 @@ def latest_pypi_version(which, requested_ver=None):
         if compare_versions(version, ver) < 0:
             version = ver
     return version
+
+
+def latest_version(what, website, pattern):
+    pre = pattern.split('*')[0]
+    post = pattern.split('*')[-1]
+    listing = os.path.join(options.target_build_dir, '.' + what + '_list')
+    urlretrieve(website + '/', listing)
+    version = '0'
+    versions = []
+    f = open(listing, 'r')
+    contents = f.read()
+    f.close()
+    idx = contents.find(pre, 0)
+    l = len(pre)
+    while idx >= 0:
+        endl = contents.find('\n', idx)
+        end = contents.find(post, idx)
+        if end > 0 and end < endl:
+            versions.append(contents[idx+l:end])
+        idx = contents.find(pre, end)
+    for ver in versions:
+        if compare_versions(version, ver) < 0:
+            version = ver
+    return version
+
+

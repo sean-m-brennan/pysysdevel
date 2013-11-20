@@ -33,13 +33,15 @@ import platform
 import traceback
 
 from ..prerequisites import *
-from ..configuration import dynamic_module, latest_pypi_version, pypi_exceptions
+from ..configuration import dynamic_module, latest_pypi_version
+from ..configuration import is_pypi_listed, pypi_exceptions
 from ..filesystem import mkdir
 from .. import options
 from ...util import is_string
 
 
 DEBUG_PYPI = True
+DEBUG_LOCAL = True
 
 
 class FatalError(SystemExit):
@@ -114,8 +116,9 @@ def configure_system(prerequisite_list, version,
                                  "built locally.\n")
 
         for help_name in prerequisite_list:
-            environment = __configure_package(environment, help_name,
-                                              skip, install, quiet)
+            if len(help_name) > 0:
+                environment = __configure_package(environment, help_name,
+                                                  skip, install, quiet)
         save_cache(environment)
     except Exception:
         logfile = os.path.join(options.target_build_dir, 'config.err')
@@ -150,8 +153,12 @@ def __configure_package(environment, help_name, skip, install, quiet):
         sys.path.insert(0, cfg_dir)
     successful = False
     for package in packages:
+        if successful:
+            continue
         full_name = package + help_name
         try:
+            if not package and is_pypi_listed(base):
+                raise ImportError('Invalid config')
             __import__(full_name, globals=globals())
             helper = sys.modules[full_name]
             successful = True
@@ -168,7 +175,8 @@ def __configure_package(environment, help_name, skip, install, quiet):
                     helper = sys.modules[full_name]
                     successful = True
                 except (ImportError, KeyError):
-                    pass
+                    if DEBUG_LOCAL and not package and not is_pypi_listed(base):
+                        traceback.print_exc()
     if not successful:
         try:
             ## grab it from the Python Package Index
