@@ -148,18 +148,21 @@ class RequirementsFinder(ast.NodeVisitor):
 ## Caching ###################
 
 def read_cache():
+    environ = dict()
     cache_file = os.path.join(options.target_build_dir, '.cache')
     if os.path.exists(cache_file):
-        cache = open(cache_file, 'rb')
-        cached = json.load(cache)
-        options.set_local_search_paths(cached['local_search_paths'])
-        environ = cached['environment']
-        cache.close()
-        if len(options.local_search_paths) == 0:
-            options.set_local_search_paths(
-                [os.path.abspath(options.target_build_dir)])
-        return environ
-    return dict()
+        try:
+            cache = open(cache_file, 'rb')
+            cached = json.load(cache)
+            options.set_local_search_paths(cached['local_search_paths'])
+            environ = cached['environment']
+            cache.close()
+            if len(options.local_search_paths) == 0:
+                options.set_local_search_paths(
+                    [os.path.abspath(options.target_build_dir)])
+        except:
+            pass
+    return environ
 
 def save_cache(environ):
     cache_file = os.path.join(options.target_build_dir, '.cache')
