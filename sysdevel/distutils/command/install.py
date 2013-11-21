@@ -35,7 +35,7 @@ try:
 except ImportError:
     from distutils.command.install import install as old_install
 
-from .recur import process_subpackages
+from ..recur import process_subpackages
 
 
 class install(old_install):
@@ -65,9 +65,12 @@ class install(old_install):
                     ]
 
     def run(self):
+        ## before anything else, always runs (in case build hasn't run)
+        self.run_command('dependencies')
+
         if self.distribution.subpackages != None:
-            self.ran = True
             build = self.get_finalized_command('build')
+
             try:
                 os.makedirs(build.build_base)
             except:
@@ -94,3 +97,4 @@ class install(old_install):
                 old_install.run(self)
         else:
             old_install.run(self)
+        self.ran = True

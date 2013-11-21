@@ -24,14 +24,10 @@ permissions and limitations under the License.
 """
 
 
-__all__ = ['core', 'extensions', 'pkg_config', 'configuration', 'configure',
-           'build_clib', 'build_docbook', 'build_doc', 'build_exe', 'build_js',
-           'build_org', 'build', 'build_pypp_ext', 'build_py', 'build_scripts',
-           'build_shlib', 'build_src',
-           'clean', 'config_cc', 'config_fc', 'ctypes_header', 'deps',
-           'install_clib', 'install_data', 'install_exe', 'install_lib',
-           'install', 
-           'recur', 'sdist', 'submodules', 'util', 'test', 'tree',
+__all__ = ['command', 'configure',
+           'building', 'configuration', 'core', 'extensions', 'fetching',
+           'filesystem', 'headers', 'numpy_utils', 'pkg_config',
+           'prerequisites', 'recur', 'submodules', 'tree',
            ]
 
 import os

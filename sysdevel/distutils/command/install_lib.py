@@ -36,9 +36,9 @@ import platform
 from distutils.command.install_lib import install_lib as old_install_lib
 from distutils.util import change_root, convert_path
 
-from .filesystem import mkdir
-from .prerequisites import get_module_location
-from . import options
+from ..filesystem import mkdir
+from ..prerequisites import get_module_location
+from .. import options
 
 
 class install_lib(old_install_lib):

@@ -38,9 +38,9 @@ try:
 except:
     from distutils.command.build_src import build_src as _build_src
 
-from .filesystem import mkdir
-from .building import configure_file
-from sysdevel import client_support_dir
+from ..filesystem import mkdir
+from ..building import configure_file
+from ... import client_support_dir
 
 
 class build_src(_build_src):

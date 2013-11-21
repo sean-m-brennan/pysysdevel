@@ -43,9 +43,9 @@ except:
     from distutils.command.build_clib import build_clib
     from distutils import log
 
-from ..util import is_string
-from .building import convert_ulist, safe_eval
-from .numpy_utils import filter_sources, is_sequence
+from ...util import is_string
+from ..building import convert_ulist, safe_eval
+from ..numpy_utils import filter_sources, is_sequence
 
 
 class build_shlib(build_clib):

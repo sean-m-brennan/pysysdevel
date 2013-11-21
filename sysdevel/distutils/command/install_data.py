@@ -34,7 +34,7 @@ try:
 except:
     from distutils.command.install_data import install_data as old_data
 
-from .filesystem import mkdir, copy_tree
+from ..filesystem import mkdir, copy_tree
 
 
 class install_data(old_data):

@@ -38,9 +38,9 @@ try:
 except:
     from distutils.command.build_ext import build_ext
 
-from .prerequisites import find_program, find_file
-from .filesystem import mkdir, copy_tree
-from . import options
+from ..prerequisites import find_program, find_file
+from ..filesystem import mkdir, copy_tree
+from .. import options
 
 
 def make_doc(src_file, target_dir=None, stylesheet=None):

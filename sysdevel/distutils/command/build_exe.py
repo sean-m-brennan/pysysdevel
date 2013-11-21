@@ -43,9 +43,9 @@ except:
     from distutils.command.build_clib import build_clib
     from distutils import log
 
-from ..util import is_string
-from .building import convert_ulist
-from .numpy_utils import has_f_sources, has_cxx_sources, filter_sources, \
+from ...util import is_string
+from ..building import convert_ulist
+from ..numpy_utils import has_f_sources, has_cxx_sources, filter_sources, \
     is_sequence, all_strings
 
 

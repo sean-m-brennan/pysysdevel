@@ -60,7 +60,7 @@ except ImportError:
 from .numpy_utils import *
 from ..util import is_string
 from .building import convert_ulist
-from sysdevel.distutils import options
+from . import options
 
 
 
@@ -235,30 +235,30 @@ import warnings
 import distutils.core
 import distutils.dist
 
-from . import config_cc
-from . import config_fc
-from . import build
-from . import build_doc
-from . import build_js
-from . import build_py
-from . import build_scripts
-from . import build_pypp_ext
-from . import build_src
-from . import build_clib
-from . import build_shlib
-from . import build_exe
-from . import sdist
-from . import install
-from . import install_data
-from . import install_lib
-from . import install_clib
-from . import install_exe
-from . import clean
-from . import test
-from . import deps
+from .command import config_cc
+from .command import config_fc
+from .command import build
+from .command import build_doc
+from .command import build_js
+from .command import build_py
+from .command import build_scripts
+from .command import build_pypp_ext
+from .command import build_src
+from .command import build_clib
+from .command import build_shlib
+from .command import build_exe
+from .command import sdist
+from .command import install
+from .command import install_data
+from .command import install_lib
+from .command import install_clib
+from .command import install_exe
+from .command import clean
+from .command import test
+from .command import dependencies
 
 
-my_cmdclass = {'dependencies':     deps.deps,
+my_cmdclass = {'dependencies':     dependencies.dependencies,
                'build':            build.build,
                'build_src':        build_src.build_src,
                'build_scripts':    build_scripts.build_scripts,

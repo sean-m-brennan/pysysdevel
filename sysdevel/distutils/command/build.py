@@ -35,13 +35,17 @@ try:
 except ImportError:
     from distutils.command.build import build as old_build
 
-from .recur import process_subpackages
+from ..recur import process_subpackages
 
 
 class build(old_build):
     '''
     Subclass build command to support new commands.
     '''
+    def initialize_options (self):
+        old_build.initialize_options(self)
+        self.ran = False
+
     def has_pure_modules(self):
         return self.distribution.has_pure_modules() or \
             self.distribution.has_antlr_extensions() or \
@@ -69,6 +73,9 @@ class build(old_build):
         return self.distribution.has_data_files() or \
             self.distribution.has_data_directories()
 
+    def has_documents(self):
+        return True  ##FIXME detect documentation
+
 
     ## Order is important
     sub_commands = [('config_cc',      lambda *args: True),
@@ -81,7 +88,7 @@ class build(old_build):
                     ('build_ext',      old_build.has_ext_modules),
                     ('build_pypp_ext', has_pypp_extensions),
                     ('build_scripts',  has_scripts),
-                    ('build_doc',      lambda *args: True),
+                    ('build_doc',      has_documents),
                     ('build_exe',      has_executables),
                     ]
 
@@ -111,3 +118,4 @@ class build(old_build):
                                 argv, self.distribution.quit_on_error)
 
         old_build.run(self)
+        self.ran = True

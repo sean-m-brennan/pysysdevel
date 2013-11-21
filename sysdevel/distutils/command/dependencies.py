@@ -34,14 +34,14 @@ import subprocess
 import inspect
 from distutils.core import Command
 
-from .prerequisites import RequirementsFinder
-from .configure import configure_system
-from.filesystem import mkdir
-from . import options
-from ..util import is_string
+from ..prerequisites import RequirementsFinder
+from ..configure import configure_system
+from ..filesystem import mkdir
+from .. import options
+from ...util import is_string
 
 
-class deps(Command):
+class dependencies(Command):
     description = "package dependencies"
     user_options = [('show', 's', 'show the dependencies'),
                     ('show-subpackages', None,

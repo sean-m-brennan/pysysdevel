@@ -40,7 +40,7 @@ try:
 except:
     from distutils.command.build_py import build_py as _build_py
 
-from .building import configure_file
+from ..building import configure_file
 
 
 class build_py(_build_py):

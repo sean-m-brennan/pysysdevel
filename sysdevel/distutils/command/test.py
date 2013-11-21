@@ -34,12 +34,12 @@ import platform
 from distutils.core import Command
 from distutils import log
 
-from .extensions import FortranUnitTest, CUnitTest, CppUnitTest
-from .recur import process_subpackages
-from .prerequisites import RequirementsFinder, check_call
-from .filesystem import copy_tree
-from ..util import is_string
-from . import options
+from ..extensions import FortranUnitTest, CUnitTest, CppUnitTest
+from ..recur import process_subpackages
+from ..prerequisites import RequirementsFinder, check_call
+from ..filesystem import copy_tree
+from ...util import is_string
+from .. import options
 
 
 def create_test_wrapper(pyscript, target_dir, lib_dirs):
@@ -341,7 +341,7 @@ class test(Command):
 
         ## FORTRAN
         if self._has_fortran_tests():
-            from .configure import fruit
+            from ..configure import fruit
             env = dict()
             if not fruit.is_installed(env, None):
                 fruit.install(env, None)
@@ -378,7 +378,7 @@ class test(Command):
 
         ## C
         if self._has_c_tests():
-            from .configure import cunit
+            from ..configure import cunit
             env = dict()
             if not cunit.is_installed(env, None):
                 cunit.install(env, None)
@@ -414,7 +414,7 @@ class test(Command):
 
         ## C++
         if self._has_cpp_tests():
-            from .configure import cppunit
+            from ..configure import cppunit
             env = dict()
             if not cppunit.is_installed(env, None):
                 cppunit.install(env, None)
@@ -449,7 +449,7 @@ class test(Command):
 
         ## Javascript
         if self._has_js_tests():
-            from .configure import qunitsuite
+            from ..configure import qunitsuite
             env = dict()
             if not qunitsuite.is_installed(env, None):
                 qunitsuite.install(env, None)

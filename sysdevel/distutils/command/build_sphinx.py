@@ -35,6 +35,8 @@ import shutil
 import platform
 import subprocess
 
+import sphinx
+
 from distutils import dir_util
 
 try:
@@ -42,9 +44,9 @@ try:
 except:
     from distutils.command.build_ext import build_ext
 
-from .filesystem import mkdir, copy_tree
-from .building import configure_file, configure_files
-from .prerequisites import find_program
+from ..filesystem import mkdir, copy_tree
+from ..building import configure_file, configure_files
+from ..prerequisites import find_program
 
 
 def create_breathe_stylesheet(dirname):
@@ -211,7 +213,6 @@ class build_sphinx(build_ext):
                                os.path.join(working_dir, 'conf.py'))
                 import warnings
                 try:
-                    import sphinx
                     from sphinx.application import Sphinx
                     if 'windows' in platform.system().lower() or \
                             not build_verbose:

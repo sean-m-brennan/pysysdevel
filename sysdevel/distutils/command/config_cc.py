@@ -35,7 +35,7 @@ try:
 except:
     from distutils.command.config_compiler import config_cc as old_config_cc
 
-from ..util import is_string
+from ...util import is_string
 
 
 class config_cc(old_config_cc):

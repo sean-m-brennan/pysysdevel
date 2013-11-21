@@ -33,8 +33,8 @@ try:
     from numpy.distutils import log
     from numpy.distutils.command.config_compiler import config_fc as old_cfg_fc
 
-    from .prerequisites import gcc_is_64bit
-    from ..util import is_string
+    from ..prerequisites import gcc_is_64bit
+    from ...util import is_string
 
 
     class config_fc(old_cfg_fc):

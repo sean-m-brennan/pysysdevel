@@ -42,11 +42,11 @@ try:
 except:
     from distutils.command.build_ext import build_ext
 
-from .filesystem import mkdir, copy_tree, recursive_chown
-from .prerequisites import find_program
-from .building import configure_file, configure_files
-from . import options
-from .. import client_support_dir
+from ..filesystem import mkdir, copy_tree, recursive_chown
+from ..prerequisites import find_program
+from ..building import configure_file, configure_files
+from .. import options
+from ... import client_support_dir
 
 
 class build_js(build_ext):
