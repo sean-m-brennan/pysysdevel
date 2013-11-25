@@ -63,6 +63,10 @@ from .building import convert_ulist
 from . import options
 
 
+CustomCommands = ['dependencies', 'build_doc', 'build_docbook', 'build_exe',
+                  'build_js', 'build_org', 'build_py', 'build_pypp_ext',
+                  'build_shlib', 'build_sphinx', 'install_exe', 'test']
+
 
 class CustomDistribution(oldDistribution):
     '''

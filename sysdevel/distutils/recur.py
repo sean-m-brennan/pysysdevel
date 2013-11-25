@@ -47,12 +47,18 @@ def process_package(fnctn, build_base, progress, pyexe, argv,
         log = open(os.devnull, 'w')
 
     from sysdevel.distutils.prerequisites import RequirementsFinder
+    from sysdevel.distutils.core import CustomCommands
     rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
-    if not rf.is_sysdevel_build:
+    if not rf.is_sysdevel_build:  ## regular distutils
         args = list(argv)
         for arg in args:
             if '--sublevel' in arg:
                 argv.remove(arg)
+            if arg in CustomCommands:
+                argv.remove(arg)
+        if len(argv) == 0:
+            argv.append('build')
+
     try:
         p = subprocess.Popen([pyexe, os.path.join(pkg_dir, 'setup.py'),
                               ] + argv + addtnl_args,

@@ -191,14 +191,16 @@ def create_cppunit_driver(unit):
 class test(Command):
     description = "unit testing"
 
-    user_options = []
+    user_options = [('sublevel=', None, 'sub-package level'),]
 
     def initialize_options(self):
         self.tests = []
+        self.sublevel = 0
 
     def finalize_options(self):
         if not self.tests: 
             self.tests = self.distribution.tests
+        self.sublevel = int(self.sublevel)
 
 
     def _get_python_tests(self):
@@ -283,6 +285,16 @@ class test(Command):
 
     def run(self):
         failed = False
+
+        ## before anything else (runs in case build hasn't run)
+        deps = self.get_finalized_command('dependencies')
+        if self.sublevel == 0 and not deps.ran:
+            self.run_command('dependencies')
+
+        build = self.get_finalized_command('build')
+        if self.sublevel == 0 and not build.ran:
+            self.run_command('build')
+
         if self.distribution.subpackages != None:
             subs = []
             for (pkg_name, pkg_dir) in self.distribution.subpackages:
@@ -293,7 +305,11 @@ class test(Command):
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])
-            build = self.get_finalized_command('build')
+            for arg in sys.argv:
+                if arg == 'clean' or '--sublevel' in arg:
+                    argv.remove(arg)
+
+            argv += ['--sublevel=' + str(self.sublevel + 1)]
             failed = process_subpackages(build.distribution.parallel_build,
                                          'test', build.build_base, subs,
                                          argv, False)

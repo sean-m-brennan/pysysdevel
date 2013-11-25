@@ -121,8 +121,7 @@ class build(old_build):
                     break
             argv = list(sys.argv[idx+1:])
             for arg in sys.argv:
-                if arg == 'clean' or \
-                   '--sublevel' in arg:
+                if arg == 'clean' or '--sublevel' in arg:
                     argv.remove(arg)
 
             argv += ['--sublevel=' + str(self.sublevel + 1)]
