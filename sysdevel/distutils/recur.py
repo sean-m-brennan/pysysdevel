@@ -45,6 +45,14 @@ def process_package(fnctn, build_base, progress, pyexe, argv,
         log = open(log_file, 'w')
     else:
         log = open(os.devnull, 'w')
+
+    from sysdevel.distutils.prerequisites import RequirementsFinder
+    rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
+    if not rf.is_sysdevel_build:
+        args = list(argv)
+        for arg in args:
+            if '--sublevel' in arg:
+                argv.remove(arg)
     try:
         p = subprocess.Popen([pyexe, os.path.join(pkg_dir, 'setup.py'),
                               ] + argv + addtnl_args,
@@ -77,7 +85,8 @@ def process_subpackages(parallel, fnctn, build_base, subpackages,
         results = [job_server.submit(process_package,
                                      (fnctn, build_base, process_progress,
                                       sys.executable, argv,) + sub,
-                                     (), ('os', 'subprocess',))
+                                     (), ('os', 'sys', 'subprocess',
+                                          'sysdevel.distutils.prerequisites'))
                    for sub in subpackages]
         has_failed = False
         for result in results:

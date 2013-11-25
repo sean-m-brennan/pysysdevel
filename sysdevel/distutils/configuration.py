@@ -142,8 +142,8 @@ class lib_config(config):
                     locations.insert(0,
                                      os.path.abspath(os.path.join(incl_dir,
                                                                   '..', lib)))
-            lib_dir, libs = find_library(self.lib, locations, limit=limit)
-            def_dir, defs = '', []
+            lib_dir, lib = find_library(self.lib, locations, limit=limit)
+            def_dir, defs = lib_dir, []
             if 'windows' in platform.system().lower():
                 def_dir, defs = find_definitions(self.lib, locations,
                                                  limit=limit)
@@ -158,7 +158,7 @@ class lib_config(config):
         self.environment[self.lib.upper() + '_LIB_DIR'] = def_dir
         self.environment[self.lib.upper() + '_DEF_FILES'] = defs
         self.environment[self.lib.upper() + '_SHLIB_DIR'] = lib_dir
-        self.environment[self.lib.upper() + '_LIB_FILES'] = libs
+        self.environment[self.lib.upper() + '_LIB_FILES'] = [lib]
         self.environment[self.lib.upper() + '_LIBRARIES'] = [self.lib]
         return self.found
 

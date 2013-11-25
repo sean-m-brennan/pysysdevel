@@ -42,9 +42,18 @@ class build(old_build):
     '''
     Subclass build command to support new commands.
     '''
+    user_options = [('sublevel=', None, 'sub-package level'),
+                    ] + old_build.user_options
+
     def initialize_options (self):
         old_build.initialize_options(self)
+        self.sublevel = 0
         self.ran = False
+
+    def finalize_options(self):
+        old_build.finalize_options(self)
+        self.sublevel = int(self.sublevel)
+
 
     def has_pure_modules(self):
         return self.distribution.has_pure_modules() or \
@@ -94,9 +103,12 @@ class build(old_build):
 
 
     def run(self):
-        ## before anything else, always runs
-        self.run_command('dependencies')
+        ## before anything else
+        deps = self.get_finalized_command('dependencies')
+        if self.sublevel == 0 and not deps.ran:
+            self.run_command('dependencies')
 
+        self.ran = True
         if self.distribution.subpackages != None:
             if self.get_finalized_command('install').ran:
                 return  ## avoid build after install
@@ -108,14 +120,14 @@ class build(old_build):
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])
-            if 'install' in argv:
-                argv.remove('install')
-            if 'clean' in argv:
-                argv.remove('clean')
+            for arg in sys.argv:
+                if arg == 'clean' or \
+                   '--sublevel' in arg:
+                    argv.remove(arg)
 
+            argv += ['--sublevel=' + str(self.sublevel + 1)]
             process_subpackages(self.distribution.parallel_build, 'build',
                                 self.build_base, self.distribution.subpackages,
                                 argv, self.distribution.quit_on_error)
 
         old_build.run(self)
-        self.ran = True

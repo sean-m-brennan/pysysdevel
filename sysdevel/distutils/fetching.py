@@ -39,7 +39,6 @@ from . import options
 
 download_file = ''
 
-
 def set_downloading_file(dlf):
     '''
     Set the global for the download_progress callback below.

@@ -65,7 +65,7 @@ def simplify_version(version):
 
 def configure_system(prerequisite_list, version,
                      required_python_version='2.4', install=True, quiet=False,
-                     sublevel=0):
+                     sublevel=0, out=sys.stdout, err=sys.stderr):
     '''
     Given a list of required software and optionally a Python version,
     verify that python is the proper version and that
@@ -90,10 +90,10 @@ def configure_system(prerequisite_list, version,
                              'You are running version ' + pyver)
 
         if not quiet:
-            sys.stdout.write('CONFIGURE  ')
+            out.write('CONFIGURE  ')
             if len(environment):
-                sys.stdout.write('(from cache)')
-            sys.stdout.write('\n')
+                out.write('(from cache)')
+            out.write('\n')
         environment['PACKAGE_VERSION'] = version
 
         prerequisite_list.insert(0, 'httpsproxy_urllib2')
@@ -101,7 +101,7 @@ def configure_system(prerequisite_list, version,
            in_prerequisites('mingw', prerequisite_list) and \
            in_prerequisites('boost', prerequisite_list) and not \
            in_prerequisites('msvcrt', prerequisite_list):
-            sys.stderr.write("WARNING: if you're using the boost-python DLL, " +
+            err.write("WARNING: if you're using the boost-python DLL, " +
                              "also add 'msvcrt' as a prerequisite.\n")
         if 'darwin' in platform.system().lower() and \
            not in_prerequisites('macports', prerequisite_list) and \
@@ -111,14 +111,15 @@ def configure_system(prerequisite_list, version,
             elif system_uses_homebrew():
                 prerequisite_list.insert(0, 'homebrew')
             else:
-                sys.stderr.write("WARNING: neither MacPorts nor Homebrew " +
+                err.write("WARNING: neither MacPorts nor Homebrew " +
                                  "detected. All required libraries will be " +
                                  "built locally.\n")
 
         for help_name in prerequisite_list:
             if len(help_name) > 0:
                 environment = __configure_package(environment, help_name,
-                                                  skip, install, quiet)
+                                                  skip, install, quiet,
+                                                  out, err)
         save_cache(environment)
     except Exception:
         logfile = os.path.join(options.target_build_dir, 'config.err')
@@ -133,14 +134,15 @@ def configure_system(prerequisite_list, version,
                   "--show'\nand install the listed packages by hand.\n" +
                   traceback.format_exc())
         log.close()
-        sys.stderr.write('Configuration error; see ' + logfile + ' for details.\n' +
+        err.write('Configuration error; see ' + logfile + ' for details.\n' +
                          'Prerequisites might be present, so building anyway...\n')
     sys.path.insert(0, os.path.join(options.target_build_dir,
                                     options.local_lib_dir))
     return environment
 
 
-def __configure_package(environment, help_name, skip, install, quiet):
+def __configure_package(environment, help_name, skip, install, quiet,
+                        out=sys.stdout, err=sys.stderr):
     req_version = None
     if not is_string(help_name):
         req_version = help_name[1]
@@ -189,16 +191,16 @@ def __configure_package(environment, help_name, skip, install, quiet):
         except:
             if DEBUG_PYPI:
                 traceback.print_exc()
-            sys.stderr.write('No setup helper module ' + base + '\n')
+            err.write('No setup helper module ' + base + '\n')
             raise ImportError('No configuration found for ' + help_name)
     return __run_helper__(environment, help_name, helper,
-                          req_version, skip, install, quiet)
+                          req_version, skip, install, quiet, out, err)
 
 
 configured = []
 
 def __run_helper__(environment, short_name, helper, version,
-                   skip, install, quiet):
+                   skip, install, quiet, out=sys.stdout, err=sys.stderr):
     configured.append(short_name)
     cfg = helper.configuration()
     for dep in cfg.dependencies:
@@ -208,14 +210,14 @@ def __run_helper__(environment, short_name, helper, version,
         if dep_name in configured:
             continue
         environment = __configure_package(environment, dep,
-                                          skip, install, quiet)
+                                          skip, install, quiet, out, err)
         save_cache(environment)
     if not quiet:
-        sys.stdout.write('Checking for ' + short_name + ' ')
+        out.write('Checking for ' + short_name + ' ')
         if not version is None:
-            sys.stdout.write('v.' + version)
-        sys.stdout.write('\n')
-        sys.stdout.flush()
+            out.write('v.' + version)
+        out.write('\n')
+        out.flush()
     if skip:
         cfg.null()
     elif not cfg.is_installed(environment, version):

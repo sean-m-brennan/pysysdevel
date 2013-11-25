@@ -96,16 +96,7 @@ class install_lib(old_install_lib):
             for pkg_tpl in self.distribution.extra_install_libraries:
                 for lib_tpl in pkg_tpl[1]:
                     libpath = lib_tpl[0]
-                    suffixes = ['.so*']
-                    prefixes = ['', 'lib']
-                    if 'windows' in platform.system().lower():
-                        suffixes = ['.dll']
-                    elif 'darwin' in platform.system().lower():
-                        suffixes += ['.dylib*']
-                    for prefix in prefixes:
-                        for suffix in suffixes:
-                            for libname in lib_tpl[1]:
-                                filename = prefix + libname + '*' + suffix
-                                for source in glob.glob(os.path.join(libpath,
-                                                                     filename)):
-                                    self.copy_file(source, target_dir)
+                    for libname in lib_tpl[1]:
+                        for source in glob.glob(os.path.join(libpath,
+                                                             libname + '*')):
+                            self.copy_file(source, target_dir)

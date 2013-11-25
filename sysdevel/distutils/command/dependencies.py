@@ -53,6 +53,7 @@ class dependencies(Command):
         self.show = False
         self.show_subpackages = False
         self.sublevel = 0
+        self.ran = False
 
     def finalize_options(self):
         if self.sublevel is None:
@@ -64,6 +65,7 @@ class dependencies(Command):
 
 
     def run(self):
+        self.ran = True
         options.set_top_level(self.sublevel)
         token = 'Package dependencies: '
         outlog = os.path.join(options.target_build_dir, 'config.out')
@@ -79,6 +81,9 @@ class dependencies(Command):
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])
+            for arg in sys.argv:
+                if '--sublevel' in arg:
+                    argv.remove(arg)
             shell=False
             if 'windows' in platform.system().lower():
                 shell = True

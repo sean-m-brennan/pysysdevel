@@ -14,7 +14,11 @@ class configuration(lib_config):
 
     def is_installed(self, environ, version=None):
         lib_config.is_installed(self, environ, version)
-        self.environment['GSL_LIBRARIES'] += ['gslcblas']
+        if self.found:
+            self.environment['GSL_LIBRARIES'] += ['gslcblas']
+            lib_file = self.environment['GSL_LIB_FILES'][0]
+            pre, post = lib_file.split('gsl')
+            self.environment['GSL_LIB_FILES'] += [pre + 'gslcblas' + post]
         return self.found
 
 

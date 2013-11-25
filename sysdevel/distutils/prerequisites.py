@@ -261,16 +261,6 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
     raise Exception(filename + ' not found.')
 
 
-def find_library(name, extra_paths=[], extra_subdirs=[],
-                 limit=False, wildcard=True):
-    '''
-    Find the containing directory and proper filename (returned as a tuple)
-    of the given library.
-    '''
-    return find_libraries(name, extra_paths, extra_subdirs,
-                          limit, True, wildcard=wildcard)
-
-
 def find_definitions(name, extra_paths=[], extra_subdirs=[],
                      limit=False, single=False, wildcard=True):
     '''
@@ -315,6 +305,16 @@ def find_definitions(name, extra_paths=[], extra_subdirs=[],
                                     print('Found at ' + root)
                                 return root.rstrip(os.sep), defs
     raise Exception(name + ' library definitions not found.')
+
+
+def find_library(name, extra_paths=[], extra_subdirs=[],
+                 limit=False, wildcard=True):
+    '''
+    Find the containing directory and proper filename (returned as a tuple)
+    of the given library.
+    '''
+    return find_libraries(name, extra_paths, extra_subdirs,
+                          limit, True, wildcard=wildcard)
 
 
 def find_libraries(name, extra_paths=[], extra_subdirs=[],

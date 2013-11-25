@@ -24,6 +24,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
+'''
+NOTE: requires the following be defined in distutils environment:
+  WEBSOCKET_ORIGIN
+  WEBSOCKET_TLS_PKEY
+  WEBSOCKET_TLS_CERT
+  WEBSOCKET_RESOURCE
+  WEBSOCKET_ADD_RESOURCES
+'''
+
 
 import os
 import sys

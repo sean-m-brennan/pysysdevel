@@ -42,9 +42,18 @@ class install(old_install):
     '''
     Subclass install command to support new commands.
     '''
+    user_options = [('sublevel=', None, 'sub-package level'),
+                    ] + old_install.user_options
+
     def initialize_options (self):
         old_install.initialize_options(self)
+        self.sublevel = 0
         self.ran = False
+
+    def finalize_options(self):
+        old_install.finalize_options(self)
+        self.sublevel = int(self.sublevel)
+
 
     def has_lib(self):
         return old_install.has_lib(self) or self.distribution.has_shared_libs()
@@ -65,9 +74,12 @@ class install(old_install):
                     ]
 
     def run(self):
-        ## before anything else, always runs (in case build hasn't run)
-        self.run_command('dependencies')
+        ## before anything else (runs in case build hasn't run)
+        deps = self.get_finalized_command('dependencies')
+        if self.sublevel == 0 and not deps.ran:
+            self.run_command('dependencies')
 
+        self.ran = True
         if self.distribution.subpackages != None:
             build = self.get_finalized_command('build')
 
@@ -79,11 +91,13 @@ class install(old_install):
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])
-            if 'build' in argv:
-                argv.remove('build')
-            if 'clean' in argv:
-                argv.remove('clean')
+            for arg in sys.argv:
+                if arg == 'build' or \
+                   arg == 'clean' or \
+                   '--sublevel' in arg:
+                    argv.remove(arg)
 
+            argv += ['--sublevel=' + str(self.sublevel + 1)]
             process_subpackages(build.distribution.parallel_build, 'install',
                                 build.build_base, self.distribution.subpackages,
                                 argv, build.distribution.quit_on_error)
@@ -97,4 +111,3 @@ class install(old_install):
                 old_install.run(self)
         else:
             old_install.run(self)
-        self.ran = True
