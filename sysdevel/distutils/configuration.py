@@ -344,10 +344,27 @@ class py_config(config):
             src_dir = self.indexed + '-' + str(version)
             archive = src_dir + '.tar.gz'
             try:
-                install_pypkg(src_dir, website, archive, locally=locally)
+                fetch(website, archive, archive, quiet=True)
             except Exception:
-                archive = src_dir + '.zip'
-                install_pypkg(src_dir, website, archive, locally=locally)
+                try:
+                    archive = src_dir + '.zip'
+                    fetch(website, archive, archive, quiet=True)
+                except Exception:
+                    try:
+                        archive = src_dir + '.tar.bz2'
+                        fetch(website, archive, archive, quiet=True)
+                    except Exception:
+                        try:
+                            archive = src_dir + '.tgz'
+                            fetch(website, archive, archive, quiet=True)
+                        except Exception:
+                            try:
+                                archive = src_dir + '.tar.Z'
+                                fetch(website, archive, archive, quiet=True)
+                            except Exception:
+                                    archive = src_dir + '.tar'
+                                    fetch(website, archive, archive)
+            install_pypkg(src_dir, website, archive, locally=locally)
             ## Urgent FIXME install check is not always working
             #if not self.is_installed(environ, version):
             #    raise Exception(self.pkg + ' installation failed.')
