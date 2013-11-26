@@ -54,12 +54,18 @@ class configuration(lib_config):
                                                         base_dirs)
             mpich_inc_dir = find_header(self.hdr, base_dirs,
                                         ['mpich2', 'mpich2-' + arch,])
+            mpich_exe = find_program('mpif90', base_dirs +
+                                     [os.path.join(mpich_lib_dir, '..')])
+            mpich_exe_dir = os.path.abspath(os.path.dirname(mpich_exe))
             self.found = True
         except Exception:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found
 
+        os.environ['PATH'] = os.environ.get('PATH', '') + \
+                             os.pathsep + mpich_exe_dir
+        self.environment['MPICH_PATH'] = mpich_exe_dir
         self.environment['MPICH_INCLUDE_DIR'] = mpich_inc_dir
         self.environment['MPICH_LIB_DIR'] = mpich_lib_dir
         self.environment['MPICH_LIBRARIES'] = mpich_lib_list

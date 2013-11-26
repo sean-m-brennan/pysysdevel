@@ -53,6 +53,9 @@ class configuration(lib_config):
                                                             base_dirs, subdirs)
             openmpi_inc_dir = find_header(self.hdr, base_dirs,
                                           ['openmpi', 'openmpi-' + arch,])
+            openmpi_exe = find_program('mpif90', base_dirs +
+                                       [os.path.join(openmpi_lib_dir, '..')])
+            openmpi_exe_dir = os.path.abspath(os.path.dirname(openmpi_exe))
             self.found = True
         except Exception:
             if self.debug:
@@ -60,6 +63,9 @@ class configuration(lib_config):
                 print(e)
             return self.found
 
+        os.environ['PATH'] = os.environ.get('PATH', '') + \
+                             os.pathsep + openmpi_exe_dir
+        self.environment['OPENMPI_PATH'] = openmpi_exe_dir
         self.environment['OPENMPI_INCLUDE_DIR'] = openmpi_inc_dir
         self.environment['OPENMPI_LIB_DIR'] = openmpi_lib_dir
         self.environment['OPENMPI_LIBRARIES'] = openmpi_lib_list
