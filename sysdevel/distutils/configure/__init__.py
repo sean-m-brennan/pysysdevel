@@ -147,6 +147,17 @@ def __configure_package(environment, help_name, skip, install, quiet,
     if not is_string(help_name):
         req_version = help_name[1]
         help_name = help_name[0]
+    elif '=' in help_name:
+        n_end = help_name.find('(')
+        if n_end < 0:
+            n_end = help_name.find('>')
+            if n_end < 0:
+                n_end = help_name.find('=')
+        v_begin = help_name.rfind('=') + 1
+        v_end = help_name.find(')')
+        req_version = help_name[v_begin:v_end]
+        help_name = help_name[:n_end]
+
     base = help_name = help_name.strip()
     packages = [__package__ + '.', '',]
     cfg_dir = os.path.abspath(os.path.join(options.target_build_dir,
