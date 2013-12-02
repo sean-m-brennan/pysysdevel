@@ -1,0 +1,245 @@
+#+TITLE:     Multi-Model Orbital Simulation Development with Python
+#+AUTHOR:    Sean M. Brennan\thanks{Research Scientist, Space Data Systems, PO Box 1663, Los Alamos National Laboratory, Los Alamos, NM 87545}
+#+EMAIL:     brennan@lanl.gov
+#+DATE:
+
+#+LANGUAGE:  en
+#+OPTIONS:   H:4 num:t toc:nil \n:nil @:t ::t |:t ^:{} -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:auto skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+# Cls file from http://www.univelt.com/forms/AAS%20Paper%20Format%20Instructions%20and%20Templates%20for%20LaTeX%20Users.zip
+#+LaTeX_CLASS: AAS
+#+LaTeX_CLASS_OPTIONS: [letterpaper, preprint]
+
+#+LaTeX_HEADER: \usepackage{bm}
+#+LaTeX_HEADER: \usepackage{amsmath}
+#+LaTeX_HEADER: \usepackage{subfigure}
+#+LaTeX_HEADER: \usepackage{overcite}
+#+LaTeX_HEADER: \usepackage{footnpag}
+#+LaTeX_HEADER: \usepackage[colorlinks=true, pdfstartview=FitV, linkcolor=black, citecolor= black, urlcolor= black]{hyperref}
+
+#+LaTeX_HEADER: \newcommand\blankfootnote[1]{%
+#+LaTeX_HEADER:   \begingroup
+#+LaTeX_HEADER:   \renewcommand\thefootnote{}\footnote{#1}%
+#+LaTeX_HEADER:   \addtocounter{footnote}{-1}%
+#+LaTeX_HEADER:   \endgroup
+#+LaTeX_HEADER: }
+
+#+LaTeX_HEADER: \PaperNumber{XX-XXX}
+
+
+#+LATEX: \blankfootnote{\newline This document approved for unlimited release: LA-UR-13-27570.}
+
+#+LATEX: \begin{abstract}
+#+BEGIN_abstract
+The Integrated Modeling of Perturbation in Atmospheres for Conjunction
+Tracking (IMPACT) project integrates drag modeling, orbit propagation,
+and conjunction analysis to better predict collisions in orbit. This
+is built on, and propels the further development of, our integration
+architecture: /SysDevel/. The =sysdevel= Python package generically
+aids multi-model simulation development through model coupling, data
+visualization and collaborative software distribution.  We describe in
+detail how /SysDevel/ handles each of these tasks, and the ongoing
+challenges they present, as a case study of the IMPACT project's
+integration efforts.
+#+END_abstract
+#+LATEX: \end{abstract}
+
+
+* Introduction
+
+The IMPACT project has integrated atmospheric density modeling, drag
+coefficient and orbit propagation, and statistical space object
+conjunction analysis to better predict collisions in orbit. This
+software framework not only couples these disparate models and data
+sources, but can take on new data sources and, with caveats, new
+models.
+
+The /SysDevel/ architecture, implemented as the open-source Python
+package =sysdevel=, is the engine behind the development of such
+multi-model simulation software. This pure-python package helps in
+three major areas of code development: model coupling, data
+visualization, and distribution for collaboration.
+
+We will review the role of /SysDevel/ of the IMPACT framework as a
+case study, describing these three areas of development, particularly
+in terms of generalizing model interactions and applying verification
+and validation (V&V) techniques.
+
+
+** Modeling and Simulation
+
+The most challenging task of the IMPACT integration effort lies in
+aligning the diverse data that serve as input and output for each
+model such that subsequent models can use them. See Figure [[1]] below for
+an overview of the various models involved, and Koller, et al. for
+greater detail.\cite{koller_impact} Our options were to implement an
+ad hoc solution for each model pairing or devise a generic means for
+joining models. The latter approach is our /SysDevel/ architecture.
+
+#+CAPTION: IMPACT model interactions
+#+NAME:    1
+[[./models.png]]
+
+therefore, the most conceptually interesting portion of =sysdevel= is
+its model integration facility. /SysDevel/ combines multiple
+simulation models together using the Model-View-Controller (MVC)
+pattern, which consists of data models (in the case of IMPACT, orbital
+objects), data controllers that manipulate those objects (IMPACT
+modeling processes), and data views that represent direct hooks to
+plotting and visualization. Notice that there is conflicting semantics
+for the word 'model' above – in the context of the well-known MVC
+software pattern, we will substitute the word 'object'. These objects
+are the core of our model synthesis strategy.
+
+As our development process for IMPACT iterates from 1-to-1 conjunction
+analysis, expanding to all-to-all space object collision detection, we
+move from the challenges of tying these models together coherently, to
+the additional complexities of scale. As we expand to cover more and
+more orbital objects, and over wider time scales, our storage
+performance needs grow drastically. Furthermore, we are not only
+concerned with scalability, but also malleability. We already have
+integrated not just our own novel models \cite{walker_gas,
+shoemaker_tomography, shoemaker_density}, but also some alternate
+models (such as MSIS for atmospheric density). Additionally, we want
+to easily include other alternatives throughout the pipeline in a more
+or less automated fashion. This dynamic computational pipeline
+construction allows IMPACT developers to both verify our models by
+injecting observation data for comparison against predicted outcomes,
+and to validate our own models against such alternates as MSIS above.
+
+To achieve the required scalability, the =sysdevel= data object
+abstraction supports multiple data storage backends. This can consist
+of structured Hierarchical Data Format (HDF) files, or utilize a
+relational database, or even graph databases such as Neo4J.
+
+To satisfy the latter design requirement of malleability, the
+=sysdevel= data objects are self-describing, using built-in Python
+idioms. This feature allows IMPACT developers to simply alter our data
+object definition (by creating a new sub-class of the original Python
+data object) to also conform to the domain ontology of the new
+model. Inside the =sysdevel= implementation, there is a great deal
+more complexity to map that change to the storage backend (hence our
+initial preference for HDF, which simplifies this mapping).
+
+=sysdevel= also simplifies computational scaling by exposing, and
+easing the configuration of, multiple parallel compute schemes: from
+traditional MPI messaging to object-based, ad hoc, computational
+resource discovery.
+
+
+** Data Visualization
+
+=sysdevel= provides a generic web-based user interface, using a
+Javascript and PHP framework, for configuring any particular
+simulation run and results viewing. Using a plumbing metaphor, the
+user graphically configures the simulation processing pipeline,
+choosing which data sources and processing models to use, and chooses
+data plots of interest. These interactive results plots are displayed
+as soon as data is available. To minimize computation, =sysdevel=
+stores intermediate results, so data from a duplicate configuration is
+available immediately unless caching is overridden.
+
+#+CAPTION: IMPACT orbital visualization
+#+NAME:    2
+[[./orbits.png]]
+
+Custom visualization is easily added to this user interface, because
+the framework communicates with the simulation using JSON over
+WebSockets. For example, within the IMPACT source tree, one of our
+sub-packages is labeled 'website' and this not only ties in to the
+generic =sysdevel= interface, but also provides a three-dimensional
+visualization of orbital objects about the Earth, built with
+Javascript. A screen capture of this interactive visualization can be
+seen in Figure [[2]]. To reduce clutter, we only display the most recent
+orbital track history. Positions are streamed from our pre-computed
+data from the orbit propagator as the visualization time increments.
+Positional uncertainty is indicated as a statistical cloud of points,
+also streamed from the backend. Depending on the power of the graphics
+card available to the browser (/not/ the backend), this visualization
+can support three to four thousand orbital objects.
+
+
+** Collaboration and Distribution
+
+For the sake of confirming research, it is critical to be able to
+consistently recreate a complex simulation system such as IMPACT
+across potentially diverse computing environments. For software
+development across a large team, this capability is doubly critical.
+=sysdevel= glues together a wide variety of build systems into one, in
+order to facilitate building a multi-model system that, by definition,
+consists of separately developed code sources, each possibly targeted
+for very different environments.
+
+The =sysdevel= build system extends the built-in Python =distutils=
+package to recursively build sub-packages that each build one of our
+models with a normal 'python setup.py build' call. In the case of
+IMPACT, for example, this descends into the GITM sub-package like a
+recursive 'make' call. It locates GITM's MPI and HDF5 library
+dependencies and the proper Fortran compiler, fetching and installing
+them if any are missing by utilizing CMake-style configuration files
+in =sysdevel=. Finally, it creates a native executable for use in a
+cluster. Those familiar with Python will recognize that this is well
+beyond the normal =distutils= build process.
+
+In addition to easing software distribution, =sysdevel= also seeks to
+remedy a growing concern in academia - that of sharing and confirming
+results. Whereas the literate programming (documentation embedded in
+code) and the reproducible research (code embedded in documentation)
+approaches directly address some of the issues involved in scientific
+reproduction, these approaches do not scale well. For computational
+scaling, 'cloud' computing resources appear to be a good fit, but
+sharing of large-scale data has not been addressed. /SysDevel/ is an
+exploration of how this issue of data scaling might be approached: a
+mechanism for data-set providers to allow computation, without
+necessarily providing compute resources, while maintaining control of
+their data.
+
+
+* Conclusion
+
+Through these features of scalable and malleable data unification,
+simulation pipeline configuration and data visualization, and a
+comprehensive build system, the IMPACT framework has been able to
+realize our own model V&V, as well as contribute back to the research
+community by providing tools at several levels - namely both pluggable
+collision-analysis, and generic multi-model integration tools.
+
+Our =sysdevel= integration package not only serves the needs of our
+IMPACT project, but also provides a general tool for other multi-model
+simulations that would otherwise require extensive effort to tie
+together, particularly for Big Data providers.
+
+There are, of course, many ongoing challenges in realizing the
+/SysDevel/ concept in full. The complexity of environment discovery
+for the build system is particularly challenging and is only truly
+testable through crowd-source techniques. 
+
+We invite you to try the open-source =sysdevel= package at
+http://github.com/sean-m-brennan/pysysdevel.
+
+
+* Acknowledgments
+
+Funding for this work was provided by the U. S. Department of Energy
+through the Los Alamos National Laboratory Directed Research and Development
+program.
+
+
+
+\begin{thebibliography}{1}
+
+\bibitem{koller_impact} Josef Koller, et al., "The IMPACT Framework for Enabling System Analysis of Satellite Conjunctions", submitted AAS/AIAA Space Flight Mechanics Meeting, 2014.
+
+\bibitem{walker_gas} Andrew Walker, Michael Shoemaker, Josef Koller, Piyush Mehta, "Gas-surface Interactions for Satellites Orbiting in the Lower Exosphere", submitted AAS/AIAA Space Flight Mechanics Meeting, 2014.
+
+\bibitem{shoemaker_tomography} Michael Shoemaker, et al., "Comparisons of Satellite Orbit Tomography with Simultaneous Atmospheric Density and Orbit Estimation Methods", submitted AAS/AIAA Space Flight Mechanics Meeting, 2014.
+
+\bibitem{shoemaker_density} Michael Shoemaker, Andrew Walker, Josef Koller, "Simultaneous Estimation of Atmospheric Density and Satellite Ballistic Coefficient Using a Genetic Algorithm", submitted AAS/AIAA Space Flight Mechanics Meeting, 2014.
+
+\end{thebibliography}
+
+#  LocalWords:  Additionaly
