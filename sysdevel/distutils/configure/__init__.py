@@ -40,8 +40,8 @@ from .. import options
 from ...util import is_string
 
 
-DEBUG_PYPI = True
-DEBUG_LOCAL = True
+DEBUG_PYPI = False
+DEBUG_LOCAL = False
 
 
 class FatalError(SystemExit):
@@ -161,7 +161,7 @@ def __configure_package(environment, help_name, skip, install, quiet,
     base = help_name = help_name.strip()
     packages = [__package__ + '.', '',]
     cfg_dir = os.path.abspath(os.path.join(options.target_build_dir,
-                                           '..', 'config'))
+                                           '..', options.user_config_dir))
     if os.path.exists(cfg_dir):
         sys.path.insert(0, cfg_dir)
     successful = False
@@ -171,9 +171,15 @@ def __configure_package(environment, help_name, skip, install, quiet,
         full_name = package + help_name
         try:
             if not package and is_pypi_listed(base):
+                ## Likely actual package module
                 raise ImportError('Invalid config')
             __import__(full_name, globals=globals())
             helper = sys.modules[full_name]
+            module_path = os.path.dirname(helper.__file__)
+            if not package and \
+               not module_path.endswith(options.user_config_dir):
+                ## Probably an actual package module
+                raise ImportError('Invalid config')
             successful = True
         except (ImportError, KeyError):
             full_name = package + help_name + '_js'
@@ -213,7 +219,11 @@ configured = []
 def __run_helper__(environment, short_name, helper, version,
                    skip, install, quiet, out=sys.stdout, err=sys.stderr):
     configured.append(short_name)
-    cfg = helper.configuration()
+    try:
+        cfg = helper.configuration()
+    except:
+        print 'Error loading ' + short_name + ' configuration.'
+        raise
     for dep in cfg.dependencies:
         dep_name = dep
         if not is_string(dep):

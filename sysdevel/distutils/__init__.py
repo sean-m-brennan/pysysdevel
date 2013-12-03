@@ -79,6 +79,8 @@ class _Options(object):
     windows_postinstall = 'postinstall.py'
     default_py2exe_library = 'library.zip'
 
+    user_config_dir = 'config'  ## in package base directory
+
     def __init__(self):
         ## mutable
         self._local_search_paths = []
