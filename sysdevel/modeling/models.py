@@ -106,7 +106,7 @@ class DataController(object):
         discard = dir(type('dummy', (object,), {}))  ## builtins
         discard += [item for item in dir(self) if isinstance(item, collections.Callable)]  ## methods
         return [item for item in dir(self) if item not in discard]
-        """  Followinf not supported under PyJS
+        """  Following not supported under PyJS
         import inspect
         discard = dir(type('dummy', (object,), {}))
         discard += inspect.getmembers(self,
@@ -121,7 +121,6 @@ class DataController(object):
         Necessary inputs; may be an empty list (for data acquisition objects).
         '''
         return []
-
 
     def control(self, data_model):
         '''
