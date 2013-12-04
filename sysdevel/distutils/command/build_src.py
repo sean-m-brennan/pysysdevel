@@ -45,7 +45,7 @@ from ... import client_support_dir
 
 class build_src(_build_src):
     '''
-    Build python modules from ANTLR grammars
+    Build python modules from ANTLR grammars or add sysdevel support files
     '''
     def initialize_options(self):
         _build_src.initialize_options(self)
@@ -115,4 +115,5 @@ class build_src(_build_src):
                     for f in glob.glob('*.tokens'):
                         os.unlink(f)
                 os.chdir(here)
-        _build_src.run(self)
+        if self.distribution.has_ext_modules():
+            _build_src.run(self)

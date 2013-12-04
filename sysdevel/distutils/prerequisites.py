@@ -65,11 +65,19 @@ class RequirementsFinder(ast.NodeVisitor):
         ast.NodeVisitor.__init__(self)
         self.variables = {}
         self.is_sysdevel_build = False
+        self.is_sysdevel_itself = False
         self.needs_early_config = False
         self.requires_list = []
         if filepath:
+            if len(glob.glob(os.path.join(os.path.dirname(filepath),
+                                          'sysdevel*'))) > 0:
+                self.is_sysdevel_itself = True
             self._load_from_path(filepath)
         elif filedescriptor:
+            if hasattr(filedescriptor, 'name') and \
+               len(glob.glob(os.path.join(os.path.dirname(filedescriptor.name),
+                                          'sysdevel*'))) > 0:
+                self.is_sysdevel_itself = True
             self._load_from_file(filedescriptor)
         elif codestring:
             self._load_from_string(codestring)
@@ -120,8 +128,6 @@ class RequirementsFinder(ast.NodeVisitor):
 
 
     def visit_keyword(self, node):
-        if self.is_sysdevel_build:
-            return  ## will be ingoring these results anyway
         for kw in self.req_keywords:
             if node.arg == kw:
                 if type(node.value) == ast.List:
@@ -133,11 +139,11 @@ class RequirementsFinder(ast.NodeVisitor):
 
     def visit_Import(self, node):
         for name in node.names:
-            if name.name.startswith('sysdevel'):
+            if name.name.startswith('sysdevel') and not self.is_sysdevel_itself:
                 self.is_sysdevel_build = True
 
     def visit_ImportFrom(self, node):
-        if node.module.startswith('sysdevel'):
+        if node.module.startswith('sysdevel') and not self.is_sysdevel_itself:
             self.is_sysdevel_build = True
 
     def generic_visit(self, node):

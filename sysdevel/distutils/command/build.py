@@ -89,7 +89,7 @@ class build(old_build):
     ## Order is important
     sub_commands = [('config_cc',      lambda *args: True),
                     ('config_fc',      lambda *args: True),
-                    ('build_src',      old_build.has_ext_modules),
+                    ('build_src',      lambda *args: True),
                     ('build_py',       has_pure_modules),
                     ('build_js',       has_web_extensions),
                     ('build_clib',     has_c_libraries),

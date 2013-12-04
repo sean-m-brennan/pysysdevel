@@ -89,10 +89,16 @@ class dependencies(Command):
                 shell = True
             for (pkg_name, pkg_dir) in self.distribution.subpackages:
                 rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
-                if rf.is_sysdevel_build:  ## depth may be greater than one
+                if not rf.is_sysdevel_build:
+                    self.requirements += rf.requires_list
+                    if self.show_subpackages:
+                        print(pkg_name.upper() + ':  ' +
+                              ', '.join(rf.requires_list))
+                else:
                     if rf.needs_early_config:
                         print('Previewing dependencies for ' + pkg_name +
                               ' configuration ...')
+                    ## depth may be greater than one
                     dep_args = ['dependencies',
                                     '--sublevel=' + str(self.sublevel + 1)]
                     ## do nothing else but check dependencies
@@ -128,11 +134,6 @@ class dependencies(Command):
                     self.requirements += p_list.split(',')
                     if self.show_subpackages:
                         print(pkg_name.upper() + ':  ' + p_list)
-                else:
-                    self.requirements += rf.requires_list
-                    if self.show_subpackages:
-                        print(pkg_name.upper() + ':  ' +
-                              ', '.join(rf.requires_list))
             while 'None' in self.requirements:
                 self.requirements.remove('None')
 

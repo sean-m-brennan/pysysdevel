@@ -157,6 +157,8 @@ def __configure_package(environment, help_name, skip, install, quiet,
         v_end = help_name.find(')')
         req_version = help_name[v_begin:v_end]
         help_name = help_name[:n_end]
+    if help_name == 'None':
+        return environment
 
     base = help_name = help_name.strip()
     packages = [__package__ + '.', '',]

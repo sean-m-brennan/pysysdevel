@@ -19,27 +19,15 @@ rev = rcs_revision()
 if rev is None:
     rev = '6.12'
 
-
-if not 'clean' in sys.argv and \
-   not '--no-docs' in sys.argv and not '--without-documentation' in sys.argv:
-    ## In-place build; always build documentation
-    from sysdevel.distutils.build_org import make_doc as make_org
-    from sysdevel.distutils.build_docbook import make_doc as make_docbook
-        
-    xml_file = make_org(os.path.join('sysdevel', 'doc', 'sysdevel_book.org'))
-    try:
-        make_docbook(xml_file, stylesheet='docbook_custom.xsl')
-    except Exception:
-        print(sys.exc_info()[1])
-        print("Could not build the manual. "+
-              "Requires emacs, docbook, xsltproc or saxon, and fop.")
-
-
-if '--no-docs' in sys.argv:
-    argv.remove('--no-docs')
-if '--without-documentation' in sys.argv:
-    argv.remove('--without-documentation')
-
+create_documentation = False
+if 'build_doc' in sys.argv:
+    create_documentation = True
+    sys.argv.remove('build_doc')
+if '--with-documentation' in sys.argv:
+    create_documentation = True
+    sys.argv.remove('--with-documentation')
+if len(sys.argv) < 2:
+    sys.argv.append('build')
 
 
 
@@ -51,6 +39,7 @@ setup(name         = 'pysysdevel',
       url          = 'https://github.com/sean-m-brennan/pysysdevel',
       packages     = ['sysdevel',
                       'sysdevel.distutils', 'sysdevel.distutils.configure',
+                      'sysdevel.modeling',
                       ],
       package_data = {'sysdevel': [os.path.join('distutils',
                                                 'sphinx_conf.py.in'),
@@ -81,3 +70,18 @@ setup(name         = 'pysysdevel',
           'Topic :: Software Development :: Build Tools',
           ],
      )
+
+
+if create_documentation:
+    print 'running build_doc'
+    sys.path.append('.')
+    from sysdevel.distutils.command.build_org import make_doc as make_org
+    from sysdevel.distutils.command.build_docbook import make_doc as make_docbook
+        
+    xml_file = make_org(os.path.join('sysdevel', 'doc', 'sysdevel_book.org'))
+    try:
+        make_docbook(xml_file, stylesheet='docbook_custom.xsl')
+    except Exception:
+        print(sys.exc_info()[1])
+        print("Could not build the manual. "+
+              "Requires emacs, docbook, xsltproc or saxon, and fop.")
