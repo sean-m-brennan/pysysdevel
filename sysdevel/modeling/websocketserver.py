@@ -27,10 +27,17 @@ permissions and limitations under the License.
 WebSocket standalone server
 """
 
-from http import server as httpserver
-from http import client as httpclient
+try:
+    ## Python 3.x
+    from http.server import HTTPServer, SimpleHTTPRequestHandler
+    from http.client import HTTPMessage
+    import socketserver
+except:
+    from BaseHTTPServer import HTTPServer
+    from SimpleHTTPServer import SimpleHTTPRequestHandler
+    from httplib import HTTPMessage
+    import SocketServer as socketserver
 
-import socketserver
 import logging
 import socket
 import select
@@ -82,7 +89,7 @@ def get_ws_logger(cls, debug=False):
 
 class WebSocketServer(threading.Thread,
                       socketserver.ThreadingMixIn,
-                      httpserver.HTTPServer):
+                      HTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
@@ -344,8 +351,8 @@ class WebsocketDispatch(dispatch.Dispatcher):
 
 
 
-class WebSocketRequestHandler(httpserver.SimpleHTTPRequestHandler):
-    MessageClass = httpclient.HTTPMessage
+class WebSocketRequestHandler(SimpleHTTPRequestHandler):
+    MessageClass = HTTPMessage
 
     def setup(self):
         """Override SocketServer.StreamRequestHandler.setup to wrap rfile
@@ -360,7 +367,7 @@ class WebSocketRequestHandler(httpserver.SimpleHTTPRequestHandler):
         # Call superclass's setup to prepare rfile, wfile, etc. See setup
         # definition on the root class SocketServer.StreamRequestHandler to
         # understand what this does.
-        httpserver.SimpleHTTPRequestHandler.setup(self)
+        SimpleHTTPRequestHandler.setup(self)
 
         self.rfile = memorizingfile.MemorizingFile(
             self.rfile,
@@ -372,12 +379,11 @@ class WebSocketRequestHandler(httpserver.SimpleHTTPRequestHandler):
         self.origin = server.origin
         self.port = server.port
         self.permissive = server.permissive
-        httpserver.SimpleHTTPRequestHandler.__init__(
-            self, request, client_address, server)
+        SimpleHTTPRequestHandler.__init__(self, request, client_address, server)
 
 
     def parse_request(self):
-        if not httpserver.SimpleHTTPRequestHandler.parse_request(self):
+        if not SimpleHTTPRequestHandler.parse_request(self):
             return False
         host, port, resource = http_header_util.parse_uri(self.path)
         if resource is None:

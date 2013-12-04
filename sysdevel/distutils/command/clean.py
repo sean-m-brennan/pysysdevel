@@ -85,5 +85,13 @@ class clean(old_clean):
                     except:
                         pass
 
+        # Remove sysdevel
+        if os.path.exists('pysysdevel'):
+            try:
+                ## ignores symlinked directory
+                shutil.rmtree('pysysdevel', ignore_errors=True)
+            except:
+                pass
+
         old_clean.run(self)
         delete_cache()
