@@ -63,6 +63,9 @@ class build(old_build):
     def has_scripts(self):
         return self.distribution.has_scripts()
 
+    def has_sources(self):
+        return self.distribution.has_sources()
+
     def has_c_libraries(self):
         return self.distribution.has_c_libraries()
 
@@ -89,7 +92,7 @@ class build(old_build):
     ## Order is important
     sub_commands = [('config_cc',      lambda *args: True),
                     ('config_fc',      lambda *args: True),
-                    ('build_src',      lambda *args: True),
+                    ('build_src',      has_sources),
                     ('build_py',       has_pure_modules),
                     ('build_js',       has_web_extensions),
                     ('build_clib',     has_c_libraries),

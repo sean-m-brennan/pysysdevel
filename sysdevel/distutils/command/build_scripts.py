@@ -66,7 +66,6 @@ class build_scripts(_build_scripts):
                 create_runscript(tpl[1], tpl[2], outfile, tpl[3])
                 self.scripts.append(outfile)
 
-        if self.distribution.has_shared_libs():
             prev_list = list(self.scripts)
             for s in prev_list:
                 if '.py' in s:

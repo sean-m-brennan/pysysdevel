@@ -175,6 +175,10 @@ class CustomDistribution(oldDistribution):
         return oldDistribution.has_scripts(self) or \
             (self.create_scripts != None and len(self.create_scripts) > 0)
 
+    def has_sources(self):
+        return oldDistribution.has_ext_modules(self) or \
+            self.devel_support != None or self.antlr_modules != None
+
     def has_c_libraries(self):
         return oldDistribution.has_c_libraries(self) or self.has_shared_libs()
 

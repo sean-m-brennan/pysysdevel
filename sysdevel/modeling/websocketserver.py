@@ -38,6 +38,7 @@ except:
     from httplib import HTTPMessage
     import SocketServer as socketserver
 
+import sys
 import logging
 import socket
 import select

@@ -115,5 +115,6 @@ class build_src(_build_src):
                     for f in glob.glob('*.tokens'):
                         os.unlink(f)
                 os.chdir(here)
+
         if self.distribution.has_ext_modules():
             _build_src.run(self)
