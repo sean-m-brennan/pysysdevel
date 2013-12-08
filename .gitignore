@@ -1,3 +1,5 @@
+.DS_Store
+
 # Byte-compiled python
 *.pyc
 
@@ -8,3 +10,15 @@
 /build
 /dist
 /MANIFEST
+
+# Documentation intermediaries
+AAS.cls
+models1.png
+models2.png
+*.aux
+*.fot
+*.log
+*.out
+*.tex
+*.dvi
+*.pdf

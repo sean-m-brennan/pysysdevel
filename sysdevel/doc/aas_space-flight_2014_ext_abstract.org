@@ -82,9 +82,35 @@ joining models. The latter approach is our /SysDevel/ architecture.
 
 #+CAPTION: IMPACT model interactions
 #+NAME:    1
-[[./models.png]]
+#+BEGIN_SRC ditaa :file models.png :cmdline -E
+                         /--------------------------------\     /--------------------\
+                         |       Interface Module    cE64 |     |    Observations    |
+                         | a. Model thermospheric density |     |  o LANL sensors    |
+                         | b. Model drag coefficient      |     |  o CHAMP/GRACE     |
+                         | c. Choose group of objects     |     |  o GOCE       c7AD |
+                         | d. Choose time interval        |     \---------+----------/
+                         \---------------+----------------/               |
+                                        |                                 v
+/-------------------------\             v                 /----------------------------\
+| Drag Coefficient Module |    /-----------------------\  | Atmospheric Density Module |
+|   o empirical           |   /+----------------------\|  |   o GITM, TIEGCM           |
+|   o analytical          |  /+----------------------\||  |   o JB08, MSIS             |
+|   o DAC            cFF3 |  | Propagation Module(s) |||  |   o Regression Model  cFF3 |
+\------------+------------/  |     o GMAT            |||  \-------------+--------------/
+             |               |     o Python          |+/                |
+             +-------------->|     o others...  c9D9 +/<----------------+
+                             \----------+------------/
+                                        |
+                                        v
+                          /------------------------------\
+                          |       Analysis Module   cFF3 |
+                          | o Uncertainty Quantification |
+                          | o Collisional probability    |
+                          \------------------------------/
+#+END_SRC
 
-therefore, the most conceptually interesting portion of =sysdevel= is
+
+Therefore, the most conceptually interesting portion of =sysdevel= is
 its model integration facility. /SysDevel/ combines multiple
 simulation models together using the Model-View-Controller (MVC)
 pattern, which consists of data models (in the case of IMPACT, orbital

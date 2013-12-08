@@ -12,7 +12,7 @@
 
 # Cls file from http://www.univelt.com/forms/AAS%20Paper%20Format%20Instructions%20and%20Templates%20for%20LaTeX%20Users.zip
 #+LaTeX_CLASS: AAS
-#+LaTeX_CLASS_OPTIONS: [letterpaper, preprint]
+#+LaTeX_CLASS_OPTIONS: [letterpaper]
 
 #+LaTeX_HEADER: \usepackage{bm}
 #+LaTeX_HEADER: \usepackage{amsmath}
@@ -28,13 +28,12 @@
 #+LaTeX_HEADER:   \endgroup
 #+LaTeX_HEADER: }
 
-#+LaTeX_HEADER: \PaperNumber{XX-XXX}
+#+LaTeX_HEADER: \PaperNumber{14-053}
 
 
 #+LATEX: \blankfootnote{\newline This document approved for unlimited release: LA-UR-13-27570.}
 
 #+LATEX: \begin{abstract}
-#+BEGIN_abstract
 The Integrated Modeling of Perturbation in Atmospheres for Conjunction
 Tracking (IMPACT) project integrates drag modeling, orbit propagation,
 and conjunction analysis to better predict collisions in orbit. This
@@ -45,7 +44,6 @@ visualization and collaborative software distribution.  We describe in
 detail how /SysDevel/ handles each of these tasks, and the ongoing
 challenges they present, as a case study of the IMPACT project's
 integration efforts.
-#+END_abstract
 #+LATEX: \end{abstract}
 
 
@@ -64,13 +62,42 @@ multi-model simulation software. This pure-python package helps in
 three major areas of code development: model coupling, data
 visualization, and distribution for collaboration.
 
+#+CAPTION: IMPACT model interactions
+#+NAME:    1
+#+BEGIN_SRC ditaa :file models1.png :cmdline -E
+                         /--------------------------------\     /--------------------\
+                         |       Interface Module    cE64 |     |    Observations    |
+                         | a. Model thermospheric density |     |  o LANL sensors    |
+                         | b. Model drag coefficient      |     |  o CHAMP/GRACE     |
+                         | c. Choose group of objects     |     |  o GOCE       c7AD |
+                         | d. Choose time interval        |     \---------+----------/
+                         \---------------+----------------/               |
+                                        |                                 v
+/-------------------------\             v                 /----------------------------\
+| Drag Coefficient Module |    /-----------------------\  | Atmospheric Density Module |
+|   o empirical           |   /+----------------------\|  |   o GITM, TIEGCM           |
+|   o analytical          |  /+----------------------\||  |   o JB08, MSIS             |
+|   o DAC            cFF3 |  | Propagation Module(s) |||  |   o Regression Model  cFF3 |
+\------------+------------/  |     o GMAT            |||  \-------------+--------------/
+             |               |     o Python          |+/                |
+             +-------------->|     o others...  c9D9 +/<----------------+
+                             \----------+------------/
+                                        |
+                                        v
+                          /------------------------------\
+                          |       Analysis Module   cFF3 |
+                          | o Uncertainty Quantification |
+                          | o Collisional probability    |
+                          \------------------------------/
+#+END_SRC
+
 We will review the role of /SysDevel/ of the IMPACT framework as a
 case study, describing these three areas of development, particularly
 in terms of generalizing model interactions and applying verification
 and validation (V&V) techniques.
 
 
-** Modeling and Simulation
+* Modeling and Simulation
 
 The most challenging task of the IMPACT integration effort lies in
 aligning the diverse data that serve as input and output for each
@@ -80,11 +107,7 @@ greater detail.\cite{koller_impact} Our options were to implement an
 ad hoc solution for each model pairing or devise a generic means for
 joining models. The latter approach is our /SysDevel/ architecture.
 
-#+CAPTION: IMPACT model interactions
-#+NAME:    1
-[[./models.png]]
-
-therefore, the most conceptually interesting portion of =sysdevel= is
+Therefore, the most conceptually interesting portion of =sysdevel= is
 its model integration facility. /SysDevel/ combines multiple
 simulation models together using the Model-View-Controller (MVC)
 pattern, which consists of data models (in the case of IMPACT, orbital
@@ -94,6 +117,55 @@ plotting and visualization. Notice that there is conflicting semantics
 for the word 'model' above – in the context of the well-known MVC
 software pattern, we will substitute the word 'object'. These objects
 are the core of our model synthesis strategy.
+
+#+CAPTION: IMPACT MVC interactions
+#+NAME:    2
+#+BEGIN_SRC ditaa :file models2.png :cmdline -E
+                                           /-------------------------------------\
+  IMPACT architecture                      | Controllers                         |
+                                           |                          +-------+  |
+                                           |  /-------------------\   |  {s}  |  |   
+                                           |  |        ED    c6BC |<--|       |  |
+/--------------------------------------\   |  | +---+ +---+ +---+ |   |       |  |
+| Models                               |   |  | | 1 | | 2 | |   | |   |       |  |
+|                           +-------+  |   |  | +---+ +---+ +---+ |-->|       |  |
+|                           |  {s}  |  |   |  \-------------------/   |       |  |
+|                           |  HDF  |  |   |            |             |       |  |
+|  /-------------------\ <--|       |  |   |            |             |       |  |
+|  |        ING   c6BC |    +-------+  |   |            V             |       |  |
+|  | +---+ +---+ +---+ |               |   |  /-------------------\   |       |  |
+|  | | A | | B | |   | |               |-->|  |        OR    c6BC |<--|       |  |
+|  | +---+ +---+ +---+ |    +-------+  |   |  | +---+ +---+ +---+ |   |       |  |
+|  \-------------------/ <--|  {s}  |  |   |  | | 4 | | 5 | |   | |   |  HDF  |  |
+|                           |  SQL  |  |   |  | +---+ +---+ +---+ |-->|       |  |
+|                           |       |  |   |  \-------------------/   |       |  |
+|                           +-------+  |   |            |             |       |  |
+|                                      :   |            |             |       |  |
+\--------------------------------------/   |            V             |       |  |
+                                           |  /-------------------\   |       |  |
+                                           |  |        US    c6BC |<--|       |  |
+                                           |  | +---+ +---+ +---+ |   |       |  |
+                                           |  | | 7 | |   | |   | |   |       |  |
+                                           |  | +---+ +---+ +---+ |-->|       |  |
+                                           |  \-------------------/   |       |  |
+                                           |                          +-------+  |
+                                           |                                     :
+                                           \-------------------------------------/
+                                                              |
+   A. Two Line Elements                                       |
+   B. Observations                                            v
+   1. MSIS                                       /-------------------------\
+   2. GITM                                       | Views                   |
+   3. SGP4                                       |                         |
+   4. Drag propagator                            |  /-------------------\  |
+   5. Gaussian uncertainty                       |  |        IVE   c6BC |  |
+   a. Results plots                              |  | +---+ +---+ +---+ |  |
+   b. 3D visualization                           |  | | a | | b | |   | |  |
+                                                 |  | +---+ +---+ +---+ |  |
+                                                 |  \-------------------/  |
+                                                 |                         :
+                                                 \-------------------------/
+#+END_SRC
 
 As our development process for IMPACT iterates from 1-to-1 conjunction
 analysis, expanding to all-to-all space object collision detection, we
@@ -131,7 +203,7 @@ traditional MPI messaging to object-based, ad hoc, computational
 resource discovery.
 
 
-** Data Visualization
+* Data Visualization
 
 =sysdevel= provides a generic web-based user interface, using a
 Javascript and PHP framework, for configuring any particular
@@ -144,8 +216,8 @@ stores intermediate results, so data from a duplicate configuration is
 available immediately unless caching is overridden.
 
 #+CAPTION: IMPACT orbital visualization
-#+NAME:    2
-[[./orbits.png]]
+#+NAME:    3
+[[file:orbits.png]]
 
 Custom visualization is easily added to this user interface, because
 the framework communicates with the simulation using JSON over
@@ -163,7 +235,7 @@ card available to the browser (/not/ the backend), this visualization
 can support three to four thousand orbital objects.
 
 
-** Collaboration and Distribution
+* Collaboration and Distribution
 
 For the sake of confirming research, it is critical to be able to
 consistently recreate a complex simulation system such as IMPACT
