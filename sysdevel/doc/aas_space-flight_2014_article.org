@@ -14,6 +14,7 @@
 #+LaTeX_CLASS: AAS
 #+LaTeX_CLASS_OPTIONS: [letterpaper]
 
+#+LaTeX_HEADER: \batchmode
 #+LaTeX_HEADER: \usepackage{bm}
 #+LaTeX_HEADER: \usepackage{amsmath}
 #+LaTeX_HEADER: \usepackage{subfigure}
@@ -64,7 +65,7 @@ visualization, and distribution for collaboration.
 
 #+CAPTION: IMPACT model interactions
 #+NAME:    1
-#+BEGIN_SRC ditaa :file models1.png :cmdline -E
+#+BEGIN_SRC ditaa :file models.png :cmdline -E
                          /--------------------------------\     /--------------------\
                          |       Interface Module    cE64 |     |    Observations    |
                          | a. Model thermospheric density |     |  o LANL sensors    |
@@ -90,6 +91,9 @@ visualization, and distribution for collaboration.
                           | o Collisional probability    |
                           \------------------------------/
 #+END_SRC
+
+#+RESULTS: 1
+[[file:models.png]]
 
 We will review the role of /SysDevel/ of the IMPACT framework as a
 case study, describing these three areas of development, particularly
@@ -120,7 +124,7 @@ are the core of our model synthesis strategy.
 
 #+CAPTION: IMPACT MVC interactions
 #+NAME:    2
-#+BEGIN_SRC ditaa :file models2.png :cmdline -E
+#+BEGIN_SRC ditaa :file architecture.png :cmdline -E
                                            /-------------------------------------\
   IMPACT architecture                      | Controllers                         |
                                            |                          +-------+  |
@@ -166,6 +170,9 @@ are the core of our model synthesis strategy.
                                                  |                         :
                                                  \-------------------------/
 #+END_SRC
+
+#+RESULTS: 2
+[[file:architecture.png]]
 
 As our development process for IMPACT iterates from 1-to-1 conjunction
 analysis, expanding to all-to-all space object collision detection, we

@@ -13,8 +13,8 @@
 
 # Documentation intermediaries
 AAS.cls
-models1.png
-models2.png
+models.png
+architecture.png
 *.aux
 *.fot
 *.log
