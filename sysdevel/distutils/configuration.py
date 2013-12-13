@@ -64,11 +64,12 @@ pypi_exceptions = {
 
 
 class config(object):
-    def __init__(self, dependencies=[], debug=False):
+    def __init__(self, dependencies=[], debug=False, force=False):
         self.dependencies = dependencies
         self.debug = debug
         self.environment = dict()
         self.found = False
+        self.force = force
 
     def null(self):
         pass
@@ -82,8 +83,8 @@ class config(object):
 
 
 class lib_config(config):
-    def __init__(self, lib, header, dependencies=[], debug=False):
-        config.__init__(self, dependencies, debug)
+    def __init__(self, lib, header, dependencies=[], debug=False, force=False):
+        config.__init__(self, dependencies, debug, force)
         self.lib = lib
         self.hdr = header
 
@@ -169,8 +170,8 @@ class lib_config(config):
 
 
 class file_config(config):
-    def __init__(self, dependencies=[], debug=False):
-        config.__init__(self, dependencies, debug)
+    def __init__(self, dependencies=[], debug=False, force=False):
+        config.__init__(self, dependencies, debug, force)
 
 
     def is_installed(self, environ, version=None):
@@ -179,8 +180,8 @@ class file_config(config):
 
 
 class prog_config(config):
-    def __init__(self, exe, dependencies=[], debug=False):
-        config.__init__(self, dependencies, debug)
+    def __init__(self, exe, dependencies=[], debug=False, force=False):
+        config.__init__(self, dependencies, debug, force)
         self.exe = exe
 
 
@@ -225,10 +226,10 @@ class prog_config(config):
 
 
 class nodejs_config(config):
-    def __init__(self, module, dependencies=['node'], debug=False):
+    def __init__(self, module, dependencies=['node'], debug=False, force=False):
         if not 'node' in dependencies:
             dependencies.append('node')
-        config.__init__(self, dependencies, debug)
+        config.__init__(self, dependencies, debug, force)
         self.module = module
 
 
@@ -302,9 +303,9 @@ class nodejs_config(config):
 
 
 class py_config(config):
-    def __init__(self, pkg, version, dependencies=[], debug=False,
-                 indexed_as=None):
-        config.__init__(self, dependencies, debug)
+    def __init__(self, pkg, version, dependencies=[], indexed_as=None,
+                 debug=False, force=False):
+        config.__init__(self, dependencies, debug, force)
         self.pkg = pkg
         self.version = version
         self.indexed = pkg
@@ -372,8 +373,8 @@ class py_config(config):
 
 
 class pypi_config(py_config):
-    def __init__(self, pkg, version, dependencies=None, debug=False,
-                 indexed_as=None):
+    def __init__(self, pkg, version, dependencies=None, indexed_as=None,
+                 debug=False, force=False):
         name = pkg
         if indexed_as:
             name = indexed_as
@@ -396,7 +397,8 @@ class pypi_config(py_config):
                 if debug:
                     traceback.print_exc()
             z.close()
-        py_config.__init__(self, pkg, version, dependencies, debug, indexed_as)
+        py_config.__init__(self, pkg, version, dependencies, indexed_as,
+                           debug, force)
 
 
     def install(self, environ, version, locally=True):
@@ -408,15 +410,15 @@ class pypi_config(py_config):
 
 
 
-def dynamic_module(pkg, version=None, dependencies=None, debug=False,
-                   indexed_as=None):
+def dynamic_module(pkg, version=None, dependencies=None, indexed_as=None,
+                   debug=False, force=False):
     module = imp.new_module(pkg + '_pypi')
     code = "from " + __package__ + ".configuration import pypi_config\n" + \
            "class configuration(pypi_config):\n" + \
            "    def __init__(self):\n" + \
            "        pypi_config.__init__(self, " + repr(pkg) + ", " + \
            repr(version) + ", " + repr(dependencies) + ", " + \
-           repr(debug) + ", " + repr(indexed_as) + ")\n"
+           repr(indexed_as) + ", " + repr(debug) + ", " + repr(force) + ")\n"
     exec code in module.__dict__
     return module
 

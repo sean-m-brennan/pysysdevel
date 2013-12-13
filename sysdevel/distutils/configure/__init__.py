@@ -204,7 +204,7 @@ def __configure_package(environment, help_name, skip, install, quiet,
             if base in pypi_exceptions.keys():
                 name, deps = pypi_exceptions[base]
                 helper = dynamic_module(base, req_version, deps,
-                                        DEBUG_PYPI, name)
+                                        name, DEBUG_PYPI)
             else:
                 helper = dynamic_module(base, req_version, debug=DEBUG_PYPI)
         except:
@@ -243,7 +243,7 @@ def __run_helper__(environment, short_name, helper, version,
         out.flush()
     if skip:
         cfg.null()
-    elif not cfg.is_installed(environment, version):
+    elif cfg.force or not cfg.is_installed(environment, version):
         if not install:
             raise Exception(help_name + ' cannot be found.')
         cfg.install(environment, version)
