@@ -39,7 +39,10 @@ __all__ = ['distutils',  ## Package building and distribution
 import os
 
 config_dir = os.path.realpath(os.path.abspath(os.path.join(os.path.dirname(__file__), 'distutils', 'configure')))
+
 server_support_dir = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
+server_support_modules = ['serve', 'daemon']
+
 client_support_dir = os.path.realpath(os.path.abspath(os.path.join(os.path.dirname(__file__), 'ui')))
 
 from .distutils.building import configure_file

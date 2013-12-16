@@ -40,7 +40,7 @@ except:
 
 from ..filesystem import mkdir
 from ..building import configure_file
-from ... import client_support_dir
+from ... import server_support_dir, server_support_modules
 
 
 class build_src(_build_src):
@@ -49,27 +49,27 @@ class build_src(_build_src):
     '''
     def initialize_options(self):
         _build_src.initialize_options(self)
-        self.devel_support = []
+        self.sysdevel_server = []
         self.antlr_modules = []
 
     def finalize_options(self):
         _build_src.finalize_options(self)
-        self.devel_support = self.distribution.devel_support
+        self.sysdevel_server = self.distribution.sysdevel_server
         self.antlr_modules = self.distribution.antlr_modules
   
 
     def run(self):
         environ = self.distribution.environment
 
-        if self.devel_support:
-            for tpl in self.devel_support:
+        if self.sysdevel_server:
+            for target in self.sysdevel_server:
                 if self.distribution.verbose:
-                    print('adding sysdevel support to ' + tpl[0])
-                target = os.path.abspath(os.path.join(self.build_lib,
-                                                      *tpl[0].split('.')))
-                mkdir(target)
-                source_dir = client_support_dir
-                for mod in tpl[1]:
+                    print('adding sysdevel support to ' + target)
+                target_dir = os.path.abspath(os.path.join(self.build_lib,
+                                                          *target.split('.')))
+                mkdir(target_dir)
+                source_dir = server_support_dir
+                for mod in server_support_modules:
                     src_file = os.path.join(source_dir, mod + '.py.in')
                     if not os.path.exists(src_file):
                         src_file = src_file[:-3]

@@ -133,9 +133,9 @@ class CustomDistribution(oldDistribution):
         if self.create_scripts != None:
             del old_attrs['create_scripts']
         ## SysDevel support modules
-        self.devel_support = attrs.get('devel_support')
-        if self.devel_support != None:
-            del old_attrs['devel_support']
+        self.sysdevel_server = attrs.get('sysdevel_server')
+        if self.sysdevel_server != None:
+            del old_attrs['sysdevel_server']
         ## Files to delete upon 'clean'
         self.generated_files = attrs.get('generated_files')
         if self.generated_files != None:
@@ -177,7 +177,8 @@ class CustomDistribution(oldDistribution):
 
     def has_sources(self):
         return oldDistribution.has_ext_modules(self) or \
-            self.devel_support != None or self.antlr_modules != None
+            (self.antlr_modules != None and len(self.antlr_modules) > 0) or \
+            (self.sysdevel_server != None and len(self.sysdevel_server) > 0)
 
     def has_c_libraries(self):
         return oldDistribution.has_c_libraries(self) or self.has_shared_libs()
@@ -191,7 +192,7 @@ class CustomDistribution(oldDistribution):
         return self.antlr_modules != None and len(self.antlr_modules) > 0
 
     def has_sysdevel_support(self):
-        return self.devel_support != None and len(self.devel_support) > 0
+        return self.sysdevel_server != None and len(self.sysdevel_server) > 0
 
     def has_pypp_extensions(self):
         return self.pypp_ext_modules != None and \
