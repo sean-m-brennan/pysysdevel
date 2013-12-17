@@ -68,7 +68,7 @@ class Extension(old_extension.Extension):
 
 
 class WebExtension(old_extension.Extension):
-    def __init__(self, name, source_dir, sources=[],
+    def __init__(self, name, sources=[], source_dir='.',
                  public_subdir='', extra_support_files=[],
                  extra_public_files=[], extra_compile_args=[]):
         old_extension.Extension.__init__(self, name, sources)
