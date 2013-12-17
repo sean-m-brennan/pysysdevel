@@ -36,7 +36,8 @@ import subprocess
 try:
     from numpy.distutils.command.build_src import build_src as _build_src
 except:
-    from distutils.command.build_src import build_src as _build_src
+    from distutils.command.build_ext import build_ext as _build_src
+from distutils.util import get_platform
 
 from ..filesystem import mkdir
 from ..building import configure_file
@@ -73,7 +74,7 @@ class build_src(_build_src):
                     src_file = os.path.join(source_dir, mod + '.py.in')
                     if not os.path.exists(src_file):
                         src_file = src_file[:-3]
-                    dst_file = os.path.join(target, mod + '.py')
+                    dst_file = os.path.join(target_dir, mod + '.py')
                     configure_file(environ, src_file, dst_file)
 
 
