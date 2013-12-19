@@ -40,6 +40,22 @@ from ..filesystem import mkdir
 from .. import options
 from ...util import is_string
 
+INTERLEAVED = True
+
+if INTERLEAVED:
+    from threading  import Thread
+    try:
+        from Queue import Queue
+    except ImportError:  # python 3.x
+        from queue import Queue
+
+
+    def enqueue_output(out, queue):
+        for line in iter(out.readline, b''):
+            queue.put(line)
+        out.close()
+
+
 
 class dependencies(Command):
     description = "package dependencies"
@@ -104,11 +120,38 @@ class dependencies(Command):
                            '--sublevel=' + str(self.sublevel + 1)]
                     if not os.path.exists(options.target_build_dir):
                         mkdir(options.target_build_dir)
+                    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE,
+                                         shell=shell)
                     log = open(logfile, 'a')
                     log.write(pkg_name.upper() + ':\n')
-                    p = subprocess.Popen(cmd, stdout=log, stderr=log,
-                                         shell=shell)
-                    p.communicate()
+                    if INTERLEAVED:
+                        out = ''
+                        o_q = Queue()
+                        o = Thread(target=enqueue_output, args=(p.stdout, o_q))
+                        e_q = Queue()
+                        e = Thread(target=enqueue_output, args=(p.stderr, e_q))
+                        o.start()
+                        e.start()
+                        while p.poll() is None:
+                            try:
+                                line = o_q.get_nowait()
+                                out += line
+                                log.write(line)
+                            except:
+                                pass
+                            try:
+                                line = e_q.get_nowait()
+                                log.write(line)
+                            except:
+                                pass
+                        o.join()
+                        e.join()
+                    else:
+                        out, err = p.communicate()
+                        log.write(out)
+                        log.write(err)
+
                     log.write('\n\n')
                     log.close()
                     if p.wait() != 0:

@@ -125,17 +125,13 @@ def configure_system(prerequisite_list, version,
         logfile = os.path.join(options.target_build_dir, 'config.log')
         if not os.path.exists(options.target_build_dir):
             mkdir(options.target_build_dir)
-        if sublevel == 0:
-            log = open(logfile, 'w')
-        else:
-            log = open(logfile, 'a')
-        log.write('** Configuration error. **\n' + 
-                  "If the build fails, run 'python setup.py dependencies " + 
-                  "--show'\nand install the listed packages by hand.\n" +
-                  traceback.format_exc())
+        log = open(logfile, 'a')
+        log.write('** Configuration error. **\n' + traceback.format_exc())
         log.close()
         err.write('Configuration error; see ' + logfile + ' for details.\n' +
-                         'Prerequisites might be present, so building anyway...\n')
+                  "If the build fails, run 'python setup.py dependencies " + 
+                  "--show'\nand install the listed packages by hand.\n" +
+                  'Prerequisites might be present, so building anyway...\n')
     sys.path.insert(0, os.path.join(options.target_build_dir,
                                     options.local_lib_dir))
     return environment
