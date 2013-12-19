@@ -68,13 +68,10 @@ class dependencies(Command):
         self.ran = True
         options.set_top_level(self.sublevel)
         token = 'Package dependencies: '
-        outlog = os.path.join(options.target_build_dir, 'config.out')
-        errlog = os.path.join(options.target_build_dir, 'config.err')
+        logfile = os.path.join(options.target_build_dir, 'config.log')
         if self.sublevel == 0:
-            if os.path.exists(outlog):
-                os.remove(outlog)
-            if os.path.exists(errlog):
-                os.remove(errlog)
+            if os.path.exists(logfile):
+                os.remove(logfile)
 
         if self.distribution.subpackages != None:
             for idx in range(len(sys.argv)):
@@ -105,23 +102,14 @@ class dependencies(Command):
                     cmd = [sys.executable, os.path.join(pkg_dir, 'setup.py'),
                            'dependencies',
                            '--sublevel=' + str(self.sublevel + 1)]
-                    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE,
-                                         shell=shell)
-                    out, err = p.communicate()
-                    out = out.strip()
-                    err = err.strip()
                     if not os.path.exists(options.target_build_dir):
                         mkdir(options.target_build_dir)
-                    log = open(outlog, 'a')
-                    if out:
-                        log.write(pkg_name.upper() + ':\n')
-                        log.write(out + '\n\n')
-                    log.close
-                    log = open(errlog, 'a')
-                    if err:
-                        log.write(pkg_name.upper() + ':\n')
-                        log.write(err + '\n\n')
+                    log = open(logfile, 'a')
+                    log.write(pkg_name.upper() + ':\n')
+                    p = subprocess.Popen(cmd, stdout=log, stderr=log,
+                                         shell=shell)
+                    p.communicate()
+                    log.write('\n\n')
                     log.close()
                     if p.wait() != 0:
                         raise Exception('Dependency check failed for ' +

@@ -122,7 +122,7 @@ def configure_system(prerequisite_list, version,
                                                   out, err)
         save_cache(environment)
     except Exception:
-        logfile = os.path.join(options.target_build_dir, 'config.err')
+        logfile = os.path.join(options.target_build_dir, 'config.log')
         if not os.path.exists(options.target_build_dir):
             mkdir(options.target_build_dir)
         if sublevel == 0:
