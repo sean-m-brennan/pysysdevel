@@ -62,6 +62,7 @@ RESOURCE           = "@@{WEBSOCKET_RESOURCE}"
 SERVICE_NAME       = RESOURCE.upper()
 ADDTNL_RESOURCES   = "@@{WEBSOCKET_ADD_RESOURCES}".split(',')
 
+_DEBUG = True
 
 
 class ServiceQuery(websockethandler.WebHandlerService):
@@ -78,39 +79,49 @@ class ServiceQuery(websockethandler.WebHandlerService):
         try:
             if self.extra_resource is None or self.extra_resource == '':
                 if message.lower().startswith('list_steps'):
-                    if self.socket_dispatch != None:
-                        msg_tpls = query.list_steps(json.loads(message[11:]))
+                    content = message[11:]
+                    if self.socket_dispatch != None and content:
+                        if _DEBUG:
+                            print('Received |' + content + '|')
+                        msg_tpls = query.list_steps(json.loads(content))
                         if msg_tpls != None:
                             for m in msg_tpls:
                                 self.socket_dispatch.send_data(
-                                    'STEP' + str(m[0]) +
+                                    'STEP' + str(m[0]) + ':' +
                                     json.dumps(m[1],
                                                default=websockethandler.json_handler))
                     handled = True
 
                 elif message.lower().startswith('last_step'):
+                    content = message[10:]
                     if self.socket_dispatch != None:
-                        msg = query.last_step(json.loads(message[10:]))
+                        if _DEBUG:
+                            print('Received |' + content + '|')
+                        msg = query.last_step(json.loads(content))
                         if msg != None:
                             self.socket_dispatch.send_data(
-                                'STEP' + str(query.max_steps+1) +
+                                'STEP' + str(query.max_steps+1) + ':' +
                                 json.dumps(msg,
                                            default=websockethandler.json_handler))
                     handled = True
 
                 elif message.lower().startswith('step'):
+                    step_num = int(message[4])
+                    content = message[6:]
                     if self.socket_dispatch != None:
-                        step_num = int(message[4])
                         try:
+                            if _DEBUG:
+                                print('Received |' + content + '|')
                             func = getattr(query, 'step' + str(step_num))
-                            msg = func(json.loads(message[6:]))
+                            print repr(func)
+                            msg = func(json.loads(content))
                             if msg != None:
                                 if isinstance(msg, Exception):
                                     self.socket_dispatch.send_data('ERROR:' +
                                                                    str(msg))
                                 else:
                                     self.socket_dispatch.send_data(
-                                        'STEP' + str(step_num+1) + 
+                                        'STEP' + str(step_num+1) +  ':' +
                                         json.dumps(msg,
                                                    default=websockethandler.json_handler))
                         except AttributeError:

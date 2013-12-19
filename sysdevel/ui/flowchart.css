@@ -10,7 +10,7 @@
    filter:alpha(opacity=80);
    line-height:5em;
    text-align:center;
-   z-index:1; /*position:absolute;*/
+   z-index:40001; /*position:absolute;*/
    background-color:#eeeeef;
    color:black;
    font-family:helvetica;padding:0.5em;
@@ -32,7 +32,7 @@
    /*width:5em; height:5em;*/
    line-height:5em;
    text-align:center;
-   z-index:2; /*position:absolute;*/
+   z-index:40002; /*position:absolute;*/
    background-color:#eeeeef;
    color:black;
    font-family:helvetica;padding:0.5em;
@@ -51,7 +51,7 @@
    /*opacity:0.8;*/
    filter:alpha(opacity=80);
    width:80%; 
-   z-index:30;
+   z-index:40003;
    background-color:#eeeeef;
    color:black;
    font-family:helvetica;padding:0.5em;
@@ -63,7 +63,7 @@
    /*opacity:0.8;*/
    filter:alpha(opacity=80);
    width:80%; 
-   z-index:30;
+   z-index:40003;
    background-color:#eeeeef;
    color:black;
    font-family:helvetica;padding:0.5em;
@@ -74,16 +74,16 @@
 
 
 ._jsPlumb_connector {
-   z-index:400;
+   z-index:40010;
 }
 
 ._jsPlumb_endpoint, .endpointTargetLabel, .endpointSourceLabel {
-   z-index:2100;
+   z-index:40011;
    cursor:pointer;
 }
 
 ._jsPlumb_dragging {
-   z-index:4000;
+   z-index:40012;
 }
 
 .active {

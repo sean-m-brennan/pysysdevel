@@ -13,13 +13,17 @@ class configuration(file_config):
     def __init__(self):
         file_config.__init__(self, dependencies=[('jquery', '1.8.1'),
                                                ('jquery_ui', '1.8.23')],
-                           debug=False)
+                             debug=False)
 
 
     def install(self, environ, version, locally=True):
-        website = 'https://raw.github.com/sporritt/jsPlumb/master/dist/js/'
         file_pattern = 'jquery.jsPlumb-*-min.js'
-        version = latest_version('jsPlumb', website, file_pattern)
+        if version is None:
+            website = 'https://raw.github.com/sporritt/jsPlumb/master/dist/js/'
+            version = latest_version('jsPlumb', website, file_pattern)
+        else:
+            website = 'https://raw.github.com/sporritt/jsPlumb/dev/' + \
+                      version + '/dist/js/'
         file_parts = file_pattern.split('*')
         js_file = file_parts[0] + version + file_parts[1]
         js_dir = os.path.join(options.target_build_dir, options.javascript_dir)

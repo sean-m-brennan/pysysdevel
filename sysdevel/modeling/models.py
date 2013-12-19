@@ -28,7 +28,6 @@ Model-View-Controller base classes
 """
 
 import math
-import collections
 
 
 class UnknownModelException(Exception):
@@ -104,7 +103,7 @@ class DataController(object):
         Outputs; relevant attributes and properties.
         '''
         discard = dir(type('dummy', (object,), {}))  ## builtins
-        discard += [item for item in dir(self) if isinstance(item, collections.Callable)]  ## methods
+        discard += [item for item in dir(self) if callable(item)]  ## methods
         return [item for item in dir(self) if item not in discard]
         """  Following not supported under PyJS
         import inspect

@@ -31,8 +31,8 @@ if ( typeof DEBUG === 'undefined' )
     DEBUG = true
 
 
-function Flowchart( onConnect, in_color, in_size, out_color, out_size,
-		    connect_color, connect_size, highlight_color ) {
+function Flowchart( in_color, in_size, out_color, out_size,
+		    connect_color, connect_size, highlight_color, onConnect ) {
     if ( typeof in_color === 'undefined' )
 	in_color = '#882255';
     if ( typeof in_size === 'undefined' )
@@ -47,11 +47,17 @@ function Flowchart( onConnect, in_color, in_size, out_color, out_size,
 	connect_size = 4;
     if ( typeof highlight_color === 'undefined' )
 	highlight_color = '#2e2af8';
+    if ( typeof onConnect === 'undefined' )
+	this.connect_callback = function( which, from, to ) {
+	    console.log(which + "ed " + from.toString() + " to " + to.toString());
+	};
+    else
+	this.connect_callback = onConnect;
 
-    this.connect_callback = onConnect;
     this.ready = false;
     this.source_backlog = [];
     this.sink_backlog = [];
+    this.connection_backlog = [];
 
     this.allSourceEndpoints = [];
     this.allTargetEndpoints = [];
@@ -158,30 +164,46 @@ function Flowchart( onConnect, in_color, in_size, out_color, out_size,
 	    this.addSinkPoint( this.sink_backlog[i][0],
 			       this.sink_backlog[i][1] )
 	this.sink_backlog = [];
+	for (var i in this.connection_backlog )
+	    this.connectPoints( this.connection_backlog[i][0],
+				this.connection_backlog[i][1],
+				this.connection_backlog[i][2] )
+	this.connection_backlog = [];
     };
 
 
-    this.addSinkPoint = function( parent, where ) {
+    this.addSourcePoint = function( what, where ) {
 	if ( ! this.ready ) {
-	    this.sink_backlog.push( [ parent, where ] );
+	    this.source_backlog.push( [ what, where ] );
 	}
 	else {
-	    var targetUUID = parent + where;
+	    var sourceUUID = what + where;
+	    this.allSourceEndpoints.push(
+		jsPlumb.addEndpoint( what, this.sourceEndpointStyle,
+				     { anchor: where, uuid: sourceUUID } ) );
+	}
+    };
+
+    this.addSinkPoint = function( what, where ) {
+	if ( ! this.ready ) {
+	    this.sink_backlog.push( [ what, where ] );
+	}
+	else {
+	    var targetUUID = what + where;
 	    this.allTargetEndpoints.push(
-		jsPlumb.addEndpoint( parent, this.targetEndpointStyle,
+		jsPlumb.addEndpoint( what, this.targetEndpointStyle,
 				     { anchor: where, uuid: targetUUID } ) );
 	}
     };
 
-    this.addSourcePoint = function( parent, where ) {
+    this.connectPoints = function( from, to, edit ) {
 	if ( ! this.ready ) {
-	    this.source_backlog.push( [ parent, where ] );
+	    this.connection_backlog.push( [ from, to, edit ] );
 	}
 	else {
-	    var sourceUUID = parent + where;
-	    this.allSourceEndpoints.push(
-		jsPlumb.addEndpoint( parent, this.sourceEndpointStyle,
-				     { anchor: where, uuid: sourceUUID } ) );
+	    if ( typeof edit === 'undefined' )
+		edit = false;
+	    jsPlumb.connect( { uuids:[ from, to ], editable:edit } );
 	}
     };
 

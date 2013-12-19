@@ -70,6 +70,7 @@ _DEFAULT_LOG_BACKUP_COUNT   = 5
 _DEFAULT_REQUEST_QUEUE_SIZE = 128
 _MAX_MEMORIZED_LINES        = 1024  ## for WebSocket handshake lines.
 
+_DEBUG = True
 
 
 def get_ws_logger(cls, debug=False):
@@ -327,6 +328,8 @@ class WebsocketDispatch(dispatch.Dispatcher):
 
     def send_data(self, data):
         if len(self.clients) > 0:
+            if _DEBUG:
+                print('Sending |' + str(data) + '|')
             for s in self.clients:
                 try:
                     s.send_message(data, binary=False)
