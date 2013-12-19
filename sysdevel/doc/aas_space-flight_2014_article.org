@@ -29,7 +29,7 @@
 #+LaTeX_HEADER:   \endgroup
 #+LaTeX_HEADER: }
 
-#+LaTeX_HEADER: \PaperNumber{xx-xxx}
+#+LaTeX_HEADER: \PaperNumber{14-330}
 
 
 #+LATEX: \blankfootnote{\newline This document approved for unlimited release: LA-UR-13-29484.}
