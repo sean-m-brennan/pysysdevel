@@ -54,13 +54,13 @@ The IMPACT project at Los Alamos National Laboratory has integrated
 atmospheric density modeling, drag coefficient and orbit propagation,
 and statistical space object conjunction analysis in order to refine
 predictions of orbital collisions. Our software integration approach
-is an iterative development process to allow coupling of models that
-are themselves in on-going development. Our simulation architecture
-combines the above aspects of space object positional prediction
-utilizing multiple data sources and various alternative models along
-the way, as illustrated in Figure [[1]]. This figure represents an early,
-high-level conceptual overview, listing possible example data and
-models. Koller, et al., reviews this in greater
+for IMPACT is an iterative development process to allow coupling of
+models that are themselves in on-going development. This simulation
+architecture combines the above aspects of space object positional
+prediction utilizing multiple data sources and various alternative
+models along the way, as illustrated in Figure [[1]]. This figure
+represents an early, high-level conceptual overview, listing possible
+example data and models. Koller, et al., reviews this in greater
 detail. \cite{koller_impact} Our software framework for achieving this
 integration handles the coupling of not just some few of these
 possibilities, but it can also take on new data and new models. Thus,
@@ -70,7 +70,7 @@ has also been a key requirement.
 
 #+CAPTION: IMPACT concept
 #+NAME:    1
-#+BEGIN_SRC ditaa :file models.png :cmdline -E
+#+BEGIN_SRC ditaa :file models.png :cmdline --no-separation --scale 1.0
                          /--------------------------------\     /--------------------\
                          |       Interface Module    cE64 |     |    Observations    |
                          | a. Model thermospheric density |     |  o LANL sensors    |
@@ -100,12 +100,13 @@ has also been a key requirement.
 #+RESULTS: 1
 [[file:models.png]]
 
+
 The /SysDevel/ architectural framework, which is implemented as the
 open-source, Python package =sysdevel=, is the engine behind the
 development of such multi-model simulation software systems. This
-pure-python package helps in three major areas of code development:
-model coupling, data visualization, and distribution for
-collaboration.
+pure-Python package (i.e., not mixed with extensions) helps in three
+major areas of code development: model coupling, data visualization,
+and distribution for collaboration.
 
 We herein review the role of /SysDevel/ in the IMPACT framework as a
 case study, describing these three areas of development. Model
@@ -129,8 +130,8 @@ The most challenging task of the IMPACT integration effort lies in
 aligning the diverse data that serve as input and output for each
 model such that subsequent models can use them. Our options were to
 implement an ad hoc solution for each model pairing or devise a
-generic means for joining models. The latter approach is a part of our
-/SysDevel/ architecture.
+generic means for joining models. The latter generic approach is a
+part of our /SysDevel/ architecture.
 
 Therefore, the most conceptually interesting portion of /SysDevel/,
 with respect to IMPACT, is its model integration facility. /SysDevel/
@@ -139,10 +140,11 @@ Model-View-Controller (MVC) pattern, which consists of data models (in
 the case of IMPACT, orbital objects), data controllers that manipulate
 those objects (IMPACT modeling processes), and data views that
 represent direct hooks to plotting and visualization. Notice that
-there is conflicting semantics for the word 'model' above – in the
-context of the well-known MVC software pattern, we will substitute the
-word 'object'. These objects are the core of our model synthesis
-strategy.
+there is conflicting semantics for the word 'model' above: our use of
+the term in the sense of a mathematical modeling process versus the
+more general usage in the name of the well-known MVC software
+pattern. In the context of MVC, we will substitute the equivalent word
+'object'. These objects are the core of our model synthesis strategy.
 
 To satisfy the design requirement of malleability, the /SysDevel/ data
 classes, on which IMPACT objects are built, are self-describing using
@@ -154,9 +156,9 @@ conforms to both the domain ontology of the new model as well as the
 
 #+CAPTION: IMPACT MVC interactions
 #+NAME:    2
-#+BEGIN_SRC ditaa :file architecture.png :cmdline -E
+#+BEGIN_SRC ditaa :file architecture.png :cmdline --no-separation
                                            /-------------------------------------\
-  IMPACT architecture                      | DataControllers                         |
+  IMPACT architecture                      | DataControllers                     |
                                            |                          +-------+  |
                                            |  /-------------------\   |  {s}  |  |   
                                            |  |        ED    c6BC |<--|       |  |
@@ -204,6 +206,7 @@ conforms to both the domain ontology of the new model as well as the
 #+RESULTS: 2
 [[file:architecture.png]]
 
+
 Figure [[2]] shows how the MVC pattern implemented in /SysDevel/ is
 applied to IMPACT. Written as Python modules which derive from
 /SysDevel/ base classes, under a single =impact= package, these
@@ -218,9 +221,9 @@ their corresponding IMPACT packages, and the modules they contain:
     * LANL sensor observations :: via a Raven-class telescope
 - /SysDevel/ DataController class
   + IMPACT-ED (Estimation of Density) package
-    * GITM :: Global Ionosphere-Thermosphere Model, physics-based atmosphere density estimation
-    * MSIS :: Mass Spectrometer - Incoherent Scatter, semi-empirical atmosphere density model
-    * Satellite Orbit Tomography :: atmosphere density reconstruction \cite{shoemaker_tomography}
+    * GITM :: Global Ionosphere-Thermosphere Model, physics-based atmospheric density estimation
+    * MSIS :: Mass Spectrometer - Incoherent Scatter, semi-empirical atmospheric density model
+    * Satellite Orbit Tomography :: atmospheric density reconstruction \cite{shoemaker_tomography}
   + IMPACT-OR (ORbit propagation) package
     * SGP4 :: Standard General Perturbations orbit model (no atmosphere)
     * Drag propagation :: modeling atmospheric density, chemical composition, and temperature effects on drag coefficient \cite{walker_gas}
@@ -255,10 +258,10 @@ which checks that the processing pipeline will work. This check begins
 with each DataView-derived object at the end of the pipeline, which
 has a custom =requires()= method and verifies that the
 DataController-derived object(s) feeding into it satisfies those
-requirements through its =provides()= method. This continues through
-to the DataModel-derived objects which also =provides()=, however in
-this case =provides()= is automatic, returning the attributes that
-have originated with the object.
+requirements through its =provides()= method. This chain continues
+through to the DataModel-derived objects which also =provides()=,
+however in this case =provides()= is automatic, returning the
+attributes that have originated with the object.
 
 Adding new models is relatively easy: create a Python interface to the
 model (which could be as simple as =subprocess.call(...)=) that
@@ -273,23 +276,23 @@ GITM versus MSIS. An experimental feature of /SysDevel/ is the ability
 to integrate and utilize new models on-the-fly as long as they adhere
 to the Python API described above. Code is placed in a repository and
 an XML or INI definition list is fed to the backend server so the new
-pipelines can be constructed using the new models and/or data sources.
+pipelines can be constructed using that new models and/or data sources.
 
 Under /SysDevel/, object storage is not strictly required. However, as
 our development process for IMPACT iterates from 1-to-1 conjunction
 analysis, expanding to multiple space object collision detection, we
-move from the challenges of tying these models together coherently, to
-the additional complexities of scale. As we expand to cover more and
+move from the challenges of tieing these models together coherently, to
+the additional complexities of scale. As we expand to include more and
 more orbital objects, and over wider time scales, our storage
-performance needs grow drastically. To achieve this required
+performance demands grow drastically. To achieve this required
 scalability, the /SysDevel/ data object abstraction supports multiple
 data storage backends. This can consist of structured Hierarchical
 Data Format (HDF) files, or utilize a relational database, or even
 graph databases such as Neo4J. As reflected in Figure [[2]], IMPACT
-utilizes a single HDF file per time step for the ED, OR, and US
+utilizes a single HDF file per time-step for the ED, OR, and US
 modules. We chose HDF partly for familiarity, but also because it is a
 good fit. The data generated by these three modules are rather large
-(1+GB per 30 minute time step), heterogeneous, and complex (differing
+(1+GB per 30 minute time-step), heterogeneous, and complex (differing
 spatial grids and temporal periods), all of which is well supported by
 HDF. \cite{folk_hdf}
 
@@ -339,37 +342,39 @@ PlotSeries class. On the server side, PlotSeries uses the =pylab=
 package to generate a preview image and also transmits labels, axes,
 and data points to the client. Previews are used to present an
 overview of all plots requested, where clicking an individual image
-leads to an interactive graph in the browser.
+leads to an interactive graph in the browser. These previews allow
+numerous graphs to be compared at-a-glance without overwhelming the
+browser as many fully interactive plots on a single page might do.
 
 For IMPACT, the web interface is organized into three phases: pipeline
 construction, plot viewing, and three-dimensional visualization. Using
-a plumbing metaphor built on jsPlumb and jQuery libraries, the user
+a plumbing metaphor built on /jsPlumb/ and /jQuery/ libraries, the user
 graphically configures the simulation processing pipeline, choosing
 which data sources and processing models to use, and data plots of
 interest. These interactive results plots are displayed as soon as
 data is available. To minimize computation, IMPACT stores intermediate
-results, so data from a duplicate configuration is available
+results, so that data from a duplicate configuration is available
 immediately unless caching is overridden. This implies a potentially
-long wait, so IMPACT make use of user profiles to facilitate
-revisiting pipeline results.
+long wait due to complex processing, so IMPACT makes use of user
+profiles to facilitate revisiting pipeline results.
 
 Custom visualization is easily added to this user interface, because
 the framework communicates with the simulation using JSON over
 WebSockets. For example, within IMPACT we not only tie into the
-generic /SysDevel/ interface, but also provides a three-dimensional
+generic /SysDevel/ interface, but also provide a three-dimensional
 visualization of orbital objects about the Earth, built with
-Javascript - particularly with the help of the three.js javascript
+Javascript - particularly with the help of the /three.js/ javascript
 library. A screen capture of this interactive visualization can be
 seen in Figure [[3]]. Here the web interface time-steps through the
 simulation results, displaying satellite tracks, positioning
 uncertainty, and, optionally, atmospheric density. To reduce clutter,
 we only display the most recent orbital track history. Positions are
-streamed from pre-computed data from the chosen orbit propagator
-as the visualization time increments.  Positional uncertainty is
+streamed from pre-computed data from the chosen orbit propagator as
+the visualization time increments.  Positional uncertainty is
 indicated as a statistical cloud of points, also streamed from the
 backend. Depending on the power of the graphics card available to the
-browser itself (notably _not_ the backend), this visualization can support
-as many as three to four thousand orbital objects.
+browser itself, this visualization can support as many as three to
+four thousand orbital objects.
 
 For desktop usage, and especially for high-performing display
 environments, we have been exploring several alternate approaches. One
@@ -380,14 +385,14 @@ these approaches diverge from any Javascript client infrastructure,
 however using node.js avoids this problem of dual client code
 bases. Running already written Javascript code on the desktop allows
 for better client performance than in the browser and no need for a
-web server. This SysDevel feature is currently experimental.
+web server. This feature of /SysDevel/ is currently experimental.
 
 For IMPACT, we are currently working on visualization strategies for
 comparing multiple pipeline results (for example, contrasting SGP4
 versus drag propagation versus observations) and for drawing attention
 to close approaches and their collisional probabilities.
 
-Clearly, all this client-side infrastructure is beyond the scope of
+Clearly, this extensive client-side infrastructure is beyond the scope of
 any normal Python build system. In fact, the =sysdevel.ui= module is a
 collection of Javascript and PHP files rather than a Python
 package. It is the /SysDevel/ build system, in particular its
@@ -401,22 +406,22 @@ support with IMPACT website software for use by a web server.
 For the sake of confirming research, it is critical to be able to
 consistently recreate a complex simulation system such as IMPACT
 across potentially diverse computing environments. For software
-development across a large, or medium-sized, team, this capability is
-doubly critical. /SysDevel/ glues together a wide variety of build
-systems into one, in order to facilitate building a multi-model system
-that, by definition, consists of separately developed code sources,
-each possibly targeted for very different environments. It handles not
-only building your package, including C/C++ extensions, shared
-libraries, and even executables, but also downloading, building, and
-installing external Python packages, native libraries, executables,
-compilers, and other tools.
+development across a large, or even medium-sized, team, this
+capability is doubly critical. /SysDevel/ glues together a wide
+variety of build systems into one, in order to facilitate building a
+multi-model system that, by definition, consists of separately
+developed code sources, each possibly targeted for very different
+environments. It handles not only building your package, including
+C/C++ extensions, shared libraries, and even executables, but also
+downloading, building, and installing external Python packages, native
+libraries, executables, compilers, and other tools.
 
 The /SysDevel/ build system extends the built-in Python =distutils=
 package, but assumes nothing about the system on which we're building,
 except that Python is available. Yet /SysDevel/ =distutils= supports
 not just the Python language, but also C, C++, Fortran, and
 Javascript. Typically a package is built with the invocation =python
-setup.py build=, and installed to the system's site packages location
+setup.py build=, and installed to the system's site-packages location
 with =python setup.py install=, just as with standard distutils. In
 fact, all the customization options of distutils, such as =--prefix=
 or =--home= are supported. It can also recursively build sub-packages
@@ -440,74 +445,77 @@ burden of correctly setting up a build environment:
 + Native executables: =sysdevel.distutils.command.build_exe=
 
   Similar to =build_shlib=, this command extends native =distutils=
-  capabilities. This is especially useful for MPI tasks.
+  capabilities. This executable compilation is especially useful for
+  MPI tasks in a modeling system.
 
 + Documentation: =sysdevel.distutils.command.build_doc=
 
   Sphinx is a package for automatic documentation of Python
   code. /SysDevel/ supports Sphinx because a single add-on package
   allows automatic documentation of C, C++, Fortran and Javascript
-  through Doxygen, all well-integrated with Sphinx-produced documents.
+  through Doxygen - all well-integrated with Sphinx-produced documents.
 
 + Unit testing: =sysdevel.distutils.command.test=
 
   /SysDevel/ uses Python's =unittest= package, but also supports C
-  (using cunit), C++ (cppunit), Fortran (fruit), and Javascript (with
-  qunit) with the =test= command. This command looks for all unit test
+  (using CUnit), C++ (CppUnit), Fortran (FRUIT), and Javascript (with
+  QUnit) with the =test= command. This command looks for all unit test
   code in the tests directory at the base of the project.
 
 + External packages and libraries: =sysdevel/distutils/configure/=
 
   Another build system, CMake, uses both bundled and user-generated
   configuration files to specify how to build common
-  dependencies. /SysDevel/ take a similar approach, using
+  dependencies. /SysDevel/ takes a similar approach, using
   configurations in the =sysdevel= package or in the =config=
   directory at the base of the project. These configurations can
   download and build third-party software, such as: libraries, files
   (like Java jars or Javascript libraries), programs (like Doxygen),
-  node.js modules, or Python packages. External Python package can
-  either be built using a configuration file or by automatically
-  querying the Python Package I... (PyPI) online repository.
+  node.js modules, or Python packages. External Python packages can
+  be built either using a configuration file or by automatically
+  querying the Python Package Index (PyPI) online repository.
 
 
-In the case of IMPACT, for example, this descends into the GITM
-sub-package like a recursive =make= call, running =setup.py= here. It
-locates GITM's MPI and HDF5 library dependencies and the proper
-Fortran compiler, fetching and installing them if any are missing.
-Finally, it creates a native executable for use in a cluster.  For the
-IMPACT website, all the supporting Javascript libraries are
-downloaded, Python sources translated, and HTML, Javascript, and image
-all collated into an =http= directory. Those familiar with Python will
-recognize that this is well beyond, yet compatable with, the normal
-=distutils= build process.
+In the case of IMPACT, for example, the build system descends into the
+GITM sub-package like a recursive =make= call, running =setup.py=
+here. It locates GITM's MPI and HDF5 library dependencies and the
+proper Fortran compiler, fetching and installing them if any are
+missing.  Finally, it creates a native executable for use in a
+cluster.  For the IMPACT website, all the supporting Javascript
+libraries are downloaded, Python sources translated, and HTML,
+Javascript, and images all collated into an =http= directory. Those
+familiar with Python will recognize that this is well beyond, yet
+compatable with, the normal =distutils= build process.
 
 In addition to easing software distribution, /SysDevel/ also seeks to
 remedy a growing concern in academia - that of sharing and confirming
 results. Whereas the literate programming (documentation embedded in
 code) and the reproducible research (code embedded in documentation)
 approaches directly address some of the issues involved in scientific
-reproduction, these approaches do not scale well. Literate
-programming, introduced by Knuth and includes tools such as Doxygen,
-JavaDoc, and Python's Sphinx package, is biased toward documenting and
-explaining code.\cite{knuth_literate} Reproducible research,
-represented by Emacs' Org-mode plus Babel, IPython or Mathematica
-notebooks, or the RunMyCode service, accomplishes more of what we need
-for OpenScience, but also have limitations.\cite{schulte_org_mode,
-stodden_run} Notebook-style solutions (including Org-mode) are biased
-toward small data, and either a small code-base or one managed by
-hand. RunMyCode.org, or really any cloud compute service, does not
-address sharing of large-scale data and, again, implies hand-managed
-code.
+reproduction, these approaches do not scale well. The literate
+programming concept, introduced by Knuth, includes tools such as
+Doxygen, JavaDoc, and Python's Sphinx package, but is biased toward
+documenting and explaining code.\cite{knuth_literate} Reproducible
+research, represented by Emacs' Org-mode plus Babel, IPython or
+Mathematica notebooks, or the RunMyCode service, accomplishes more of
+what we need for OpenScience, but also have
+limitations.\cite{schulte_org_mode, stodden_run} Notebook-style
+solutions (including Org-mode) are biased toward small data, and
+either a small code-base or one managed by hand. RunMyCode.org, or
+really any cloud-compute service, does not address sharing of
+large-scale data and, again, implies hand-managed code.
 
- /SysDevel/ on the other hand, is an exploration of how this issue of
+/SysDevel/ on the other hand, is an exploration of how this issue of
 data scaling might be approached: a mechanism for data-set providers
 to allow computation, without necessarily providing compute resources,
 while maintaining control of their data. /SysDevel/ explicitly manages
 large, complex, heterogeneous computational projects and Big Data. It
 provides an interface by which the user can experiment with their own
 computations on data they do not own or control. Computation can even
-be decoupled (although this is not yet implemented) and sent to cloud
-compute resources for greater computational scaling.
+be decoupled (although this is not yet implemented) and sent to
+cloud-compute resources for greater computational scaling. These
+features facilitate sharing and confirming scientific results that are
+dependent on large data sets.
 
 
 * Conclusion
@@ -515,14 +523,14 @@ compute resources for greater computational scaling.
 Through these /SysDevel/ features of scalable and malleable data
 unification, simulation pipeline configuration and data visualization,
 and a comprehensive build system, the IMPACT framework has been able
-to pull together our own diverse researchmodels into swappable and
+to pull together our own diverse research models into swappable and
 pluggable modules, and begin to realize verification and validation of
-our models.
+those models.
 
 The /SysDevel/ integration package not only serves the needs of our
 IMPACT project, but also provides a general tool for other multi-model
 simulations that would otherwise require extensive effort to tie
-together. Portions of /SysDevel/ have been use in other projects.
+together. Portions of /SysDevel/ have been used in other projects.
 
 There are, of course, many ongoing challenges in realizing the
 /SysDevel/ concept in full. On-the-fly model insertion, decoupling
@@ -532,6 +540,8 @@ complexity of environment discovery for the build system is
 particularly challenging because of all the possible combinations of
 operating systems, package management tools, compilers, etc., and is
 only truly testable through crowd-source techniques.
+
+=FIXME: more=
 
 We invite you to try the =sysdevel= package, released
 under the open-source Mozilla Public License, at
