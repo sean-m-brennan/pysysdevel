@@ -1,5 +1,5 @@
 #+TITLE:     Multi-Model Orbital Simulation Development with Python
-#+AUTHOR:    Sean M. Brennan\thanks{Research Scientist, Space Data Systems, Los Alamos National Laboratory, PO Box 1663, Los Alamos, NM 87545}
+#+AUTHOR:    Sean M. Brennan\thanks{Research Scientist, Space Data Systems, Los Alamos National Laboratory, PO Box 1663, Los Alamos, NM 87545}, Michael A. Shoemaker\thanks{Postdoctoral Research Associate, Space Science and Applications, Los Alamos National Laboratory, PO Box 1663, Los Alamos, NM 87545}, Andrew C. Walker\thanks{Postdoctoral Research Associate, Space Science and Applications, Los Alamos National Laboratory, PO Box 1663, Los Alamos, NM 87545}, Humberto C. Godinez Vazquez\thanks{Research Scientist, Applied Mathematics and Plasma Physics, Los Alamos National Laboratory, PO Box 1663, Los Alamos, NM 87545}, and Joseph Koller\thanks{Project Leader, Space Science and Applications, Los Alamos National Laboratory, PO Box 1663, Los Alamos, NM 87545}
 #+EMAIL:     brennan@lanl.gov
 #+DATE:
 
@@ -20,6 +20,7 @@
 #+LaTeX_HEADER: \usepackage{subfigure}
 #+LaTeX_HEADER: \usepackage{overcite}
 #+LaTeX_HEADER: \usepackage{footnpag}
+#+LaTeX_HEADER: \usepackage{epstopdf}
 #+LaTeX_HEADER: \usepackage[colorlinks=true, pdfstartview=FitV, linkcolor=black, citecolor= black, urlcolor= black]{hyperref}
 
 #+LaTeX_HEADER: \newcommand\blankfootnote[1]{%
@@ -68,9 +69,7 @@ while scalability is clearly required of the IMPACT software due to
 the sheer number of space objects of potential interest, malleability
 has also been a key requirement.
 
-#+CAPTION: IMPACT concept
-#+NAME:    1
-#+BEGIN_SRC ditaa :file models.png :cmdline -E
+#+BEGIN_SRC ditaa :file models.eps :cmdline -E :results silent
                          /--------------------------------\     /--------------------\
                          |       Interface Module    cE64 |     |    Observations    |
                          | a. Model thermospheric density |     |  o LANL sensors    |
@@ -97,8 +96,15 @@ has also been a key requirement.
                           \------------------------------/
 #+END_SRC
 
-#+RESULTS: 1
-[[file:models.png]]
+#+BEGIN_SRC sh :session *shell* :results silent :exports none
+epstopdf models.eps
+#+END_SRC
+
+#+CAPTION: IMPACT concept
+#+NAME:    1
+[[file:models.pdf]]
+
+
 
 The /SysDevel/ architectural framework, which is implemented as the
 open-source, Python package =sysdevel=, is the engine behind the
@@ -152,9 +158,7 @@ sub-class of the original /SysDevel/ data object) such that it
 conforms to both the domain ontology of the new model as well as the
 /SysDevel/ Application Programming Interface (API).
 
-#+CAPTION: IMPACT MVC interactions
-#+NAME:    2
-#+BEGIN_SRC ditaa :file architecture.png :cmdline -E
+#+BEGIN_SRC ditaa :file architecture.eps :cmdline -E :results silent
                                            /-------------------------------------\
   IMPACT architecture                      | DataControllers                         |
                                            |                          +-------+  |
@@ -201,8 +205,14 @@ conforms to both the domain ontology of the new model as well as the
                                                  \-------------------------/
 #+END_SRC
 
-#+RESULTS: 2
-[[file:architecture.png]]
+#+BEGIN_SRC sh :session *shell* :results silent :exports none
+epstopdf architecture.eps
+#+END_SRC
+
+#+CAPTION: IMPACT MVC interactions
+#+NAME:    2
+[[file:architecture.pdf]]
+
 
 Figure [[2]] shows how the MVC pattern implemented in /SysDevel/ is
 applied to IMPACT. Written as Python modules which derive from
@@ -323,7 +333,7 @@ simulation server connection using PHP for older browsers.
 
 #+CAPTION: IMPACT orbital visualization
 #+NAME:    3
-[[file:orbits.png]]
+[[file:orbits.pdf]]
 
 To ensure that the potentially large data volume of a DataModel object
 is not transmitted wholly, the DataView web interface uses the same
@@ -548,19 +558,19 @@ program.
 
 \begin{thebibliography}{1}
 
-\bibitem{folk_hdf} Mike Folk, Albert Cheng, and Kim Yates. "HDF5: A file format and I/O library for high performance computing applications." In Proceedings of Supercomputing, vol. 99. 1999.
+\bibitem{folk_hdf} Mike Folk, Albert Cheng, and Kim Yates. "HDF5: A file format and I/O library for high performance computing applications." Proceedings of Supercomputing, vol. 99. 1999.
 
-\bibitem{knuth_literate} Donald Ervin Knuth. "Literate programming." The Computer Journal 27, no. 2 (1984): 97-111.
+\bibitem{knuth_literate} Donald Ervin Knuth. "Literate programming." The Computer Journal vol. 27, no. 2 (1984): 97-111.
 
-\bibitem{koller_impact} Josef Koller, Sean Brennan, Humberto Godinez Vazquez, David Higdon, Moriba Jah, Thomas Kelecy, Alexei Klimenko, Brian Larsen, Earl Lawrence, Richard Linares, Craig McLaughlin, Piyush Mehta, David Palmer, Aaron Ridley, Michael Shoemaker, Eric Sutton, David Thompson, Andrew Walker, and Brendt Wohlberg. "The IMPACT Framework for Enabling System Analysis of Satellite Conjunctions", submitted AAS/AIAA Space Flight Mechanics Meeting, 2014.
+\bibitem{koller_impact} Josef Koller, Sean Brennan, Humberto Godinez Vazquez, David Higdon, Moriba Jah, Thomas Kelecy, Alexei Klimenko, Brian Larsen, Earl Lawrence, Richard Linares, Craig McLaughlin, Piyush Mehta, David Palmer, Aaron Ridley, Michael Shoemaker, Eric Sutton, David Thompson, Andrew Walker, and Brendt Wohlberg. "The IMPACT Framework for Enabling System Analysis of Satellite Conjunctions", accepted AAS/AIAA Space Flight Mechanics Meeting, 2014.
 
-\bibitem{schulte_org_mode} Eric Schulte, Dan Davison, Thomas Dye, and Carsten Dominik. "A multi-language computing environment for literate programming and reproducible research." Journal of Statistical Software 46, no. 3 (2012): 1-24.
+\bibitem{schulte_org_mode} Eric Schulte, Dan Davison, Thomas Dye, and Carsten Dominik. "A multi-language computing environment for literate programming and reproducible research." Journal of Statistical Software vol. 46, no. 3 (2012): 1-24.
 
-\bibitem{shoemaker_tomography} Michael Shoemaker, Brendt Wohlberg, Richard Linares, David Palmer, Alexei Klimenko, David Thompson, and Jospeh Koller. "Comparisons of Satellite Orbit Tomography with Simultaneous Atmospheric Density and Orbit Estimation Methods", submitted AAS/AIAA Space Flight Mechanics Meeting, 2014.
+\bibitem{shoemaker_tomography} Michael Shoemaker, Brendt Wohlberg, Richard Linares, David Palmer, Alexei Klimenko, David Thompson, and Jospeh Koller. "Comparisons of Satellite Orbit Tomography with Simultaneous Atmospheric Density and Orbit Estimation Methods", accepted AAS/AIAA Space Flight Mechanics Meeting, 2014.
 
-\bibitem{stodden_run} Victoria Stodden, Christophe Hurlin, and Christophe Pérignon. "RunMyCode. org: a novel dissemination and collaboration platform for executing published computational results." In E-Science (e-Science), 2012 IEEE 8th International Conference on, pp. 1-8. IEEE, 2012.
+\bibitem{stodden_run} Victoria Stodden, Christophe Hurlin, and Christophe Pérignon. "RunMyCode. org: a novel dissemination and collaboration platform for executing published computational results." Proceedings of the IEEE 8th International Conference on e-Science, (2012): 1-8.
 
-\bibitem{walker_gas} Andrew Walker, Michael Shoemaker, Josef Koller, and Piyush Mehta. "Gas-surface Interactions for Satellites Orbiting in the Lower Exosphere", submitted AAS/AIAA Space Flight Mechanics Meeting, 2014.
+\bibitem{walker_gas} Andrew Walker, Michael Shoemaker, Josef Koller, and Piyush Mehta. "Gas-surface Interactions for Satellites Orbiting in the Lower Exosphere", accepted AAS/AIAA Space Flight Mechanics Meeting, 2014.
 
 \end{thebibliography}
 
