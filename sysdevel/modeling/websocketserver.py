@@ -328,8 +328,6 @@ class WebsocketDispatch(dispatch.Dispatcher):
 
     def send_data(self, data):
         if len(self.clients) > 0:
-            if _DEBUG:
-                print('Sending |' + str(data) + '|')
             for s in self.clients:
                 try:
                     s.send_message(data, binary=False)

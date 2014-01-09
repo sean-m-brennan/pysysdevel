@@ -33,11 +33,12 @@ import platform
 import traceback
 import subprocess
 import imp
+import glob
 import traceback
 
 from .prerequisites import *
 from .filesystem import glob_insensitive
-from .fetching import urlretrieve, fetch, open_archive
+from .fetching import urlretrieve, fetch, open_archive, URLError, HTTPError
 from .building import process_progress
 from . import options
 
@@ -173,9 +174,8 @@ class file_config(config):
     def __init__(self, dependencies=[], debug=False, force=False):
         config.__init__(self, dependencies, debug, force)
 
-
     def is_installed(self, environ, version=None):
-        return False  ## always fetch
+        return False  ## fetch, or copy from download dir
 
 
 
@@ -489,24 +489,33 @@ def latest_pypi_version(which, requested_ver=None):
 def latest_version(what, website, pattern):
     pre = pattern.split('*')[0]
     post = pattern.split('*')[-1]
-    listing = os.path.join(options.target_build_dir, '.' + what + '_list')
-    urlretrieve(website + '/', listing)
-    version = '0'
-    versions = []
-    f = open(listing, 'r')
-    contents = f.read()
-    f.close()
-    idx = contents.find(pre, 0)
-    l = len(pre)
-    while idx >= 0:
-        endl = contents.find('\n', idx)
-        end = contents.find(post, idx)
-        if end > 0 and end < endl:
-            versions.append(contents[idx+l:end])
-        idx = contents.find(pre, end)
-    for ver in versions:
-        if compare_versions(version, ver) < 0:
-            version = ver
-    return version
+    try:
+        listing = os.path.join(options.target_build_dir, '.' + what + '_list')
+        urlretrieve(website + '/', listing)
+        version = '0'
+        versions = []
+        f = open(listing, 'r')
+        contents = f.read()
+        f.close()
+        idx = contents.find(pre, 0)
+        l = len(pre)
+        while idx >= 0:
+            endl = contents.find('\n', idx)
+            end = contents.find(post, idx)
+            if end > 0 and end < endl:
+                versions.append(contents[idx+l:end])
+            idx = contents.find(pre, end)
+        for ver in versions:
+            if compare_versions(version, ver) < 0:
+                version = ver
+        return version
+    except (URLError, HTTPError):
+        file_list = glob.glob(os.path.join(options.download_dir, pattern))
+        if len(file_list) > 0:
+            pre = os.path.join(options.download_dir, pre)
+            version = file_list[0][len(pre):-len(post)]
+            return version
+        else:
+            raise
 
 

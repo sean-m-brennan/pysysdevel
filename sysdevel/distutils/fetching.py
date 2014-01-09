@@ -33,6 +33,13 @@ import tarfile
 import zipfile
 import zlib
 
+try:
+    from urllib.error import URLError, HTTPError, ContentTooShortError
+except ImportError:
+    from urllib2 import URLError, HTTPError
+    from urllib import ContentTooShortError
+
+
 from .filesystem import mkdir
 from . import options
 
@@ -141,11 +148,9 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None,
     try:
         from urllib.request import ProxyHandler, build_opener, install_opener
         from urllib.request import Request, urlopen
-        from urllib.error import URLError, ContentTooShortError
     except ImportError:
         from urllib2 import ProxyHandler, build_opener, install_opener
-        from urllib2 import Request, urlopen, URLError
-        from urllib import ContentTooShortError
+        from urllib2 import Request, urlopen
 
     import tempfile
     import traceback
@@ -204,7 +209,7 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None,
             fp.close()
         del fp
         del tfp
-    except URLError:
+    except (URLError, HTTPError):
         if not quiet:
             sys.stderr.write("HTTP Error connecting to " + url + ":\n")
         raise

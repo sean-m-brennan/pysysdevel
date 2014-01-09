@@ -32,9 +32,20 @@ import logging
 
 
 def json_handler(obj):
+    import datetime
+    import numpy
+    HAVE_SPACEPY=False
+    try:
+        import spacepy
+        HAVE_SPACEPY=True
+    except:
+        pass
+
     if type(obj) == datetime.datetime:
         return obj.isoformat()
     elif type(obj) == numpy.ndarray:
+        return obj.tolist()
+    elif HAVE_SPACEPY and type(obj) == spacepy.datamodel.dmarray:
         return obj.tolist()
     else:
         raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))

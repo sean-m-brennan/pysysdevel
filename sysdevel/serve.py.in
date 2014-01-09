@@ -62,7 +62,6 @@ RESOURCE           = "@@{WEBSOCKET_RESOURCE}"
 SERVICE_NAME       = RESOURCE.upper()
 ADDTNL_RESOURCES   = "@@{WEBSOCKET_ADD_RESOURCES}".split(',')
 
-_DEBUG = True
 
 
 class ServiceQuery(websockethandler.WebHandlerService):
@@ -75,14 +74,12 @@ class ServiceQuery(websockethandler.WebHandlerService):
 
     def handle_message(self, message):
         handled = False
-        self.log.debug('Resource ' + self.extra_resource + ' requested')
+        self.log.info('Resource "' + self.extra_resource + '" requested')
         try:
             if self.extra_resource is None or self.extra_resource == '':
                 if message.lower().startswith('list_steps'):
                     content = message[11:]
                     if self.socket_dispatch != None and content:
-                        if _DEBUG:
-                            print('Received |' + content + '|')
                         msg_tpls = query.list_steps(json.loads(content))
                         if msg_tpls != None:
                             for m in msg_tpls:
@@ -95,8 +92,6 @@ class ServiceQuery(websockethandler.WebHandlerService):
                 elif message.lower().startswith('last_step'):
                     content = message[10:]
                     if self.socket_dispatch != None:
-                        if _DEBUG:
-                            print('Received |' + content + '|')
                         msg = query.last_step(json.loads(content))
                         if msg != None:
                             self.socket_dispatch.send_data(
@@ -110,8 +105,6 @@ class ServiceQuery(websockethandler.WebHandlerService):
                     content = message[6:]
                     if self.socket_dispatch != None:
                         try:
-                            if _DEBUG:
-                                print('Received |' + content + '|')
                             func = getattr(query, 'step' + str(step_num))
                             print repr(func)
                             msg = func(json.loads(content))
@@ -125,7 +118,7 @@ class ServiceQuery(websockethandler.WebHandlerService):
                                         json.dumps(msg,
                                                    default=websockethandler.json_handler))
                         except AttributeError:
-                            self.log.debug("Unknown step: " + message)
+                            self.log.warn("Unknown step: " + message)
                     handled = True
 
             else:
@@ -133,14 +126,14 @@ class ServiceQuery(websockethandler.WebHandlerService):
                     if resource == self.extra_resource:
                         handler = __import__(resource,
                                              globals={"__name__": __name__})
-                        self.log.debug('Handling through ' + resource)
+                        self.log.info('Handling through "' + resource + '"')
                         if handler.handle_message(self, message):
                             handled = True
                             
             if not handled:
-                self.log.debug("Unknown command: " + message)
+                self.log.warn("Unknown command: " + message)
         except Exception:
-            self.log.debug(traceback.format_exc())
+            self.log.warn(traceback.format_exc())
                 
     def closing(self):
         return False
@@ -286,20 +279,28 @@ def main(argv=None):
         app_name = os.path.split(sys.argv[0])[1]
         argv = sys.argv[1:]
 
-    if '-d' in argv or '--debug' in argv:
+    if '--no-daemon' in argv:
+        try:
+            server = ServiceServer(None)
+            server.run()
+        except KeyboardInterrupt:
+            server.quit()
+
+    elif '-d' in argv or '--debug' in argv:
         verbose = False
-        level = logging.WARNING
+        level = logging.INFO
         if '-v' in argv or '--verbose' in argv:
             verbose = True
             level = logging.DEBUG
         extras = []
         try:
-            server = ServiceServer(None, logging.DEBUG, verbose)
+            server = ServiceServer(None, level, verbose)
             server.run()
         except KeyboardInterrupt:
             server.quit()
+
     else:
-        server = ServiceDaemon(logging.INFO)
+        server = ServiceDaemon(logging.WARNING)
         server.start()
 
 
