@@ -1,33 +1,8 @@
 #!/bin/bash
-## 
-## Copyright 2013.  Los Alamos National Security, LLC.
-## This material was produced under U.S. Government contract
-## DE-AC52-06NA25396 for Los Alamos National Laboratory (LANL), which is
-## operated by Los Alamos National Security, LLC for the U.S. Department
-## of Energy. The U.S. Government has rights to use, reproduce, and
-## distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS
-## NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
-## ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is
-## modified to produce derivative works, such modified software should be
-## clearly marked, so as not to confuse it with the version available
-## from LANL.
-## 
-## Licensed under the Mozilla Public License, Version 2.0 (the
-## "License"); you may not use this file except in compliance with the
-## License. You may obtain a copy of the License at
-## http://www.mozilla.org/MPL/2.0/
-## 
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-## implied. See the License for the specific language governing
-## permissions and limitations under the License.
-## 
-## 
 ## Create a self-contained virtual machine
 ##
 ## REQUIRES: wget, python, lighttpd, and
-##   createrepo if using CentOS, or debarchiver + dput if using Debian, and
+##   createrepo if using CentOS, or debarchiver if using Debian, and
 ##   virtualbox, or qemu-kvm/libvirt
 ##
 ## Also needs:
@@ -50,7 +25,8 @@ VM_SERVER_PIDS=()
 VM_NAME=""
 VM_NET_NAME=""
 
-SERVER_IP=10.0.2.2
+SERVER_NAME=`hostname`
+SERVER_IP=${SERVER_NAME}
 SERVER_PORT=7999
 SERVER_ADDRESS=http://${SERVER_IP}:${SERVER_PORT}
 
@@ -63,14 +39,15 @@ function create_repository {
     if [ "${TARGET_OS}" = "CENTOS" ]; then
 	createrepo ./ --update 1>&2
     else
-	debarchiver --addoverride --autoscanall --input ${PWD} --dest ${PWD} 1>&2
+	debarchiver --addoverride --autoscanall 1>&2
+	#FIXME needs config file??
     fi
     cd $here
     port=$(printf 8%03d ${number})
     cat >"${VM_WORKING_DIR}/lighttpd_${number}.conf" <<EOF
 server.document-root = "${repo_dir}" 
 server.port = ${port}
-server.bind = "localhost"
+#server.bind = "localhost"
 server.use-ipv6 = "disable"
 dir-listing.activate = "enable" 
 EOF
@@ -107,7 +84,7 @@ function tftp_prep {
     SYSLINUX_DIR=syslinux-${SYSLINUX_VERSION}
 
     CENTOS_DISTRO=CentOS
-    CENTOS_VERSION=6.4
+    CENTOS_VERSION=6
     CENTOS_ARCH=x86_64
     CENTOS_WEBSITE=http://mirror.centos.org/centos/${CENTOS_VERSION}/os/${CENTOS_ARCH}/images/pxeboot
     CENTOS_IMG=initrd.img
@@ -152,6 +129,7 @@ function tftp_prep {
     cp *.cfg "${VM_TFTP_DIR}/"  ## Kickstart files
     cp *.bmp "${VM_TFTP_DIR}/"
     cp *.png "${VM_TFTP_DIR}/"
+    HTTP_PROXY_OPTION="http_proxy=${HTTP_PROXY}"
     cat >"${VM_TFTP_DIR}/pxelinux.cfg/default" <<EOF
 default menu.c32
 prompt 0
@@ -161,12 +139,12 @@ ontimeout ${TARGET_LABEL}
 LABEL centos
         MENU LABEL CentOS
         kernel ${CENTOS_DISTRO}/vmlinuz
-        append initrd=${CENTOS_DISTRO}/initrd.img ks=${SERVER_ADDRESS}/centos.cfg
+        append initrd=${CENTOS_DISTRO}/initrd.img ks=${SERVER_ADDRESS}/centos.cfg ${HTTP_PROXY_OPTION}
 
 LABEL debian
         MENU LABEL Debian
         kernel ${DEBIAN_DISTRO}/vmlinuz
-        append auto=true  auto url=${SERVER_ADDRESS}/debian.cfg  priority=critical DEBIAN_FRONTEND=noninteractive install debconf/priority=medium debian-installer/allow_unauthenticated=true vga=788 initrd=${DEBIAN_DISTRO}/initrd.gz -- quiet
+        append auto=true  auto url=${SERVER_ADDRESS}/debian.cfg ${HTTP_PROXY_OPTION} priority=critical DEBIAN_FRONTEND=noninteractive install debconf/priority=medium debian-installer/allow_unauthenticated=true vga=788 initrd=${DEBIAN_DISTRO}/initrd.gz -- quiet
 
 LABEL localboot
         MENU LABEL Boot from disk
@@ -260,9 +238,7 @@ function vbox_init {
     sed "s|^\(.*\)defaultMachineFolder=\"[^\"]*\"\(.*\)$|\1defaultMachineFolder=\"${VBOX_VM_DIR}\"\2|" ${VBOX_DEF}.old >${VBOX_DEF}
     VBOX_DIR=$(dirname "${VBOX_DEF}")
     echo "Using VirtualBox from ${VBOX_DIR}" 1>&2
-    if $VERBOSE; then
-	cat ${VBOX_DEF} | grep defaultMachineFolder 1>&2
-    fi
+    cat ${VBOX_DEF} | grep defaultMachineFolder 1>&2
 
     if [ ! -d "${VBOX_VM_DIR}/${VM_NAME}" ]; then
 	here="${PWD}"
@@ -330,6 +306,8 @@ function vbox_cleanup {
     VBoxManage unregistervm "${VM_NAME}"
     unset VBOX_USER_HOME
     unset VBOX_IPC_SOCKETID
+    rm -rf /tmp/vbox*
+    rm -rf /tmp/.vbox*
 }
 
 
