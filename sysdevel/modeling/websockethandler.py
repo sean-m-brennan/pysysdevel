@@ -27,7 +27,10 @@ permissions and limitations under the License.
 WebSocket handling
 """
 
-import threading
+try:
+    from multiprocessing import Process
+except:
+    from threading import Thread as Process
 import logging
 
 
@@ -53,12 +56,12 @@ def json_handler(obj):
 
 
 
-class WebHandlerService(threading.Thread):
+class WebHandlerService(Process):
     '''
     Abstract class for handling messages from a web client
     '''
     def __init__(self, name):
-        threading.Thread.__init__(self, name=name)
+        Process.__init__(self, name=name)
         self.log = logging.getLogger(self.__class__.__name__)
 
     def closing(self):

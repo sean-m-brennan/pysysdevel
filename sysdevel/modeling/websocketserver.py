@@ -42,7 +42,10 @@ import sys
 import logging
 import socket
 import select
-import threading
+try:
+    from multiprocessing import Process, Event
+except:
+    from threading import Thread as Process, Event
 
 _HAS_SSL = False
 _HAS_OPEN_SSL = False
@@ -89,7 +92,7 @@ def get_ws_logger(cls, debug=False):
 
 
 
-class WebSocketServer(threading.Thread,
+class WebSocketServer(Process,
                       socketserver.ThreadingMixIn,
                       HTTPServer):
     daemon_threads = True
@@ -114,7 +117,7 @@ class WebSocketServer(threading.Thread,
                     ]:
             get_ws_logger(cls, debug)
 
-        threading.Thread.__init__(self, name='Websocket server')
+        Process.__init__(self, name='Websocket server')
 
         self.origin = origin
         self.port = port
@@ -128,7 +131,7 @@ class WebSocketServer(threading.Thread,
         self.draft75 = True
         self.strict_draft75 = False
         self.request_queue_size = _DEFAULT_REQUEST_QUEUE_SIZE
-        self.__ws_is_shut_down = threading.Event()
+        self.__ws_is_shut_down = Event()
         self.__ws_serving = False
 
         socketserver.BaseServer.__init__(self, (host, port),
