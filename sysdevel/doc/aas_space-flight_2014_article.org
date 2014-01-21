@@ -604,22 +604,22 @@ visualization methods all need a good deal more attention. The
 complexity of environment discovery for the build system is
 particularly challenging because of all the possible combinations of
 operating systems, package management tools, compilers, etc., and thus
-is only truly testable in the wild.
+is only truly testable through wide and diverse usage.
 
 Finally, as the advent of cloud-computing resources has made
 high-performance and massively-parallel computing more accessible than
-ever, it is becoming rapidly apparent that the obverse of that coin is
-very copious amounts of acquired and generated data. Due to its sheer
-mass, such data sets produce their own challenges beyond that of mere
-computation. So while /SysDevel/ tries to ease the pain of complex
-integration of resource-intensive code, it also seeks to provide a
-flexible interface to large data sets, particularly in the context of
-OpenScience. Both storage (local and remote) and computation are
-relatively cheap, but the trade-off is control, or more specifically
-the lack of it. We believe you can have your data and compute on it
-too. The future of /SysDevel/ will be to confront the challenges in
-utilizing cloud computing remotely while maintaining local control of
-your hard-won data.
+ever, it is becoming rapidly apparent that the other side of that coin
+yields very copious amounts of acquired and generated data. Due to its
+sheer mass, such data sets produce their own challenges beyond that of
+mere computation. So while /SysDevel/ tries to ease the pain of
+complex integration of resource-intensive code, it also seeks to
+provide a flexible interface to large data sets, particularly in the
+context of OpenScience. Both storage (local and remote) and
+computation are relatively cheap, but the trade-off is control, or
+more specifically the lack of it. We believe you can have your data
+and compute with it too. The future of /SysDevel/ will be to confront
+the challenges in utilizing cloud computing remotely while maintaining
+local control of your hard-won data.
 
 We invite you to try the =sysdevel= package, released
 under the open-source Mozilla Public License, at
