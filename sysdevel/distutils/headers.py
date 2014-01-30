@@ -30,6 +30,7 @@ Utilities for dealing with C and C++ header files
 import os
 import sys
 import inspect
+import shutil
 
 
 def _ctype2declaration(key, name):
