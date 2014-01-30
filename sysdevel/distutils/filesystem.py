@@ -29,6 +29,7 @@ Utilities for portable filesystem manipulation
 
 import os
 import fnmatch
+import glob
 
 
 def mkdir(newdir):
