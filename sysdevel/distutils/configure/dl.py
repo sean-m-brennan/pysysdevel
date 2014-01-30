@@ -5,6 +5,7 @@ import platform
 from ..prerequisites import *
 from ..fetching import fetch, unarchive
 from ..configuration import lib_config
+from ..headers import patch_c_only_header
 from .. import options
 
 class configuration(lib_config):
