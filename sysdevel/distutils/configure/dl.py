@@ -79,7 +79,7 @@ class configuration(lib_config):
                 fetch(''.join(website), archive, archive)
                 unarchive(archive, src_dir)
 
-                build_dir = os.path.join(target_build_dir, src_dir)
+                build_dir = os.path.join(options.target_build_dir, src_dir)
                 os.chdir(build_dir)
                 log = open('build.log', 'w')
                 patch_c_only_header('dlfcn.h')
