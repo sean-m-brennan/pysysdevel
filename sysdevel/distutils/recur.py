@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 recursive build support
 """
@@ -35,7 +35,7 @@ from .building import process_progress
 
 
 def process_package(fnctn, build_base, progress, pyexe, argv,
-                    pkg_name, pkg_dir, addtnl_args=[]):
+                    pkg_name, pkg_dir, addtnl_args=()):
     sys.stdout.write(fnctn.upper() + 'ING ' + pkg_name + ' in ' + pkg_dir + ' ')
     logging = True
     if 'clean' in fnctn:
@@ -99,7 +99,7 @@ def process_subpackages(parallel, fnctn, build_base, subpackages,
             res_tpl = result()
             if res_tpl is None:
                 raise Exception("Parallel build failed.")
-            pkg_name, status = res_tpl
+            _, status = res_tpl
             if status != 0:
                 has_failed = True
         if has_failed:
@@ -111,7 +111,7 @@ def process_subpackages(parallel, fnctn, build_base, subpackages,
         for sub in subpackages:
             args = (fnctn, build_base, process_progress,
                     sys.executable, argv,) + sub
-            pkg_name, status = process_package(*args)
+            _, status = process_package(*args)  # pylint: disable=W0142
             if status != 0:
                 failed_somewhere = True
                 if quit_on_error:

@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Configuration classes
 """
@@ -30,43 +30,46 @@ Configuration classes
 import os
 import sys
 import platform
-import traceback
 import subprocess
 import imp
 import glob
 import traceback
 
-from .prerequisites import *
+from .prerequisites import programfiles_directories, find_header, find_library, find_definitions, find_program, system_uses_homebrew, compare_versions, install_pypkg, RequirementsFinder, compare_versions, ConfigError
 from .filesystem import glob_insensitive
-from .fetching import urlretrieve, fetch, open_archive, URLError, HTTPError
+from .fetching import urlretrieve, fetch, open_archive, DownloadError, URLError, HTTPError, ContentTooShortError
 from .building import process_progress
 from . import options
 
 
 #TODO: what does pip do for these?
 pypi_exceptions = {
-    'argparse':          ('argparse', []),  ## because it breaks the AST FIXME?
-    'dateutil':          ('python-dateutil', ['six']),
+    'argparse':          ('argparse', ()),  ## FIXME because it breaks the AST?
+    'dateutil':          ('python-dateutil', ('six',)),
     'ephem':             ('pyephem', None),
     'fuzzy':             ('Fuzzy', None),
     'jinja2':            ('Jinja2', None),
     'pygments':          ('Pygments', None),
-    'pyyaml':            ('PyYAML', ['libyaml']),
+    'pyyaml':            ('PyYAML', ('libyaml',)),
     'qunitsuite':        ('QUnitSuite', None),
-    'scipy':             ('scipy', ['gfortran',]), #'atlas'], #'lapack'?]),
+    'scipy':             ('scipy', ('gfortran',)), #'atlas',), #'lapack',?)),
     'serial':            ('pyserial', None),
-    'shapely':           ('Shapely', ['geos']),
-    'sphinx':            ('Sphinx', ['docutils', 'jinja2', 'pygments',
-                                     'roman',]), # 'rst2pdf']), #FIXME
+    'shapely':           ('Shapely', ('geos',)),
+    'sphinx':            ('Sphinx', ('docutils', 'jinja2', 'pygments',
+                                     'roman',)), # 'rst2pdf,)), #FIXME rst2pdf is broken
     'sqlalchemy':        ('SQLAlchemy', None),
-    'usb':               ('pyusb', ['libusb']),
+    'usb':               ('pyusb', ('libusb',)),
 }
 
-
+## All these classes are abstract
+# pylint: disable=W0223
 
 class config(object):
-    def __init__(self, dependencies=[], debug=False, force=False):
-        self.dependencies = dependencies
+    def __init__(self, dependencies=None, debug=False, force=False):
+        if dependencies is None:
+            self.dependencies = []
+        else:
+            self.dependencies = dependencies
         self.debug = debug
         self.environment = dict()
         self.found = False
@@ -84,7 +87,8 @@ class config(object):
 
 
 class lib_config(config):
-    def __init__(self, lib, header, dependencies=[], debug=False, force=False):
+    def __init__(self, lib, header, dependencies=None,
+                 debug=False, force=False):
         config.__init__(self, dependencies, debug, force)
         self.lib = lib
         self.hdr = header
@@ -122,11 +126,11 @@ class lib_config(config):
             try:
                 locations += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
                 locations += os.environ['CPATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             try:
                 locations.append(os.environ[self.lib.upper() + '_ROOT'])
-            except:
+            except KeyError:
                 pass
             for d in programfiles_directories():
                 locations.append(os.path.join(d, 'GnuWin32'))
@@ -134,7 +138,7 @@ class lib_config(config):
             try:
                 locations.append(environ['MINGW_DIR'])
                 locations.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
         try:
             if self.hdr:
@@ -150,7 +154,7 @@ class lib_config(config):
                 def_dir, defs = find_definitions(self.lib, locations,
                                                  limit=limit)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found
@@ -171,7 +175,7 @@ class lib_config(config):
 
 
 class file_config(config):
-    def __init__(self, dependencies=[], debug=False, force=False):
+    def __init__(self, dependencies=None, debug=False, force=False):
         config.__init__(self, dependencies, debug, force)
 
     def is_installed(self, environ, version=None):
@@ -180,7 +184,7 @@ class file_config(config):
 
 
 class prog_config(config):
-    def __init__(self, exe, dependencies=[], debug=False, force=False):
+    def __init__(self, exe, dependencies=None, debug=False, force=False):
         config.__init__(self, dependencies, debug, force)
         self.exe = exe
 
@@ -200,18 +204,18 @@ class prog_config(config):
         if not limit:
             try:
                 locations.append(os.environ[self.exe.upper() + '_ROOT'])
-            except:
+            except KeyError:
                 pass
             try:
                 locations.append(environ['MINGW_DIR'])
                 locations.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
 
         try:
             program = find_program(self.exe, locations, limit=limit)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found
@@ -226,8 +230,10 @@ class prog_config(config):
 
 
 class nodejs_config(config):
-    def __init__(self, module, dependencies=['node'], debug=False, force=False):
-        if not 'node' in dependencies:
+    def __init__(self, module, dependencies=None, debug=False, force=False):
+        if dependencies is None:
+            dependencies = ['node',]
+        elif not 'node' in dependencies:
             dependencies.append('node')
         config.__init__(self, dependencies, debug, force)
         self.module = module
@@ -242,7 +248,7 @@ class nodejs_config(config):
     def __check_installed(self, cmd_line):
         p = subprocess.Popen(cmd_line,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = p.communicate()
+        out, _ = p.communicate()
         if '(empty)' in out:
             return False
         return True
@@ -272,13 +278,13 @@ class nodejs_config(config):
             except KeyboardInterrupt:
                 p.terminate()
                 log.close()
-                e = sys.exc_info()[1]
-                raise e
+                raise
             if status != 0:
                 log.close()
                 sys.stdout.write(' failed; See ' + log_file)
-                raise Exception('NPM update is required, but could not be ' +
-                                'installed; See ' + log_file)
+                raise ConfigError(self.module,
+                                  'NPM update is required, but could not be ' +
+                                  'installed; See ' + log_file)
 
             cmd_line = pre + [environ['NPM'], 'install', 'node-webgl'] + post
             try:
@@ -287,23 +293,24 @@ class nodejs_config(config):
             except KeyboardInterrupt:
                 p.terminate()
                 log.close()
-                e = sys.exc_info()[1]
-                raise e
+                raise
             if status != 0:
                 log.close()
                 if log_file:
                     sys.stdout.write(' failed; See ' + log_file)
-                    raise Exception('Node-' + self.module + ' is required, ' +
-                                    'but could not be installed; See ' + log_file)
+                    raise ConfigError(self.module,
+                                      'Node-' + self.module + ' is required, ' +
+                                      'but could not be installed; See ' + log_file)
                 else:
                     sys.stdout.write(' failed')
-                    raise Exception('Node-' + self.module + ' is required, ' +
-                                    'but could not be installed.')
+                    raise ConfigError(self.module,
+                                      'Node-' + self.module + ' is required, ' +
+                                      'but could not be installed.')
 
 
 
 class py_config(config):
-    def __init__(self, pkg, version, dependencies=[], indexed_as=None,
+    def __init__(self, pkg, version, dependencies=None, indexed_as=None,
                  debug=False, force=False):
         config.__init__(self, dependencies, debug, force)
         self.pkg = pkg
@@ -330,7 +337,7 @@ class py_config(config):
                 if compare_versions(ver, version) == -1:
                     return self.found
             self.found = True
-        except Exception:
+        except ImportError:
             if self.debug:
                 print(sys.exc_info()[1])
         return self.found
@@ -346,29 +353,29 @@ class py_config(config):
             archive = src_dir + '.tar.gz'
             try:
                 fetch(website, archive, archive, quiet=True)
-            except Exception:
+            except (DownloadError, URLError, HTTPError, ContentTooShortError):
                 try:
                     archive = src_dir + '.zip'
                     fetch(website, archive, archive, quiet=True)
-                except Exception:
+                except (DownloadError, URLError, HTTPError, ContentTooShortError):
                     try:
                         archive = src_dir + '.tar.bz2'
                         fetch(website, archive, archive, quiet=True)
-                    except Exception:
+                    except (DownloadError, URLError, HTTPError, ContentTooShortError):
                         try:
                             archive = src_dir + '.tgz'
                             fetch(website, archive, archive, quiet=True)
-                        except Exception:
+                        except (DownloadError, URLError, HTTPError, ContentTooShortError):
                             try:
                                 archive = src_dir + '.tar.Z'
                                 fetch(website, archive, archive, quiet=True)
-                            except Exception:
-                                    archive = src_dir + '.tar'
-                                    fetch(website, archive, archive)
+                            except (DownloadError, URLError, HTTPError, ContentTooShortError):
+                                archive = src_dir + '.tar'
+                                fetch(website, archive, archive)
             install_pypkg(src_dir, website, archive, locally=locally)
             ## Urgent FIXME install check is not always working
             #if not self.is_installed(environ, version):
-            #    raise Exception(self.pkg + ' installation failed.')
+            #    raise ConfigError(self.pkg, 'installation failed.')
 
 
 
@@ -381,11 +388,8 @@ class pypi_config(py_config):
         if dependencies is None:
             if version is None:
                 version = latest_pypi_version(name)
-            try:
-                archive = name + '-' + version + pypi_archive(name, version)
-                fetch(pypi_url(name), archive, archive)
-            except:
-                raise Exception('Cannot download source for ' + pkg)
+            archive = name + '-' + version + pypi_archive(name, version)
+            fetch(pypi_url(name), archive, archive)
             z, names = open_archive(archive)
             try:
                 extract_dir = os.path.join(options.target_build_dir, '.' + pkg)
@@ -393,7 +397,7 @@ class pypi_config(py_config):
                 z.extract(member, extract_dir)
                 rf = RequirementsFinder(os.path.join(extract_dir, member))
                 dependencies = rf.requires_list
-            except:
+            except Exception:  # pylint: disable=W0703
                 if debug:
                     traceback.print_exc()
             z.close()
@@ -419,7 +423,7 @@ def dynamic_module(pkg, version=None, dependencies=None, indexed_as=None,
            "        pypi_config.__init__(self, " + repr(pkg) + ", " + \
            repr(version) + ", " + repr(dependencies) + ", " + \
            repr(indexed_as) + ", " + repr(debug) + ", " + repr(force) + ")\n"
-    exec code in module.__dict__
+    exec code in module.__dict__  # pylint: disable=W0122
     return module
 
 
@@ -428,7 +432,7 @@ def is_pypi_listed(pkg):
     try:
         urlretrieve(pypi_url(pkg, False), listing, quiet=True)
         return True
-    except:
+    except (DownloadError, URLError, HTTPError, ContentTooShortError):
         return False
 
 
@@ -454,7 +458,7 @@ def pypi_archive(which, version):
     for archive in ['.zip', '.tar.bz2', '.tar.gz', '.tgz', '.tar.Z', '.tar']:
         if contents[idx+l:].startswith(archive):
             return archive
-    raise Exception('No source archive available for ' + which)
+    raise ConfigError(which, 'No source archive available')
 
 
 def latest_pypi_version(which, requested_ver=None):
@@ -509,7 +513,7 @@ def latest_version(what, website, pattern):
             if compare_versions(version, ver) < 0:
                 version = ver
         return version
-    except (URLError, HTTPError):
+    except (DownloadError, URLError, HTTPError, ContentTooShortError):
         file_list = glob.glob(os.path.join(options.download_dir, pattern))
         if len(file_list) > 0:
             pre = os.path.join(options.download_dir, pre)

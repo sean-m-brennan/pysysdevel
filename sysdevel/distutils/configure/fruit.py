@@ -5,6 +5,7 @@ import shutil
 from ..fetching import fetch, unarchive
 from ..filesystem import mkdir
 from ..configuration import config
+from .. import options
 
 
 class configuration(config):
@@ -13,7 +14,8 @@ class configuration(config):
     """
     def __init__(self):
         config.__init__(self, debug=False)
-        self.install_dir = os.path.abspath(target_build_dir, 'src', 'fruit')
+        self.install_dir = os.path.abspath(options.target_build_dir,
+                                           'src', 'fruit')
         self.sources = ['fruit_util.f90', 'fruit.f90']
 
 
@@ -43,8 +45,9 @@ class configuration(config):
             fetch(''.join(website), archive, archive)
             unarchive(archive, src_dir)
 
-            source_dir = os.path.join(target_build_dir, src_dir, 'src')
-            install_dir = os.path.abspath(target_build_dir, 'src', 'fruit')
+            source_dir = os.path.join(options.target_build_dir, src_dir, 'src')
+            install_dir = os.path.abspath(options.target_build_dir,
+                                          'src', 'fruit')
             mkdir(install_dir)
             for src in self.sources:
                 shutil.copy(os.path.join(source_dir, src),

@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Utilities for handling 2and3, and miscellany
 """
@@ -50,7 +50,7 @@ def is_string(item):
 
 def uniquify(seq, id_fctn=None):
     if id_fctn is None:
-        def id_fctn(x): return x
+        id_fctn = lambda(x): x
     result = []
     for item in seq:
         marker = id_fctn(item)
@@ -93,7 +93,7 @@ def rcs_revision(rcs_type=None):
     else:
         raise Exception('Unknown Revision Control System.')
 
-    shell=False
+    shell = False
     if 'windows' in platform.system().lower():
         shell = True
     p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE, shell=shell)

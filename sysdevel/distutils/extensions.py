@@ -22,14 +22,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Custom extensions
 """
 
+import os
 try:
     from numpy.distutils import extension as old_extension
-except:
+except ImportError:
     from distutils import extension as old_extension
 
 from .building import convert_ulist, DEFAULT_STYLE
@@ -37,7 +38,7 @@ from .building import convert_ulist, DEFAULT_STYLE
 
 ## Shared libraries, like static libraries, consist of
 ##  a name and a build_info dictionary.
-
+# pylint: disable=W0231
 
 class Extension(old_extension.Extension):
     def __init__(self, name, sources,
@@ -68,9 +69,9 @@ class Extension(old_extension.Extension):
 
 
 class WebExtension(old_extension.Extension):
-    def __init__(self, name, sources=[], source_dir='.',
-                 public_subdir='', extra_support_files=[],
-                 extra_public_files=[], extra_compile_args=[]):
+    def __init__(self, name, sources=(), source_dir='.',
+                 public_subdir='', extra_support_files=(),
+                 extra_public_files=(), extra_compile_args=()):
         old_extension.Extension.__init__(self, name, sources)
         self.source_directory = source_dir
         self.public_subdir = public_subdir
@@ -81,8 +82,8 @@ class WebExtension(old_extension.Extension):
 
 class DocExtension(old_extension.Extension):
     def __init__(self, name, source_dir, sphinx_cfg=None,
-                 doxy_cfg=None, doxy_srcs=[], extra_docs = [],
-                 extra_directories=[], no_sphinx=False,
+                 doxy_cfg=None, doxy_srcs=(), extra_docs=(),
+                 extra_directories=(), no_sphinx=False,
                  style=DEFAULT_STYLE, docbook_xsl='', org_xform=''):
         old_extension.Extension.__init__(self, name, [])
         self.source_directory = source_dir
@@ -175,7 +176,7 @@ class Executable(old_extension.Extension):
 ## Javascript unit tests are a list of QUnit HTML files.
 
 class FortranUnitTest(Executable):
-    def __init__(self, testfile, extra_sources=[],
+    def __init__(self, testfile, extra_sources=(),
                  include_dirs=None,
                  define_macros=None,
                  undef_macros=None,
@@ -205,7 +206,7 @@ class FortranUnitTest(Executable):
 
 
 class CUnitTest(Executable):
-    def __init__(self, testfile, extra_sources=[],
+    def __init__(self, testfile, extra_sources=(),
                  include_dirs=None,
                  define_macros=None,
                  undef_macros=None,
@@ -235,7 +236,7 @@ class CUnitTest(Executable):
 
 
 class CppUnitTest(Executable):
-    def __init__(self, testfile, extra_sources=[],
+    def __init__(self, testfile, extra_sources=(),
                  include_dirs=None,
                  define_macros=None,
                  undef_macros=None,

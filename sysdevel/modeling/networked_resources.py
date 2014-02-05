@@ -22,11 +22,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Utilities for accessing remote data and computation resources.
 """
 
+# pylint: disable=E1103
 import os
 import subprocess
 import platform
@@ -40,10 +41,10 @@ import warnings
 
 
 class Storage(object):
-    def mount(self, *args, **kwargs):
+    def mount(self):
         raise NotImplementedError('Mount type unknown')
 
-    def unmount(self, *args, **kwargs):
+    def unmount(self):
         raise NotImplementedError('Mount type unknown')
 
 
@@ -80,7 +81,7 @@ class SshStorage(Storage):
             raise subprocess.CalledProcessError(status, cmd_line)
 
 
-    def umount(self):
+    def unmount(self):
         if os.path.exists(self.where):
             cmd_line = ['fusermount', '-u', self.where]
             status = subprocess.call(cmd_line)
@@ -123,7 +124,7 @@ class NfsStorage(Storage):
             raise subprocess.CalledProcessError(status, cmd_line)
 
 
-    def umount(self):
+    def unmount(self):
         if os.path.exists(self.where):
             cmd_line = ['umount', self.where]
             status = subprocess.call(cmd_line)
@@ -144,7 +145,7 @@ class SmbStorage(Storage):
             self.user = getpass.getuser()
         self.where = local_path
         if local_path is None:
-            self.where = os.path.basename(remote_path)
+            self.where = os.path.basename(share)
         self.remove_local = False
         warnings.warn('SMB can be problematic and is almost certainly ' + \
                           '*not* what you want. Try CifsStorage for ' + \
@@ -175,7 +176,7 @@ class SmbStorage(Storage):
             raise subprocess.CalledProcessError(status, cmd_line)
 
 
-    def umount(self):
+    def unmount(self):
         if os.path.exists(self.where):
             cmd_line = ['umount', self.where]
             if 'windows' in platform.system().lower():
@@ -193,18 +194,19 @@ class CifsStorage(Storage):
                  local_path=None):
         Storage.__init__(self)
         self.host = host
-        self.path = remote_path
+        self.path = share
         self.user = remote_user
         if remote_user is None:
             self.user = getpass.getuser()
         self.domain = domain
         self.where = local_path
         if local_path is None:
-            self.where = os.path.basename(remote_path)
+            self.where = os.path.basename(share)
         self.remove_local = False
 
 
     def mount(self):
+        # pylint: disable=W1402
         """
         Mount a remote filesystem using cifs (Active Directory).
         For 'passwordless' mounting:
@@ -239,7 +241,7 @@ class CifsStorage(Storage):
             raise subprocess.CalledProcessError(status, cmd_line)
 
 
-    def umount(self):
+    def unmount(self):
         if os.path.exists(self.where):
             cmd_line = ['umount', self.where]
             if 'windows' in platform.system().lower():

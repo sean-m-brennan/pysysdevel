@@ -1,9 +1,10 @@
 
 import os
+import sys
 import subprocess
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import find_program, autotools_install, global_install, ConfigError
 from ..configuration import lib_config
 from .. import options
 
@@ -20,20 +21,20 @@ class configuration(lib_config):
         self.environment['WX_LD_FLAGS'] = []
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         try:
             wx_config = os.environ['WX_CONFIG']
-        except:
+        except KeyError:
             locations = []
             try:
                 locations.append(environ['MINGW_DIR'])
                 locations.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
             try:
                 wx_config = find_program('wx-config', locations)
-            except Exception:
+            except ConfigError:
                 if self.debug:
                     print(sys.exc_info()[1])
                 return self.found
@@ -46,7 +47,7 @@ class configuration(lib_config):
             process = subprocess.Popen(ldflags_cmd, stdout=subprocess.PIPE)
             ldflags = process.communicate()[0].split()
             self.found = True
-        except Exception:
+        except OSError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found

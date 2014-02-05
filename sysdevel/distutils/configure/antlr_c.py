@@ -19,5 +19,5 @@ class configuration(lib_config):
             src_dir = 'libantlr3c-' + str(version)
             archive = src_dir + '.tar.gz'
             autotools_install(environ, website, archive, src_dir, locally)
-            if not is_installed(environ, version):
+            if not self.is_installed(environ, version):
                 raise Exception('ANTLR-C runtime installation failed.')

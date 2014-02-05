@@ -22,14 +22,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 WebSocket handling
 """
 
 try:
     from multiprocessing import Process
-except:
+except ImportError:
     from threading import Thread as Process
 import logging
 
@@ -37,11 +37,11 @@ import logging
 def json_handler(obj):
     import datetime
     import numpy
-    HAVE_SPACEPY=False
+    HAVE_SPACEPY = False
     try:
         import spacepy
-        HAVE_SPACEPY=True
-    except:
+        HAVE_SPACEPY = True
+    except ImportError:
         pass
 
     if type(obj) == datetime.datetime:
@@ -61,8 +61,8 @@ class WebHandlerService(Process):
     Abstract class for handling messages from a web client
     '''
     def __init__(self, name):
-        Process.__init__(self, name=name)
         self.log = logging.getLogger(self.__class__.__name__)
+        super(WebHandlerService, self).__init__(self, name=name)
 
     def closing(self):
         raise NotImplementedError('WebHandlerService must be subclassed.')

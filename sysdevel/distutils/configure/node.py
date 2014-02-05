@@ -1,9 +1,9 @@
 
 import os
+import sys
 import struct
-import traceback
 
-from ..prerequisites import find_program, global_install
+from ..prerequisites import find_program, global_install, ConfigError
 from ..configuration import prog_config
 from .. import options
 
@@ -28,10 +28,9 @@ class configuration(prog_config):
             try:
                 program = find_program('npm', locations, limit=True)
                 self.environment['NPM'] = program
-            except Exception:
+            except ConfigError:
                 if self.debug:
                     print(sys.exc_info()[1])
-                    #print(traceback.print_exc())
                 return False
         return prev
         

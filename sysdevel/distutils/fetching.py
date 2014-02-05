@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Utilities for downloading and unpacking archives
 """
@@ -31,11 +31,16 @@ import os
 import sys
 import tarfile
 import zipfile
-import zlib
+import tempfile
 
 try:
+    # pylint: disable=F0401,E0611
+    from urllib.request import ProxyHandler, build_opener, install_opener
+    from urllib.request import Request, urlopen
     from urllib.error import URLError, HTTPError, ContentTooShortError
 except ImportError:
+    from urllib2 import ProxyHandler, build_opener, install_opener
+    from urllib2 import Request, urlopen
     from urllib2 import URLError, HTTPError
     from urllib import ContentTooShortError
 
@@ -44,14 +49,18 @@ from .filesystem import mkdir
 from . import options
 
 
-download_file = ''
+class DownloadError(Exception):
+    pass
+
+
+__DOWNLOAD_FILE = ''
 
 def set_downloading_file(dlf):
     '''
     Set the global for the download_progress callback below.
     '''
-    global download_file
-    download_file = dlf
+    global __DOWNLOAD_FILE  # pylint: disable=W0603
+    __DOWNLOAD_FILE = dlf
 
 def download_progress(count, block_size, total_size):
     '''
@@ -59,7 +68,7 @@ def download_progress(count, block_size, total_size):
     '''
     percent = int(count * block_size * 100 / total_size)
     if options.VERBOSE:
-        sys.stdout.write("\rFETCHING " + download_file + "  %2d%%" % percent)
+        sys.stdout.write("\rFETCHING " + __DOWNLOAD_FILE + "  %2d%%" % percent)
         sys.stdout.flush()
 
 
@@ -68,7 +77,7 @@ def fetch(website, remote, local, quiet=False):
     set_downloading_file(remote)
     if not os.path.exists(os.path.join(options.download_dir, local)):
         urlretrieve(website + remote, os.path.join(options.download_dir, local),
-                    download_progress, quiet=False)
+                    download_progress, quiet=quiet)
         if options.VERBOSE:
             sys.stdout.write('\n')
 
@@ -116,7 +125,7 @@ def open_archive(archive, archive_dir=None):
         z = zipfile.ZipFile(os.path.join(archive_dir, archive), 'r')
         names = z.namelist()
     else:
-        raise Exception('Unsupported archive compression: ' + archive)
+        raise DownloadError('Unsupported archive compression: ' + archive)
 
     return z, names
 
@@ -145,28 +154,18 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None,
     Identical to urllib.urlretrieve, except that it handles
     SSL, proxies, and redirects properly.
     '''
-    try:
-        from urllib.request import ProxyHandler, build_opener, install_opener
-        from urllib.request import Request, urlopen
-    except ImportError:
-        from urllib2 import ProxyHandler, build_opener, install_opener
-        from urllib2 import Request, urlopen
-
-    import tempfile
-    import traceback
-
     proxy_url = proxy
     if proxy_url is None:
         try:
             proxy_url = os.environ['HTTP_PROXY']
-        except:
+        except KeyError:
             try:
                 proxy_url = os.environ['http_proxy']
-            except:
-                raise Exception('No proxy specified. ' +
-                                'Either call urlretrieve with a proxy ' +
-                                "argument, or provide a 'http_proxy' " +
-                                'environment variable.')
+            except KeyError:
+                raise DownloadError('No proxy specified. ' +
+                                    'Either call urlretrieve with a proxy ' +
+                                    "argument, or provide a 'http_proxy' " +
+                                    'environment variable.')
 
     proxies = ProxyHandler({'http': proxy_url, 'https': proxy_url})
     opener = build_opener(proxies)

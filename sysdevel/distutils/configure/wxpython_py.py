@@ -1,8 +1,9 @@
 
 import os
 import platform
+import glob
 
-from ..prerequisites import *
+from ..prerequisites import get_python_version, global_install, system_uses_homebrew, homebrew_prefix
 from ..configuration import py_config
 
 class configuration(py_config):

@@ -1,8 +1,9 @@
 
 import os
+import sys
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import find_header, find_library, mingw_check_call, convert2unixpath, ConfigError
 from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 from ..headers import patch_c_only_header
@@ -33,19 +34,19 @@ class configuration(lib_config):
             try:
                 base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
                 base_dirs += os.environ['CPATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             try:
                 base_dirs.append(environ['MINGW_DIR'])
                 base_dirs.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
         try:
             incl_dir = find_header(self.hdr, base_dirs, limit=limit)
             lib_dir, lib = find_library(self.lib, base_dirs,
                                         limit=limit, wildcard=False)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 e = sys.exc_info()[1]
                 print(e)
@@ -53,7 +54,7 @@ class configuration(lib_config):
 
         self.environment['DL_INCLUDE_DIR'] = incl_dir
         self.environment['DL_LIB_DIR'] = lib_dir
-         #self.environment['DL_SHLIB_DIR'] = lib_dir #FIXME
+        #FIXME self.environment['DL_SHLIB_DIR'] = lib_dir
         self.environment['DL_LIB_FILES'] = [lib]
         self.environment['DL_LIBRARIES'] = [self.lib]
         return self.found
@@ -68,7 +69,7 @@ class configuration(lib_config):
                     if not prefix in options.local_search_paths:
                         options.add_local_search_path(prefix)
                 else:
-                    prefix = global_prefix
+                    prefix = options.global_prefix
                 ## MinGW shell strips backslashes
                 prefix = convert2unixpath(prefix)
 

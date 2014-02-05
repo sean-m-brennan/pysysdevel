@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Multi-platform service/daemon creator
 """
@@ -33,102 +33,105 @@ import platform
 
 if 'windows' in platform.system().lower():
 
-#    import pythoncom
-#    import servicemanager
-    import win32serviceutil
-    import win32service
-    import win32event
-    import win32api
-    import socket
+    try:
+        # pylint: disable=F0401
+        #import pythoncom
+        #import servicemanager
+        import win32serviceutil
+        import win32service
+        import win32event
+        import win32api
+        import socket
 
-    class Daemon(win32serviceutil.ServiceFramework):
-	"""
-	A generic Windows service class.
-	Usage: subclass the Daemon class and override the run() method
-	"""
-        _svc_name_ = "InvalidService"
-        _svc_display_name_ = "Invalid Service"
+        class Daemon(win32serviceutil.ServiceFramework):
+            # pylint: disable=E1101
+            """
+            A generic Windows service class.
+            Usage: subclass the Daemon class and override the run() method
+            """
+            _svc_name_ = "InvalidService"
+            _svc_display_name_ = "Invalid Service"
 
-        def __init__(self, log_file):
-            win32serviceutil.ServiceFramework.__init__(self, [_svc_name_])
-            self.stop_event = win32event.CreateEvent(None, 0, 0, None)
-            socket.setdefaulttimeout(60)
-            self.log = log_file
-
-
-        def SvcStop(self):
-            self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-            self.stop()
-            win32event.SetEvent(self.stop_event)
-            self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+            def __init__(self, log_file):
+                win32serviceutil.ServiceFramework.__init__(self, [self._svc_name_])
+                self.stop_event = win32event.CreateEvent(None, 0, 0, None)
+                socket.setdefaulttimeout(60)
+                self.log = log_file
+                self._svc_reg_class_ = None  ## see start()
 
 
-        def SvcDoRun(self):
-            self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
-            try:
-                self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-                self.run()
-                #win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
-            except Exception:
-                self.SvcStop()
+            def SvcStop(self):
+                self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+                self.stop()
+                win32event.SetEvent(self.stop_event)
+                self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
 
-        def start(self):
-            try:
-                module_path = sys.modules[self.__module__].__file__
-            except AttributeError:
-                # maybe py2exe went by
-                module_path = sys.executable
-                module_file = os.path.splitext(os.path.abspath(module_path))[0]
-                self._svc_reg_class_ = '%s.%s' % (module_file, self.__name__)
+            def SvcDoRun(self):
+                self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
                 try:
-                    win32serviceutil.InstallService(self._svc_reg_class_,
-                                                    self._svc_name_,
-                                                    self._svc_display_name_,
-                                                    startType=win32service.SERVICE_AUTO_START
-                                                    )
-                    print('Install ok')
-                    win32serviceutil.StartService(self._svc_name_)
+                    self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+                    self.run()
+                    #win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
+                except win32api.error:
+                    self.SvcStop()
+
+
+            def start(self):
+                try:
+                    module_path = sys.modules[self.__module__].__file__
+                except AttributeError:
+                    # maybe py2exe went by
+                    module_path = sys.executable
+                    module_file = os.path.splitext(os.path.abspath(module_path))[0]
+                    self._svc_reg_class_ = '%s.%s' % (module_file, self.__name__)
+                    try:
+                        win32serviceutil.InstallService(self._svc_reg_class_,
+                                                        self._svc_name_,
+                                                        self._svc_display_name_,
+                                                        startType=win32service.SERVICE_AUTO_START
+                                                        )
+                        print('Install ok')
+                        win32serviceutil.StartService(self._svc_name_)
+                        print('Start ok')
+                    except win32api.error:
+                        print(str(sys.exc_info()[1]))
+
+
+            def force_stop(self):
+                try:
+                    win32serviceutil.StopService(self._svc_name_)
                     print('Start ok')
-                except Exception:
-                    e = sys.exc_info()[1]
-                    print(str(e))
+                except win32api.error:
+                    print(str(sys.exc_info()[1]))
+                try:
+                    win32serviceutil.RemoveService(self._svc_name_)
+                except win32api.error:
+                    print(str(sys.exc_info()[1]))
 
 
-        def force_stop(self):
-            try:
-                win32serviceutil.StopService(self._svc_name_)
-                print('Start ok')
-            except Exception:
-                e = sys.exc_info()[1]
-                print(str(e))
-            try:
-                win32serviceutil.RemoveService(self._svc_name_)
-            except Exception:
-                e = sys.exc_info()[1]
-                print(str(e))
+            def sleep(self, sec):
+                win32api.Sleep(sec*1000, True)
 
 
-        def sleep(self, sec):
-            win32api.Sleep(sec*1000, True)
+            def stop(self):
+                """
+                You should override this method when you subclass Daemon.
+                Call force_stop at the end of your overridden method.
+                """
+                raise NotImplementedError('Daemon is abstract, ' +
+                                          'choose a concrete class.')
 
 
-        def stop(self):
-            """
-            You should override this method when you subclass Daemon.
-            Call force_stop at the end of your overridden method.
-            """
-            raise NotImplementedError('Daemon is abstract, ' +
-                                      'choose a concrete class.')
+            def run(self):
+                """
+                You should override this method when you subclass Daemon.
+                """
+                raise NotImplementedError('Daemon is abstract, ' +
+                                          'choose a concrete class.')
 
-
-        def run(self):
-            """
-            You should override this method when you subclass Daemon.
-            """
-            raise NotImplementedError('Daemon is abstract, ' +
-                                      'choose a concrete class.')
-
+    except:
+        raise Exception("Support for Windows daemon not available (win32api).")
 
 else:  ## UNIX assumed
 
@@ -138,14 +141,14 @@ else:  ## UNIX assumed
     import tempfile
 
     class Daemon(object):
-	"""
+        """
 	A generic UNIX daemon class.
 	Usage: subclass the Daemon class and override the run() method
 	"""
         _svc_name_ = "InvalidDaemon"
         _svc_display_name_ = "Invalid Daemon"
 
-	def __init__(self, log_file='/dev/null'):
+        def __init__(self, log_file='/dev/null'):
             self.stdin = '/dev/null'
             self.stdout = log_file
             self.stderr = log_file
@@ -154,7 +157,8 @@ else:  ## UNIX assumed
             signal.signal(signal.SIGTERM, self._signal_handler)
 	
 
-        def _signal_handler(self, signum, frame):
+        def _signal_handler(self, *unused):  # pylint: disable=W0613
+            ## Must match signal handler signature
             self.stop()
 
         def _daemonize(self):
@@ -202,23 +206,23 @@ else:  ## UNIX assumed
             # write pidfile
             atexit.register(self._delpid)
             pid = str(os.getpid())
-            pf = open(self.pidfile,'w+')
+            pf = open(self.pidfile, 'w+')
             pf.write("%s\n" % pid)
             pf.close()
 	
 
         def _delpid(self):
-             if os.path.exists(self.pidfile):
-                 os.remove(self.pidfile)
+            if os.path.exists(self.pidfile):
+                os.remove(self.pidfile)
 
 
-	def start(self):
+        def start(self):
             """
             Start the daemon
             """
             # Check for a pidfile to see if the daemon already runs
             try:
-                pf = open(self.pidfile,'r')
+                pf = open(self.pidfile, 'r')
                 pid = int(pf.read().strip())
                 pf.close()
             except IOError:
@@ -233,10 +237,10 @@ else:  ## UNIX assumed
             self.run()
 
 
-	def force_stop(self):
+        def force_stop(self):
             # Get the pid from the pidfile
             try:
-                pf = open(self.pidfile,'r')
+                pf = open(self.pidfile, 'r')
                 pid = int(pf.read().strip())
                 pf.close()
             except IOError:
@@ -294,8 +298,9 @@ if __name__ == "__main__":
         _svc_display_name_ = "Test Daemon"
 
         def __init__(self):
-            Daemon.__init__(self, os.path.join(tempfile.gettempdir(),
-                                               'TestDaemon.log'))
+            super(TestDaemon, self).__init__(self,
+                                             os.path.join(tempfile.gettempdir(),
+                                                          'TestDaemon.log'))
             self.running = True
 
         def stop(self):

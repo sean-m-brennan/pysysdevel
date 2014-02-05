@@ -1,10 +1,11 @@
 
 import os
+import sys
 import platform
 import glob
 import subprocess
 
-from ..prerequisites import *
+from ..prerequisites import find_program, global_install, ConfigError
 from ..configuration import config
 from .. import options
 
@@ -43,10 +44,10 @@ class configuration(config):
                 pathlist = os.environ['CLASSPATH'].split(_sep_)
                 for path in pathlist:
                     classpaths.append(path)
-            except:
+            except KeyError:
                 pass
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found

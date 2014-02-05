@@ -22,18 +22,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Custom Fortran compiler config
 """
 
 try:
     import os
-    import platform
     from numpy.distutils import log
+    # pylint: disable=W0201
     from numpy.distutils.command.config_compiler import config_fc as old_cfg_fc
 
-    from ..prerequisites import gcc_is_64bit
     from ...util import is_string
 
 
@@ -42,14 +41,16 @@ try:
             old_cfg_fc.initialize_options(self)
             try:
                 old_ldflags = os.environ['LDFLAGS']
-            except:
+            except KeyError:
                 old_ldflags = ''
-            #if not 'darwin' in platform.system().lower(): //FIXME ?
+            #FIXME? if not 'darwin' in platform.system().lower():
             os.environ['LDFLAGS'] = old_ldflags + ' -shared'
 
 
         def finalize_options(self):
             """ Perhaps not necessary? (potential OSX problem)
+            import platform
+            from ..prerequisites import gcc_is_64bit
             if ((self.f77exec is None and self.f90exec is None) or \
                 'gfortran' in self.f77exec or 'gfortran' in self.f90exec) and \
                 'darwin' in platform.system().lower():
@@ -88,7 +89,7 @@ try:
                     for c in cmd_list:
                         if getattr(c,a) is None: setattr(c, a, v1)
 
-except:
+except ImportError:
     from distutils.core import Command
 
     class config_fc(Command):

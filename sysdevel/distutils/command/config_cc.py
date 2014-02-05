@@ -22,23 +22,34 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Custom C/C++ compiler config
 """
 
 import platform
 
-from distutils import log
+# pylint: disable=W0201
 try:
     from numpy.distutils.command.config_compiler import config_cc as old_config_cc
-except:
-    from distutils.command.config_compiler import config_cc as old_config_cc
+except ImportError:
+    from distutils.core import Command as old_config_cc
+from distutils import log
 
 from ...util import is_string
 
 
+# pylint: disable=W0201
 class config_cc(old_config_cc):
+    description = "specify C/C++ compiler information"
+
+    user_options = [
+        ('compiler=',None,"specify C/C++ compiler type"),
+        ]
+
+    def initialize_options(self):
+        self.compiler = None
+
     def finalize_options(self):
         ## force cached compiler
         if 'windows' in platform.system().lower():
@@ -70,4 +81,8 @@ class config_cc(old_config_cc):
             if v1:
                 for c in cmd_list:
                     if getattr(c,a) is None: setattr(c, a, v1)
+        return
+
+    def run(self):
+        # Do nothing.
         return

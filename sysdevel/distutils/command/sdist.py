@@ -22,36 +22,33 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 modified 'sdist' command
 """
 
-from .. import setup_setuptools, using_setuptools
+from .. import USING_SETUPTOOLS, setup_setuptools
 setup_setuptools()
 
 import os
 import glob
-import sys
 
+# pylint: disable=W0201
 try:
     from numpy.distutils.command.sdist import sdist as old_sdist
 except ImportError:
     from distutils.command.sdist import sdist as old_sdist
 
 
-if using_setuptools:
+if USING_SETUPTOOLS:
     have_setuptools = True
-    from setuptools import setup as old_setup
-    # easy_install imports math, it may be picked up from cwd
-    from setuptools.command import easy_install
     try:
+        # pylint: disable=F0401,W0611
         # very old versions of setuptools don't have this
         from setuptools.command import bdist_egg
     except ImportError:
         have_setuptools = False
 else:
-    from distutils.core import setup as old_setup
     have_setuptools = False
 
 
@@ -70,8 +67,8 @@ class sdist(old_sdist):
             self.check_metadata()
             self.make_distribution()
             dist_files = getattr(self.distribution,'dist_files',[])
-            for file in self.archive_files:
-                data = ('sdist', '', file)
+            for f in self.archive_files:
+                data = ('sdist', '', f)
                 if data not in dist_files:
                     dist_files.append(data)
         else:

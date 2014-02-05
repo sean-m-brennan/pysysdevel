@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Unordered tree with unique nodes
 """
@@ -33,11 +33,11 @@ class tree(object):
     """
     def __init__(self, arg):
         if isinstance(arg, tree):
-            self._root = arg.__deepcopy()
+            self._root = arg._deepcopy()  # pylint: disable=W0212
         elif isinstance(arg, list):
             self._root = arg
             try:
-                arg = self.__flat(self._root)  ## verify recursive nature
+                arg = self._flat(self._root)  ## verify recursive nature
             except TypeError:
                 raise TypeError("Initializing a tree requires " + \
                                     "that leaves are also lists.")
@@ -48,24 +48,24 @@ class tree(object):
             raise TypeError("Initializing a tree requires either a " +
                             "list of lists or another tree.")
 
-    def __deepcopy(self, arg=None):
+    def _deepcopy(self, arg=None):
         if arg is None:
             arg = self._root
         if isinstance(arg, list):
-            return list(map(self.__deepcopy, arg))
+            return [self._deepcopy(x) for x in arg]  # pylint: disable=W0212
         return arg
 
-    def __flat(self, subtree):
+    def _flat(self, subtree):
         result = [subtree[0]]
         for node in subtree[1:]:
-            result += self.__flat(node)
+            result += self._flat(node)
         return result
 
     def flatten(self):
         """
         Return nodes and leaves as a flat list
         """
-        return self.__flat(self._root)
+        return self._flat(self._root)
 
     def list(self):
         """
@@ -95,14 +95,14 @@ class tree(object):
         """
         Forward iterator
         """
-        for key in self.__flat(self._root):
+        for key in self._flat(self._root):
             yield key
 
     def __reversed__(self):
         """
         'reversed' operator: Reverse iterator
         """
-        for key in self.__flat(self._root).reverse():
+        for key in self._flat(self._root).reverse():
             yield key
 
     def __descend(self, key, subtree, prev=None):
@@ -142,7 +142,7 @@ class tree(object):
         """
         if not self.__contains__(key):
             raise IndexError
-        root, parent = self.__descend(key, self._root)
+        root, _ = self.__descend(key, self._root)
         return root
 
     def __delitem__(self, key):
@@ -214,7 +214,7 @@ class tree(object):
 
     def __dive(self, subtree):
         if len(subtree) == 1:
-            return 1;
+            return 1
         maximum = 0
         for node in subtree[1:]:
             value = self.__dive(node)

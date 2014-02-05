@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Utilities for dealing with C and C++ header files
 """
@@ -132,7 +132,7 @@ def _generate_header(filename, custom_types):
     hdr.write('#define ' + guard + '\n\n')
     for t in custom_types:
         hdr.write('struct ' + t.name + ' {\n')
-        members = t._fields_
+        members = t._fields_  # pylint: disable=W0212
         for f in range(len(members)):
             field_id = members[f][0]
             full_type = repr(members[f][1])
@@ -165,7 +165,7 @@ def generate_module_header(module_path, target_path=None):
         sys.path.insert(0, moddir)
     __import__(modname)
     module = sys.modules[modname]
-    custom_types = [c for n, c in inspect.getmembers(module, class_filter)]
+    custom_types = [c for _, c in inspect.getmembers(module, class_filter)]
     if target_path is None:
         target_path = os.path.splitext(module_path)[0] + '.h'
     _generate_header(target_path, custom_types)

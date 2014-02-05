@@ -1,11 +1,13 @@
 
+import os
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import convert2unixpath, mingw_check_call, check_call, admin_check_call, global_install
 from ..fetching import fetch, unarchive
 from ..filesystem import mkdir
 from ..configuration import lib_config
 from .. import options
+
 
 class configuration(lib_config):
     """
@@ -31,11 +33,11 @@ class configuration(lib_config):
                 unarchive(archive, src_dir)
 
                 if locally:
-                    prefix = os.path.abspath(target_build_dir)
+                    prefix = os.path.abspath(options.target_build_dir)
                     if not prefix in options.local_search_paths:
                         options.add_local_search_path(prefix)
                 else:
-                    prefix = global_prefix
+                    prefix = options.global_prefix
                 prefix = convert2unixpath(prefix)  ## MinGW shell strips backslashes
 
                 build_dir = os.path.join(options.target_build_dir,

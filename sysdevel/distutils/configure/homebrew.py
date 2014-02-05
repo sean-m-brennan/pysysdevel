@@ -4,7 +4,7 @@ import sys
 import os
 import glob
 
-from ..prerequisites import *
+from ..prerequisites import system_uses_homebrew, check_call, call, homebrew_prefix
 from ..configuration import config
 from ..filesystem import mkdir
 from .. import options
@@ -41,8 +41,8 @@ class configuration(config):
         if not 'darwin' in platform.system().lower():
             return
         python_version = ''
-        mkdir(target_build_dir)
-        log = open(os.path.join(target_build_dir,
+        mkdir(options.target_build_dir)
+        log = open(os.path.join(options.target_build_dir,
                                 'homebrew_build.log'), 'w')
         if not self.found:
             check_call('ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"',
@@ -93,7 +93,7 @@ def switch_python():
         os.pathsep + os.path.join(homebrew_prefix(), 'bin') + \
         os.pathsep + env.get('PATH', [])
     sys.stdout.write('Switching to Homebrew Python ')
-    if VERBOSE:
+    if options.VERBOSE:
         sys.stdout.write(python_executable() + ' ' + ' '.join(sys.argv))
     sys.stdout.write('\n\n')
     sys.stdout.flush()

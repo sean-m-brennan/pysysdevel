@@ -11,7 +11,7 @@ class configuration(py_config):
         py_config.__init__(self, 'httpsproxy_urllib2', '1.0', debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         if sys.version_info < (2, 6):
             ## Cannot detect if this is already present
             self.found = False
@@ -23,5 +23,6 @@ class configuration(py_config):
 
     def install(self, environ, version, locally=True):
         py_config.install(self, environ, version, locally)
-        reload(urllib2)
-        reload(httplib)
+        reload(urllib2)  # pylint: disable=E0602
+        reload(httplib)  # pylint: disable=E0602
+

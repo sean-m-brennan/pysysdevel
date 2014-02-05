@@ -1,8 +1,10 @@
 
 import os
+import sys
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import programfiles_directories, find_program, system_uses_homebrew, convert2unixpath, check_call, mingw_check_call, admin_check_call, major_minor_version, global_install, ConfigError
+from ..filesystem import mkdir
 from ..configuration import prog_config
 from .. import options
 
@@ -15,7 +17,7 @@ class configuration(prog_config):
                              dependencies=['git', 'cmake'], debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         limit = False
         base_dirs = []
@@ -29,13 +31,13 @@ class configuration(prog_config):
             try:
                 base_dirs.append(environ['MINGW_DIR'])
                 base_dirs.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
         try:
             self.environment['GCCXML'] = find_program('gccxml', base_dirs,
                                                       limit=limit)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
         return self.found
@@ -51,17 +53,19 @@ class configuration(prog_config):
                     if not prefix in options.local_search_paths:
                         options.add_local_search_path(prefix)
                 else:
-                    prefix = global_prefix
+                    prefix = options.global_prefix
                 ## MinGW shell strips backslashes
                 prefix = convert2unixpath(prefix)
 
                 src_dir = 'gccxml'
-                if not os.path.exists(os.path.join(here, download_dir, src_dir)):
-                    os.chdir(download_dir)
+                if not os.path.exists(os.path.join(here, options.download_dir,
+                                                   src_dir)):
+                    os.chdir(options.download_dir)
                     gitsite = 'https://github.com/gccxml/gccxml.git'
                     check_call([environ['GIT'], 'clone', gitsite, src_dir])
                     os.chdir(here)
-                build_dir = os.path.join(download_dir, src_dir, '_build')
+                build_dir = os.path.join(options.download_dir,
+                                         src_dir, '_build')
                 mkdir(build_dir)
                 os.chdir(build_dir)
                 log = open('build.log', 'w')

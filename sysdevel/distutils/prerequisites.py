@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Utilities for prerequisite library and build-tool installation
 """
@@ -34,11 +34,12 @@ import subprocess
 import fnmatch
 import struct
 import glob
-import time
 import traceback
 import site
 import ast
 import re
+import shutil
+from distutils.sysconfig import get_python_lib
 
 try:
     import json
@@ -54,6 +55,16 @@ from . import options
 
 class PrerequisiteError(Exception):
     pass
+
+
+class ConfigError(Exception):
+    def __init__(self, which, what):
+        Exception.__init__(self)
+        self.which = which
+        self.what = what
+
+    def __str__(self):
+        return "Error finding '" + self.which + "': " + self.what
 
 
 class RequirementsFinder(ast.NodeVisitor):
@@ -120,7 +131,7 @@ class RequirementsFinder(ast.NodeVisitor):
                             self.variables[
                                 str(target.elts[idx].id)] = node.value.elts[idx]
                         #elif type(node.value) == ast.Call:
-                        #   TODO evaluate ast.Call for assignment
+                        #   TODO evaluate ast.Call for assignment operator
             if type(node.value) == ast.Call:
                 if type(node.value.func) == ast.Name:
                     if node.value.func.id == self.cfg_keyword:
@@ -166,7 +177,7 @@ def read_cache():
             if len(options.local_search_paths) == 0:
                 options.set_local_search_paths(
                     [os.path.abspath(options.target_build_dir)])
-        except:
+        except Exception:  # pylint: disable=W0703
             pass
     return environ
 
@@ -191,13 +202,15 @@ def delete_cache():
 ##############################
 
 
-def find_program(name, pathlist=[], limit=False):
+def find_program(name, pathlist=None, limit=False):
     '''
     Find the path of an executable.
     '''
+    if pathlist is None:
+        pathlist = []
     try:
         path_env = os.environ['PATH'].split(os.pathsep)
-    except:
+    except KeyError:
         path_env = []
     if not limit:
         pathlist += path_env + options.local_search_paths
@@ -223,16 +236,20 @@ def find_program(name, pathlist=[], limit=False):
                     if options.DEBUG:
                         print('Found ' + full + '.cmd')
                     return full + '.bat'
-    raise Exception(name + ' not found.')
+    raise ConfigError(name, 'Program not found.')
 
 
 
-def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
+def find_header(filepath, extra_paths=None, extra_subdirs=None, limit=False):
     '''
     Find the containing directory of the specified header file.
     extra_subdir may be a pattern. For Windows, it is important to not
     have a trailing path separator.
     '''
+    if extra_paths is None:
+        extra_paths = []
+    if extra_subdirs is None:
+        extra_subdirs = []
     subdirs = ['include',]
     for sub in extra_subdirs:
         subdirs += [os.path.join('include', sub), sub]
@@ -252,7 +269,7 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
                         print('Searching ' + ext_path + ' for ' + filepath)
                     filename = os.path.basename(filepath)
                     dirname = os.path.dirname(filepath)
-                    for root, dirnames, filenames in os.walk(ext_path):
+                    for root, _, filenames in os.walk(ext_path):
                         rt = os.path.normpath(root)
                         for fn in filenames:
                             if dirname == '' and fnmatch.fnmatch(fn, filename):
@@ -264,15 +281,19 @@ def find_header(filepath, extra_paths=[], extra_subdirs=[], limit=False):
                                 if options.DEBUG:
                                     print('Found ' + os.path.join(rt, filename))
                                 return os.path.dirname(rt).rstrip(os.sep)
-    raise Exception(filename + ' not found.')
+    raise ConfigError(filename, 'Header not found.')
 
 
-def find_definitions(name, extra_paths=[], extra_subdirs=[],
+def find_definitions(name, extra_paths=None, extra_subdirs=None,
                      limit=False, single=False, wildcard=True):
     '''
     Find the containing directory and definitions filenames of
     the given library. Windows only.
     '''
+    if extra_paths is None:
+        extra_paths = []
+    if extra_subdirs is None:
+        extra_subdirs = []
     def_suffixes = ['.dll.a', '.lib']
     prefixes = ['', 'lib']
     subdirs = []
@@ -287,7 +308,7 @@ def find_definitions(name, extra_paths=[], extra_subdirs=[],
     for path in pathlist:
         if path != None and os.path.exists(path):
             for sub in subdirs:
-                for root, dirnames, filenames in \
+                for root, _, filenames in \
                     os.walk(os.path.join(path, sub)):
                     for prefix in prefixes:
                         for def_suffix in def_suffixes:
@@ -310,10 +331,10 @@ def find_definitions(name, extra_paths=[], extra_subdirs=[],
                                 if options.DEBUG:
                                     print('Found at ' + root)
                                 return root.rstrip(os.sep), defs
-    raise Exception(name + ' library definitions not found.')
+    raise ConfigError(name, 'Library definitions not found.')
 
 
-def find_library(name, extra_paths=[], extra_subdirs=[],
+def find_library(name, extra_paths=None, extra_subdirs=None,
                  limit=False, wildcard=True):
     '''
     Find the containing directory and proper filename (returned as a tuple)
@@ -323,13 +344,17 @@ def find_library(name, extra_paths=[], extra_subdirs=[],
                           limit, True, wildcard=wildcard)
 
 
-def find_libraries(name, extra_paths=[], extra_subdirs=[],
+def find_libraries(name, extra_paths=None, extra_subdirs=None,
                    limit=False, single=False, wildcard=True):
     '''
     Find the containing directory and proper filenames (returned as a tuple)
     of the given library. For Windows, it is important to not have a
     trailing path separator.
     '''
+    if extra_paths is None:
+        extra_paths = []
+    if extra_subdirs is None:
+        extra_subdirs = []
     default_lib_paths = ['lib64', 'lib', '']
     suffixes = ['.so', '.a']
     prefixes = ['', 'lib']
@@ -351,7 +376,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
         if path != None and os.path.exists(path):
             for subpath in default_lib_paths:
                 for sub in subdirs:
-                    for root, dirnames, filenames in \
+                    for root, _, filenames in \
                             os.walk(os.path.join(path, subpath, sub)):
                         for prefix in prefixes:
                             for suffix in suffixes:
@@ -375,7 +400,7 @@ def find_libraries(name, extra_paths=[], extra_subdirs=[],
                                     if options.DEBUG:
                                         print('Found at ' + root)
                                     return root.rstrip(os.sep), libs
-    raise Exception(name + ' library not found.')
+    raise ConfigError(name, 'Library not found.')
 
 
 def libraries_from_components(components, path):
@@ -391,10 +416,12 @@ def libraries_from_components(components, path):
     return libs
 
 
-def find_file(filepattern, pathlist=[]):
+def find_file(filepattern, pathlist=None):
     '''
     Find the full path of the specified file.
     '''
+    if pathlist is None:
+        pathlist = []
     suffix = ''
     if os.path.sep in filepattern:
         idx = filepattern.rfind(os.path.sep)
@@ -409,12 +436,12 @@ def find_file(filepattern, pathlist=[]):
                     if options.DEBUG:
                         print('Found ' + os.path.join(path, fn))
                     return os.path.join(path, fn)
-    raise Exception(filepattern + ' not found.')
+    raise ConfigError(filepattern, 'File not found.')
 
 
 
 def version_str_split(v):
-    pattern = re.compile('(\d+)[_\.]?(\d+)*[_\.]?(\d+)*[\-_\.]?(\S+)*')
+    pattern = re.compile(r'(\d+)[_\.]?(\d+)*[_\.]?(\d+)*[\-_\.]?(\S+)*')
     m = pattern.match(v)
     if m:
         strs = list(m.groups())
@@ -485,11 +512,11 @@ def major_minor_version(ver):
 
 def in_prerequisites(item, prereqs):
     for p in prereqs:
-         if not is_string(p):
+        if not is_string(p):
             if item == p[0]:
                 return True
-         elif item == p:
-             return True
+        elif item == p:
+            return True
     return False
 
 
@@ -497,7 +524,7 @@ def programfiles_directories():
     if 'windows' in platform.system().lower():
         try:
             drive = os.path.splitdrive(os.environ['ProgramFiles'])[0]
-        except:
+        except KeyError:
             drive = 'c:'
         return [os.path.join(drive, os.sep, 'Program Files'),
                 os.path.join(drive, os.sep, 'Program Files (x86)'),]
@@ -531,12 +558,12 @@ def gcc_is_64bit():
         p = subprocess.Popen(['file', tempobj], stdout=subprocess.PIPE)
         if 'x86_64' in p.communicate()[0]:
             retval = True
-    except:
+    except OSError:
         pass
     os.unlink(tempsrc)
     try:
         os.unlink(tempobj)
-    except:
+    except OSError:
         pass
     return retval
         
@@ -587,9 +614,8 @@ def get_os():
             begin = rel_line.find('release') + 8
             end = rel_line[begin:].find('.') + begin
             os_name = 'rhel' + rel_line[begin:end]
-        except Exception:  ## others not supported
+        except Exception:  # pylint: disable=W0703
             os_name = platform.system().lower()
-            pkg.allow_network_updates = False
     return os_name
 
 
@@ -611,19 +637,22 @@ def install_pyscript(website, name, locally=True):
         sys.stdout.write('PREREQUISITE ' + name + ' ')
     try:
         shutil.copy(os.path.join(options.download_dir, name), target_dir)
-    except Exception:
-        e = sys.exc_info()[1]
-        raise Exception('Unable to install ' + name + ': ' + str(e))
+    except IOError:
+        raise ConfigError(name, 'Unable to install: ' + str(sys.exc_info()[1]))
 
 
 def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
-                                patch=None, extra_cmds=[], extra_args=[]):
+                                patch=None, extra_cmds=None, extra_args=None):
     compiler = []
     if 'windows' in platform.system().lower():
-        # TODO iff windows is using mingw:
+        # TODO compiler=mingw32 iff windows is using mingw (handle vcpp also?)
         compiler.append('--compiler=mingw32')
     if src_dir is None:
         src_dir = name
+    if extra_cmds is None:
+        extra_cmds = []
+    if extra_args is None:
+        extra_args = []
     here = os.path.abspath(os.getcwd())
     target_dir = os.path.abspath(options.target_build_dir)
     target_lib_dir = os.path.join(target_dir, options.local_lib_dir)
@@ -669,12 +698,11 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
         except KeyboardInterrupt:
             p.terminate()
             log.close()
-            e = sys.exc_info()[1]
-            raise e
+            raise
         if status != 0:
             sys.stdout.write(' failed; See ' + log_file)
-            raise Exception(name + ' is required, but could not be ' +
-                            'installed; See ' + log_file)
+            raise ConfigError(name, 'Required, but could not be ' +
+                              'installed; See ' + log_file)
         else:
             if options.VERBOSE:
                 sys.stdout.write(' done\n')
@@ -683,10 +711,11 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
             if not target_lib_dir in sys.path:
                 sys.path.insert(0, target_lib_dir)
         os.chdir(here)
-    except Exception:
+    except Exception:  # pylint: disable=W0703
         os.chdir(here)
-        raise Exception('Unable to install ' + name + ':\n' +
-                        str(sys.exc_info()[1]) + '\n' + traceback.format_exc())
+        raise ConfigError(name, 'Unable to install:\n' +
+                          str(sys.exc_info()[1]) + '\n' +
+                          traceback.format_exc())
 
     if locally:
         return target_lib_dir
@@ -694,16 +723,20 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
         __import__(name)
         module = sys.modules[name]
         return os.path.dirname(module.__file__)
-    except:
+    except ImportError:
         return get_python_lib()
 
 
 
 
 def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
-                  patch=None, extra_cmds=[], extra_args=[]):
+                  patch=None, extra_cmds=None, extra_args=None):
     if src_dir is None:
         src_dir = name
+    if extra_cmds is None:
+        extra_cmds = []
+    if extra_args is None:
+        extra_args = []
 
     fetch(website, archive, archive)
     unarchive(archive, src_dir)
@@ -714,7 +747,11 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
 
 
 def autotools_install(environ, website, archive, src_dir, locally=True,
-                      extra_cfg=[], addtnl_env=dict()):
+                      extra_cfg=None, addtnl_env=None):
+    if extra_cfg is None:
+        extra_cfg = []
+    if addtnl_env is None:
+        addtnl_env = dict()
     here = os.path.abspath(os.getcwd())
     fetch(''.join(website), archive, archive)
     unarchive(archive, src_dir)
@@ -744,7 +781,7 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
             try:
                 mingw_check_call(environ, ['make', 'install'],
                                  stdout=log, stderr=log, addtnl_env=addtnl_env)
-            except:
+            except subprocess.CalledProcessError:
                 pass
         else:
             os_environ = os.environ.copy()
@@ -760,7 +797,7 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
                 else:
                     admin_check_call(['make', 'install'], stdout=log,
                                      stderr=log, addtnl_env=addtnl_env)
-            except:
+            except subprocess.CalledProcessError:
                 pass
     finally:
         log.close()
@@ -772,7 +809,7 @@ def system_uses_apt_get():
         try:
             find_program('apt-get')
             return os.path.exists('/etc/apt/sources.list')
-        except:
+        except Exception:  # pylint: disable=W0703
             pass
     return False
 
@@ -781,7 +818,7 @@ def system_uses_yum():
         try:
             find_program('yum')
             return os.path.exists('/etc/yum.conf')
-        except:
+        except Exception:  # pylint: disable=W0703
             pass
     return False
 
@@ -790,7 +827,7 @@ def system_uses_homebrew():
         try:
             find_program('brew')
             return True
-        except:
+        except Exception:  # pylint: disable=W0703
             pass
     return False
 
@@ -799,7 +836,7 @@ def system_uses_macports():
         try:
             find_program('port')
             return os.path.exists(macports_prefix() + '/etc/macports/macports.conf')
-        except:
+        except Exception:  # pylint: disable=W0703
             pass
     return False
 
@@ -852,7 +889,7 @@ def global_install(what, website_tpl, winstaller=None,
         installer = os.path.join(options.download_dir, winstaller)
         try:
             admin_check_call(installer, stdout=log, stderr=log)
-        except:
+        except subprocess.CalledProcessError:
             ## some installers do not exit cleanly
             pass
 
@@ -907,11 +944,14 @@ def check_call(cmd_line, *args, **kwargs):
     
 
 def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None,
-                     addtnl_env=dict()):
+                     addtnl_env=None):
+    if addtnl_env is None:
+        addtnl_env = dict()
     if 'windows' in platform.system().lower():
         if not is_string(cmd_line):
             cmd_line = ' '.join(cmd_line)
         if not as_admin():
+            # pylint: disable=F0401,W0612
             from win32com.shell.shell import ShellExecuteEx
             from win32event import WaitForSingleObject, INFINITE
             from win32process import GetExitCodeProcess
@@ -938,8 +978,11 @@ def admin_check_call(cmd_line, quiet=False, stdout=None, stderr=None,
                        stdout=sys.stdout, stderr=sys.stderr, env=os_environ)
 
 
+# pylint: disable=W0613
 def mingw_check_call(environ, cmd_line, stdin=None, stdout=None, stderr=None,
-                     addtnl_env=dict()):
+                     addtnl_env=None):
+    if addtnl_env is None:
+        addtnl_env = dict()
     path = os.path.join(environ['MSYS_DIR'], 'bin') + ';' + \
         os.path.join(environ['MINGW_DIR'], 'bin') + ';'
     os_environ = os.environ.copy()

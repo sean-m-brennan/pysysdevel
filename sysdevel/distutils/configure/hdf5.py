@@ -1,8 +1,10 @@
 
 import os
+import sys
 import platform
+import subprocess
 
-from ..prerequisites import *
+from ..prerequisites import programfiles_directories, find_header, find_libraries, check_call, autotools_install, global_install, ConfigError
 from ..configuration import lib_config
 from .. import options
 
@@ -14,7 +16,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "hdf5", "hdf5.h", debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         base_dirs = []
         limit = False
@@ -28,25 +30,25 @@ class configuration(lib_config):
             try:
                 base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
                 base_dirs += os.environ['CPATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             try:
                 base_dirs.append(os.environ['HDF5_ROOT'])
-            except:
+            except KeyError:
                 pass
             for d in programfiles_directories():
                 base_dirs.append(os.path.join(d, 'HDF_Group', 'HDF5'))
             try:
                 base_dirs.append(environ['MINGW_DIR'])
                 base_dirs.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
         try:
             hdf5_lib_dir, hdf5_libs  = find_libraries(self.lib, base_dirs,
                                                       limit=limit)
             hdf5_inc_dir = find_header(self.hdr, base_dirs, limit=limit)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found
@@ -75,7 +77,7 @@ class configuration(lib_config):
                 try:
                     ## zlib prerequisite
                     check_call(['mingw-get', 'install', 'libz-dev'])
-                except:
+                except subprocess.CalledProcessError:
                     pass
             if locally or 'windows' in platform.system().lower():
                 src_dir = 'hdf5-' + str(version)

@@ -1,9 +1,10 @@
 
+import os
+import sys
 import struct
 import platform
-import os
 
-from ..prerequisites import *
+from ..prerequisites import find_program, system_uses_homebrew, global_install, admin_check_call, ConfigError
 from ..fetching import fetch, unarchive
 from ..configuration import prog_config
 from .. import options
@@ -17,15 +18,15 @@ class configuration(prog_config):
                              dependencies=['java'], debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         if version is None:
             version = '1.9.4'
         try:
-            local_dir = os.path.join(target_build_dir, 'neo4j-*', 'bin')
+            local_dir = os.path.join(options.target_build_dir, 'neo4j-*', 'bin')
             self.environment['NEO4J'] = find_program('neo4j', [local_dir])
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
         return self.found
@@ -55,11 +56,13 @@ class configuration(prog_config):
             elif not locally:
                 fetch(website, archive, archive)
                 unarchive(archive, src_dir)
-                local_dir = os.path.join(target_build_dir, src_dir, 'bin')
+                local_dir = os.path.join(options.target_build_dir,
+                                         src_dir, 'bin')
                 admin_check_call([os.path.join(local_dir, 'neo4j'), 'install'])
             else:
                 fetch(website, archive, archive)
                 unarchive(archive, src_dir)
-                local_dir = os.path.join(target_build_dir, src_dir, 'bin')
+                local_dir = os.path.join(options.target_build_dir,
+                                         src_dir, 'bin')
                 self.environment['NEO4J'] = [os.path.join(local_dir, 'neo4j'),
                                              'start']

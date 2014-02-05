@@ -1,9 +1,10 @@
 
 import os
+import sys
 import platform
 import subprocess
 
-from ..prerequisites import *
+from ..prerequisites import find_header, find_libraries, compare_versions, check_call, global_install, get_python_version, ConfigError
 from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 from ..headers import get_header_version
@@ -26,7 +27,7 @@ class configuration(lib_config):
         self.environment['BOOST_LIBRARIES'] = []
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         if version is None:
             required_version = '1_44_0'
         else:
@@ -47,7 +48,7 @@ class configuration(lib_config):
             try:
                 base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
                 base_dirs += os.environ['CPATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             try:
                 boost_root = os.environ['BOOST_ROOT']
@@ -55,16 +56,16 @@ class configuration(lib_config):
                 if os.path.exists(os.path.join(boost_root, 'stage', 'lib')):
                     base_dirs.append(os.path.join(boost_root, 'stage'))
                 base_dirs.append(boost_root)
-            except:
+            except KeyError:
                 pass
             try:
                 base_dirs.append(os.environ['BOOST_LIBRARY_DIR'])
-            except:
+            except KeyError:
                 pass
             try:
                 base_dirs.append(environ['MINGW_DIR'])
                 base_dirs.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
         try:
             incl_dir = find_header(os.path.join('boost', 'version.hpp'),
@@ -78,7 +79,7 @@ class configuration(lib_config):
             if compare_versions(boost_version, required_version) == -1:
                 return self.found
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found
@@ -126,7 +127,7 @@ class configuration(lib_config):
                     if not prefix in options.local_search_paths:
                         options.add_local_search_path(prefix)
                 else:
-                    prefix = global_prefix
+                    prefix = options.global_prefix
 
                 os.chdir(os.path.join(options.target_build_dir, src_dir))
                 log = open('build.log', 'w')

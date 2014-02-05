@@ -22,16 +22,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'install_data' command for installing shared libraries and executables
 """
 
 import os
-import struct
 
 from distutils.command import install_lib
-from distutils.util import change_root, convert_path
 
 
 class install_exe(install_lib.install_lib):

@@ -1,5 +1,9 @@
 
-from ..prerequisites import find_header
+import os
+import sys
+import shutil
+
+from ..prerequisites import find_header, ConfigError
 from ..fetching import fetch
 from ..configuration import config
 from .. import options
@@ -22,7 +26,7 @@ class configuration(config):
             incl_dir = find_header('f2c.h')
             ## f2c lib is built into libgfortran
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found
@@ -35,9 +39,9 @@ class configuration(config):
             website = 'http://www.netlib.org/f2c/'
             header_file = 'f2c.h'        
             fetch(''.join(website), header_file, header_file)
-            shutil.copy(os.path.join(download_dir, header_file),
-                        target_build_dir)
-            self.environment['F2C_INCLUDE_DIR'] = target_build_dir
+            shutil.copy(os.path.join(options.download_dir, header_file),
+                        options.target_build_dir)
+            self.environment['F2C_INCLUDE_DIR'] = options.target_build_dir
             prefix = os.path.abspath(options.target_build_dir)
             if not prefix in options.local_search_paths:
                 options.add_local_search_path(prefix)

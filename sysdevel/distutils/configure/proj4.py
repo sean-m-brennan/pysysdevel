@@ -1,7 +1,9 @@
 
+import os
+import sys
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import find_header, find_libraries, autotools_install, global_install, ConfigError
 from ..configuration import lib_config
 from .. import options
 
@@ -13,7 +15,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "proj", "proj_api.h", debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         base_dirs = []
         limit = False
@@ -26,27 +28,26 @@ class configuration(lib_config):
         if not limit:
             try:
                 base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             try:
                 base_dirs.append(os.environ['PROJ4_ROOT'])
-            except:
+            except KeyError:
                 pass
             if 'windows' in platform.system().lower():
                 base_dirs.append(os.path.join('C:', os.sep, 'OSGeo4W'))
             try:
                 base_dirs.append(environ['MINGW_DIR'])
                 base_dirs.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
         try:
             proj4_inc_dir = find_header(self.hdr, base_dirs)
             proj4_lib_dir, proj4_libs  = find_libraries(self.lib, base_dirs)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['PROJ4_INCLUDE_DIR'] = proj4_inc_dir

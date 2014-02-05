@@ -1,5 +1,5 @@
 
-from ..prerequisites import global_install
+from ..prerequisites import global_install, major_minor_version
 from ..configuration import prog_config
 
 class configuration(prog_config):

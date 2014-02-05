@@ -22,17 +22,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 WebSocket standalone server
 """
 
+# pylint: disable=W0201
 try:
     ## Python 3.x
+    # pylint: disable=F0401
     from http.server import HTTPServer, SimpleHTTPRequestHandler
     from http.client import HTTPMessage
     import socketserver
-except:
+except ImportError:
     from BaseHTTPServer import HTTPServer
     from SimpleHTTPServer import SimpleHTTPRequestHandler
     from httplib import HTTPMessage
@@ -44,7 +46,7 @@ import socket
 import select
 try:
     from multiprocessing import Process, Event
-except:
+except ImportError:
     from threading import Thread as Process, Event
 
 _HAS_SSL = False
@@ -98,6 +100,8 @@ class WebSocketServer(Process,
     daemon_threads = True
     allow_reuse_address = True
 
+    # pylint: disable=W0231
+    ## Not using HTTPServer.__init__
     def __init__(self, resource_handler,
                  host=_WEBSOCKET_HOST, port=_WEBSOCKET_PORT,
                  origin=_WEBSOCKET_HOST,
@@ -110,7 +114,7 @@ class WebSocketServer(Process,
         '''
         ## Unify mod_pywebsocket logs
         self._logger = get_ws_logger(self, debug)
-        for cls in [util._Inflater, util._Deflater,
+        for cls in [util._Inflater, util._Deflater,  # pylint: disable=W0212
                     handshake, handshake.hybi.Handshaker,
                     handshake.hybi00.Handshaker, handshake.draft75.Handshaker,
                     extensions.DeflateFrameExtensionProcessor,
@@ -122,6 +126,7 @@ class WebSocketServer(Process,
         self.origin = origin
         self.port = port
         self.permissive = permissive
+        self._sockets = []
 
         self.using_tls = False
         if tls_pkey != None and tls_cert != None:
@@ -147,7 +152,6 @@ class WebSocketServer(Process,
 
     def _create_sockets(self):
         self.server_name, self.server_port = self.server_address
-        self._sockets = []
         if not self.server_name:
             # On platforms that doesn't support IPv6, the first bind fails.
             # On platforms that supports IPv6
@@ -167,12 +171,11 @@ class WebSocketServer(Process,
                                                 socket.IPPROTO_TCP)
         for addrinfo in addrinfo_array:
             self._logger.debug('WS Create socket on: %r', addrinfo)
-            family, socktype, proto, canonname, sockaddr = addrinfo
+            family, socktype, _, _, _ = addrinfo
             try:
                 socket_ = socket.socket(family, socktype)
-            except Exception:
-                e = sys.exc_info()[1]
-                self._logger.debug('WS Skip by failure: %r', e)
+            except (socket.error, socket.herror):
+                self._logger.debug('WS Skip by failure: %r', sys.exc_info()[1])
                 continue
             if self.using_tls:
                 if _HAS_SSL:
@@ -198,9 +201,8 @@ class WebSocketServer(Process,
                 socket_.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 socket_.bind(self.server_address)
-            except Exception:
-                e = sys.exc_info()[1]
-                self._logger.debug('WS Skip by failure: %r', e)
+            except (socket.error, socket.herror):
+                self._logger.debug('WS Skip by failure: %r', sys.exc_info()[1])
                 socket_.close()
                 failed_sockets.append(socketinfo)
 
@@ -216,9 +218,8 @@ class WebSocketServer(Process,
             self._logger.debug('WS Listen on: %r', addrinfo)
             try:
                 socket_.listen(self.request_queue_size)
-            except Exception:
-                e = sys.exc_info()[1]
-                self._logger.debug('WS Skip by failure: %r', e)
+            except (socket.error, socket.herror):
+                self._logger.debug('WS Skip by failure: %r', sys.exc_info()[1])
                 socket_.close()
                 failed_sockets.append(socketinfo)
 
@@ -246,6 +247,7 @@ class WebSocketServer(Process,
     def get_request(self):
         accepted_socket, client_address = self.socket.accept()
         if self.using_tls and _HAS_OPEN_SSL:
+            # pylint: disable=W0212
             accepted_socket = standalone._StandaloneSSLConnection(accepted_socket)
         return accepted_socket, client_address
 
@@ -263,7 +265,7 @@ class WebSocketServer(Process,
             self._logger.debug('WS Fallback to blocking request handler')
         try:
             while self.__ws_serving:
-                r, w, e = select.select(
+                r, _, _ = select.select(
                     [socket_[0] for socket_ in self._sockets],
                     [], [], poll_interval)
                 for socket_ in r:
@@ -319,9 +321,8 @@ class WebsocketDispatch(dispatch.Dispatcher):
             try:
                 msg = request.ws_stream.receive_message()
                 service.handle_message(msg)
-            except Exception:
-                e = sys.exc_info()[1]
-                self.log.debug('WS receive: ' + str(e))
+            except (socket.error, socket.herror):
+                self.log.debug('WS receive: ' + str(sys.exc_info()[1]))
                 break
         try:
             self.clients.remove(request.ws_stream)
@@ -334,9 +335,8 @@ class WebsocketDispatch(dispatch.Dispatcher):
             for s in self.clients:
                 try:
                     s.send_message(data, binary=False)
-                except Exception:
-                    e = sys.exc_info()[1]
-                    self.log.debug('WS send: ' + str(e))
+                except socket.error:
+                    self.log.debug('WS send: ' + str(sys.exc_info()[1]))
                     try:
                         self.clients.remove(s)
                     except ValueError:
@@ -355,6 +355,7 @@ class WebsocketDispatch(dispatch.Dispatcher):
 
 
 
+# pylint: disable=W0231
 
 class WebSocketRequestHandler(SimpleHTTPRequestHandler):
     MessageClass = HTTPMessage
@@ -384,7 +385,8 @@ class WebSocketRequestHandler(SimpleHTTPRequestHandler):
         self.origin = server.origin
         self.port = server.port
         self.permissive = server.permissive
-        SimpleHTTPRequestHandler.__init__(self, request, client_address, server)
+        SimpleHTTPRequestHandler.__init__(self, request,
+                                          client_address, server)
 
 
     def parse_request(self):
@@ -416,6 +418,7 @@ class WebSocketRequestHandler(SimpleHTTPRequestHandler):
 
 
     def handle_ws(self, resource):
+        # pylint: disable=W0212
         request = standalone._StandaloneRequest(self, self.server.using_tls)
         try:
             try:

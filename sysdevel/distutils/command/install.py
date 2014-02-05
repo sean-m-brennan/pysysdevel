@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 modified 'install' command
 """
@@ -30,6 +30,7 @@ modified 'install' command
 import os
 import sys
 
+# pylint: disable=W0201
 try:
     from numpy.distutils.command.install import install as old_install
 except ImportError:
@@ -85,9 +86,11 @@ class install(old_install):
 
             try:
                 os.makedirs(build.build_base)
-            except:
+            except OSError:
                 pass
-            for idx in range(len(sys.argv)):
+            idx = 0
+            for i in range(len(sys.argv)):
+                idx = i
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])

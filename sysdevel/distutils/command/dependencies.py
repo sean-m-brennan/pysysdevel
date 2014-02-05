@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'dependencies' command for printing a list of all dependencies for this setup
 """
@@ -31,7 +31,6 @@ import os
 import sys
 import platform
 import subprocess
-import inspect
 from distutils.core import Command
 
 from ..prerequisites import RequirementsFinder
@@ -43,11 +42,14 @@ from ...util import is_string
 INTERLEAVED = True
 
 if INTERLEAVED:
-    from threading  import Thread
+    #pylint: disable=W0611
+    from threading import Thread
     try:
-        from Queue import Queue
-    except ImportError:  # python 3.x
+        ## Python 3.x
+        # pylint: disable=F0401
         from queue import Queue
+    except ImportError:
+        from Queue import Queue
 
 
     def enqueue_output(out, queue):
@@ -56,7 +58,7 @@ if INTERLEAVED:
         out.close()
 
 
-
+# pylint: disable=W0201
 class dependencies(Command):
     description = "package dependencies"
     user_options = [('show', 's', 'show the dependencies'),
@@ -90,7 +92,9 @@ class dependencies(Command):
                 os.remove(logfile)
 
         if self.distribution.subpackages != None:
-            for idx in range(len(sys.argv)):
+            idx = 0
+            for i in range(len(sys.argv)):
+                idx = i
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])
@@ -111,9 +115,6 @@ class dependencies(Command):
                     if rf.needs_early_config:
                         print('Previewing dependencies for ' + pkg_name +
                               ' configuration ...')
-                    ## depth may be greater than one
-                    dep_args = ['dependencies',
-                                    '--sublevel=' + str(self.sublevel + 1)]
                     ## do nothing else but check dependencies
                     cmd = [sys.executable, os.path.join(pkg_dir, 'setup.py'),
                            'dependencies',
@@ -138,12 +139,12 @@ class dependencies(Command):
                                 line = o_q.get_nowait()
                                 out += line
                                 log.write(line)
-                            except:
+                            except Exception:  # pylint: disable=W0703
                                 pass
                             try:
                                 line = e_q.get_nowait()
                                 log.write(line)
-                            except:
+                            except Exception:  # pylint: disable=W0703
                                 pass
                         o.join()
                         e.join()

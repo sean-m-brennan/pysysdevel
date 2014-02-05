@@ -1,5 +1,9 @@
 
-from ..prerequisites import *
+import os
+import sys
+import platform
+
+from ..prerequisites import programfiles_directories, find_program, global_install, ConfigError
 from ..configuration import prog_config
 from .. import options
 
@@ -11,13 +15,11 @@ class configuration(prog_config):
         prog_config.__init__(self, 'git', debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         base_dirs = []
-        limit = False
         if 'GIT' in environ and environ['GIT']:
             base_dirs.append(os.path.dirname(environ['GIT']))
-            limit = True
 
         base_dirs.append(os.path.join('C:',  os.sep, 'msysgit', 'cmd'))
         for d in programfiles_directories():
@@ -25,12 +27,12 @@ class configuration(prog_config):
         try:
             base_dirs.append(environ['MINGW_DIR'])
             base_dirs.append(environ['MSYS_DIR'])
-        except:
+        except KeyError:
             pass
         try:
             self.environment['GIT'] = find_program('git', base_dirs)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
         return self.found

@@ -1,5 +1,8 @@
 
-from ..prerequisites import *
+import os
+import sys
+
+from ..prerequisites import find_program, install_pypkg, ConfigError
 from ..configuration import prog_config
 from .. import options
 
@@ -16,7 +19,7 @@ class configuration(prog_config):
         self.environment['CTYPESGEN_PATH'] = None
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         limit = False
         locations = []
@@ -29,7 +32,7 @@ class configuration(prog_config):
             import ctypesgencore
             lib = os.path.dirname(os.path.dirname(ctypesgencore.__file__))
             self.found = True
-        except Exception:
+        except (ConfigError, ImportError):
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found

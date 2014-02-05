@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Duplicates of NumPy utilities (in case numpy is not used)
 """
@@ -51,7 +51,6 @@ def _get_f90_modules(source):
         if m:
             name = m.group('name')
             modules.append(name)
-            # break  # XXX can we assume that there is one module per file?
     f.close()
     return modules
 
@@ -67,7 +66,7 @@ def is_sequence(seq):
         return False
     try:
         len(seq)
-    except:
+    except TypeError:
         return False
     return True
 

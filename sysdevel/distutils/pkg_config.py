@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Package specification
 """
@@ -31,15 +31,17 @@ import os
 import sys
 import platform
 import warnings
+import glob
+import zipfile
 
 from .prerequisites import read_cache
 from ..util import flatten
 from . import options
 
 
-#FIXME unify argv, environ and options handling
+#TODO unify argv, environ and options handling
 
-def handle_arguments(argv, option_list=[]):
+def handle_arguments(argv, option_list=()):
     if '--quiet' in argv:
         options.set_verbose(False)
     if '--debug' in argv:
@@ -56,9 +58,9 @@ def handle_arguments(argv, option_list=[]):
 
     bundle = False
     if 'py2exe' in argv:
-         bundle = True
+        bundle = True
     if 'py2app' in argv:
-         bundle = True
+        bundle = True
     app = ''
     runscript = ''
     for arg in argv:
@@ -71,7 +73,7 @@ def handle_arguments(argv, option_list=[]):
             runscript = arg[6:].lower()
             if not runscript.endswith('.py'):
                 runscript = runscript + '.py'
-            for root, dirnames, filenames in os.walk('.'): ## source directory
+            for root, _, filenames in os.walk('.'): ## source directory
                 for filename in filenames:
                     if filename == runscript:
                         runscript = os.path.join(root, filename)
@@ -143,7 +145,7 @@ def handle_arguments(argv, option_list=[]):
     return opts, argv
 
 
-def get_options(pkg_config, opts):
+def get_options(pkg_cfg, opts):
     '''
     pkg_config is a 'mydistutils.pkg_config' object.
     options from 'handle_arguments' above.
@@ -156,22 +158,22 @@ def get_options(pkg_config, opts):
     ## Windows plus py2exe
     if is_bundle and target_os == 'windows':
         warnings.simplefilter('ignore', DeprecationWarning)
-        import py2exe
+        import py2exe  # pylint: disable=F0401,E0611,W0612
         warnings.resetwarnings()
 
         INCLUDE_GTK_WIN = False
         INCLUDE_TCLTK_WIN = False
         #os.environ['PATH'] += os.pathsep + 'gtk/lib' + os.pathsep + 'gtk/bin'
 
-        package_name = pkg_config.PACKAGE
-        icon_file = os.path.join(pkg_config.PACKAGE, pkg_config.image_dir,
-                                 pkg_config.PACKAGE + '.ico')
+        package_name = pkg_cfg.PACKAGE
+        icon_file = os.path.join(pkg_cfg.PACKAGE, pkg_cfg.image_dir,
+                                 pkg_cfg.PACKAGE + '.ico')
     
         addtnl_files = []
-        addtnl_files += pkg_config.get_data_files(opts['app'])
-        addtnl_files += pkg_config.get_extra_data_files(opts['app'])
+        addtnl_files += pkg_cfg.get_data_files(opts['app'])
+        addtnl_files += pkg_cfg.get_extra_data_files(opts['app'])
         addtnl_files += [('.', [icon_file])]
-        addtnl_files += [('.', pkg_config.get_missing_libraries())]
+        addtnl_files += [('.', pkg_cfg.get_missing_libraries())]
         icon_res = [(0, icon_file)]
 
         if INCLUDE_GTK_WIN:
@@ -202,10 +204,10 @@ def get_options(pkg_config, opts):
         exe_opts = {'py2exe': {
                     'unbuffered': False,
                     'optimize': 2,
-                    'includes': flatten(list(pkg_config.dynamic_modules.values())) + \
+                    'includes': flatten(list(pkg_cfg.dynamic_modules.values())) + \
                         gtk_includes,
-                    'packages': flatten(list(pkg_config.required_pkgs.values())) + \
-                        pkg_config.extra_pkgs,
+                    'packages': flatten(list(pkg_cfg.required_pkgs.values())) + \
+                        pkg_cfg.extra_pkgs,
                     'ignores': [],
                     'excludes': excludes,
                     'dll_excludes': dll_excludes,
@@ -225,27 +227,27 @@ def get_options(pkg_config, opts):
                     'bitmap_resources': [],
                     'other_resources': [],
                     'dest_base': opts['app'],
-                    'company_name': pkg_config.COMPANY,
+                    'company_name': pkg_cfg.COMPANY,
                     }]
 
-        pkgs = pkg_config.extra_pkgs
+        pkgs = pkg_cfg.extra_pkgs
         pkg_data = dict({})
-        p = pkg_config.PACKAGE
+        p = pkg_cfg.PACKAGE
         while True:
-            pkgs += [pkg_config.names[p]]
-            pkg_data[pkg_config.names[p]] = pkg_config.package_files[p]
-            p = pkg_config.parents[p]
+            pkgs += [pkg_cfg.names[p]]
+            pkg_data[pkg_cfg.names[p]] = pkg_cfg.package_files[p]
+            p = pkg_cfg.parents[p]
             if p is None:
                 break
 
-        for lib in pkg_config.extra_libraries:
+        for lib in pkg_cfg.extra_libraries:
             os.environ['PATH'] += os.pathsep + lib[0]
             os.environ['PATH'] += os.pathsep + os.path.join(lib[0], '..', 'bin')
 
         if 'app_type' in opts and opts['app_type'] == 'console':
             specific_options = dict(
                 console = exe_target,
-                package_dir = {pkg_config.PACKAGE: pkg_config.PACKAGE},
+                package_dir = {pkg_cfg.PACKAGE: pkg_cfg.PACKAGE},
                 packages = pkgs,
                 package_data = pkg_data,
                 data_files = addtnl_files,
@@ -255,7 +257,7 @@ def get_options(pkg_config, opts):
         else:
             specific_options = dict(
                 windows = exe_target,
-                package_dir = {pkg_config.PACKAGE: pkg_config.PACKAGE},
+                package_dir = {pkg_cfg.PACKAGE: pkg_cfg.PACKAGE},
                 packages = pkgs,
                 package_data = pkg_data,
                 data_files = addtnl_files,
@@ -268,32 +270,32 @@ def get_options(pkg_config, opts):
     ##############################
     ## Mac OS X plus py2app
     elif is_bundle and target_os == 'darwin':
-        import py2app
+        import py2app  # pylint: disable=F0401,E0611,W0612
 
-        package_name = pkg_config.PACKAGE
+        package_name = pkg_cfg.PACKAGE
         target = [runscript]
-        addtnl_files = pkg_config.source_files
-        addtnl_files += [('.', [os.path.join(pkg_config.image_path,
-                                             pkg_config.PACKAGE + '.icns')])]
+        addtnl_files = pkg_cfg.source_files
+        addtnl_files += [('.', [os.path.join(pkg_cfg.image_path,
+                                             pkg_cfg.PACKAGE + '.icns')])]
     
         plist = {'CFBundleName': package_name,
                  'CFBundleDisplayName': package_name,
-                 'CFBundleIdentifier': pkg_config.ID,
-                 'CFBundleVersion': pkg_config.VERSION,
+                 'CFBundleIdentifier': pkg_cfg.ID,
+                 'CFBundleVersion': pkg_cfg.VERSION,
                  'CFBundlePackageType': 'APPL',
                  'CFBundleExecutable': package_name.upper(),
-                 'CFBundleShortVersionString': pkg_config.RELEASE,
-                 'NSHumanReadableCopyright': pkg_config.COPYRIGHT,
-                 'CFBundleGetInfoString': package_name + ' ' + pkg_config.VERSION,
+                 'CFBundleShortVersionString': pkg_cfg.RELEASE,
+                 'NSHumanReadableCopyright': pkg_cfg.COPYRIGHT,
+                 'CFBundleGetInfoString': package_name + ' ' + pkg_cfg.VERSION,
                  }
         
         opts = {'py2app': {
             'optimize': 2,
-            'includes': pkg_config.dynamic_modules,
-            'packages': list(pkg_config.required_pkgs.values()) + \
-                pkg_config.extra_pkgs,
-            'iconfile': os.path.join(pkg_config.PACKAGE, pkg_config.image_dir,
-                                     pkg_config.PACKAGE + '.icns'),
+            'includes': pkg_cfg.dynamic_modules,
+            'packages': list(pkg_cfg.required_pkgs.values()) + \
+                pkg_cfg.extra_pkgs,
+            'iconfile': os.path.join(pkg_cfg.PACKAGE, pkg_cfg.image_dir,
+                                     pkg_cfg.PACKAGE + '.icns'),
             'excludes': ['tcl', 'Tkconstants', 'Tkinter', 'pytz',],
             'dylib_excludes': ['tcl84.dylib', 'tk84.dylib'],
             'datamodels': [],
@@ -312,7 +314,7 @@ def get_options(pkg_config, opts):
             'argv_emulation': False,
             'argv_inject': [],
             'use_pythonpath': False,
-            'bdist_base': pkg_config.build_dir,
+            'bdist_base': pkg_cfg.build_dir,
             'dist_dir': 'bin_dist',
             'site_packages': True,
             #'strip': True,
@@ -337,23 +339,23 @@ def get_options(pkg_config, opts):
     else:
         directories = dict()
         data = dict()
-        for p, h in list(pkg_config.hierarchy.items()):
-            pkg_name = pkg_config.names[p]
-            directories[pkg_name] = os.path.join(pkg_config.PACKAGE,
-                                                 pkg_config.directories[p])
-            data[pkg_name] = pkg_config.package_files[p]
+        for p, _ in list(pkg_cfg.hierarchy.items()):
+            pkg_name = pkg_cfg.names[p]
+            directories[pkg_name] = os.path.join(pkg_cfg.PACKAGE,
+                                                 pkg_cfg.directories[p])
+            data[pkg_name] = pkg_cfg.package_files[p]
         specific_options = dict(
             package_dir = directories,
-            packages = flatten(list(pkg_config.names.values())) + \
-                pkg_config.extra_pkgs,
+            packages = flatten(list(pkg_cfg.names.values())) + \
+                pkg_cfg.extra_pkgs,
             package_data = data,
-            create_scripts = pkg_config.generated_scripts,
-            data_files = pkg_config.extra_data_files,
-            tests = pkg_config.tests,
+            create_scripts = pkg_cfg.generated_scripts,
+            data_files = pkg_cfg.extra_data_files,
+            tests = pkg_cfg.tests,
             )
         if target_os == 'windows':
             specific_options['bdist_wininst'] = {
-                'bitmap': pkg_config.logo_bmp_path,
+                'bitmap': pkg_cfg.logo_bmp_path,
                 'install_script': options.windows_postinstall,
                 'keep_temp': True,
                 'user_access_control': 'auto',
@@ -364,19 +366,19 @@ def get_options(pkg_config, opts):
 
 
 
-def post_setup(pkg_config, opts):
+def post_setup(pkg_cfg, opts):
     bundled = opts['bundle']
     if bundled:
         os_name = platform.system().lower()
         dist_dir = os.path.join('bin_dist', opts['app'])
         current = os.getcwd()
         os.chdir(dist_dir)
-        archive = opts['app'] + '_' + os_name + '_' + pkg_config.RELEASE + '.zip'
-        if pkg_config.PACKAGE != opts['app']:
-            archive = pkg_config.PACKAGE + '_' + archive
+        archive = opts['app'] + '_' + os_name + '_' + pkg_cfg.RELEASE + '.zip'
+        if pkg_cfg.PACKAGE != opts['app']:
+            archive = pkg_cfg.PACKAGE + '_' + archive
         z = zipfile.ZipFile(os.path.join(current, 'bin_dist', archive),
                             'w', zipfile.ZIP_DEFLATED)
-        for root, dirnames, filenames in os.walk('.'):
+        for root, _, filenames in os.walk('.'):
             for filename in filenames:
                 z.write(os.path.join(root, filename))
         z.close()
@@ -397,10 +399,12 @@ class pkg_config(object):
     '''
     def __init__(self, name, package_tree,
                  pkg_id, version, author, email, website, company,
-                 copyright, srcs, runscripts,
-                 data_files=[], extra_data=[], req_pkgs=[], dyn_mods=[],
-                 extra_pkgs=[], extra_libs=[], environ=dict(), prereq=[],
-                 redistrib=[], img_dir='', build_dir='', description=''):
+                 copyrt, srcs, runscripts,
+                 data_files=(), extra_data=(), req_pkgs=(), dyn_mods=(),
+                 extra_pkgs=(), extra_libs=(), environ=None, prereq=(),
+                 redistrib=(), img_dir='', build_dir='', description=''):
+        if environ is None:
+            environ = dict()
         if package_tree is not None:
             self.PACKAGE       = package_tree.root()
         else:
@@ -408,7 +412,7 @@ class pkg_config(object):
         self.NAME              = name
         self.VERSION           = version[:version.rindex('.')]
         self.RELEASE           = version
-        self.COPYRIGHT         = copyright
+        self.COPYRIGHT         = copyrt
         self.AUTHOR            = author
         self.AUTHOR_CONTACT    = email
         self.WEBSITE           = website
@@ -450,6 +454,7 @@ class pkg_config(object):
             self.hierarchy     = dict((tree.root(),
                                        list(reversed(tree.flatten())))
                                       for tree in self.PACKAGE_TREE.subtrees())
+            # pylint: disable=W0142
             self.directories   = dict((tree.root(),
                                        os.path.join(*(list(reversed(tree.flatten()))[1:]))) \
                                           for tree in self.PACKAGE_TREE.subtrees() if len(tree) > 1)
@@ -506,16 +511,16 @@ class pkg_config(object):
         self.environment = dict(list(envir.items()) + list(self.environment.items()))
         return self.environment
 
-    def get_source_files(self, *args):
+    def get_source_files(self, *args):  # pylint: disable=W0613
         return self.source_files
 
-    def get_data_files(self, *args):
+    def get_data_files(self, *args):  # pylint: disable=W0613
         return [('', self.package_files[self.PACKAGE])]
 
-    def get_extra_data_files(self, *args):
+    def get_extra_data_files(self, *args):  # pylint: disable=W0613
         return self.extra_data_files
 
-    def get_missing_libraries(self, *args):
+    def get_missing_libraries(self, *args):  # pylint: disable=W0613
         '''
         List of libraries for explicit inclusion in py2exe build.
         See the list of DLLs at the end of py2exe processing.

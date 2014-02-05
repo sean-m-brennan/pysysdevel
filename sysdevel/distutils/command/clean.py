@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 modified 'clean' command
 """
@@ -41,13 +41,13 @@ class clean(old_clean):
     def run(self):
         # Remove .pyc, .lreg and .sibling files
         if hasattr(os, 'walk'):
-            for root, dirs, files in os.walk('.'):
+            for _, _, files in os.walk('.'):
                 for f in files:
                     if f.endswith('.pyc') or \
                             f.endswith('.lreg') or f.endswith('.sibling'):
                         try:
                             os.unlink(f)
-                        except:
+                        except OSError:
                             pass
 
         # Remove generated directories
@@ -56,15 +56,17 @@ class clean(old_clean):
         if os.path.exists(build_dir):
             try:
                 shutil.rmtree(build_dir, ignore_errors=True)
-            except:
+            except OSError:
                 pass
         if self.distribution.subpackages != None:
             subs = []
             for (pkg_name, pkg_dir) in self.distribution.subpackages:
                 rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
                 if rf.is_sysdevel_build:
-                    subs.append((pkg_name, pkg_dir)) 
-            for idx in range(len(sys.argv)):
+                    subs.append((pkg_name, pkg_dir))
+            idx = 0
+            for i in range(len(sys.argv)):
+                idx = i
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])
@@ -77,12 +79,12 @@ class clean(old_clean):
                 if os.path.isfile(path) or os.path.islink(path):
                     try:
                         os.unlink(path)
-                    except:
+                    except OSError:
                         pass
                 elif os.path.isdir(path):
                     try:
                         shutil.rmtree(path, ignore_errors=True)
-                    except:
+                    except OSError:
                         pass
 
         # Remove sysdevel
@@ -90,7 +92,7 @@ class clean(old_clean):
             try:
                 ## ignores symlinked directory
                 shutil.rmtree('pysysdevel', ignore_errors=True)
-            except:
+            except OSError:
                 pass
 
         old_clean.run(self)

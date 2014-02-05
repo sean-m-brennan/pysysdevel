@@ -1,9 +1,10 @@
 
 import os
+import sys
 import platform
 import subprocess
 
-from ..prerequisites import *
+from ..prerequisites import find_header, find_library, find_program, convert2unixpath, check_call, mingw_check_call, admin_check_call, global_install, ConfigError
 from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 from .. import options
@@ -18,7 +19,7 @@ class configuration(lib_config):
             self.dependencies.append('mingw')
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         lib_name = 'cdf'
         if 'windows' in platform.system().lower():
@@ -50,7 +51,7 @@ class configuration(lib_config):
             try:
                 base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
                 base_dirs += os.environ['CPATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             if 'windows' in platform.system().lower():
                 base_dirs.append(os.path.join('C:', os.sep, 'CDF Distribution',
@@ -58,14 +59,14 @@ class configuration(lib_config):
             try:
                 base_dirs.append(environ['MINGW_DIR'])
                 base_dirs.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
         try:
             incl_dir = find_header(self.hdr, base_dirs, limit=limit)
             lib_dir, lib = find_library(self.lib, base_dirs, limit=limit)
             exe = find_program('cdfcompare',  base_dirs)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found
@@ -92,7 +93,7 @@ class configuration(lib_config):
                     if not prefix in options.local_search_paths:
                         options.add_local_search_path(prefix)
                 else:
-                    prefix = global_prefix
+                    prefix = options.global_prefix
                 ## MinGW shell strips backslashes
                 prefix = convert2unixpath(prefix)
 
@@ -120,7 +121,7 @@ class configuration(lib_config):
                         ## ncurses prerequisite
                         check_call(['mingw-get', 'install', 'pdcurses'])
                         check_call(['mingw-get', 'install', 'libpdcurses'])
-                    except:
+                    except subprocess.CalledProcessError:
                         pass
                     mingw_check_call(environ, ['make',
                                                'OS=mingw', 'ENV=gnu', 'all'],

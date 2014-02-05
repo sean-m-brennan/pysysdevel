@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Model-View-Controller base classes
 """
@@ -31,17 +31,18 @@ import math
 
 
 class UnknownModelException(Exception):
-    def __init(self, what):
-        self.what = what
+    def __init__(self, explain):
+        Exception.__init__(self)
+        self.what = explain
 
     def __str__(self):
-        return 'Unknown model ' + what
+        return 'Unknown model ' + self.what
 
 
 
 ##############################
 
-class DataModel(dict):
+class DataModel(object):
     '''
     Model of Model-View-Controller pattern. Container for data updates by
     multiple controllers, read by viewer for display.
@@ -98,22 +99,34 @@ class DataController(object):
     of a model to reflect computation.
     '''
 
-    def provides(self):
-        '''
-        Outputs; relevant attributes and properties.
-        '''
+    def _js_provides(self):
         discard = dir(type('dummy', (object,), {}))  ## builtins
         discard += [item for item in dir(self) if callable(item)]  ## methods
         return [item for item in dir(self) if item not in discard]
-        """  Following not supported under PyJS
+
+    def _py_provides(self):
+        ##  The following is not supported under PyJS
         import inspect
         discard = dir(type('dummy', (object,), {}))
         discard += inspect.getmembers(self,
                                       lambda x: inspect.isbuiltin(x) or \
-                                          inspect.ismethod(x))
+                                      inspect.ismethod(x))
         return [item for item in inspect.getmembers(self)
                 if item not in discard]
-        """
+
+    def provides(self):
+        '''
+        Outputs; relevant attributes and properties.
+        '''
+        ## Test whether inside pyjamas
+        try:
+            import pyjd  # pylint: disable=F0401
+            if not pyjd.is_desktop:
+                return self._js_provides()
+            else:
+                return self._py_provides()
+        except ImportError:
+            return self._py_provides()
 
     def requires(self):
         '''
@@ -165,6 +178,7 @@ class GenericPlot(DataViewer):
         plot.plot()
 
     '''
+    ## Also an abstract class  # pylint: disable=W0223
     def __init__(self, axes=2, **kwargs):
         DataViewer.__init__(self, **kwargs)
         self.chart_title = 'Chart'
@@ -195,16 +209,16 @@ class GenericPlot(DataViewer):
         fig = plot.figure()
         for s in self.series:
             axes = fig.add_subplot(111)
-            if p.axes == 3:
-                axes.plot(p.x_values, p.y_values, p.z_values)
-                axes.xlabel(p.labels[0])
-                axes.ylabel(p.labels[1])
-                axes.zlabel(p.labels[2])
+            if s.axes == 3:
+                axes.plot(s.x_values, s.y_values, s.z_values)
+                axes.xlabel(s.labels[0])
+                axes.ylabel(s.labels[1])
+                axes.zlabel(s.labels[2])
             else:
-                axes.plot(p.x_values, p.y_values)
-                axes.xlabel(p.labels[0])
-                axes.ylabel(p.labels[1])
-            axes.title(p.series_name)
+                axes.plot(s.x_values, s.y_values)
+                axes.xlabel(s.labels[0])
+                axes.ylabel(s.labels[1])
+            axes.title(s.series_name)
         plot.show()
 
 

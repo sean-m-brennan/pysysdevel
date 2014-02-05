@@ -1,7 +1,8 @@
 
+import sys
+
 from ..prerequisites import compare_versions, install_pypkg
 from ..configuration import py_config
-from .. import options
 
 class configuration(py_config):
     """
@@ -11,14 +12,14 @@ class configuration(py_config):
         py_config.__init__(self, 'PIL', '1.1.7', debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         try:
             import PIL.Image
             ver = PIL.Image.VERSION
             if compare_versions(ver, version) == -1:
                 return self.found
             self.found = True
-        except Exception:
+        except ImportError:
             if self.debug:
                 print(sys.exc_info()[1])
         return self.found

@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_exe' command for (non-python) executables
 """
@@ -34,12 +34,13 @@ from distutils.errors import DistutilsSetupError, DistutilsError, \
 from distutils.dep_util import newer_group
 
 have_numpy = False
+# pylint: disable=W0201
 try:
     from numpy.distutils.command.build_clib import build_clib
     from numpy.distutils.misc_util import get_numpy_include_dirs
     from numpy.distutils import log
     have_numpy = True
-except:
+except ImportError:
     from distutils.command.build_clib import build_clib
     from distutils import log
 
@@ -118,10 +119,8 @@ class build_exe(build_clib):
                 self.fcompiler.show_customization()
 
 
-
-        exes = []
         for exe in self.executables:
-            libraries = convert_ulist(exe.libraries or [])
+            #libraries = convert_ulist(exe.libraries or [])
             library_dirs = convert_ulist(exe.library_dirs or [])
             runtime_library_dirs = convert_ulist(exe.runtime_library_dirs or [])
             extra_preargs = exe.extra_compile_args or []
@@ -330,4 +329,4 @@ class build_exe(build_clib):
                 linker_args['runtime_library_dirs'] = runtime_library_dirs
 
             ## Alternate ending
-            link_compiler.link(**linker_args)
+            link_compiler.link(**linker_args)  # pylint: disable=W0142

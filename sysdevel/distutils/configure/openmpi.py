@@ -1,8 +1,9 @@
 
+import os
+import sys
 import struct
-import platform
 
-from ..prerequisites import *
+from ..prerequisites import find_header, find_libraries, find_program, programfiles_directories, autotools_install, global_install, ConfigError
 from ..configuration import lib_config
 from .. import options
 
@@ -14,7 +15,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "openmpi", "mpi.h", debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         openmpi_lib_list = ['mpi', 'mpi_cxx', 'mpi_f90']
         arch = 'i686'
@@ -33,18 +34,18 @@ class configuration(lib_config):
             try:
                 base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
                 base_dirs += os.environ['CPATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             try:
                 base_dirs.append(os.environ['OPENMPI_ROOT'])
-            except:
+            except KeyError:
                 pass
             for d in programfiles_directories():
                 base_dirs.append(os.path.join(d, 'OPENMPI'))
             try:
                 base_dirs.append(environ['MINGW_DIR'])
                 base_dirs.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
 
         try:
@@ -57,10 +58,9 @@ class configuration(lib_config):
                                        [os.path.join(openmpi_lib_dir, '..')])
             openmpi_exe_dir = os.path.abspath(os.path.dirname(openmpi_exe))
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         os.environ['PATH'] = os.environ.get('PATH', '') + \

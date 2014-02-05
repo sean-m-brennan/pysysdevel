@@ -1,9 +1,8 @@
 
 import os
-import platform
 import sys
 
-from ..prerequisites import *
+from ..prerequisites import find_program, programfiles_directories, get_msvc_version, ConfigError
 from ..configuration import config
 from .. import options
 
@@ -29,7 +28,6 @@ class configuration(config):
 
         version, _, _ = get_msvc_version()
         dot_ver = '.'.join(version)
-        ver = ''.join(version)
 
         vcvars = None
         nmake = None
@@ -51,10 +49,9 @@ class configuration(config):
             nmake = find_program('nmake', msvc_dirs, limit=limit)
             msvc = find_program('cl', msvc_dirs, limit=limit)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['MSVC_VARS'] = vcvars

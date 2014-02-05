@@ -22,22 +22,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_src' command, adding module generation using ANTLR grammars
 """
 
 import os
-import sys
-import shutil
-import glob
-import subprocess
-
-from types import *
+from types import StringType, ListType, TupleType
 
 try:
     from numpy.distutils.command.build_py import build_py as _build_py
-except:
+except ImportError:
     from distutils.command.build_py import build_py as _build_py
 
 from ..building import configure_file
@@ -59,7 +54,7 @@ class build_py(_build_py):
         # easy, we just copy it somewhere under self.build_lib (the build
         # directory for Python source).
         outfile = self.get_module_outfile(self.build_lib, package, module)
-        dir = os.path.dirname(outfile)
-        self.mkpath(dir)
+        d = os.path.dirname(outfile)
+        self.mkpath(d)
         configure_file(environ, module_file, outfile)
         return (outfile, 1)

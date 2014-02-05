@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_shlib' command for *shared* (non-python) libraries
 """
@@ -33,13 +33,14 @@ from distutils.errors import DistutilsSetupError, DistutilsError, \
      DistutilsFileError
 from distutils.dep_util import newer_group
 
+# pylint: disable=W0201
 have_numpy = False
 try:
     from numpy.distutils.command.build_clib import build_clib
     from numpy.distutils.misc_util import get_numpy_include_dirs
     from numpy.distutils import log
     have_numpy = True
-except:
+except ImportError:
     from distutils.command.build_clib import build_clib
     from distutils import log
 
@@ -64,7 +65,7 @@ class build_shlib(build_clib):
             compiler = new_compiler(compiler=self.compiler)
             compiler.customize(self.distribution,
                                need_cxx=self.have_cxx_sources())
-            static_libraries = self.distribution.libraries
+            #static_libraries = self.distribution.libraries
             for lib in self.libraries:
                 target_lib = compiler.library_filename(lib[0],
                                                        lib_type='shared',
@@ -80,7 +81,6 @@ class build_shlib(build_clib):
                 key = lib_name + '_DEFINES'
                 if env and key in env:
                     extra_preargs = build_info.get('extra_compiler_args') or []
-                    install_data = self.get_finalized_command('install_data')
                     for define in env[key]:
                         template = define[0]
                         insert = safe_eval(define[1])

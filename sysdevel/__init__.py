@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 sysdevel package
 
@@ -30,19 +30,23 @@ The sysdevel package facilitates multi-model simulation development in three
 areas: model coupling, data visualization, and collaboration & distribution.
 """
 
+# pylint: disable=E0603
 
 __all__ = ['distutils',  ## Package building and distribution
            'modeling',   ## Multi-model simulation building
-           #'ui'         ## User interface support code (not a Python module)
+           #"ui"         ## User interface support code (not a Python module)
            ]
 
 import os
 
-config_dir = os.path.realpath(os.path.abspath(os.path.join(os.path.dirname(__file__), 'distutils', 'configure')))
+CONFIG_DIR = os.path.realpath(os.path.abspath(
+    os.path.join(os.path.dirname(__file__), 'distutils', 'configure')))
 
-server_support_dir = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
-server_support_modules = ['serve', 'daemon']
+SERVER_SUPPORT_DIR = os.path.realpath(os.path.abspath(
+    os.path.dirname(__file__)))
+SERVER_SUPPORT_MODULES = ['serve', 'daemon']
 
-client_support_dir = os.path.realpath(os.path.abspath(os.path.join(os.path.dirname(__file__), 'ui')))
+CLIENT_SUPPORT_DIR = os.path.realpath(os.path.abspath(
+    os.path.join(os.path.dirname(__file__), 'ui')))
 
 from .distutils.building import configure_file

@@ -1,5 +1,7 @@
 
-from ..prerequisites import find_program, compare_versions, install_pypkg
+import sys
+
+from ..prerequisites import find_program, compare_versions, install_pypkg, ConfigError
 from ..configuration import prog_config
 from .. import options
 
@@ -12,7 +14,7 @@ class configuration(prog_config):
         self.environment['WXGLADE'] = None
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         try:
             import wxglade.common
@@ -21,7 +23,7 @@ class configuration(prog_config):
                 return self.found
             self.environment['WXGLADE'] = find_program('wxglade')
             self.found = True
-        except Exception:
+        except (ImportError, ConfigError):
             if self.debug:
                 print(sys.exc_info()[1])
         return self.found

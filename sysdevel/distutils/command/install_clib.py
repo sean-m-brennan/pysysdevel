@@ -22,14 +22,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Flexible install_clib command
 """
 
 try:
+    # pylint: disable=W0611
     from numpy.distutils.command.install_clib import install_clib
-except:
+
+except ImportError:
     from distutils.core import Command
 
 

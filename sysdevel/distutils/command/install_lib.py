@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'install_lib' command for installing shared libraries and executables
 """
@@ -31,10 +31,8 @@ import os
 import sys
 import struct
 import glob
-import platform
 
 from distutils.command.install_lib import install_lib as old_install_lib
-from distutils.util import change_root, convert_path
 
 from ..filesystem import mkdir
 from ..prerequisites import get_module_location
@@ -89,7 +87,7 @@ class install_lib(old_install_lib):
                     self.copy_tree(source, os.path.join(module_dir, mod))
                 else:
                     self.copy_file(source, module_dir)
-            for i in range(insertions):
+            for _ in range(insertions):
                 sys.path.pop(0)
 
         if self.distribution.extra_install_libraries:

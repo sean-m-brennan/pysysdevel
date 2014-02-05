@@ -22,14 +22,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_doc' command (see sub commands)
 """
 
 try:
     from numpy.distutils.command.build_ext import build_ext
-except:
+except ImportError:
     from distutils.command.build_ext import build_ext
 
 

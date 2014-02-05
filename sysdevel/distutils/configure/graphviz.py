@@ -1,8 +1,11 @@
 
+import os
+import sys
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import programfiles_directories, find_header, find_library, autotools_install, global_install, ConfigError
 from ..configuration import lib_config
+from ..filesystem import glob_insensitive
 from .. import options
 
 class configuration(lib_config):
@@ -39,11 +42,11 @@ class configuration(lib_config):
             try:
                 base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
                 base_dirs += os.environ['CPATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             try:
                 base_dirs.append(os.environ['GRAPHVIZ_ROOT'])
-            except:
+            except KeyError:
                 pass
             for d in programfiles_directories():
                 base_dirs.append(os.path.join(d, 'GnuWin32'))
@@ -51,13 +54,13 @@ class configuration(lib_config):
             try:
                 base_dirs.append(environ['MINGW_DIR'])
                 base_dirs.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
         try:
             incl_dir = find_header(self.hdr, base_dirs, limit=limit)
             lib_dir, lib = find_library(self.lib, base_dirs, limit=limit)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 e = sys.exc_info()[1]
                 print(e)
@@ -65,7 +68,7 @@ class configuration(lib_config):
 
         self.environment['GRAPHVIZ_INCLUDE_DIR'] = incl_dir
         self.environment['GRAPHVIZ_LIB_DIR'] = lib_dir
-        #self.environment['GRAPHVIZ_SHLIB_DIR'] = lib_dir #FIXME
+        #FIXME self.environment['GRAPHVIZ_SHLIB_DIR'] = lib_dir
         self.environment['GRAPHVIZ_LIB_FILES'] = [lib]
         self.environment['GRAPHVIZ_LIBRARIES'] = [self.lib]
         return self.found

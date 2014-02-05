@@ -4,7 +4,8 @@ import glob
 import sys
 import subprocess
 
-from ..prerequisites import *
+from ..prerequisites import find_program, as_admin, ConfigError
+from ..building import process_progress
 from ..configuration import py_config
 from ..fetching import fetch, unarchive
 from .. import options
@@ -22,7 +23,7 @@ class configuration(py_config):
         self.environment['PYJSBUILD'] = None
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         try:
             pyjamas_root = os.environ['PYJAMAS_ROOT']
@@ -30,16 +31,16 @@ class configuration(py_config):
             pyjs_lib = os.path.join(pyjamas_root, 'build', 'lib')
             self.environment['PYJSBUILD'] = find_program('pyjsbuild', [pyjs_bin])
             sys.path.insert(0, pyjs_lib)
-            import pyjs
+            import pyjs  # pylint: disable=F0401,W0611,W0612
             self.found = True
-        except Exception:
+        except (KeyError, ConfigError, ImportError):
             if self.debug:
                 print(sys.exc_info()[1])
             try:
-                import pyjs
+                import pyjs  # pylint: disable=F0401,W0611,W0612
                 self.environment['PYJSBUILD'] = find_program('pyjsbuild')
                 self.found = True
-            except Exception:
+            except (ImportError, ConfigError):
                 if self.debug:
                     print(sys.exc_info()[1])
         return self.found
@@ -75,7 +76,7 @@ class configuration(py_config):
             except KeyboardInterrupt:
                 p.terminate()
                 log.close()
-                raise e
+                raise
             self.check_install(status, log, log_file)
 
             cmd_line = [sys.executable, 'run_bootstrap_first_then_setup.py',
@@ -92,7 +93,7 @@ class configuration(py_config):
             except KeyboardInterrupt:
                 p.terminate()
                 log.close()
-                raise e
+                raise
             self.check_install(status, log, log_file)
 
             if options.VERBOSE:

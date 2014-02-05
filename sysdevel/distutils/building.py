@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Utilities for package installation
 """
@@ -84,7 +84,7 @@ def create_script_wrapper(pyscript, target_dir):
     if not os.path.exists(dst_file):
         f = open(dst_file, 'w')
         if 'windows' in platform.system().lower():
-            wexe = os.path.join(os.path.dirname(sys.executable), 'pythonw')
+            #wexe = os.path.join(os.path.dirname(sys.executable), 'pythonw')
             exe = os.path.join(os.path.dirname(sys.executable), 'python')
             f.write('@echo off\nsetlocal\n' +
                     'set PATH=%~dp0..\\Lib;%PATH%\n' +
@@ -160,7 +160,7 @@ def convert_ulist(str_list):
 
 
 def configure_files(var_dict, directory_or_file_list,
-                    pattern='*.in', target_dir=None, excludes=[]):
+                    pattern='*.in', target_dir=None, excludes=()):
     '''
     Given a dictionary of environment variables,
     and either a list of files or a directory, an optional filename pattern
@@ -175,7 +175,7 @@ def configure_files(var_dict, directory_or_file_list,
     else:
         directory = directory_or_file_list
         matches = []
-        for root, dirnames, filenames in os.walk(directory):
+        for root, _, filenames in os.walk(directory):
             for ex in excludes:
                 if fnmatch.fnmatch(root, ex):
                     continue
@@ -196,7 +196,7 @@ def configure_files(var_dict, directory_or_file_list,
 
 
 def nested_values(line, var_dict, d=0, style=DEFAULT_STYLE):
-    var_dict = dict(environment_defaults, **var_dict)
+    var_dict = dict(environment_defaults, **var_dict)  # pylint: disable=W0142
 
     fr_delim = '@@{'
     bk_delim = '}'
@@ -263,12 +263,11 @@ def configure_file(var_dict, filepath, newpath=None, suffix='.in',
 
 
 def safe_eval(stmt):
-    ## TODO restrict possible functions/modules used
     safe_list = []  ## allowable modules and functions
     safe_builtins = []  ## allowable builtin functions
     safe_dict = dict([ (k, globals().get(k, None)) for k in safe_list ])
     safe_dict['__builtins__'] = safe_builtins
-    #return eval(stmt, safe_dict)  #TODO not implemented
+    #return eval(stmt, safe_dict)  #TODO restrict possible functions/modules used
     return eval(stmt)
 
 
@@ -276,7 +275,7 @@ def safe_eval(stmt):
 def clean_generated_files():
     ## remove all but input files and test directory
     matches = []
-    for root, dirnames, filenames in os.walk('.'):
+    for root, _, filenames in os.walk('.'):
         for filename in filenames:
             if filename.endswith('.in') and \
                     os.path.exists(os.path.join(root, filename[:-3])):
@@ -286,5 +285,5 @@ def clean_generated_files():
     for filepath in matches:
         try:
             os.unlink(filepath)
-        except:
+        except OSError:
             pass

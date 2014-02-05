@@ -1,5 +1,8 @@
 
-from ..prerequisites import find_program, global_install
+import sys
+import platform
+
+from ..prerequisites import find_program, global_install, ConfigError
 from ..configuration import prog_config
 from .. import options
 
@@ -16,13 +19,13 @@ class configuration(prog_config):
         self.environment['GXX'] = None
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         try:
             gcc = find_program('gcc')
             gxx = find_program('g++')
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found
@@ -50,5 +53,5 @@ class configuration(prog_config):
                                'automake libtool gettext',
                            rpm='gcc gcc-c++ autoconf automake libtool ' + \
                                'make gettext')
-        if not is_installed(environ, version):
+        if not self.is_installed(environ, version):
             raise Exception('GCC installation failed.')

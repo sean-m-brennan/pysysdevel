@@ -23,6 +23,7 @@ class configuration(lib_config):
                 archive = src_dir + '.tar.gz'
                 autotools_install(environ, website, archive, src_dir, locally)
             else:
+                here = os.getcwd()
                 global_install('LZF', website,
                                brew=os.path.join(here, 'liblzf.rb'),
                                port='liblzf',

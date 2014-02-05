@@ -23,6 +23,7 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
 
+# pylint: disable=E0603
 
 __all__ = ['build', 'build_clib', 'build_docbook', 'build_doc', 'build_exe',
            'build_js', 'build_org', 'build_pypp_ext', 'build_py',

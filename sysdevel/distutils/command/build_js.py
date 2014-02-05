@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_js' command for python-to-javascript conversion using Pyjamas
 """
@@ -33,20 +33,20 @@ import logging
 import subprocess
 import shutil
 import fnmatch
-import glob
 
 from distutils.errors import DistutilsExecError
 
+# pylint: disable=W0201
 try:
     from numpy.distutils.command.build_ext import build_ext
-except:
+except ImportError:
     from distutils.command.build_ext import build_ext
 
 from ..filesystem import mkdir, copy_tree, recursive_chown
 from ..prerequisites import find_program
 from ..building import configure_file, configure_files
 from .. import options
-from ... import client_support_dir
+from ... import CLIENT_SUPPORT_DIR
 
 
 class build_js(build_ext):
@@ -71,16 +71,16 @@ class build_js(build_ext):
         self.web_ext_modules = self.distribution.web_ext_modules
         if self.pyjspath is None:
             try:
-                import pyjs
+                import pyjs  # pylint: disable=F0401
                 self.pyjspath = os.path.dirname(pyjs.__file__)
-            except:
+            except ImportError:
                 pass
         else:
             sys.path.insert(0, os.path.join(self.pyjspath, 'build', 'lib'))
         if self.pyjscompiler is None:
             try:
                 self.pyjscompiler = find_program('pyjsbuild', [self.pyjspath])
-            except:
+            except Exception:  # pylint: disable=W0703
                 pass
 
 
@@ -108,7 +108,7 @@ class build_js(build_ext):
             mkdir(working_dir)
 
             for support in wext.extra_support_files:
-                src_file = os.path.join(client_support_dir, support + '.in')
+                src_file = os.path.join(CLIENT_SUPPORT_DIR, support + '.in')
                 if not os.path.exists(src_file):
                     src_file = src_file[:-3]
                 dst_file = os.path.join(working_dir, support)
@@ -132,7 +132,7 @@ class build_js(build_ext):
                         configure_file(environ, s,
                                        os.path.join(working_dir,
                                                     os.path.basename(s)))
-                    import pyjs
+                    import pyjs  # pylint: disable=F0401,W0611,W0612
                     ## TODO: use pyjs module directly (instead of 'pyjsbuild')
                     compiler = environ['PYJSBUILD'] or self.pyjscompiler
                     if compiler is None:
@@ -166,7 +166,7 @@ class build_js(build_ext):
                           verbose=self.distribution.verbose)
 
             for filename in wext.extra_public_files:
-                filepath = os.path.join(client_support_dir, filename + '.in')
+                filepath = os.path.join(CLIENT_SUPPORT_DIR, filename + '.in')
                 if not os.path.exists(filepath):
                     filepath = filepath[:-3]
                 targetfile = os.path.join(target, filename)
@@ -192,7 +192,7 @@ class build_js(build_ext):
 
             ## pyjs processing ignores hidden files in public
             hidden = []
-            for root, dirnames, filenames in os.walk(pubdir):
+            for root, _, filenames in os.walk(pubdir):
                 for ex in excludes:
                     if fnmatch.fnmatch(root, ex):
                         continue

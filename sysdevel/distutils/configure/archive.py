@@ -25,5 +25,5 @@ class configuration(lib_config):
                 global_install('Archive', website,
                                brew='libarchive', port='libarchive',
                                deb='libarchive-dev', rpm='libarchive-devel')
-            if not is_installed(environ, version):
+            if not self.is_installed(environ, version):
                 raise Exception('libarchive installation failed.')

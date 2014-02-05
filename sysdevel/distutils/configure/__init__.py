@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Entry point for finding/installing required libraries
 """
@@ -32,7 +32,8 @@ import sys
 import platform
 import traceback
 
-from ..prerequisites import *
+from ..prerequisites import read_cache, save_cache, in_prerequisites
+from ..prerequisites import system_uses_macports, system_uses_homebrew
 from ..configuration import dynamic_module, latest_pypi_version
 from ..configuration import is_pypi_listed, pypi_exceptions
 from ..filesystem import mkdir
@@ -48,10 +49,11 @@ class FatalError(SystemExit):
     """
     Uncatchable error, exits uncleanly.
     """
+    # pylint: disable=W0231
     def __init__(self, what):
         sys.stderr.write('FatalError: ' + what + '\n')
         sys.stderr.flush()
-        os._exit(-1)
+        os._exit(-1)  # pylint: disable=W0212
 
 
 
@@ -78,7 +80,7 @@ def configure_system(prerequisite_list, version,
     try:
         environment = read_cache()
         skip = False
-        for idx, arg in enumerate(sys.argv[:]):
+        for arg in sys.argv:
             if arg.startswith('clean'):
                 skip = True
                 quiet = True
@@ -121,7 +123,7 @@ def configure_system(prerequisite_list, version,
                                                   skip, install, quiet,
                                                   out, err)
         save_cache(environment)
-    except Exception:
+    except Exception:  # pylint: disable=W0703
         logfile = os.path.join(options.target_build_dir, 'config.log')
         if not os.path.exists(options.target_build_dir):
             mkdir(options.target_build_dir)
@@ -135,6 +137,11 @@ def configure_system(prerequisite_list, version,
     sys.path.insert(0, os.path.join(options.target_build_dir,
                                     options.local_lib_dir))
     return environment
+
+
+def configure_package(which):
+    return __configure_package(dict(), which, skip=False,
+                               install=True, quiet=False)
 
 
 def __configure_package(environment, help_name, skip, install, quiet,
@@ -203,7 +210,7 @@ def __configure_package(environment, help_name, skip, install, quiet,
                                         name, DEBUG_PYPI)
             else:
                 helper = dynamic_module(base, req_version, debug=DEBUG_PYPI)
-        except:
+        except Exception:
             if DEBUG_PYPI:
                 traceback.print_exc()
             err.write('No setup helper module ' + base + '\n')
@@ -219,7 +226,7 @@ def __run_helper__(environment, short_name, helper, version,
     configured.append(short_name)
     try:
         cfg = helper.configuration()
-    except:
+    except Exception:
         print 'Error loading ' + short_name + ' configuration.'
         raise
     for dep in cfg.dependencies:
@@ -241,7 +248,7 @@ def __run_helper__(environment, short_name, helper, version,
         cfg.null()
     elif cfg.force or not cfg.is_installed(environment, version):
         if not install:
-            raise Exception(help_name + ' cannot be found.')
+            raise Exception(short_name + ' cannot be found.')
         cfg.install(environment, version)
     env = dict(list(cfg.environment.items()) + list(environment.items()))
     if not 'PREREQUISITES' in env:

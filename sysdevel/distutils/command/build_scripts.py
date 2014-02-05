@@ -22,20 +22,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_scripts' command, adding module generation using ANTLR grammars
 """
 
 import os
-import sys
-import shutil
-import glob
-import subprocess
 
+# pylint: disable=W0201
 try:
     from numpy.distutils.command.build_scripts import build_scripts as _build_scripts
-except:
+except ImportError:
     from distutils.command.build_scripts import build_scripts as _build_scripts
 
 from ..filesystem import mkdir
@@ -55,8 +52,6 @@ class build_scripts(_build_scripts):
         self.create_scripts = self.distribution.create_scripts
   
     def run(self):
-        environ = self.distribution.environment
-
         mkdir(self.build_dir)
         if self.create_scripts:
             if not self.scripts:

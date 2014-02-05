@@ -22,20 +22,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_org' command using emacs on org-mode files
 """
 
 import os
-import sys
 import glob
 import shutil
 import subprocess
 
 try:
     from numpy.distutils.command.build_ext import build_ext
-except:
+except ImportError:
     from distutils.command.build_ext import build_ext
 
 from ..prerequisites import find_program
@@ -46,6 +45,7 @@ from .. import options
 def make_doc(src_file, target_dir=None, mode='docbook'):
     if target_dir is None:
         pth = os.path.relpath(os.path.dirname(src_file)).split(os.sep)[1:]
+        # pylint: disable=W0142
         target_dir = os.path.join(options.target_build_dir, *pth)
 
     emacs_exe = find_program('emacs')
@@ -112,6 +112,7 @@ def make_doc(src_file, target_dir=None, mode='docbook'):
     return os.path.join(target_dir, result_files[-1])
 
 
+# pylint: disable=W0201
 class build_org(build_ext):
     description = "Transform Emacs Org-mode documentation"
     user_options = [('latex', None, 'transform org to latex'),

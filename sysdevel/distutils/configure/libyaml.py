@@ -1,4 +1,6 @@
 
+import platform
+
 from ..prerequisites import autotools_install, global_install
 from ..configuration import lib_config
 
@@ -14,7 +16,7 @@ class configuration(lib_config):
         if not self.found:
             if version is None:
                 version = '0.1.4'
-            major = '.'.join(version.split('.')[:2])
+            #major = '.'.join(version.split('.')[:2])
             website = ('http://pyyaml.org/', 'download/libyaml/')
             if locally or 'windows' in platform.system().lower():
                 src_dir = 'yaml-' + str(version)

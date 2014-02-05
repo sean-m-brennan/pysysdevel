@@ -1,4 +1,6 @@
 
+import sys
+
 from ..prerequisites import install_pypkg
 from ..configuration import py_config
 
@@ -11,11 +13,11 @@ class configuration(py_config):
                            dependencies=['gccxml'], debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         try:
-            import pygccxml
+            import pygccxml  # pylint: disable=W0612
             self.found = True
-        except Exception:
+        except ImportError:
             if self.debug:
                 print(sys.exc_info()[1])
         return self.found

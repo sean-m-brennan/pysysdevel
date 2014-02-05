@@ -23,6 +23,7 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
 
+# pylint: disable=E0603
 
 __all__ = ['command', 'configure',
            'building', 'configuration', 'core', 'extensions', 'fetching',
@@ -35,15 +36,15 @@ import sys
 import glob
 
 
-using_setuptools = False  ## monkeypatching is evil
+USING_SETUPTOOLS = False  ## monkeypatching is evil
 
 def use_setuptools():
-    global using_setuptools
+    global USING_SETUPTOOLS  # pylint: disable=W0603
     if sys.version_info > (2, 5): ## setuptools is broken in at least Python 2.4
         try:
-            import setuptools
-            using_setuptools = True
-        except:
+            import setuptools  # pylint: disable=F0401,W0612
+            USING_SETUPTOOLS = True
+        except ImportError:
             pass
 
 def setuptools_in_use():
@@ -54,15 +55,15 @@ def setuptools_in_use():
 
 def setup_setuptools():
     ## MUST be called before distutils (get the monkeypatching out of the way)
-    global using_setuptools
-    if using_setuptools:
+    global USING_SETUPTOOLS  # pylint: disable=F0401,W0603
+    if USING_SETUPTOOLS:
         try:
-            import setuptools
+            import setuptools  # pylint: disable=W0612
             reload(setuptools.dist)  ## in case it was already loaded
-            using_setuptools = True
+            USING_SETUPTOOLS = True
             sys.stderr.write("Using setuptools.\n")
-        except:
-            using_setuptools = False
+        except ImportError:
+            USING_SETUPTOOLS = False
             sys.stderr.write("Setuptools is not available.\n")
 
 
@@ -139,7 +140,7 @@ class _Options(object):
 
     def set_top_level(self, num):
         base_dir = os.path.realpath(os.path.abspath(
-            os.path.sep.join(['..' for i in range(num)])))
+            os.path.sep.join(['..' for _ in range(num)])))
         self._target_build_dir = os.path.join(base_dir, self.default_build_dir)
         self._target_download_dir = os.path.join(base_dir,
                                                  self.default_download_dir)
@@ -149,8 +150,8 @@ options = _Options()
 
 
 from .core import setup
-from .extensions import *
 from .configure import configure_system, FatalError
 from .pkg_config import pkg_config, handle_arguments, get_options, post_setup
+from .extensions import *  # pylint: disable=W0401
 
 

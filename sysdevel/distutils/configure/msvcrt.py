@@ -1,9 +1,8 @@
 
 import os
-import platform
 import sys
 
-from ..prerequisites import *
+from ..prerequisites import get_msvc_version, programfiles_directories, find_library, ConfigError
 from ..configuration import config
 from .. import options
 
@@ -54,15 +53,15 @@ class configuration(config):
             if not msvs_present:
                 try:
                     msvcr_rel_dirs.append(os.environ['MSVCRT_DIR'])
-                except:
+                except KeyError:
                     pass
                 try:
                     msvcr_rel_dirs.append(os.environ['SYSTEM'])
-                except:
+                except KeyError:
                     try:
                         msvcr_rel_dirs.append(os.path.join(os.environ['WINDIR'],
                                                            'System32'))
-                    except:
+                    except KeyError:
                         pass
         release_dir = None
         debug_dir = None
@@ -73,10 +72,9 @@ class configuration(config):
             debug_dir, _ = find_library('msvcr' + ver, msvcr_dbg_dirs,
                                         limit=limit)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['MSVCRT_DIR'] = release_dir
@@ -96,8 +94,9 @@ class configuration(config):
                                  website[0] + ')\nthe ' + name + '.\n' +
                                  'Opening a browser to confirm download ...\n')
                 webbrowser.open(''.join(website))
+                # pylint: disable=W0141
                 input('Press any key once the redistributable ' +
-                          'package is installed')
+                      'package is installed')
             else:
                 raise Exception('MSVC runtime included as part of the OS, ' +
                                 'but not found.')

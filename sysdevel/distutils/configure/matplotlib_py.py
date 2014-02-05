@@ -1,5 +1,6 @@
 
 import os
+import sys
 
 from ..prerequisites import compare_versions, install_pypkg
 from ..configuration import py_config
@@ -17,7 +18,7 @@ class configuration(py_config):
         self.environment['MATPLOTLIB_DATA_FILES'] = []
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         try:
             import matplotlib
@@ -25,7 +26,7 @@ class configuration(py_config):
             if compare_versions(ver, version) == -1:
                 return self.found
             self.found = True
-        except Exception:
+        except ImportError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found
@@ -56,9 +57,9 @@ class configuration(py_config):
                 ## Can't re-import properly?
                 datapath = os.path.abspath(os.path.join(pth, 'matplotlib',
                                                         'mpl-data'))
-                head, tail = os.path.split(datapath)
+                tail = os.path.split(datapath)[1]
                 d = {}
-                for root, dirs, files in os.walk(datapath):
+                for root, _, files in os.walk(datapath):
                     # Need to explicitly remove cocoa_agg files
                     if 'Matplotlib.nib' in files:
                         files.remove('Matplotlib.nib')

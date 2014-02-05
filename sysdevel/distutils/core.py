@@ -22,20 +22,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Custom setup
 """
 
-from . import setup_setuptools, using_setuptools, setuptools_in_use
+from . import USING_SETUPTOOLS, setup_setuptools, setuptools_in_use
 setup_setuptools()
 
 import sys
-import shutil
-import os
-import platform
-import subprocess
-import glob
 
 have_numpy = False
 try:
@@ -48,7 +43,8 @@ except ImportError:
     try:
         print('NumPy not found. Failover to Distutils2 alone.')
         from distutils2.dist import Distribution as oldDistribution
-        from distutils2.command import config, build_ext, install_headers, bdist_rpm
+        from distutils2.command import config, build_ext, install_headers
+        ## no bdist_rpm in distutils2
 
     except ImportError:
         print('Distutils2 not found. Failover to old distutils.')
@@ -57,9 +53,8 @@ except ImportError:
 
         # TODO Python 3 'packaging' module
 
-from .numpy_utils import *
+from .numpy_utils import is_sequence
 from ..util import is_string
-from .building import convert_ulist
 from . import options
 
 
@@ -67,6 +62,7 @@ CustomCommands = ['dependencies', 'build_doc', 'build_docbook', 'build_exe',
                   'build_js', 'build_org', 'build_py', 'build_pypp_ext',
                   'build_shlib', 'build_sphinx', 'install_exe', 'test']
 
+# pylint: disable=W0231
 
 class CustomDistribution(oldDistribution):
     '''
@@ -217,7 +213,7 @@ class CustomDistribution(oldDistribution):
 ## Almost verbatim from numpy.disutils.core
 ##################################################
 
-if using_setuptools:
+if USING_SETUPTOOLS:
     have_setuptools = True
     from setuptools import setup as old_setup
     # easy_install imports math, it may be picked up from cwd
@@ -232,11 +228,12 @@ else:
     have_setuptools = False
 
 allows_py2app = False
-if using_setuptools:
+if USING_SETUPTOOLS:
     try:
+        # pylint: disable=F0401
         from py2app.build_app import py2app
         allows_py2app = True
-    except:
+    except ImportError:
         pass
 
 
@@ -325,17 +322,19 @@ def _dict_append(d, **kws):
         elif isinstance(dv, list):
             d[k] = dv + list(v)
         elif isinstance(dv, dict):
-            _dict_append(dv, **v)
+            _dict_append(dv, **v)  # pylint: disable=W0142
         elif is_string(dv):
             d[k] = dv + v
         else:
             raise TypeError(repr(type(dv)))
 
-def _command_line_ok(_cache=[]):
+def _command_line_ok(_cache=None):
     """ Return True if command line does not contain any
     help or display requests.
     """
-    if _cache:
+    if _cache is None:
+        _cache = []
+    elif _cache:
         return _cache[0]
     ok = True
     display_opts = ['--'+n for n in distutils.dist.Distribution.display_option_names]
@@ -351,15 +350,8 @@ def _command_line_ok(_cache=[]):
 
 
 def get_distribution(always=False):
-    dist = distutils.core._setup_distribution
-    # XXX Hack to get numpy installable with easy_install.
-    # The problem is easy_install runs it's own setup(), which
-    # sets up distutils.core._setup_distribution. However,
-    # when our setup() runs, that gets overwritten and lost.
-    # We can't use isinstance, as the DistributionWithoutHelpCommands
-    # class is local to a function in setuptools.command.easy_install
-    if dist is not None and \
-            'DistributionWithoutHelpCommands' in repr(dist):
+    dist = distutils.core._setup_distribution  # pylint: disable=W0212
+    if dist is not None and 'DistributionWithoutHelpCommands' in repr(dist):
         dist = None
     if always and dist is None:
         dist = CustomDistribution()
@@ -377,8 +369,11 @@ def setup(**attr):
             sys.argv[:] = interactive_sys_argv(sys.argv)
             if len(sys.argv)>1:
                 return setup(**attr)
-        except:
+        except ImportError:
             pass
+
+    # pylint: disable=W0212
+    # pylint: disable=W0142
 
     cmdclass = my_cmdclass.copy()
 
@@ -406,10 +401,10 @@ def setup(**attr):
             return dist
 
         # create setup dictionary and append to new_attr
-        config = configuration()
-        if hasattr(config,'todict'):
-            config = config.todict()
-        _dict_append(new_attr, **config)
+        cfg = configuration()
+        if hasattr(cfg,'todict'):
+            cfg = cfg.todict()
+        _dict_append(new_attr, **cfg)  # pylint: disable=W0142
 
     # Move extension source libraries to libraries
     libraries = []
@@ -418,7 +413,7 @@ def setup(**attr):
         for item in ext.libraries:
             #[item] = convert_ulist([item])
             if is_sequence(item):
-                lib_name, build_info = item
+                lib_name, _ = item
                 _check_append_ext_library(libraries, item)
                 new_libraries.append(lib_name)
             elif is_string(item):
@@ -441,7 +436,7 @@ def setup(**attr):
     # Use our custom Distribution class instead of distutils' one
     new_attr['distclass'] = CustomDistribution
 
-    if not using_setuptools and setuptools_in_use():
+    if not USING_SETUPTOOLS and setuptools_in_use():
         raise Exception("Spurious import of setuptools. Failure in build.")
 
     return old_setup(**new_attr)

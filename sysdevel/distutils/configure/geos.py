@@ -1,8 +1,10 @@
 
 import os
+import sys
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import find_header, find_libraries, compare_versions, autotools_install, global_install, ConfigError
+from ..headers import get_header_version
 from ..configuration import lib_config
 from .. import options
 
@@ -14,31 +16,31 @@ class configuration(lib_config):
         lib_config.__init__(self, "geos_c", "geos_c.h", debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         locations = []
         limit = False
         if 'GEOS_LIB_DIR' in environ and environ['GEOS_LIB_DIR']:
-             locations.append(environ['GEOS_LIB_DIR'])
-             limit = True
-             if 'GEOS_INCLUDE_DIR' in environ and environ['GEOS_INCLUDE_DIR']:
-                 locations.append(environ['GEOS_INCLUDE_DIR'])
+            locations.append(environ['GEOS_LIB_DIR'])
+            limit = True
+            if 'GEOS_INCLUDE_DIR' in environ and environ['GEOS_INCLUDE_DIR']:
+                locations.append(environ['GEOS_INCLUDE_DIR'])
 
         if not limit:
             try:
                 locations += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             try:
                 locations.append(os.environ['GEOS_ROOT'])
-            except:
+            except KeyError:
                 pass
             if 'windows' in platform.system().lower():
                 locations.append(os.path.join('C:', os.sep, 'OSGeo4W'))
             try:
                 locations.append(environ['MINGW_DIR'])
                 locations.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
         try:
             lib_dir, libs  = find_libraries(self.lib, locations, limit=limit)
@@ -49,7 +51,7 @@ class configuration(lib_config):
             if compare_versions(ver, version) == -1:
                 return self.found
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 e = sys.exc_info()[1]
                 print(e)

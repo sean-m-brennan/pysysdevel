@@ -3,8 +3,7 @@ import os
 import sys
 import shutil
 
-from .. import options
-from ..prerequisites import programfiles_directories
+from ..prerequisites import programfiles_directories, find_file, ConfigError
 from ..fetching import fetch, unarchive
 from ..configuration import prog_config
 from .. import options
@@ -17,7 +16,7 @@ class configuration(prog_config):
         prog_config.__init__(self, 'antlr', dependencies=['java'], debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         if version is None:
             version = '3.1.2'
         options.set_debug(self.debug)
@@ -33,11 +32,11 @@ class configuration(prog_config):
                 pathlist = environ['CLASSPATH'].split(os.pathsep)
                 for path in pathlist:
                     classpaths.append(os.path.dirname(path))
-            except:
+            except KeyError:
                 pass
             try:
                 antlr_root = os.environ['ANTLR_ROOT']
-            except:
+            except KeyError:
                 pass
             for d in programfiles_directories():
                 classpaths.append(os.path.join(d, 'ANTLR', 'lib'))
@@ -52,7 +51,7 @@ class configuration(prog_config):
                                          "-classpath", os.path.abspath(jarfile),
                                          "org.antlr.Tool",]
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
         return self.found

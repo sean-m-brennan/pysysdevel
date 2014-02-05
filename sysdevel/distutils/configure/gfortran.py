@@ -1,8 +1,7 @@
 
-import os
 import platform
 
-from ..prerequisites import global_install
+from ..prerequisites import global_install, system_uses_macports
 from ..configuration import prog_config
 
 class configuration(prog_config):
@@ -24,7 +23,6 @@ class configuration(prog_config):
                            str(version) + '/')
             if 'darwin' in platform.system().lower() and system_uses_macports():
                 raise Exception('GFortran does not appear to be installed.')
-            here = os.path.abspath(os.path.dirname(__file__))
             global_install('GFortran', website,
                            winstaller='mingw-get-inst-' + str(version) + '.exe',
                            brew='gfortran ', #+ os.path.join(here, 'g77.rb'),

@@ -22,16 +22,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'install_data' command for installing shared libraries and executables
 """
 
 import os
 
+# pylint: disable=W0201
 try:
     from numpy.distutils.command.install_data import install_data as old_data
-except:
+except ImportError:
     from distutils.command.install_data import install_data as old_data
 
 from ..filesystem import mkdir, copy_tree
@@ -41,6 +42,7 @@ class install_data(old_data):
     def initialize_options(self):
         old_data.initialize_options(self)
         self.data_dirs = self.distribution.data_dirs
+        self.data_install_dir = None
         if self.data_files is None:
             self.data_files = []
 
@@ -62,7 +64,7 @@ class install_data(old_data):
         mkdir(self.data_install_dir)
         if (not hasattr(self.distribution, 'using_py2exe') or \
                 not self.distribution.using_py2exe) and self.data_dirs:
-           for tpl in self.data_dirs:
+            for tpl in self.data_dirs:
                 target = os.path.join(self.data_install_dir, tpl[0])
                 for d in tpl[1]:
                     copy_tree(d, target, excludes=['.svn*', 'CVS*',

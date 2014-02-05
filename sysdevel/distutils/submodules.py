@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Facilitates pulling SCM repositories outside of the normal dependency chain.
 """
@@ -31,8 +31,7 @@ Facilitates pulling SCM repositories outside of the normal dependency chain.
 import os
 import platform
 import subprocess
-import sys
-import time
+
 
 def git_version():
     p = subprocess.Popen(['git', '--version'], stdout=subprocess.PIPE)
@@ -46,7 +45,7 @@ def git_pull(submodules):
     """
     shell = False
     if 'windows' in platform.system().lower():
-       shell = True
+        shell = True
     here = os.path.abspath(os.getcwd())
     for sub in submodules:
         if not os.path.exists(sub[0]):
@@ -54,7 +53,7 @@ def git_pull(submodules):
             try:  ## specific revision
                 os.chdir(sub[0])
                 subprocess.check_call(['git', 'checkout', sub[2]], shell=shell)
-            except:
+            except subprocess.CalledProcessError:
                 pass
         elif os.path.exists(os.path.join(sub[0], '.git')):
             ## no revision => get up-to-date
@@ -78,7 +77,7 @@ def git_pull_sparse(submodule, excludes):
 
     shell = False
     if 'windows' in platform.system().lower():
-       shell = True
+        shell = True
     here = os.path.abspath(os.getcwd())
     if not os.path.exists(submodule[0]):
         os.mkdir(submodule[0])
@@ -98,7 +97,7 @@ def git_pull_sparse(submodule, excludes):
         try:  ## specific revision
             subprocess.check_call(['git', 'checkout', submodule[2]],
                                   shell=shell)
-        except:
+        except subprocess.CalledProcessError:
             pass
     elif os.path.exists(os.path.join(submodule[0], '.git')):
         ## no revision => get up-to-date

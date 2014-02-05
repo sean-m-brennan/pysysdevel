@@ -2,9 +2,11 @@
 import os
 import platform
 import sys
+import glob
 
-from ..prerequisites import *
+from ..prerequisites import autotools_install, admin_check_call, macports_prefix, patch_file, system_uses_macports
 from ..configuration import config
+from ..filesystem import mkdir
 from .. import options
 
 class configuration(config):
@@ -37,8 +39,9 @@ class configuration(config):
     def install(self, environ, version, locally=True):
         if not 'darwin' in platform.system().lower():
             return
-        mkdir(target_build_dir)
-        log = open(os.path.join(target_build_dir, 'macports_setup.log'), 'w')
+        mkdir(options.target_build_dir)
+        log = open(os.path.join(options.target_build_dir,
+                                'macports_setup.log'), 'w')
         python_version = '26'  ## Hard coded due to wxPython
         if not self.found:
             if version is None:
@@ -67,7 +70,7 @@ class configuration(config):
                               'py' + python_version + '-py2app'],
                              stdout=log, stderr=log)
         log.close()
-        if not self.is_installed(environ, verson):
+        if not self.is_installed(environ, version):
             raise Exception("Macports installation failed.")
 
 
@@ -91,7 +94,7 @@ def switch_python():
                    os.path.join(macports_prefix(), 'sbin'),] + [env.get('PATH', '')]
     env['PATH'] = ':'.join(env['PATH'])
     sys.stdout.write('Switching to MacPorts Python ')
-    if VERBOSE:
+    if options.VERBOSE:
         sys.stdout.write(python_executable() + ' ' + ' '.join(sys.argv))
     sys.stdout.write('\n\n')
     sys.stdout.flush()

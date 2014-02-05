@@ -3,7 +3,7 @@ import os
 import shutil
 
 from ..fetching import fetch
-from ..configuration import file_config
+from ..configuration import file_config, latest_version
 from .. import options
 
 class configuration(file_config):

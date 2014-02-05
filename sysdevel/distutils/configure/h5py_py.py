@@ -1,4 +1,6 @@
 
+import sys
+
 from ..prerequisites import compare_versions, install_pypkg
 from ..configuration import py_config
 from .. import options
@@ -13,7 +15,7 @@ class configuration(py_config):
                            debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         try:
             import h5py
@@ -21,7 +23,7 @@ class configuration(py_config):
             if compare_versions(ver, version) == -1:
                 return self.found
             self.found = True
-        except Exception:
+        except ImportError:
             if self.debug:
                 print(sys.exc_info()[1])
         return self.found

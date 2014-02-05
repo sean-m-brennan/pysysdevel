@@ -23,6 +23,7 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
 
+# pylint: disable=E0603
 
 __all__ = ['daemon', 'generic_query', 'networked_resources',
            'models', 'factories',

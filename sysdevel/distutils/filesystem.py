@@ -22,14 +22,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Utilities for portable filesystem manipulation
 """
 
 import os
+import sys
 import fnmatch
 import glob
+import shutil
 
 
 def mkdir(newdir):
@@ -47,13 +49,16 @@ def mkdir(newdir):
 
 
 def copy_tree(src, dst, preserve_mode=1, preserve_times=1, preserve_symlinks=0,
-              update=0, verbose=0, dry_run=0, excludes=[]):
+              update=0, verbose=0, dry_run=0, excludes=None):
     '''
     Extends distutils.dir_util.copy_tree to exclude given patterns
     '''
     from distutils import dir_util, file_util
     from distutils.errors import DistutilsFileError
     from distutils import log
+
+    if excludes is None:
+        excludes = []
 
     if not dry_run and not os.path.isdir(src):
         raise DistutilsFileError("cannot copy tree '%s': not a directory" % src)
@@ -119,15 +124,17 @@ def symlink(original, target):
     if not os.path.lexists(target):
         if not os.path.isabs(original):
             levels = len(target.split(os.sep))-1
-            for l in range(levels):
+            for _ in range(levels):
                 original = os.path.join('..', original)
         try:
             os.symlink(original, target)
-        except:
+        except OSError:
             shutil.copyfile(original, target)
 
 
-def is_out_of_date(target, source, additional=[]):
+def is_out_of_date(target, source, additional=None):
+    if additional is None:
+        additional = []
     extra = False
     for addtnl in additional:
         if os.path.exists(target) and os.path.exists(addtnl):
@@ -140,8 +147,8 @@ def is_out_of_date(target, source, additional=[]):
  
 
 def glob_insensitive(directory, file_pattern):
-    def either(c):
-        return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
-    return glob.glob(os.path.join(directory, ''.join(map(either, file_pattern))))
+    either = lambda(c): '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
+    return glob.glob(os.path.join(directory,
+                                  ''.join([either(p) for p in file_pattern])))
 
 

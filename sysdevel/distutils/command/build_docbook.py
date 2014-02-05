@@ -22,20 +22,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_docbook' command using emacs on org-mode files
 """
 
 import os
-import sys
 import glob
-import shutil
 import subprocess
 
+# pylint: disable=W0201
 try:
     from numpy.distutils.command.build_ext import build_ext
-except:
+except ImportError:
     from distutils.command.build_ext import build_ext
 
 from ..prerequisites import find_program, find_file
@@ -49,6 +48,7 @@ def make_doc(src_file, target_dir=None, stylesheet=None):
     src_dir = os.path.abspath(os.path.dirname(src_file))
     if target_dir is None:
         pth = os.path.relpath(os.path.dirname(src_file)).split(os.sep)[1:]
+        # pylint: disable=W0142
         target_dir = os.path.join(options.target_build_dir, *pth)
     if stylesheet is None:
         stylesheet = 'http://docbook.sourceforge.net/release/fo/docbook.xsl'
@@ -58,17 +58,17 @@ def make_doc(src_file, target_dir=None, stylesheet=None):
     try:  ## prefer xsltproc
         xslt_exe = [find_program('xsltproc')]
         which = XSLTPROC
-    except:
+    except Exception:  # pylint: disable=W0703
         try:
             classpaths = []
             try:
                 for path in os.environ['CLASSPATH'].split(os.pathsep):
                     classpaths.append(os.path.dirname(path))
-            except:
+            except KeyError:
                 pass
             try:
                 classpaths.append(os.path.join(os.environ['JAVA_HOME'], 'lib'))
-            except:
+            except KeyError:
                 pass
             saxon_jar = find_file('saxon*.jar',
                                   ['/usr/share/java', '/usr/local/share/java',
@@ -81,7 +81,7 @@ def make_doc(src_file, target_dir=None, stylesheet=None):
                         os.pathsep.join([saxon_jar, resolver_jar]),
                         '-jar', saxon_jar]
             which = JAVA_SAXON
-        except:
+        except Exception:  # pylint: disable=W0703
             xslt_exe = [find_program('saxon')]
             which = NET_SAXON
 
@@ -127,7 +127,7 @@ class build_docbook(build_ext):
             if dext.docbook_stylesheet:  ## must be provided to trigger this
                 for xfile in glob.glob(os.path.join(dext.source_directory,
                                                     '*.xml')):
-                    make_docs(xfile, target, dext.docbook_stylesheet)
+                    make_doc(xfile, target, dext.docbook_stylesheet)
 
         if not self.distribution.doc_dir:
             return
@@ -135,4 +135,4 @@ class build_docbook(build_ext):
         ## default location
         for xfile in glob.glob(os.path.join(self.distribution.doc_dir,
                                             '*.xml')):
-            make_docs(xfile, target, self.stylesheet)
+            make_doc(xfile, target, self.stylesheet)

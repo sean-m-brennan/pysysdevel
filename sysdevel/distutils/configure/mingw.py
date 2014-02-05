@@ -1,8 +1,9 @@
 
 import os
+import sys
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import programfiles_directories, find_program, global_install, ConfigError
 from ..configuration import config
 from .. import options
 
@@ -36,7 +37,7 @@ class configuration(config):
         if not limit:
             try:
                 mingw_root = os.environ['MINGW_ROOT']
-            except:
+            except KeyError:
                 locations = [os.path.join('C:', os.sep, 'MinGW')]
                 for d in programfiles_directories():
                     locations.append(os.path.join(d, 'MinGW'))
@@ -44,10 +45,9 @@ class configuration(config):
                     gcc = find_program('mingw32-gcc', locations)
                     mingw_root = os.path.abspath(os.path.join(
                             os.path.dirname(gcc), '..'))
-                except Exception:
+                except ConfigError:
                     if self.debug:
-                        e = sys.exc_info()[1]
-                        print(e)
+                        print(sys.exc_info[1])
                     return self.found
 
         msys_root = os.path.join(mingw_root, 'msys', '1.0')
@@ -57,7 +57,7 @@ class configuration(config):
             gxx = find_program('mingw32-g++', [mingw_root], limit=limit)
             gfort = find_program('mingw32-gfortran', [mingw_root], limit=limit)
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found

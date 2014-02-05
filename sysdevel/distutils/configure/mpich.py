@@ -1,8 +1,10 @@
 
+import os
+import sys
 import struct
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import programfiles_directories, find_libraries, find_header, find_program, autotools_install, global_install, ConfigError
 from ..configuration import lib_config
 from .. import options
 
@@ -14,7 +16,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "mpich2", "mpi.h", debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         options.set_debug(self.debug)
         mpich_lib_list = ['mpich', 'mpichcxx', 'mpichf90']
         if 'windows' in platform.system().lower():
@@ -35,18 +37,18 @@ class configuration(lib_config):
             try:
                 base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
                 base_dirs += os.environ['CPATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             try:
                 base_dirs.append(os.environ['MPICH_ROOT'])
-            except:
+            except KeyError:
                 pass
             for d in programfiles_directories():
                 base_dirs.append(os.path.join(d, 'MPICH2'))
             try:
                 base_dirs.append(environ['MINGW_DIR'])
                 base_dirs.append(environ['MSYS_DIR'])
-            except:
+            except KeyError:
                 pass
 
         try:
@@ -58,7 +60,7 @@ class configuration(lib_config):
                                      [os.path.join(mpich_lib_dir, '..')])
             mpich_exe_dir = os.path.abspath(os.path.dirname(mpich_exe))
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
                 print(sys.exc_info()[1])
             return self.found

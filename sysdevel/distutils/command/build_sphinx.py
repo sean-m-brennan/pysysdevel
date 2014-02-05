@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_sphinx' command for Sphinx docs (plus Doxygen/Breathe for extension docs)
 """
@@ -35,13 +35,12 @@ import shutil
 import platform
 import subprocess
 
-import sphinx
-
-from distutils import dir_util
+## Fail if sphinx isn't available
+import sphinx  # pylint: disable=W0611
 
 try:
     from numpy.distutils.command.build_ext import build_ext
-except:
+except ImportError:
     from distutils.command.build_ext import build_ext
 
 from ..filesystem import mkdir, copy_tree
@@ -108,7 +107,7 @@ class build_sphinx(build_ext):
             if os.path.exists(ref) and not self.force:
                 reprocess = False
                 docbase = os.path.join(doc_dir, 'modules')
-                for root, dirnames, filenames in os.walk(docbase):
+                for root, _, filenames in os.walk(docbase):
                     for fn in fnmatch.filter(filenames, '*.rst'):
                         doc = os.path.join(root, fn)
                         if os.path.getmtime(ref) < os.path.getmtime(doc):
@@ -148,7 +147,7 @@ class build_sphinx(build_ext):
 
                 if os.path.exists(os.path.join(doc_dir, dext.doxygen_cfg)):
                     ## Doxygen + breathe
-                    'Config ' + os.path.join(doc_dir, dext.doxygen_cfg)
+                    print('Config ' + os.path.join(doc_dir, dext.doxygen_cfg))
                     configure_file(environ,
                                    os.path.join(doc_dir, dext.doxygen_cfg),
                                    os.path.join(working_dir, dext.doxygen_cfg),
@@ -160,7 +159,7 @@ class build_sphinx(build_ext):
                                        style=dext.style)
                     try:
                         doxygen_exe = find_program('doxygen')
-                    except:
+                    except Exception:  # pylint: disable=W0703
                         sys.stderr.write('ERROR: Doxygen not installed ' +
                                          '(required for documentation).\n')
                         return
@@ -171,8 +170,8 @@ class build_sphinx(build_ext):
                         reprocess = False
                         for d in environ['C_SOURCE_DIRS'].split(' '):
                             for orig in glob.glob(os.path.join(d, '*.h*')):
-                               if os.path.getmtime(ref) < \
-                                        os.path.getmtime(orig):
+                                if os.path.getmtime(ref) < \
+                                   os.path.getmtime(orig):
                                     reprocess = True
                                     break
                     if reprocess:
@@ -217,7 +216,7 @@ class build_sphinx(build_ext):
                     if 'windows' in platform.system().lower() or \
                             not build_verbose:
                         from sphinx.util.console import nocolor
-                except:
+                except ImportError:
                     sys.stderr.write('ERROR: Sphinx not installed ' +
                                      '(required for documentation).\n')
                     return
@@ -235,10 +234,9 @@ class build_sphinx(build_ext):
                                         os.path.join(target, '.doctrees'),
                                         'html', None, status)
                     sphinx_app.build(True)
-                except Exception:
+                except Exception:  # pylint: disable=W0703
                     if build_verbose:
-                        e = sys.exc_info()[1]
-                        print('ERROR: ' + str(e))
+                        print('ERROR: ' + str(sys.exc_info()[1]))
                     else:
                         pass
                 if not build_verbose:

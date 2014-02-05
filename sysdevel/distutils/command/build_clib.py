@@ -22,16 +22,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_clib' command with conditional recompile
 """
 
 import os
 
+# pylint: disable=W0201
 try:
     from numpy.distutils.command.build_clib import build_clib as old_build_clib
-except:
+except ImportError:
     from distutils.command.build_clib import build_clib as old_build_clib
 
 from ..building import safe_eval
@@ -55,12 +56,11 @@ class build_clib(old_build_clib):
                 key = lib_name + '_DEFINES'
                 if env and key in env:
                     extra_preargs = build_info.get('extra_compiler_args') or []
-                    install_data = self.get_finalized_command('install_data')
                     for define in env[key]:
                         template = define[0]
                         insert = safe_eval(define[1])
                         arg = template.replace('@@def@@', insert)
-                        extra_preargs.append(template)
+                        extra_preargs.append(arg)
                     build_info['extra_compiler_args'] = extra_preargs
 
                 ## Conditional recompile

@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'test' command for building/running unit tests,
  supports python, fortran, and c/c++
@@ -31,9 +31,12 @@ permissions and limitations under the License.
 import os
 import sys
 import platform
+import unittest
+import subprocess
 from distutils.core import Command
 from distutils import log
 
+from ..configure import configure_package
 from ..extensions import FortranUnitTest, CUnitTest, CppUnitTest
 from ..recur import process_subpackages
 from ..prerequisites import RequirementsFinder, check_call
@@ -51,7 +54,7 @@ def create_test_wrapper(pyscript, target_dir, lib_dirs):
     dst_file = os.path.join(target_dir, os.path.splitext(pyscript)[0] + dst_ext)
     f = open(dst_file, 'w')
     if 'windows' in platform.system().lower():
-        wexe = os.path.join(os.path.dirname(sys.executable), 'pythonw')
+        #wexe = os.path.join(os.path.dirname(sys.executable), 'pythonw')
         exe = os.path.join(os.path.dirname(sys.executable), 'python')
         dirlist = ''
         for d in lib_dirs:
@@ -187,7 +190,7 @@ def create_cppunit_driver(unit):
 
 
 
-
+# pylint: disable=W0201
 class test(Command):
     description = "unit testing"
 
@@ -300,8 +303,10 @@ class test(Command):
             for (pkg_name, pkg_dir) in self.distribution.subpackages:
                 rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
                 if rf.is_sysdevel_build:
-                    subs.append((pkg_name, pkg_dir)) 
-            for idx in range(len(sys.argv)):
+                    subs.append((pkg_name, pkg_dir))
+            idx = 0
+            for i in range(len(sys.argv)):
+                idx = i
                 if 'setup.py' in sys.argv[idx]:
                     break
             argv = list(sys.argv[idx+1:])
@@ -326,15 +331,15 @@ class test(Command):
             lib_dirs = [build.build_temp]
             try:
                 lib_dirs += environ['PATH']  ## need dlls for windows
-            except:
+            except KeyError:
                 pass
             try:
                 lib_dirs.append(os.path.join(environ['MINGW_DIR'], 'bin'))
                 lib_dirs.append(os.path.join(environ['MSYS_DIR'], 'bin'))
                 lib_dirs.append(os.path.join(environ['MSYS_DIR'], 'lib'))
-            except:
+            except KeyError:
                 pass
-            postfix = '.'.join(build.build_temp.split('.')[1:])        
+            #postfix = '.'.join(build.build_temp.split('.')[1:])        
 
             for pkg, units in self._get_python_tests():
                 test_dir = os.path.join(build_dir, 'test_' + pkg)
@@ -350,21 +355,16 @@ class test(Command):
                 log.info('Python unit tests for ' + pkg)
                 try:
                     check_call([wrap])
-                except Exception:
+                except subprocess.CalledProcessError:
                     failed = True
-                    e = sys.exc_info()[1]
-                    print(e)
+                    print(sys.exc_info()[1])
 
         ## FORTRAN
         if self._has_fortran_tests():
-            from ..configure import fruit
-            env = dict()
-            if not fruit.is_installed(env, None):
-                fruit.install(env, None)
+            env = configure_package('fruit')
             fortran_unittest_framework = [
                 os.path.join(env['FRUIT_SOURCE_DIR'], src)
                 for src in env['FRUIT_SOURCE_FILES']]
-
             orig_exes = self.distribution.native_executables
 
             build = self.get_finalized_command('build')
@@ -387,18 +387,13 @@ class test(Command):
                 for unit in units:
                     try:
                         check_call([os.path.join(lib_dir, unit.name)])
-                    except Exception:
+                    except subprocess.CalledProcessError:
                         failed = True
-                        e = sys.exc_info()[1]
-                        print(e)
+                        print(sys.exc_info()[1])
 
         ## C
         if self._has_c_tests():
-            from ..configure import cunit
-            env = dict()
-            if not cunit.is_installed(env, None):
-                cunit.install(env, None)
-
+            env = configure_package('cunit')
             orig_exes = self.distribution.native_executables
 
             build = self.get_finalized_command('build')
@@ -423,18 +418,13 @@ class test(Command):
                 for unit in units:
                     try:
                         check_call([os.path.join(lib_dir, unit.name)])
-                    except Exception:
+                    except subprocess.CalledProcessError:
                         failed = True
-                        e = sys.exc_info()[1]
-                        print(e)
+                        print(sys.exc_info()[1])
 
         ## C++
         if self._has_cpp_tests():
-            from ..configure import cppunit
-            env = dict()
-            if not cppunit.is_installed(env, None):
-                cppunit.install(env, None)
-
+            env = configure_package('cppunit')
             orig_exes = self.distribution.native_executables
 
             build = self.get_finalized_command('build')
@@ -458,30 +448,27 @@ class test(Command):
                 for unit in units:
                     try:
                         check_call([os.path.join(lib_dir, unit.name)])
-                    except Exception:
+                    except subprocess.CalledProcessError:
                         failed = True
-                        e = sys.exc_info()[1]
-                        print(e)
+                        print(sys.exc_info()[1])
 
         ## Javascript
         if self._has_js_tests():
-            from ..configure import qunitsuite
-            env = dict()
-            if not qunitsuite.is_installed(env, None):
-                qunitsuite.install(env, None)
-
+            env = configure_package('qunitsuite')
+            from qunitsuite.suite import QUnitSuite  \
+                # pylint: disable=F0401,E0602
             for pkg, units in self._get_js_tests():
                 for unit in units:
-                   suite = qunitsuite.QUnitSuite(unit)
-                   result = unittest.TextTestRunner(verbosity=2).run(suite)
-                   if len(result.errors) > 0:
-                       failed = true
-                       for error in result.errors:
-                           print(error[1])
-                   if len(result.failures) > 0:
-                       failed = true
-                       for failure in result.failures:
-                           print(failure[1])
+                    suite = QUnitSuite(unit)
+                    result = unittest.TextTestRunner(verbosity=2).run(suite)
+                    if len(result.errors) > 0:
+                        failed = True
+                        for error in result.errors:
+                            print(error[1])
+                    if len(result.failures) > 0:
+                        failed = True
+                        for failure in result.failures:
+                            print(failure[1])
 
         if failed:
             sys.exit(1)

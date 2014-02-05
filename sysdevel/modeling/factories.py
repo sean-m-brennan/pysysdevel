@@ -22,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Factory that produces factories
 """
@@ -30,10 +30,12 @@ Factory that produces factories
 import sys
 import functools
 try:
-    from configparser import RawConfigParser
-except:
-    from ConfigParser import RawConfigParser
+    # pylint: disable=F0401
+    from configparser import RawConfigParser, NoOptionError
+except ImportError:
+    from ConfigParser import RawConfigParser, NoOptionError
 
+# pylint: disable=W0142
 
 class FactoryException(Exception):
     def __init__(self, type_key):
@@ -116,13 +118,16 @@ class DefinitionList(list):
         import xml.etree.ElementTree as ET
         lst = cls(no_default)
         definitions = ET.fromstring(list_str)
-        for d in definitions.findAll('definition'):
+        for d in definitions.findall('definition'):  # pylint: disable=E1103
             if 'test' in d.attrib:
                 test = d['test']
             else:
                 test = 'lambda(x): True'
-            lst.append(Definition(d.find('name').text, d.find('module'.text),
-                                  eval(test)))
+            name = d.find('name')
+            mod = d.find('module')
+            if name is None or mod is None:
+                continue
+            lst.append(Definition(name.text, mod.text, eval(test)))
         return lst
         
     @classmethod
@@ -140,30 +145,32 @@ class DefinitionList(list):
             for section in config.sections():
                 try:
                     test = config.get(section, 'TEST')
-                except:
+                except NoOptionError:
                     test = 'lambda(x): True'
                 lst.append(Definition(section, config.get(section, 'MODULE'),
                                       eval(test)))
         return lst
 
     @staticmethod
-    def convert(def_list):
+    def convert(def_arg):
         '''
         Convert from either a tuple list or a string descriptor
         to DefinitionList.
         Conversion always uses the first entry as the default.
         '''
-        if type(def_list) == list:
-            return DefinitionList.from_list(def_list)
-        elif type(def_list) == str:
-            try:
-                return DefinitionList.from_xml(def_list)
-            except:
-                return DefinitionList.from_ini(def_list)
-        elif type(def_list) == type(DefinitionList):
-            return def_list
+        if type(def_arg) == list:
+            return DefinitionList.from_list(def_arg)
+        elif type(def_arg) == str:
+            dl = DefinitionList.from_xml(def_arg)
+            if not dl:
+                dl = DefinitionList.from_xml_file(def_arg)
+                if not dl:
+                    dl = DefinitionList.from_ini_file(def_arg)
+            return dl
+        elif type(def_arg) == type(DefinitionList):
+            return def_arg
         else:
-            raise InvalidDefinitionListException(type(def_list))
+            raise InvalidDefinitionListException(type(def_arg))
 
 
 

@@ -22,26 +22,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 'build_src' command, adding module generation using ANTLR grammars
 """
 
 import os
-import sys
 import shutil
 import glob
 import subprocess
 
+# pylint: disable=W0201
 try:
     from numpy.distutils.command.build_src import build_src as _build_src
-except:
+except ImportError:
     from distutils.command.build_ext import build_ext as _build_src
-from distutils.util import get_platform
 
 from ..filesystem import mkdir
 from ..building import configure_file
-from ... import server_support_dir, server_support_modules
+from ... import SERVER_SUPPORT_DIR, SERVER_SUPPORT_MODULES
 
 
 class build_src(_build_src):
@@ -69,8 +68,8 @@ class build_src(_build_src):
                 target_dir = os.path.abspath(os.path.join(self.build_lib,
                                                           *target.split('.')))
                 mkdir(target_dir)
-                source_dir = server_support_dir
-                for mod in server_support_modules:
+                source_dir = SERVER_SUPPORT_DIR
+                for mod in SERVER_SUPPORT_MODULES:
                     src_file = os.path.join(source_dir, mod + '.py.in')
                     if not os.path.exists(src_file):
                         src_file = src_file[:-3]

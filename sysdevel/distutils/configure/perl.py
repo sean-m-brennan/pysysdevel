@@ -1,9 +1,11 @@
 
 import os
+import sys
 import platform
 
-from ..prerequisites import *
+from ..prerequisites import find_program, find_header, find_library, check_call, global_install, ConfigError
 from ..configuration import lib_config
+from ..fetching import fetch, unarchive
 from .. import options
 
 class configuration(lib_config):
@@ -14,7 +16,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "perl", "perl.h", debug=False)
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None):
         if version is None:
             ver = '5'
         else:
@@ -34,15 +36,15 @@ class configuration(lib_config):
             try:
                 base_dirs += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
                 base_dirs += os.environ['CPATH'].split(os.pathsep)
-            except:
+            except KeyError:
                 pass
             try:
                 base_dirs.append(os.environ['PERL_CORE'])
-            except:
+            except KeyError:
                 pass
             try:
                 base_dirs.append(os.environ['PERL_ROOT'])
-            except:
+            except KeyError:
                 pass
             if 'windows' in platform.system().lower():
                 ## Strawberry Perl from http://strawberryperl.com
@@ -50,7 +52,7 @@ class configuration(lib_config):
                                               'strawberry', 'perl'))
                 try:
                     base_dirs.append(environ['MSYS_DIR'])  ## msys includes perl
-                except:
+                except KeyError:
                     pass
             elif 'darwin' in platform.system().lower():
                 base_dirs.append(os.path.join('/', 'System', 'Library', 'Perl',
@@ -69,12 +71,11 @@ class configuration(lib_config):
                                               [os.path.join('perl', 'bin'),
                                                incl_dir,])
             if 'windows' in platform.system().lower():
-                lib_ver = perl_lib.split('.')[0].split('perl')[1]
+                lib_ver = perl_lib[0].split('.')[0].split('perl')[1]
             self.found = True
-        except Exception:
+        except ConfigError:
             if self.debug:
-                e = sys.exc_info()[1]
-                print(e)
+                print(sys.exc_info()[1])
             return self.found
 
         self.environment['PERL'] = perl_exe
@@ -102,10 +103,17 @@ class configuration(lib_config):
                 fetch(''.join(website), archive, archive)
                 unarchive(archive, src_dir)
 
+                if locally:
+                    prefix = os.path.abspath(options.target_build_dir)
+                    if not prefix in options.local_search_paths:
+                        options.add_local_search_path(prefix)
+                else:
+                    prefix = options.global_prefix
                 here = os.path.abspath(os.getcwd())
-                os.chdir(build_dir)
+                os.chdir(options.target_build_dir)
                 log = open('build.log', 'w')
-                check_call(['./Configure', '-des', '-Dprefix=' + prefix],
+                check_call(['./Configure', '-des',
+                            '-Dprefix=' + prefix],
                            stdout=log, stderr=log)
                 check_call(['make'], stdout=log, stderr=log)
                 check_call(['make', 'install'], stdout=log, stderr=log)
