@@ -12,7 +12,7 @@ class configuration(py_config):
                            debug=True)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = self.version
@@ -22,6 +22,6 @@ class configuration(py_config):
             archive = src_dir + '.tar.gz' 
             install_pypkg(src_dir, website, archive, locally=locally)
             #              extra_args=['config_fc', '--fcompiler=gnu95'])
-            ## FIXME silently failing
-            #if not self.is_installed(environ, version):
+            #TODO install check silently failing
+            #if not self.is_installed(environ, version, strict):
             #    raise Exception('SpacePy installation failed.')

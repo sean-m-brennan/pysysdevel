@@ -12,7 +12,7 @@ class configuration(prog_config):
         prog_config.__init__(self, 'gfortran', debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = ('http://gcc.gnu.org',)
             if 'windows' in platform.system().lower():
@@ -27,5 +27,5 @@ class configuration(prog_config):
                            winstaller='mingw-get-inst-' + str(version) + '.exe',
                            brew='gfortran ', #+ os.path.join(here, 'g77.rb'),
                            deb='gfortran', rpm='gcc-gfortran')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('GFortran installation failed.')

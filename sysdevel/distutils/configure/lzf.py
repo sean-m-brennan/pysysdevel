@@ -13,7 +13,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "lzf", "lzf.h", debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '3.6'
@@ -28,5 +28,5 @@ class configuration(lib_config):
                                brew=os.path.join(here, 'liblzf.rb'),
                                port='liblzf',
                                deb='liblzf-dev', rpm='liblzf-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('LZF installation failed.')

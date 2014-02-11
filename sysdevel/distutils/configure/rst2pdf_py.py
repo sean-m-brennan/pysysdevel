@@ -14,7 +14,7 @@ class configuration(py_config):
                            debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = 'http://rst2pdf.googlecode.com/files/'
             if version is None:
@@ -22,5 +22,5 @@ class configuration(py_config):
             src_dir = 'rst2pdf-' + str(version)
             archive = src_dir + '.tar.gz' 
             install_pypkg(src_dir, website, archive, locally=locally)
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('rst2pdf installation failed.')

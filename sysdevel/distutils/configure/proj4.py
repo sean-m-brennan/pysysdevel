@@ -15,7 +15,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "proj", "proj_api.h", debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         base_dirs = []
         limit = False
@@ -57,7 +57,7 @@ class configuration(lib_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '4.8.0'
@@ -71,6 +71,6 @@ class configuration(lib_config):
                 global_install('PROJ4', website,
                                brew='proj', port='libproj4',
                                deb='libproj-dev', rpm='proj-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('Proj4 installation failed.')
 

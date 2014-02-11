@@ -11,7 +11,7 @@ class configuration(lib_config):
 
     ## TODO ANTLR v2 & v4
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = 'http://www.antlr3.org/download/'
             if version is None:
@@ -19,5 +19,5 @@ class configuration(lib_config):
             src_dir = 'libantlr3c-' + str(version)
             archive = src_dir + '.tar.gz'
             autotools_install(environ, website, archive, src_dir, locally)
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('ANTLR-C runtime installation failed.')

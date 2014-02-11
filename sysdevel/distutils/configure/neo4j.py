@@ -18,7 +18,7 @@ class configuration(prog_config):
                              dependencies=['java'], debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         if version is None:
             version = '1.9.4'
@@ -33,7 +33,7 @@ class configuration(prog_config):
 
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '1.9.4'

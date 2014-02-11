@@ -14,7 +14,7 @@ class configuration(lib_config):
     """
     def __init__(self):
         lib_config.__init__(self, "cgraph", "cgraph.h",
-                            dependencies=[], #FIXME lots of dependencies
+                            dependencies=[], #TODO lots of dependencies
                             debug=False)
 
 
@@ -26,7 +26,7 @@ class configuration(lib_config):
         self.environment['GRAPHVIZ_LIBRARIES'] = None
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         base_dirs = []
         limit = False
@@ -68,13 +68,13 @@ class configuration(lib_config):
 
         self.environment['GRAPHVIZ_INCLUDE_DIR'] = incl_dir
         self.environment['GRAPHVIZ_LIB_DIR'] = lib_dir
-        #FIXME self.environment['GRAPHVIZ_SHLIB_DIR'] = lib_dir
+        self.environment['GRAPHVIZ_SHLIB_DIR'] = lib_dir
         self.environment['GRAPHVIZ_LIB_FILES'] = [lib]
         self.environment['GRAPHVIZ_LIBRARIES'] = [self.lib]
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '2.30.1'
@@ -88,5 +88,5 @@ class configuration(lib_config):
                 global_install('Graphviz', website,
                                brew='graphviz', port='graphviz-devel',
                                deb='graphviz-dev', rpm='graphviz-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('Graphviz installation failed.')

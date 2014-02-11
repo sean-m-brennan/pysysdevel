@@ -12,7 +12,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "archive", "archive.h", debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '3.1.2'
@@ -25,5 +25,5 @@ class configuration(lib_config):
                 global_install('Archive', website,
                                brew='libarchive', port='libarchive',
                                deb='libarchive-dev', rpm='libarchive-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('libarchive installation failed.')

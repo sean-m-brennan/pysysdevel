@@ -35,7 +35,8 @@ import traceback
 from ..prerequisites import read_cache, save_cache, in_prerequisites
 from ..prerequisites import system_uses_macports, system_uses_homebrew
 from ..configuration import dynamic_module, latest_pypi_version
-from ..configuration import is_pypi_listed, pypi_exceptions
+from ..configuration import is_pypi_listed
+from ..pypi_exceptions import pypi_exceptions
 from ..filesystem import mkdir
 from .. import options
 from ...util import is_string
@@ -134,8 +135,6 @@ def configure_system(prerequisite_list, version,
                   "If the build fails, run 'python setup.py dependencies " + 
                   "--show'\nand install the listed packages by hand.\n" +
                   'Prerequisites might be present, so building anyway...\n')
-    sys.path.insert(0, os.path.join(options.target_build_dir,
-                                    options.local_lib_dir))
     return environment
 
 
@@ -147,6 +146,7 @@ def configure_package(which):
 def __configure_package(environment, help_name, skip, install, quiet,
                         out=sys.stdout, err=sys.stderr):
     req_version = None
+    strict = False
     if not is_string(help_name):
         req_version = help_name[1]
         help_name = help_name[0]
@@ -158,6 +158,8 @@ def __configure_package(environment, help_name, skip, install, quiet,
                 n_end = help_name.find('=')
         v_begin = help_name.rfind('=') + 1
         v_end = help_name.find(')')
+        if '==' in help_name[n_end:]:
+            strict = True
         req_version = help_name[v_begin:v_end]
         help_name = help_name[:n_end]
     if help_name == 'None':
@@ -167,7 +169,7 @@ def __configure_package(environment, help_name, skip, install, quiet,
     packages = [__package__ + '.', '',]
     cfg_dir = os.path.abspath(os.path.join(options.target_build_dir,
                                            '..', options.user_config_dir))
-    if os.path.exists(cfg_dir):
+    if os.path.exists(cfg_dir) and not cfg_dir in sys.path:
         sys.path.insert(0, cfg_dir)
     successful = False
     for package in packages:
@@ -206,28 +208,33 @@ def __configure_package(environment, help_name, skip, install, quiet,
             ## grab it from the Python Package Index
             if base in pypi_exceptions.keys():
                 name, deps = pypi_exceptions[base]
-                helper = dynamic_module(base, req_version, deps,
+                helper = dynamic_module(base, req_version, strict, deps,
                                         name, DEBUG_PYPI)
             else:
-                helper = dynamic_module(base, req_version, debug=DEBUG_PYPI)
+                helper = dynamic_module(base, req_version, strict,
+                                        debug=DEBUG_PYPI)
         except Exception:
             if DEBUG_PYPI:
                 traceback.print_exc()
             err.write('No setup helper module ' + base + '\n')
             raise ImportError('No configuration found for ' + help_name)
+    local_python_dir = os.path.join(options.target_build_dir,
+                                    options.local_lib_dir)
+    if not local_python_dir in sys.path:
+        sys.path.insert(0, local_python_dir)
     return __run_helper__(environment, help_name, helper,
-                          req_version, skip, install, quiet, out, err)
+                          req_version, strict, skip, install, quiet, out, err)
 
 
 configured = []
 
-def __run_helper__(environment, short_name, helper, version,
+def __run_helper__(environment, short_name, helper, version, strict,
                    skip, install, quiet, out=sys.stdout, err=sys.stderr):
     configured.append(short_name)
     try:
         cfg = helper.configuration()
     except Exception:
-        print 'Error loading ' + short_name + ' configuration.'
+        print('Error loading ' + short_name + ' configuration.')
         raise
     for dep in cfg.dependencies:
         dep_name = dep
@@ -238,18 +245,22 @@ def __run_helper__(environment, short_name, helper, version,
         environment = __configure_package(environment, dep,
                                           skip, install, quiet, out, err)
         save_cache(environment)
+    quiet = False
     if not quiet:
         out.write('Checking for ' + short_name + ' ')
-        if not version is None:
+        if version:
             out.write('v.' + version)
+        if strict:
+            out.write(' (strict)')
         out.write('\n')
         out.flush()
     if skip:
         cfg.null()
-    elif cfg.force or not cfg.is_installed(environment, version):
+    elif cfg.force or not cfg.is_installed(environment, version, strict):
         if not install:
             raise Exception(short_name + ' cannot be found.')
-        cfg.install(environment, version)
+        #TODO: global install option
+        cfg.install(environment, version, strict, True)
     env = dict(list(cfg.environment.items()) + list(environment.items()))
     if not 'PREREQUISITES' in env:
         env['PREREQUISITES'] = [short_name]

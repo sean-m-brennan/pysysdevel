@@ -20,7 +20,7 @@ class configuration(config):
         self.environment['MSVC_VARS'] = None
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version, strict=False):
         options.set_debug(self.debug)
         if 'MINGW_CC' in environ:
             raise Exception('MS Visual C *and* MinGW both specified ' +
@@ -60,6 +60,6 @@ class configuration(config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             raise Exception('Install MS Visual Studio by hand')

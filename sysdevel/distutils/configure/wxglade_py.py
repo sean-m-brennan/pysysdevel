@@ -14,12 +14,18 @@ class configuration(prog_config):
         self.environment['WXGLADE'] = None
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         try:
             import wxglade.common
             ver = wxglade.common.version
-            if compare_versions(ver, version) == -1:
+            not_ok = (compare_versions(ver, version) == -1)
+            if strict:
+                not_ok = (compare_versions(ver, version) != 0)
+            if not_ok:
+                if self.debug:
+                    print('Wrong version of wxGlade: ' +
+                          str(ver) + ' vs ' + str(version))
                 return self.found
             self.environment['WXGLADE'] = find_program('wxglade')
             self.found = True
@@ -29,7 +35,7 @@ class configuration(prog_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '0.6.5'
@@ -37,5 +43,5 @@ class configuration(prog_config):
             src_dir = 'wxGlade-' + version
             archive = src_dir + '.tar.gz'
             install_pypkg(src_dir, website, archive, locally=locally)
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('wxGlade installation failed.')

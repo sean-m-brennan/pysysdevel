@@ -17,7 +17,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "atlas", "atlas_type.h", debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '3.10.1'
@@ -70,5 +70,5 @@ class configuration(lib_config):
                 global_install('ATLAS', website,
                                ## part of XCode
                                deb='libatlas-dev', rpm='atlas-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('ATLAS installation failed.')

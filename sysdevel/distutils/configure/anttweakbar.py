@@ -12,7 +12,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "AntTweakBar", "AntTweakBar.h", debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '116'
@@ -25,5 +25,5 @@ class configuration(lib_config):
                 global_install('AntTweakBar', website,
                                brew='anttweakbar', port='AntTweakBar',
                                deb='anttweakbar-dev', rpm='AntTweakBar-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('AntTweakBar installation failed.')

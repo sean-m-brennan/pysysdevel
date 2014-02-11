@@ -30,13 +30,6 @@ The sysdevel package facilitates multi-model simulation development in three
 areas: model coupling, data visualization, and collaboration & distribution.
 """
 
-# pylint: disable=E0603
-
-__all__ = ['distutils',  ## Package building and distribution
-           'modeling',   ## Multi-model simulation building
-           #"ui"         ## User interface support code (not a Python module)
-           ]
-
 import os
 
 CONFIG_DIR = os.path.realpath(os.path.abspath(

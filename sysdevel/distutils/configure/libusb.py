@@ -12,7 +12,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "usb", "usb.h", debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '1.0.9'
@@ -27,5 +27,5 @@ class configuration(lib_config):
                 global_install('USB', website,
                                brew='libusb', port='libusb-devel',
                                deb='libusb-dev', rpm='libusb-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('USB installation failed.')

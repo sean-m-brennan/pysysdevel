@@ -19,7 +19,7 @@ class configuration(lib_config):
             self.dependencies.append('mingw')
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         lib_name = 'cdf'
         if 'windows' in platform.system().lower():
@@ -81,7 +81,7 @@ class configuration(lib_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '34_1'
@@ -142,5 +142,5 @@ class configuration(lib_config):
                 os.chdir(here)
             else:
                 global_install('CDF', website, brew='cdf', port='cdf')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('CDF installation failed.')

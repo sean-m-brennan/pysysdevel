@@ -21,7 +21,7 @@ class configuration(lib_config):
         self.environment['WX_LD_FLAGS'] = []
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         try:
             wx_config = os.environ['WX_CONFIG']
@@ -57,7 +57,7 @@ class configuration(lib_config):
         return self.found
     
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '2.8.12'
@@ -71,5 +71,5 @@ class configuration(lib_config):
                                brew='wxwidgets', port='wxgtk',
                                deb='libwxbase-dev libwxgtk-dev',
                                rpm='wxBase wxGTK-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('WxGTK installation failed.')

@@ -19,7 +19,7 @@ class configuration(lib_config):
         self.environment['GOMP_LIBRARY'] = ''
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         try:
             gomp_lib_dir, gomp_lib  = find_library('gomp')
@@ -32,6 +32,6 @@ class configuration(lib_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         raise Exception('GOMP is part of GCC; Your development environment ' +
                         'is seriously screwed up. Look for libgomp.so.')

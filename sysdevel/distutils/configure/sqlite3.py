@@ -12,7 +12,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "sqlite3", "sqlite3.h", debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '3071502'
@@ -25,5 +25,5 @@ class configuration(lib_config):
                 global_install('SQLite3', website,
                                brew='sqlite', port='sqlite3',
                                deb='libsqlite-dev', rpm='sqlite-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('SQLite3 installation failed.')

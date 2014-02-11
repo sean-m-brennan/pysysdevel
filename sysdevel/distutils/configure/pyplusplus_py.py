@@ -13,7 +13,7 @@ class configuration(py_config):
                            dependencies=['pygccxml'], debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         try:
             import pyplusplus  # pylint: disable=F0401,W0611,W0612
             self.found = True
@@ -23,7 +23,7 @@ class configuration(py_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = self.version
@@ -33,5 +33,5 @@ class configuration(py_config):
             src_dir = 'Py++-' + str(version)
             archive = 'pyplusplus-' + str(version) + '.zip'
             install_pypkg(src_dir, website, archive, locally=locally)
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('Py++ installation failed.')

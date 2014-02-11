@@ -20,7 +20,7 @@ class configuration(config):
         self.environment['MSVCRT_LIBRARIES'] = []
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         msvcr_rel_dirs = []
         msvcr_dbg_dirs = []
@@ -83,7 +83,7 @@ class configuration(config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             version, ms_id, name = get_msvc_version()
             if ms_id:

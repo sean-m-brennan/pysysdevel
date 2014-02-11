@@ -16,7 +16,7 @@ class configuration(prog_config):
         prog_config.__init__(self, 'antlr', dependencies=['java'], debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         if version is None:
             version = '3.1.2'
         options.set_debug(self.debug)
@@ -57,7 +57,7 @@ class configuration(prog_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '3.1.2'
@@ -78,3 +78,4 @@ class configuration(prog_config):
             self.environment['ANTLR'] = [environ['JAVA'],
                                          "-classpath", os.path.abspath(jarfile),
                                          "org.antlr.Tool",]
+            #FIXME is_installed

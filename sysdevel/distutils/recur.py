@@ -35,7 +35,9 @@ from .building import process_progress
 
 
 def process_package(fnctn, build_base, progress, pyexe, argv,
-                    pkg_name, pkg_dir, addtnl_args=()):
+                    pkg_name, pkg_dir, addtnl_args=None):
+    if addtnl_args is None:
+        addtnl_args = []
     sys.stdout.write(fnctn.upper() + 'ING ' + pkg_name + ' in ' + pkg_dir + ' ')
     logging = True
     if 'clean' in fnctn:

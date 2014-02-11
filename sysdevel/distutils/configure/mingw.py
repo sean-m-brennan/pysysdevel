@@ -24,7 +24,7 @@ class configuration(config):
         self.environment['MINGW_FORTRAN'] = None
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         if 'MSVC' in environ:
             raise Exception('MinGW *and* MS Visual C both specified ' +
@@ -70,7 +70,7 @@ class configuration(config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if not 'windows' in platform.system().lower():
                 raise Exception('Not installing MinGW on this platform. ' +
@@ -82,5 +82,5 @@ class configuration(config):
                        str(version) + '/')
             global_install('MinGW', website,
                            winstaller='mingw-get-inst-' + str(version) + '.exe')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('MinGW installation failed.')

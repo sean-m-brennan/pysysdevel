@@ -27,13 +27,13 @@ class configuration(lib_config):
         self.environment['BOOST_LIBRARIES'] = []
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         if version is None:
             required_version = '1_44_0'
         else:
             required_version = version.replace('.', '_')
 
-        #FIXME not detecting
+        #FIXME not detecting if boost installed
 
         options.set_debug(self.debug)
         base_dirs = []
@@ -71,12 +71,18 @@ class configuration(lib_config):
             incl_dir = find_header(os.path.join('boost', 'version.hpp'),
                                    base_dirs, ['boost-*'], limit=limit)
             lib_dir, libs = find_libraries('boost', base_dirs, limit=limit)
-            ## FIXME lib_dir is wrong in windows (maybe)
+            #TODO boost lib_dir is wrong in windows (maybe)
             boost_version = get_header_version(os.path.join(incl_dir, 'boost',
                                                             'version.hpp'),
                                                'BOOST_LIB_VERSION')
             boost_version = boost_version.strip('"')
-            if compare_versions(boost_version, required_version) == -1:
+            not_ok = (compare_versions(boost_version, required_version) == -1)
+            if strict:
+                not_ok = (compare_versions(boost_version, required_version) != 0)
+            if not_ok:
+                if self.debug:
+                    print('Wrong version of Boost: ' +
+                          str(boost_version) + ' vs ' + str(required_version))
                 return self.found
             self.found = True
         except ConfigError:
@@ -104,7 +110,7 @@ class configuration(lib_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '1_44_0'
@@ -170,5 +176,5 @@ class configuration(lib_config):
                                port='boost +python' + ''.join(get_python_version()),
                                deb='libboost-dev',
                                rpm='boost-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('Boost installation failed.')

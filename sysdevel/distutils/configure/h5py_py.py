@@ -1,5 +1,7 @@
 
+import os
 import sys
+import ctypes
 
 from ..prerequisites import compare_versions, install_pypkg
 from ..configuration import py_config
@@ -15,12 +17,18 @@ class configuration(py_config):
                            debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         try:
             import h5py
             ver = h5py.version.version
-            if compare_versions(ver, version) == -1:
+            not_ok = (compare_versions(ver, version) == -1)
+            if strict:
+                not_ok = (compare_versions(ver, version) != 0)
+            if not_ok:
+                if self.debug:
+                    print('Wrong version of ' + self.pkg + ': ' +
+                          str(ver) + ' vs ' + str(version))
                 return self.found
             self.found = True
         except ImportError:
@@ -29,7 +37,7 @@ class configuration(py_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = 'http://h5py.googlecode.com/files/'
             if version is None:
@@ -37,6 +45,9 @@ class configuration(py_config):
             src_dir = 'h5py-' + str(version)
             archive = src_dir + '.tar.gz'
             install_pypkg(src_dir, website, archive, locally=locally)
-            ## FIXME Doesn't find the hdf5 shared lib
-            #if not self.is_installed(environ, version):
-            #    raise Exception('h5py installation failed.')
+            ctypes.cdll.LoadLibrary(os.path.join(
+                os.path.abspath(environ['HDF5_LIB_DIR']),
+                environ['HDF5_LIB_FILES'][0]))
+            #FIXME Doesn't find the hdf5 shared lib
+            if not self.is_installed(environ, version, strict):
+                raise Exception('h5py installation failed.')

@@ -17,7 +17,7 @@ class configuration(prog_config):
                              dependencies=['git', 'cmake'], debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         limit = False
         base_dirs = []
@@ -43,7 +43,7 @@ class configuration(prog_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if locally or ('darwin' in platform.system().lower() and
                            system_uses_homebrew()):
@@ -74,7 +74,7 @@ class configuration(prog_config):
                         config_cmd = [environ['CMAKE'], '..',
                                       '-G', '"NMake Makefiles"',
                                       '-DCMAKE_INSTALL_PREFIX=' + prefix]
-                        ##FIXME probably wrong
+                        #TODO test msvc cmake build; probably wrong
                         check_call([environ['MSVC_VARS']],
                                    stdout=log, stderr=log)
                         check_call(config_cmd, stdout=log, stderr=log)
@@ -114,5 +114,5 @@ class configuration(prog_config):
                                winstaller='gccxml-' + str(version) + '-win32.exe',
                                brew=None, port='gccxml-devel',
                                deb='gccxml', rpm='gccxml')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('GCC-XML installation failed.')

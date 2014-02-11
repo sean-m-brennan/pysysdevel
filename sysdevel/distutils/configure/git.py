@@ -15,7 +15,7 @@ class configuration(prog_config):
         prog_config.__init__(self, 'git', debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         base_dirs = []
         if 'GIT' in environ and environ['GIT']:
@@ -38,17 +38,17 @@ class configuration(prog_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = ('http://git-scm.com/',)
             if 'windows' in platform.system().lower():
                 if version is None:
                     version = '1.8.1.2-preview21130201'
                 website = ('http://msysgit.googlecode.com/', 'files/')
-            # FIXME no local install
+            #TODO no local install
             global_install('Git', website,
                            winstaller='Git-' + str(version) + '.exe',
                            brew='git', port='git-core',
                            deb='git', rpm='git')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('Git installation failed.')

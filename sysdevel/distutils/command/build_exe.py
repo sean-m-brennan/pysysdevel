@@ -27,34 +27,23 @@ permissions and limitations under the License.
 'build_exe' command for (non-python) executables
 """
 
-import os
-from glob import glob
-from distutils.errors import DistutilsSetupError, DistutilsError, \
-     DistutilsFileError
-from distutils.dep_util import newer_group
-
-have_numpy = False
 # pylint: disable=W0201
+have_numpy = False
 try:
     from numpy.distutils.command.build_clib import build_clib
-    from numpy.distutils.misc_util import get_numpy_include_dirs
-    from numpy.distutils import log
     have_numpy = True
 except ImportError:
     from distutils.command.build_clib import build_clib
-    from distutils import log
 
-from ...util import is_string
-from ..building import convert_ulist
-from ..numpy_utils import has_f_sources, has_cxx_sources, filter_sources, \
-    is_sequence, all_strings
+from ..building import build_target, EXECUTABLE
+from ..numpy_utils import has_f_sources, has_cxx_sources, all_strings
 
 
 class build_exe(build_clib):
     '''
     Build executables
     '''
-    def finalize_options (self):
+    def finalize_options(self):
         build_clib.finalize_options(self)
         self.executables = self.distribution.native_executables
         self.install_executables = []
@@ -94,6 +83,7 @@ class build_exe(build_clib):
             l = exe.language
             if l and l not in languages: languages.append(l)
 
+        ## Are the following lines unique for executables?
         from distutils.ccompiler import new_compiler
         self.compiler = new_compiler(compiler=self.compiler,
                                      dry_run=self.dry_run,
@@ -120,6 +110,9 @@ class build_exe(build_clib):
 
 
         for exe in self.executables:
+            build_target(self, exe, exe.name, EXECUTABLE)
+
+            """
             #libraries = convert_ulist(exe.libraries or [])
             library_dirs = convert_ulist(exe.library_dirs or [])
             runtime_library_dirs = convert_ulist(exe.runtime_library_dirs or [])
@@ -330,3 +323,4 @@ class build_exe(build_clib):
 
             ## Alternate ending
             link_compiler.link(**linker_args)  # pylint: disable=W0142
+            """

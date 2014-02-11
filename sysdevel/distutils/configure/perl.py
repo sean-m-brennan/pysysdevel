@@ -16,7 +16,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "perl", "perl.h", debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         if version is None:
             ver = '5'
         else:
@@ -86,7 +86,7 @@ class configuration(lib_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '5.16.3'
@@ -129,5 +129,5 @@ class configuration(lib_config):
                 global_install('Perl', website,
                                'strawberry-perl-' + str(version) + '-32bit.msi',
                                deb='libperl-dev', rpm='perl-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('Perl installation failed.')

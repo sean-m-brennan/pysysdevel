@@ -24,7 +24,7 @@ class configuration(config):
         self.brews_found = False
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         self.found = system_uses_homebrew()
         if self.found:
@@ -37,7 +37,7 @@ class configuration(config):
         return self.found and self.brews_found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not 'darwin' in platform.system().lower():
             return
         python_version = ''
@@ -63,7 +63,7 @@ class configuration(config):
             call([pip_executable(), 'install', 'py2app'],
                        stdout=log, stderr=log)
         log.close()
-        if not self.is_installed(environ, version):
+        if not self.is_installed(environ, version. strict):
             raise Exception("Homebrew installation failed.")
 
 

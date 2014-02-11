@@ -14,7 +14,7 @@ class configuration(file_config):
         file_config.__init__(self, dependencies=['jquery'], debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if version is None:
             version = '1.8.23'
         website = 'http://code.jquery.com/ui/' + version + '/'

@@ -19,7 +19,7 @@ class configuration(prog_config):
         self.environment['GXX'] = None
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         try:
             gcc = find_program('gcc')
@@ -35,7 +35,7 @@ class configuration(prog_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = ('http://gcc.gnu.org',)
             if 'windows' in platform.system().lower():
@@ -53,5 +53,5 @@ class configuration(prog_config):
                                'automake libtool gettext',
                            rpm='gcc gcc-c++ autoconf automake libtool ' + \
                                'make gettext')
-        if not self.is_installed(environ, version):
+        if not self.is_installed(environ, version, strict):
             raise Exception('GCC installation failed.')

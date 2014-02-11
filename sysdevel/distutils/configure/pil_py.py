@@ -12,11 +12,17 @@ class configuration(py_config):
         py_config.__init__(self, 'PIL', '1.1.7', debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         try:
             import PIL.Image
             ver = PIL.Image.VERSION
-            if compare_versions(ver, version) == -1:
+            not_ok = (compare_versions(ver, version) == -1)
+            if strict:
+                not_ok = (compare_versions(ver, version) != 0)
+            if not_ok:
+                if self.debug:
+                    print('Wrong version of ' + self.pkg + ': ' +
+                          str(ver) + ' vs ' + str(version))
                 return self.found
             self.found = True
         except ImportError:
@@ -25,7 +31,7 @@ class configuration(py_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = 'http://effbot.org/downloads/'
             if version is None:
@@ -33,5 +39,5 @@ class configuration(py_config):
             src_dir = 'Imaging-' + str(version)
             archive = src_dir + '.tar.gz'
             install_pypkg(src_dir, website, archive, locally=locally)
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('PIL.Image installation failed.')

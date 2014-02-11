@@ -25,7 +25,7 @@ class configuration(config):
         self.environment['CLASSPATH'] = []
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         try:
             locations = glob.glob(os.path.join('C:' + os.sep + 'OpenSCG',
@@ -61,7 +61,7 @@ class configuration(config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '1.6.0'
@@ -73,12 +73,12 @@ class configuration(config):
             if 'windows' in platform.system().lower():
                 website = 'http://oscg-downloads.s3.amazonaws.com/installers/'
                 installer = 'oscg-openjdk6b24-1-windows-installer.exe'
-            ## FIXME no local install
+            #TODO no local install
             global_install('Java', website,
                            winstaller=installer,
                            deb='openjdk-' + sub + '-jdk',
                            rpm='java-1.' + str(version) + '-openjdk-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('Java installation failed.')
 
 

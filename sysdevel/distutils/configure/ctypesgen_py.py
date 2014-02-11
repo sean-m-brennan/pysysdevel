@@ -19,7 +19,7 @@ class configuration(prog_config):
         self.environment['CTYPESGEN_PATH'] = None
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         limit = False
         locations = []
@@ -42,7 +42,7 @@ class configuration(prog_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = 'http://pypi.python.org/packages/source/c/ctypesgen/'
             if version is None:
@@ -54,5 +54,5 @@ class configuration(prog_config):
                 prefix = os.path.abspath(options.target_build_dir)
                 if not prefix in options.local_search_paths:
                     options.add_local_search_path(prefix)
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('ctypesgen installation failed.')

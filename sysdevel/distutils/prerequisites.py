@@ -688,7 +688,10 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
                 extra_cmds + ['build'] + compiler + ['install'] + extra_args
         log_file = os.path.join(target_dir, name + '.log')
         log = open(log_file, 'w')
-        log.write(str(cmd_line) + '\n\n')
+        log.write(str(cmd_line) + '\n')
+        if options.VERBOSE:
+            log.write('Env: ' + str(environ) + '\n')
+        log.write('\n')
         log.flush()
         try:
             p = subprocess.Popen(cmd_line, env=environ, stdout=log, stderr=log,

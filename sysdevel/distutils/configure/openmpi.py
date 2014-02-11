@@ -15,7 +15,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "openmpi", "mpi.h", debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         openmpi_lib_list = ['mpi', 'mpi_cxx', 'mpi_f90']
         arch = 'i686'
@@ -73,7 +73,7 @@ class configuration(lib_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '1.6.4'
@@ -88,5 +88,5 @@ class configuration(lib_config):
                 global_install('OpenMPI', website,
                                brew='open-mpi', port='openmpi',
                                deb='libopenmpi-dev', rpm='openmpi-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('OPENMPI2 installation failed.')

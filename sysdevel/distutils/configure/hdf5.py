@@ -16,7 +16,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "hdf5", "hdf5.h", debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         base_dirs = []
         limit = False
@@ -65,7 +65,7 @@ class configuration(lib_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '1.8.10'
@@ -89,9 +89,9 @@ class configuration(lib_config):
                 global_install('HDF5', website,
                                brew='hdf5', port='hdf5',
                                deb='hdf5-devel', rpm='libhdf5-dev')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('HDF5 installation failed.')
 
 
-    ## FIXME: windows mingw build needs patch
-    ## Remove h5perf_serial from perform/Makefile.in
+    #TODO windows mingw build needs patch
+    #TODO Remove h5perf_serial from perform/Makefile.in

@@ -10,7 +10,7 @@ class configuration(py_config):
         py_config.__init__(self, 'antlr3', '3.1.3', debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = 'http://www.antlr3.org/download/Python/'
             if version is None:
@@ -18,5 +18,5 @@ class configuration(py_config):
             src_dir = 'antlr_python_runtime-' + str(version)
             archive = src_dir + '.tar.gz' 
             install_pypkg(src_dir, website, archive, locally=locally)
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('ANTLR-Python runtime installation failed.')

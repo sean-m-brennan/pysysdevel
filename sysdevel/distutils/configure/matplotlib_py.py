@@ -18,12 +18,18 @@ class configuration(py_config):
         self.environment['MATPLOTLIB_DATA_FILES'] = []
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         try:
             import matplotlib
             ver = matplotlib.__version__
-            if compare_versions(ver, version) == -1:
+            not_ok = (compare_versions(ver, version) == -1)
+            if strict:
+                not_ok = (compare_versions(ver, version) != 0)
+            if not_ok:
+                if self.debug:
+                    print('Wrong version of ' + self.pkg + ': ' +
+                          str(ver) + ' vs ' + str(version))
                 return self.found
             self.found = True
         except ImportError:
@@ -36,7 +42,7 @@ class configuration(py_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = 'https://github.com/downloads/matplotlib/matplotlib/'
             if version is None:
@@ -45,10 +51,10 @@ class configuration(py_config):
             archive = src_dir + '.tar.gz'
             pth = install_pypkg(src_dir, website, archive, locally=locally)
 
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('matplotlib installation failed.')
 
-            ##FIXME: is this needed at all?
+            #TODO is matplotlib data file info this needed at all?
             mpl = sys.modules.get('matplotlib', None)
             if mpl:
                 self.environment['MATPLOTLIB_DATA_FILES'] = \

@@ -12,7 +12,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "cppunit", "TestCaller.h", debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '1.12.1'
@@ -25,5 +25,5 @@ class configuration(lib_config):
                 global_install('CppUnit', website,
                                brew='cppunit', port='cppunit',
                                deb='libcppunit-dev', rpm='cppunit-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('CppUnit installation failed.')

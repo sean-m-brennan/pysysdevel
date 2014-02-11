@@ -23,18 +23,9 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
 
-# pylint: disable=E0603
-
-__all__ = ['command', 'configure',
-           'building', 'configuration', 'core', 'extensions', 'fetching',
-           'filesystem', 'headers', 'numpy_utils', 'pkg_config',
-           'prerequisites', 'recur', 'submodules', 'tree',
-           ]
-
 import os
 import sys
 import glob
-
 
 USING_SETUPTOOLS = False  ## monkeypatching is evil
 
@@ -153,5 +144,3 @@ from .core import setup
 from .configure import configure_system, FatalError
 from .pkg_config import pkg_config, handle_arguments, get_options, post_setup
 from .extensions import *  # pylint: disable=W0401
-
-

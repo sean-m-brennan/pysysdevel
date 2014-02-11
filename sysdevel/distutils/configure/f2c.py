@@ -20,7 +20,7 @@ class configuration(config):
         self.environment['F2C_INCLUDE_DIR'] = None
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         try:
             incl_dir = find_header('f2c.h')
@@ -34,7 +34,7 @@ class configuration(config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = 'http://www.netlib.org/f2c/'
             header_file = 'f2c.h'        
@@ -45,3 +45,4 @@ class configuration(config):
             prefix = os.path.abspath(options.target_build_dir)
             if not prefix in options.local_search_paths:
                 options.add_local_search_path(prefix)
+            ## intentionally not using is_installed

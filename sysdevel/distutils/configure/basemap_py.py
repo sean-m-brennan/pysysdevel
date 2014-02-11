@@ -30,11 +30,17 @@ class configuration(py_config):
         self.environment['BASEMAP_DEPENDENCIES'] = []
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         try:
             from mpl_toolkits import basemap
             ver = basemap.__version__
-            if compare_versions(ver, version) == -1:
+            not_ok = (compare_versions(ver, version) == -1)
+            if strict:
+                not_ok = (compare_versions(ver, version) != 0)
+            if not_ok:
+                if self.debug:
+                    print('Wrong version of ' + self.pkg + ': ' + 
+                          str(ver) + ' vs ' + str(version))
                 return self.found
             self.found = True
         except ImportError:
@@ -51,7 +57,7 @@ class configuration(py_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = self.version
@@ -67,7 +73,7 @@ class configuration(py_config):
                     [(self.basemap_data_dir,
                       glob.glob(os.path.join(basemap_dir, 'data', '*.*')))]
             self.__patch(basemap_dir)
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('basemap installation failed.')
 
 

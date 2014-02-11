@@ -28,32 +28,23 @@ permissions and limitations under the License.
 """
 
 import os
-from glob import glob
-from distutils.errors import DistutilsSetupError, DistutilsError, \
-     DistutilsFileError
-from distutils.dep_util import newer_group
 
 # pylint: disable=W0201
 have_numpy = False
 try:
     from numpy.distutils.command.build_clib import build_clib
-    from numpy.distutils.misc_util import get_numpy_include_dirs
-    from numpy.distutils import log
     have_numpy = True
 except ImportError:
     from distutils.command.build_clib import build_clib
-    from distutils import log
 
-from ...util import is_string
-from ..building import convert_ulist, safe_eval
-from ..numpy_utils import filter_sources, is_sequence
+from ..building import safe_eval, build_target, SHARED_LIBRARY
 
 
 class build_shlib(build_clib):
     '''
     Build *shared* libraries for use in Python extensions
     '''
-    def finalize_options (self):
+    def finalize_options(self):
         build_clib.finalize_options(self)
         self.libraries = self.distribution.sh_libraries
         self.install_shared_libraries = []
@@ -91,6 +82,9 @@ class build_shlib(build_clib):
 
 
     def build_a_library(self, build_info, lib_name, libraries):
+        build_target(self, build_info, lib_name, SHARED_LIBRARY)
+
+        """
         libraries = convert_ulist(build_info.get('libraries') or [])
         library_dirs = convert_ulist(build_info.get('library_dirs') or [])
         runtime_library_dirs = convert_ulist(build_info.get('runtime_library_dirs'))
@@ -311,3 +305,4 @@ class build_shlib(build_clib):
             extra_preargs        = extra_preargs,
             extra_postargs       = extra_postargs,
             )
+        """

@@ -23,7 +23,7 @@ class configuration(py_config):
         self.environment['PYJSBUILD'] = None
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         try:
             pyjamas_root = os.environ['PYJAMAS_ROOT']
@@ -46,7 +46,7 @@ class configuration(py_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = self.version

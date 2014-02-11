@@ -14,7 +14,7 @@ class configuration(py_config):
         py_config.__init__(self, 'wx', '2.9.4.0', debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = self.version
@@ -47,5 +47,5 @@ class configuration(py_config):
                                                       'site-packages',
                                                       'wx-*', 'wx'))[0], target)
                        
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('wxpython installation failed.')

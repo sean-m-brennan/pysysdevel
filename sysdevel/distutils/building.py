@@ -32,9 +32,24 @@ import sys
 import platform
 import fnmatch
 import time
+from glob import glob
+from distutils.errors import DistutilsSetupError, DistutilsError, DistutilsFileError
+from distutils.dep_util import newer_group
+
+have_numpy = False
+# pylint: disable=W0201
+try:
+    from numpy.distutils.command.build_clib import build_clib  # pylint: disable=F0401,W0611
+    from numpy.distutils.misc_util import get_numpy_include_dirs
+    from numpy.distutils import log
+    have_numpy = True
+except ImportError:
+    from distutils.command.build_clib import build_clib  # pylint: disable=W0611
+    from distutils import log
 
 from ..util import is_string
 from .filesystem import mkdir
+from .numpy_utils import filter_sources, is_sequence
 from . import options
 
 
@@ -287,3 +302,246 @@ def clean_generated_files():
             os.unlink(filepath)
         except OSError:
             pass
+
+
+
+############################################################
+
+SHARED_LIBRARY, EXECUTABLE = range(2)
+
+def build_target(builder, target, name, mode):
+    """
+    Common function for build_* commands
+    """
+    target_name = name
+    if mode == SHARED_LIBRARY:
+        target_name = builder.compiler.library_filename(name, lib_type='shared',
+                                                        output_dir='')
+
+    #libraries = convert_ulist(target.get('libraries', []))  ## unused
+    library_dirs = convert_ulist(target.get('library_dirs', []))
+    runtime_library_dirs = convert_ulist(target.get('runtime_library_dirs', []))
+    extra_preargs = target.get('extra_compile_args', [])
+    extra_postargs = target.get('extra_link_args', [])
+
+    ## include libraries built by build_shlib and/or build_clib
+    library_dirs.append(builder.build_temp)
+
+    ## Conditional recompile
+    build_directory = builder.build_clib
+    target_path = os.path.join(build_directory, name)
+    recompile = False
+    if not os.path.exists(target_path) or builder.get('force', False):
+        recompile = True
+    else:
+        for src in target.sources:
+            if os.path.getmtime(target_path) < os.path.getmtime(src):
+                recompile = True
+                break
+    if not recompile:
+        return
+    library_dirs += [builder.build_clib]
+
+    ########################################
+    ## Copied from numpy.distutils.command.build_clib
+
+    # default compilers
+    compiler = builder.compiler
+    fcompiler = getattr(builder, '_f_compiler', builder.fcompiler)
+
+    sources = target.get('sources')
+    if sources is None or not is_sequence(sources):
+        raise DistutilsSetupError(("in 'libraries' option (library '%s'), " +
+                                   "'sources' must be present and must be " +
+                                   "a list of source filenames") % name)
+    sources = list(sources)
+
+    c_sources, cxx_sources, f_sources, fmodule_sources = filter_sources(sources)
+    if not target.language:
+        target.language = 'c'
+    requiref90 = not not fmodule_sources or target.get('language', 'c') == 'f90'
+
+    # save source type information so that build_ext can use it.
+    source_languages = []
+    if c_sources:
+        source_languages.append('c')
+    if cxx_sources:
+        source_languages.append('c++')
+    if requiref90:
+        source_languages.append('f90')
+    elif f_sources:
+        source_languages.append('f77')
+    target.source_languages = source_languages
+
+    lib_file = compiler.library_filename(name, output_dir=build_directory)
+    if mode == SHARED_LIBRARY:
+        lib_file = compiler.library_filename(name, lib_type='shared',
+                                             output_dir=build_directory)
+
+    depends = sources + (target.get('depends', []))
+    if not (builder.force or newer_group(depends, lib_file, 'newer')):
+        log.debug("skipping '%s' library (up-to-date)", name)
+        return
+    else:
+        log.info("building '%s' library", name)
+
+    if have_numpy:
+        config_fc = target.get('config_fc', {})
+        if fcompiler is not None and config_fc:
+            log.info('using additional config_fc from setup script '\
+                     'for fortran compiler: %s' % (config_fc,))
+            from numpy.distutils.fcompiler import new_fcompiler
+            fcompiler = new_fcompiler(compiler=fcompiler.compiler_type,
+                                      verbose=builder.verbose,
+                                      dry_run=builder.dry_run,
+                                      force=builder.force,
+                                      requiref90=requiref90,
+                                      c_compiler=builder.compiler)
+            if fcompiler is not None:
+                dist = builder.distribution
+                base_config_fc = dist.get_option_dict('config_fc').copy()
+                base_config_fc.update(config_fc)
+                fcompiler.customize(base_config_fc)
+
+        # check availability of Fortran compilers
+        if (f_sources or fmodule_sources) and fcompiler is None:
+            ver = '77'
+            if requiref90:
+                ver = '90'
+            raise DistutilsError("target %s has Fortran%s sources" \
+                                 " but no Fortran compiler found" % (name, ver))
+
+    macros = target.get('define_macros')
+    include_dirs = convert_ulist(target.get('include_dirs'))
+    if include_dirs is None:
+        include_dirs = []
+    extra_postargs = target.get('extra_compiler_args') or []
+
+    if have_numpy:
+        include_dirs.extend(get_numpy_include_dirs())
+    # where compiled F90 module files are:
+    module_dirs = target.get('module_dirs', [])
+    module_build_dir = os.path.dirname(lib_file)
+    if requiref90:
+        builder.mkpath(module_build_dir)
+
+    if compiler.compiler_type=='msvc':
+        # this hack works around the msvc compiler attributes
+        # problem, msvc uses its own convention :(
+        c_sources += cxx_sources
+        cxx_sources = []
+
+    objects = []
+    if c_sources:
+        log.info("compiling C sources")
+        objects = compiler.compile(c_sources,
+                                   output_dir=builder.build_temp,
+                                   macros=macros,
+                                   include_dirs=include_dirs,
+                                   debug=builder.debug,
+                                   extra_postargs=extra_postargs)
+
+    if cxx_sources:
+        log.info("compiling C++ sources")
+        cxx_compiler = compiler.cxx_compiler()
+        cxx_objects = cxx_compiler.compile(cxx_sources,
+                                           output_dir=builder.build_temp,
+                                           macros=macros,
+                                           include_dirs=include_dirs,
+                                           debug=builder.debug,
+                                           extra_postargs=extra_postargs)
+        objects.extend(cxx_objects)
+
+    if f_sources or fmodule_sources:
+        if not have_numpy:
+            raise Exception("Fortran sources, but no NumPy to compile them.")
+        extra_postargs = []
+        f_objects = []
+
+        if requiref90:
+            if fcompiler.module_dir_switch is None:
+                existing_modules = glob('*.mod')
+            extra_postargs += fcompiler.module_options(
+                module_dirs,module_build_dir)
+
+        if fmodule_sources:
+            log.info("compiling Fortran 90 module sources")
+            f_objects += fcompiler.compile(fmodule_sources,
+                                           output_dir=builder.build_temp,
+                                           macros=macros,
+                                           include_dirs=include_dirs,
+                                           debug=builder.debug,
+                                           extra_postargs=extra_postargs)
+
+        if requiref90 and fcompiler.module_dir_switch is None:
+            # move new compiled F90 module files to module_build_dir
+            for f in glob('*.mod'):
+                if f in existing_modules:
+                    continue
+                t = os.path.join(module_build_dir, f)
+                if os.path.abspath(f)==os.path.abspath(t):
+                    continue
+                if os.path.isfile(t):
+                    os.remove(t)
+                try:
+                    builder.move_file(f, module_build_dir)
+                except DistutilsFileError:
+                    log.warn('failed to move %r to %r' % (f, module_build_dir))
+
+        if f_sources:
+            log.info("compiling Fortran sources")
+            f_objects += fcompiler.compile(f_sources,
+                                           output_dir=builder.build_temp,
+                                           macros=macros,
+                                           include_dirs=include_dirs,
+                                           debug=builder.debug,
+                                           extra_postargs=extra_postargs)
+    else:
+        f_objects = []
+
+    objects.extend(f_objects)
+
+    # assume that default linker is suitable for
+    # linking Fortran object files
+    ########################################
+
+    if target.link_with_fcompiler: # if using PROGRAM
+        link_compiler = fcompiler
+    else:
+        link_compiler = compiler
+    if cxx_sources:
+        link_compiler = cxx_compiler
+    extra_postargs = target.get('extra_link_args') or []
+
+    ## May be dependent on other libs we're builing
+    shlib_libraries = []
+    for libinfo in target.get('libraries', []):
+        if is_string(libinfo):
+            shlib_libraries.append(convert_ulist([libinfo])[0])
+        else:
+            shlib_libraries.append(libinfo[0])
+
+    if mode == EXECUTABLE:
+        if not hasattr(link_compiler, 'linker_exe') or \
+           link_compiler.linker_exe is None:
+            link_compiler.linker_exe = [link_compiler.linker_so[0]]
+        target_desc = link_compiler.EXECUTABLE
+    elif mode == SHARED_LIBRARY:
+        target_desc = link_compiler.EXECUTABLE
+                
+
+    linker_args = dict(
+        target_desc          = target_desc,
+        objects              = objects,
+        output_filename      = target_name,
+        output_dir           = build_directory,
+        libraries            = shlib_libraries,
+        library_dirs         = library_dirs,
+        debug                = builder.debug,
+        extra_preargs        = extra_preargs,
+        extra_postargs       = extra_postargs,
+    )
+    if not target.link_with_fcompiler:
+        linker_args['runtime_library_dirs'] = runtime_library_dirs
+
+    link_compiler.link(**linker_args)  # pylint: disable=W0142

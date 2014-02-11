@@ -12,7 +12,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "freeimage", "FreeImage.h", debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '3.15.4'
@@ -26,5 +26,5 @@ class configuration(lib_config):
                 global_install('FreeImage', website,
                                brew='freeimage', port='freeimage-devel',
                                deb='libfreeimage-dev', rpm='freeimage-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('FreeImage installation failed.')

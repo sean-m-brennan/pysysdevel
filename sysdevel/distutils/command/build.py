@@ -87,7 +87,7 @@ class build(old_build):
             self.distribution.has_data_directories()
 
     def has_documents(self):
-        return True  ##FIXME detect documentation
+        return True  #FIXME detect documentation
 
 
     ## Order is important

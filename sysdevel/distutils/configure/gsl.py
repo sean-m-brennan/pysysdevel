@@ -12,8 +12,8 @@ class configuration(lib_config):
         lib_config.__init__(self, "gsl", "gsl_types.h", debug=False)
 
 
-    def is_installed(self, environ, version=None):
-        lib_config.is_installed(self, environ, version)
+    def is_installed(self, environ, version=None, strict=False):
+        lib_config.is_installed(self, environ, version, strict)
         if self.found:
             self.environment['GSL_LIBRARIES'] += ['gslcblas']
             lib_file = self.environment['GSL_LIB_FILES'][0]
@@ -22,7 +22,7 @@ class configuration(lib_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '1.15'
@@ -35,5 +35,5 @@ class configuration(lib_config):
                 global_install('GSL', website,
                                brew='gsl', port='gsl-devel',
                                deb='libgsl-dev', rpm='gsl-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('GSL installation failed.')

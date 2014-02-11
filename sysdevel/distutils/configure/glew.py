@@ -12,7 +12,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "GLEW", "glew.h", debug=False)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '1.10.0'
@@ -26,5 +26,5 @@ class configuration(lib_config):
                 global_install('GLEW', website,
                                brew='glew', port='glew-devel',
                                deb='libglew-dev', rpm='glew-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('GLEW installation failed.')

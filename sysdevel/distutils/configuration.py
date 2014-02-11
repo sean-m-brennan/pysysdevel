@@ -42,25 +42,6 @@ from .building import process_progress
 from . import options
 
 
-#TODO: what does pip do for these?
-pypi_exceptions = {
-    'argparse':          ('argparse', ()),  ## FIXME because it breaks the AST?
-    'dateutil':          ('python-dateutil', ('six',)),
-    'ephem':             ('pyephem', None),
-    'fuzzy':             ('Fuzzy', None),
-    'jinja2':            ('Jinja2', None),
-    'pygments':          ('Pygments', None),
-    'pyyaml':            ('PyYAML', ('libyaml',)),
-    'qunitsuite':        ('QUnitSuite', None),
-    'scipy':             ('scipy', ('gfortran',)), #'atlas',), #'lapack',?)),
-    'serial':            ('pyserial', None),
-    'shapely':           ('Shapely', ('geos',)),
-    'sphinx':            ('Sphinx', ('docutils', 'jinja2', 'pygments',
-                                     'roman',)), # 'rst2pdf,)), #FIXME rst2pdf is broken
-    'sqlalchemy':        ('SQLAlchemy', None),
-    'usb':               ('pyusb', ('libusb',)),
-}
-
 ## All these classes are abstract
 # pylint: disable=W0223
 
@@ -78,10 +59,10 @@ class config(object):
     def null(self):
         pass
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version, strict=False):
         raise NotImplementedError('is_installed')
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         raise NotImplementedError('install')
 
 
@@ -103,7 +84,7 @@ class lib_config(config):
         self.environment[self.lib.upper() + '_LIBRARIES'] = []
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         default_lib_paths = ['lib64', 'lib', '']
         default_include_paths = ['include', os.path.join(self.lib, 'include')]
@@ -169,7 +150,7 @@ class lib_config(config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         raise NotImplementedError('lib' + self.lib + ' installation')
 
 
@@ -178,7 +159,7 @@ class file_config(config):
     def __init__(self, dependencies=None, debug=False, force=False):
         config.__init__(self, dependencies, debug, force)
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         return False  ## fetch, or copy from download dir
 
 
@@ -193,7 +174,7 @@ class prog_config(config):
         self.environment[self.exe.upper()] = None
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         limit = False
         locations = []
@@ -224,7 +205,7 @@ class prog_config(config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         raise NotImplementedError(self.exe + ' installation')
 
 
@@ -239,7 +220,7 @@ class nodejs_config(config):
         self.module = module
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         cmd_line = [environ['NPM'], 'list', self.module.lower()]
         return self.__check_installed(cmd_line) or \
             self.__check_installed(cmd_line + ['-g'])
@@ -254,7 +235,7 @@ class nodejs_config(config):
         return True
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             pre = []
             post = []
@@ -320,7 +301,7 @@ class py_config(config):
             self.indexed = indexed_as
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         try:
             impl = __import__(self.pkg.lower())
             check_version = False
@@ -334,7 +315,14 @@ class py_config(config):
                 ver = impl.VERSION
                 check_version = True
             if check_version:
-                if compare_versions(ver, version) == -1:
+                not_ok = (compare_versions(ver, version) == -1)
+                if strict:
+                    not_ok = (compare_versions(ver, version) != 0)
+                if not_ok:
+                    if self.debug:
+                        print('Wrong version of ' + self.pkg + ': ' +
+                              str(ver) + ' vs ' + str(version))
+                    self.found = False
                     return self.found
             self.found = True
         except ImportError:
@@ -343,7 +331,7 @@ class py_config(config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             website = 'https://pypi.python.org/packages/source/' + \
                 self.indexed[0] + '/' + self.indexed + '/'
@@ -373,9 +361,14 @@ class py_config(config):
                                 archive = src_dir + '.tar'
                                 fetch(website, archive, archive)
             install_pypkg(src_dir, website, archive, locally=locally)
-            ## Urgent FIXME install check is not always working
-            #if not self.is_installed(environ, version):
-            #    raise ConfigError(self.pkg, 'installation failed.')
+            if not self.is_installed(environ, version, strict):
+                ## Exclude numpy since it's already loaded (used in building)
+                if not self.pkg == 'numpy':
+                    print('Warning: ' + self.pkg +
+                          ' installation may have failed')
+                    #FIXME install check for python pkgs frequently fails
+                    ## Check sys.path & site instead
+                    #    raise ConfigError(self.pkg, 'Installation failed.')
 
 
 
@@ -405,24 +398,35 @@ class pypi_config(py_config):
                            debug, force)
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            py_config.install(self, environ,
-                              latest_pypi_version(self.indexed, version),
-                              locally)
+            if not strict:
+                version = latest_pypi_version(self.indexed, version)
+            py_config.install(self, environ, version, strict, locally)
 
 
 
 
-def dynamic_module(pkg, version=None, dependencies=None, indexed_as=None,
-                   debug=False, force=False):
+def dynamic_module(pkg, version=None, strict=False, dependencies=None,
+                   indexed_as=None, debug=False, force=False):
     module = imp.new_module(pkg + '_pypi')
     code = "from " + __package__ + ".configuration import pypi_config\n" + \
            "class configuration(pypi_config):\n" + \
            "    def __init__(self):\n" + \
            "        pypi_config.__init__(self, " + repr(pkg) + ", " + \
            repr(version) + ", " + repr(dependencies) + ", " + \
-           repr(indexed_as) + ", " + repr(debug) + ", " + repr(force) + ")\n"
+           repr(indexed_as) + ", " + repr(debug) + ", " + \
+           repr(force) + ")\n" + \
+           "\n" + \
+           "    def is_installed(self, environ, " + \
+           "version=None, strict=False):\n" + \
+           "        pypi_config.is_installed(self, environ, " + \
+           repr(version) + ", " + repr(strict) + ")\n" + \
+           "\n" + \
+           "    def install(self, environ, version, " + \
+           "strict=False, locally=True):\n" + \
+           "        pypi_config.install(self, environ, " + \
+           repr(version) + ", " + repr(strict) + ", locally)\n\n"
     exec code in module.__dict__  # pylint: disable=W0122
     return module
 

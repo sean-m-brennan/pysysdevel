@@ -16,7 +16,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "geos_c", "geos_c.h", debug=False)
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
         locations = []
         limit = False
@@ -48,7 +48,13 @@ class configuration(lib_config):
             quoted_ver = get_header_version(os.path.join(inc_dir, self.hdr),
                                             'GEOS_VERSION ')
             ver = quoted_ver[1:-1]
-            if compare_versions(ver, version) == -1:
+            not_ok = (compare_versions(ver, version) == -1)
+            if strict:
+                not_ok = (compare_versions(ver, version) != 0)
+            if not_ok:
+                if self.debug:
+                    print('Wrong version of ' + self.lib + ': ' +
+                          str(ver) + ' vs ' + str(version))
                 return self.found
             self.found = True
         except ConfigError:
@@ -64,7 +70,7 @@ class configuration(lib_config):
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '3.3.8'
@@ -79,5 +85,5 @@ class configuration(lib_config):
                                None,
                                brew='geos', port='geos',
                                deb='libgeos-dev', rpm='geos-devel')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('Geos installation failed.')

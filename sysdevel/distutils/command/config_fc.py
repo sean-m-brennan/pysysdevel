@@ -43,7 +43,7 @@ try:
                 old_ldflags = os.environ['LDFLAGS']
             except KeyError:
                 old_ldflags = ''
-            #FIXME? if not 'darwin' in platform.system().lower():
+            #TODO? if not 'darwin' in platform.system().lower():
             os.environ['LDFLAGS'] = old_ldflags + ' -shared'
 
 

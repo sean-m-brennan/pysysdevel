@@ -19,7 +19,7 @@ class configuration(lib_config):
             self.dependencies.append(['mingw'])
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
 
         base_dirs = []
@@ -54,13 +54,13 @@ class configuration(lib_config):
 
         self.environment['DL_INCLUDE_DIR'] = incl_dir
         self.environment['DL_LIB_DIR'] = lib_dir
-        #FIXME self.environment['DL_SHLIB_DIR'] = lib_dir
+        self.environment['DL_SHLIB_DIR'] = lib_dir
         self.environment['DL_LIB_FILES'] = [lib]
         self.environment['DL_LIBRARIES'] = [self.lib]
         return self.found
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if 'windows' in platform.system().lower():
                 here = os.path.abspath(os.getcwd())
@@ -98,5 +98,5 @@ class configuration(lib_config):
                 os.chdir(here)
             else:
                 raise Exception('Non-Windows platform with missing libdl.')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('libdl installation failed.')

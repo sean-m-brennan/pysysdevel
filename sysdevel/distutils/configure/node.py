@@ -20,9 +20,9 @@ class configuration(prog_config):
         self.environment['NPM'] = None
 
 
-    def is_installed(self, environ, version=None):
+    def is_installed(self, environ, version=None, strict=False):
         options.set_debug(self.debug)
-        prev = prog_config.is_installed(self, environ, version)
+        prev = prog_config.is_installed(self, environ, version, strict)
         if prev:
             locations = [os.path.dirname(self.environment[self.exe.upper()])]
             try:
@@ -36,7 +36,7 @@ class configuration(prog_config):
         
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '0.10.15'
@@ -45,10 +45,10 @@ class configuration(prog_config):
             if struct.calcsize('P') == 8:
                 arch = 'x64'
                 website = (website[0], website[1] + arch + '/')
-            # FIXME no local install
+            #TODO no local install
             global_install('Node.js', website,
                            winstaller='node-v' + version + '-' + arch + 'msi',
                            brew='node, npm', port='nodejs, npm',
                            deb='nodejs, npm', rpm='nodejs, npm')
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('Node.js installation failed.')

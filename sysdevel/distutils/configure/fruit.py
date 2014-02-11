@@ -24,7 +24,7 @@ class configuration(config):
         self.environment['FRUIT_SOURCE_FILES'] = []
 
 
-    def is_installed(self, environ, version):
+    def is_installed(self, environ, version=None, strict=False):
         for src in self.sources:
             if not os.path.exists(os.path.join(self.install_dir, src)):
                 return self.found
@@ -33,7 +33,7 @@ class configuration(config):
         self.environment['FRUIT_SOURCE_FILES'] = self.sources
 
 
-    def install(self, environ, version, locally=True):
+    def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '3.2.0'
@@ -53,5 +53,5 @@ class configuration(config):
                 shutil.copy(os.path.join(source_dir, src),
                             os.path.join(install_dir, src))
 
-            if not self.is_installed(environ, version):
+            if not self.is_installed(environ, version, strict):
                 raise Exception('FRUIT installation failed.')
