@@ -700,7 +700,7 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
             environ['PYTHONPATH'] = target_lib_dir
             cmd_line = [sys.executable, 'setup.py'] + extra_cmds + \
                 ['build'] + compiler + ['install', '--home=' + target_dir,
-                 '--install-lib=' + target_lib_dir, '--prefix=""',] + extra_args
+                 '--install-lib=' + target_lib_dir, "--prefix=''",] + extra_args
         else:
             sudo_prefix = []
             if not as_admin():
