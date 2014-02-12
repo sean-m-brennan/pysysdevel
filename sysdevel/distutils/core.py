@@ -100,10 +100,6 @@ class CustomDistribution(oldDistribution):
         self.pypp_ext_modules = attrs.get('pypp_ext_modules')
         if self.pypp_ext_modules != None:
             del old_attrs['pypp_ext_modules']
-        ## MPI extensions
-        self.mpi_extensions = attrs.get('mpi_extensions')
-        if self.mpi_extensions != None:
-            del old_attrs['mpi_extensions']
         ## Shared libraries
         self.sh_libraries = attrs.get('sh_libraries')
         if self.sh_libraries != None:

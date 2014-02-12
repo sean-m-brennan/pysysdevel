@@ -4,7 +4,7 @@ import sys
 import platform
 import subprocess
 
-from ..prerequisites import programfiles_directories, find_header, find_libraries, check_call, autotools_install, global_install, ConfigError
+from ..prerequisites import programfiles_directories, find_header, find_libraries, check_call, autotools_install, global_install, ConfigError, compare_versions
 from ..configuration import lib_config
 from .. import options
 
@@ -47,6 +47,26 @@ class configuration(lib_config):
             hdf5_lib_dir, hdf5_libs  = find_libraries(self.lib, base_dirs,
                                                       limit=limit)
             hdf5_inc_dir = find_header(self.hdr, base_dirs, limit=limit)
+
+            h = open(os.path.join(hdf5_inc_dir, 'H5public.h'), 'r')
+            ver = None
+            for line in h.readlines():
+                if 'H5_VERS_INFO' in line:
+                    pre = 'HDF5 library version: '
+                    v_begin = line.find(pre) + len(pre)
+                    v_end = line.find('"', v_begin)
+                    ver = line[v_begin:v_end].strip()
+                    break
+            h.close()
+            not_ok = (compare_versions(ver, version) == -1)
+            if strict:
+                not_ok = (compare_versions(ver, version) != 0)
+            if not_ok:
+                if self.debug:
+                    print('Wrong version of ' + self.lib + ': ' +
+                          str(ver) + ' vs ' + str(version))
+                self.found = False
+                return self.found
             self.found = True
         except ConfigError:
             if self.debug:

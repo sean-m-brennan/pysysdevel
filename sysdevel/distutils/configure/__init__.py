@@ -34,6 +34,7 @@ import traceback
 
 from ..prerequisites import read_cache, save_cache, in_prerequisites
 from ..prerequisites import system_uses_macports, system_uses_homebrew
+from ..prerequisites import requirement_versioning
 from ..configuration import dynamic_module, latest_pypi_version
 from ..configuration import is_pypi_listed
 from ..pypi_exceptions import pypi_exceptions
@@ -42,7 +43,7 @@ from .. import options
 from ...util import is_string
 
 
-DEBUG_PYPI = False
+DEBUG_PYPI = True
 DEBUG_LOCAL = False
 
 
@@ -145,24 +146,8 @@ def configure_package(which):
 
 def __configure_package(environment, help_name, skip, install, quiet,
                         out=sys.stdout, err=sys.stderr):
-    req_version = None
-    strict = False
-    if not is_string(help_name):
-        req_version = help_name[1]
-        help_name = help_name[0]
-    elif '=' in help_name:
-        n_end = help_name.find('(')
-        if n_end < 0:
-            n_end = help_name.find('>')
-            if n_end < 0:
-                n_end = help_name.find('=')
-        v_begin = help_name.rfind('=') + 1
-        v_end = help_name.find(')')
-        if '==' in help_name[n_end:]:
-            strict = True
-        req_version = help_name[v_begin:v_end]
-        help_name = help_name[:n_end]
-    if help_name == 'None':
+    help_name, req_version, strict = requirement_versioning(help_name)
+    if help_name is None:
         return environment
 
     base = help_name = help_name.strip()
@@ -234,7 +219,10 @@ def __run_helper__(environment, short_name, helper, version, strict,
     try:
         cfg = helper.configuration()
     except Exception:
-        print('Error loading ' + short_name + ' configuration.')
+        ver_info = ''
+        if version:
+            ver_info = ' v.' + str(version)
+        print('Error loading ' + short_name + ver_info + '  configuration.')
         raise
     for dep in cfg.dependencies:
         dep_name = dep

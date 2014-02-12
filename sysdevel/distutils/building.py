@@ -309,6 +309,21 @@ def clean_generated_files():
 
 SHARED_LIBRARY, EXECUTABLE = range(2)
 
+def _get(obj, what, default=None):
+    try:
+        ## Dictionary
+        return obj.get(what, default)
+    except AttributeError:
+        ## Attribute
+        return getattr(obj, what, default)
+
+def _put(obj, what, val):
+    try:
+        setattr(obj, what, val)
+    except AttributeError:
+        obj[what] = val
+
+
 def build_target(builder, target, name, mode):
     """
     Common function for build_* commands
@@ -318,11 +333,12 @@ def build_target(builder, target, name, mode):
         target_name = builder.compiler.library_filename(name, lib_type='shared',
                                                         output_dir='')
 
-    #libraries = convert_ulist(target.get('libraries', []))  ## unused
-    library_dirs = convert_ulist(target.get('library_dirs', []))
-    runtime_library_dirs = convert_ulist(target.get('runtime_library_dirs', []))
-    extra_preargs = target.get('extra_compile_args', [])
-    extra_postargs = target.get('extra_link_args', [])
+    #libraries = convert_ulist(_get(target, 'libraries', []))  ## unused
+    library_dirs = convert_ulist(_get(target, 'library_dirs', []))
+    runtime_library_dirs = convert_ulist(_get(target,
+                                               'runtime_library_dirs', []))
+    extra_preargs = _get(target, 'extra_compile_args', [])
+    extra_postargs = _get(target, 'extra_link_args', [])
 
     ## include libraries built by build_shlib and/or build_clib
     library_dirs.append(builder.build_temp)
@@ -331,10 +347,10 @@ def build_target(builder, target, name, mode):
     build_directory = builder.build_clib
     target_path = os.path.join(build_directory, name)
     recompile = False
-    if not os.path.exists(target_path) or builder.get('force', False):
+    if not os.path.exists(target_path) or builder.force:
         recompile = True
     else:
-        for src in target.sources:
+        for src in _get(target, 'sources', []):
             if os.path.getmtime(target_path) < os.path.getmtime(src):
                 recompile = True
                 break
@@ -349,7 +365,7 @@ def build_target(builder, target, name, mode):
     compiler = builder.compiler
     fcompiler = getattr(builder, '_f_compiler', builder.fcompiler)
 
-    sources = target.get('sources')
+    sources = _get(target, 'sources')
     if sources is None or not is_sequence(sources):
         raise DistutilsSetupError(("in 'libraries' option (library '%s'), " +
                                    "'sources' must be present and must be " +
@@ -357,9 +373,8 @@ def build_target(builder, target, name, mode):
     sources = list(sources)
 
     c_sources, cxx_sources, f_sources, fmodule_sources = filter_sources(sources)
-    if not target.language:
-        target.language = 'c'
-    requiref90 = not not fmodule_sources or target.get('language', 'c') == 'f90'
+    requiref90 = not not fmodule_sources or \
+                 (_get(target, 'language', 'c') == 'f90')
 
     # save source type information so that build_ext can use it.
     source_languages = []
@@ -371,14 +386,14 @@ def build_target(builder, target, name, mode):
         source_languages.append('f90')
     elif f_sources:
         source_languages.append('f77')
-    target.source_languages = source_languages
+    _put(target, 'source_languages', source_languages)
 
     lib_file = compiler.library_filename(name, output_dir=build_directory)
     if mode == SHARED_LIBRARY:
         lib_file = compiler.library_filename(name, lib_type='shared',
                                              output_dir=build_directory)
 
-    depends = sources + (target.get('depends', []))
+    depends = sources + (_get(target, 'depends', []))
     if not (builder.force or newer_group(depends, lib_file, 'newer')):
         log.debug("skipping '%s' library (up-to-date)", name)
         return
@@ -386,7 +401,7 @@ def build_target(builder, target, name, mode):
         log.info("building '%s' library", name)
 
     if have_numpy:
-        config_fc = target.get('config_fc', {})
+        config_fc = _get(target, 'config_fc', {})
         if fcompiler is not None and config_fc:
             log.info('using additional config_fc from setup script '\
                      'for fortran compiler: %s' % (config_fc,))
@@ -411,16 +426,16 @@ def build_target(builder, target, name, mode):
             raise DistutilsError("target %s has Fortran%s sources" \
                                  " but no Fortran compiler found" % (name, ver))
 
-    macros = target.get('define_macros')
-    include_dirs = convert_ulist(target.get('include_dirs'))
+    macros = _get(target, 'define_macros')
+    include_dirs = convert_ulist(_get(target, 'include_dirs'))
     if include_dirs is None:
         include_dirs = []
-    extra_postargs = target.get('extra_compiler_args') or []
+    extra_postargs = _get(target, 'extra_compiler_args') or []
 
     if have_numpy:
         include_dirs.extend(get_numpy_include_dirs())
     # where compiled F90 module files are:
-    module_dirs = target.get('module_dirs', [])
+    module_dirs = _get(target, 'module_dirs', [])
     module_build_dir = os.path.dirname(lib_file)
     if requiref90:
         builder.mkpath(module_build_dir)
@@ -505,17 +520,17 @@ def build_target(builder, target, name, mode):
     # linking Fortran object files
     ########################################
 
-    if target.link_with_fcompiler: # if using PROGRAM
+    if _get(target, 'link_with_fcompiler', False): # if using PROGRAM
         link_compiler = fcompiler
     else:
         link_compiler = compiler
     if cxx_sources:
         link_compiler = cxx_compiler
-    extra_postargs = target.get('extra_link_args') or []
+    extra_postargs = _get(target, 'extra_link_args') or []
 
     ## May be dependent on other libs we're builing
     shlib_libraries = []
-    for libinfo in target.get('libraries', []):
+    for libinfo in _get(target, 'libraries', []):
         if is_string(libinfo):
             shlib_libraries.append(convert_ulist([libinfo])[0])
         else:
@@ -527,7 +542,7 @@ def build_target(builder, target, name, mode):
             link_compiler.linker_exe = [link_compiler.linker_so[0]]
         target_desc = link_compiler.EXECUTABLE
     elif mode == SHARED_LIBRARY:
-        target_desc = link_compiler.EXECUTABLE
+        target_desc = link_compiler.SHARED_LIBRARY
                 
 
     linker_args = dict(
@@ -541,7 +556,7 @@ def build_target(builder, target, name, mode):
         extra_preargs        = extra_preargs,
         extra_postargs       = extra_postargs,
     )
-    if not target.link_with_fcompiler:
+    if not _get(target, 'link_with_fcompiler', False):
         linker_args['runtime_library_dirs'] = runtime_library_dirs
 
     link_compiler.link(**linker_args)  # pylint: disable=W0142

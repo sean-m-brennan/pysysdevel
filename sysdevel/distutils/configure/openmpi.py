@@ -2,6 +2,7 @@
 import os
 import sys
 import struct
+import subprocess
 
 from ..prerequisites import find_header, find_libraries, find_program, programfiles_directories, autotools_install, global_install, ConfigError
 from ..configuration import lib_config
@@ -54,7 +55,7 @@ class configuration(lib_config):
                                                             base_dirs, subdirs)
             openmpi_inc_dir = find_header(self.hdr, base_dirs,
                                           ['openmpi', 'openmpi-' + arch,])
-            openmpi_exe = find_program('mpif90', base_dirs +
+            openmpi_exe = find_program('mpicc', base_dirs +
                                        [os.path.join(openmpi_lib_dir, '..')])
             openmpi_exe_dir = os.path.abspath(os.path.dirname(openmpi_exe))
             self.found = True
@@ -70,6 +71,16 @@ class configuration(lib_config):
         self.environment['OPENMPI_LIB_DIR'] = openmpi_lib_dir
         self.environment['OPENMPI_LIBRARIES'] = openmpi_lib_list
         self.environment['OPENMPI_LIB_FILES'] = openmpi_libs
+        try:
+            p = subprocess.Popen([openmpi_exe, '-show'],
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            if err != '':
+                self.found = False
+                return self.found
+            self.environment['OPENMPI_FLAGS'] = out[3:]
+        except OSError:
+            self.found = False
         return self.found
 
 

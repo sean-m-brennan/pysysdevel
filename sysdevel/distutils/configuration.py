@@ -333,8 +333,7 @@ class py_config(config):
 
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            website = 'https://pypi.python.org/packages/source/' + \
-                self.indexed[0] + '/' + self.indexed + '/'
+            website = pypi_url(self.indexed)
             if version is None:
                 version = self.version
             src_dir = self.indexed + '-' + str(version)
@@ -451,6 +450,11 @@ def pypi_url(pkg, src=True):
 
 
 def pypi_archive(which, version):
+    if not version in available_versions(which, pypi_url(which),
+                                         which + '-*', True):
+        print('Warning: version ' + str(version) + ' of ' + which +
+              ' is not available.')
+        version = earliest_pypi_version(which)
     listing = os.path.join(options.target_build_dir, '.' + which + '_list')
     if not os.path.exists(listing):
         urlretrieve(pypi_url(which), listing)
@@ -465,59 +469,48 @@ def pypi_archive(which, version):
     raise ConfigError(which, 'No source archive available')
 
 
-def latest_pypi_version(which, requested_ver=None):
-    listing = os.path.join(options.target_build_dir, '.' + which + '_list')
-    urlretrieve(pypi_url(which), listing)
-    version = '0'
+def available_versions(what, website, pattern, archives=False):
+    pre = pattern.split('*')[0]
+    post = pattern.split('*')[-1]
+    listing = os.path.join(options.target_build_dir, '.' + what + '_list')
+    urlretrieve(website + '/', listing)
     versions = []
     f = open(listing, 'r')
     contents = f.read()
     f.close()
-    idx = contents.find(which + '-', 0)
-    l = len(which + '-')
+    idx = contents.find(pre, 0)
+    l = len(pre)
     while idx >= 0:
         endl = contents.find('\n', idx)
-        end_t = contents.find('.tar', idx, endl)
-        end_z = contents.find('.zip', idx, endl)
-        if end_t > 0 and end_z > 0:
-            end = min(end_t, end_z)
-        else:
-            end = max(end_t, end_z)
-        if end > 0:
+        end = contents.find(post, idx)
+        if archives:
+            end_t = contents.find('.tar', idx, endl)
+            end_z = contents.find('.zip', idx, endl)
+            if end_t > 0 and end_z > 0:
+                end = min(end_t, end_z)
+            else:
+                end = max(end_t, end_z)
+        if end > 0 and end < endl:
             versions.append(contents[idx+l:end])
-        idx = contents.find(which + '-', end)
-    if requested_ver in versions:
-        return requested_ver
-    for ver in versions:
-        if compare_versions(version, ver) < 0:
-            version = ver
-    return version
+        idx = contents.find(pre, end)
+    return versions
 
 
-def latest_version(what, website, pattern):
+def latest_version(what, website, pattern,
+                   requested='0', archives=False):
     pre = pattern.split('*')[0]
     post = pattern.split('*')[-1]
     try:
-        listing = os.path.join(options.target_build_dir, '.' + what + '_list')
-        urlretrieve(website + '/', listing)
-        version = '0'
-        versions = []
-        f = open(listing, 'r')
-        contents = f.read()
-        f.close()
-        idx = contents.find(pre, 0)
-        l = len(pre)
-        while idx >= 0:
-            endl = contents.find('\n', idx)
-            end = contents.find(post, idx)
-            if end > 0 and end < endl:
-                versions.append(contents[idx+l:end])
-            idx = contents.find(pre, end)
+        version = requested
+        versions = available_versions(what, website, pattern, archives)
         for ver in versions:
             if compare_versions(version, ver) < 0:
                 version = ver
+        if requested in versions:
+            return requested
         return version
     except (DownloadError, URLError, HTTPError, ContentTooShortError):
+        ## Default to whatever is in the third_party directory
         file_list = glob.glob(os.path.join(options.download_dir, pattern))
         if len(file_list) > 0:
             pre = os.path.join(options.download_dir, pre)
@@ -527,3 +520,35 @@ def latest_version(what, website, pattern):
             raise
 
 
+def earliest_version(what, website, pattern,
+                     requested='9999999999', archives=False):
+    pre = pattern.split('*')[0]
+    post = pattern.split('*')[-1]
+    try:
+        version = requested
+        versions = available_versions(what, website, pattern, archives)
+        for ver in versions:
+            if compare_versions(version, ver) > 0:
+                version = ver
+        if requested in versions:
+            return requested
+        return version
+    except (DownloadError, URLError, HTTPError, ContentTooShortError):
+        ## Default to whatever is in the third_party directory
+        file_list = glob.glob(os.path.join(options.download_dir, pattern))
+        if len(file_list) > 0:
+            pre = os.path.join(options.download_dir, pre)
+            version = file_list[0][len(pre):-len(post)]
+            return version
+        else:
+            raise
+
+
+def latest_pypi_version(what, requested_ver=None):
+    return latest_version(what, pypi_url(what),
+                          what + '-*', requested_ver, True)
+
+
+def earliest_pypi_version(what, requested_ver=None):
+    return earliest_version(what, pypi_url(what),
+                            what + '-*', requested_ver, True)

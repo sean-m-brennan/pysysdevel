@@ -67,6 +67,33 @@ class ConfigError(Exception):
         return "Error finding '" + self.which + "': " + self.what
 
 
+
+def requirement_versioning(name):
+    version = None
+    strict = False
+    if not is_string(name) and len(name) > 1:
+        if len(name) > 2:
+            strict = name[2]
+        version = name[1]
+        name = name[0]
+    elif '=' in name:
+        n_end = name.find('(')
+        if n_end < 0:
+            n_end = name.find('>')
+            if n_end < 0:
+                n_end = name.find('=')
+        v_begin = name.rfind('=') + 1
+        v_end = name.find(')')
+        if '==' in name[n_end:]:
+            strict = True
+        version = name[v_begin:v_end].strip()
+        name = name[:n_end].strip()
+    if name == 'None':
+        name = None
+    return name, version, strict
+
+
+
 class RequirementsFinder(ast.NodeVisitor):
     req_keywords = ['requires', #'install_requires',
                     ]
@@ -100,13 +127,7 @@ class RequirementsFinder(ast.NodeVisitor):
         required = list(self.requires_list)
         self.requires_list = []
         for r in required:
-            if '=' in r:
-                idx = r.find('>')
-                if idx < 0:
-                    idx = r.find('=')
-                self.requires_list.append((r[:idx], r[idx+2:]))
-            else:
-                self.requires_list.append(r)
+            self.requires_list.append(requirement_versioning(r))
 
 
     def _load_from_file(self, f):

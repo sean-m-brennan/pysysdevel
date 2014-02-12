@@ -3,6 +3,7 @@ import os
 import sys
 import struct
 import platform
+import subprocess
 
 from ..prerequisites import programfiles_directories, find_libraries, find_header, find_program, autotools_install, global_install, ConfigError
 from ..configuration import lib_config
@@ -56,7 +57,7 @@ class configuration(lib_config):
                                                         base_dirs)
             mpich_inc_dir = find_header(self.hdr, base_dirs,
                                         ['mpich2', 'mpich2-' + arch,])
-            mpich_exe = find_program('mpif90', base_dirs +
+            mpich_exe = find_program('mpicc', base_dirs +
                                      [os.path.join(mpich_lib_dir, '..')])
             mpich_exe_dir = os.path.abspath(os.path.dirname(mpich_exe))
             self.found = True
@@ -72,6 +73,16 @@ class configuration(lib_config):
         self.environment['MPICH_LIB_DIR'] = mpich_lib_dir
         self.environment['MPICH_LIBRARIES'] = mpich_lib_list
         self.environment['MPICH_LIB_FILES'] = mpich_libs
+        try:
+            p = subprocess.Popen([mpich_exe, '-compile_info', '-link_info'],
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            if err != '':
+                self.found = False
+                return self.found
+            self.environment['MPICH_FLAGS'] = out[3:]
+        except OSError:
+            self.found = False
         return self.found
 
 

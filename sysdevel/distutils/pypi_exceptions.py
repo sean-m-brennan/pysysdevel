@@ -30,27 +30,33 @@ Note that some PyPI listings do *not* have code on PyPI, those won't work here.
 
 ## Q: what does pip do for these?
 ## A: nothing - tough luck if you don't know the *PyPI* name or
-##     if dependencies are not listed in setup 'requires'
+##     if dependencies are not listed in setup's 'requires' entry
 
 ## Dictionary organized as:
 ##  Package name (as used), PyPI name, dependencies
 pypi_exceptions = {
-    'argparse':          ('argparse', ()),  #TODO argparse breaks the AST?
-    'cython':            ('Cython', None),
-    'dateutil':          ('python-dateutil', ('six',)),
-    'ephem':             ('pyephem', None),
-    'fuzzy':             ('Fuzzy', None),
-    'jinja2':            ('Jinja2', None),
-    'numba':             ('numba', ('numpy (==1.7.1)', ## due to bug in numba
-                                    'cython', 'llvmpy', 'llvmmath')),
-    'pygments':          ('Pygments', None),
-    'pyyaml':            ('PyYAML', ('libyaml',)),
-    'qunitsuite':        ('QUnitSuite', None),
-    'scipy':             ('scipy', ('gfortran',)), #'atlas',)), #'lapack',?)),
-    'serial':            ('pyserial', None),
-    'shapely':           ('Shapely', ('geos',)),
-    'sphinx':            ('Sphinx', ('docutils', 'jinja2', 'pygments',
-                                     'roman',)), # 'rst2pdf,)), #TODO rst2pdf is broken
-    'sqlalchemy':        ('SQLAlchemy', None),
-    'usb':               ('pyusb', ('libusb',)),
+    'argparse':    ('argparse', ()),  #TODO why does argparse break the dependency checker AST?
+    'cython':      ('Cython', None),
+    'dateutil':    ('python-dateutil', ('six',)),
+    'ephem':       ('pyephem', None),
+    'fuzzy':       ('Fuzzy', None),
+    'h5py':        ('h5py', ('hdf5 (>=1.8.3)', 'lzf')),
+    'jinja2':      ('Jinja2', None),
+    'numba':       ('numba', ('numpy (==1.7.1)', ## due to bug in numba
+                              'cython', 'llvmpy', 'llvmmath')),
+    'pygments':    ('Pygments', None),
+
+    'pyyaml':      ('PyYAML', ('libyaml',)),
+
+    'qunitsuite':  ('QUnitSuite', None),
+
+    'scipy':       ('scipy', ('gfortran',)), #'atlas',)), #'lapack',?)),
+
+    'serial':      ('pyserial', None),
+
+    'shapely':     ('Shapely', ('geos',)),
+    'sphinx':      ('Sphinx', ('docutils', 'jinja2', 'pygments',
+                               'roman',)), # 'rst2pdf,)), #TODO rst2pdf is broken
+    'sqlalchemy':  ('SQLAlchemy', None),
+    'usb':         ('pyusb', ('libusb',)),
 }
