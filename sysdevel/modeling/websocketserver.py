@@ -63,6 +63,7 @@ except ImportError:
 
 from mod_pywebsocket import common, dispatch, util, handshake, standalone
 from mod_pywebsocket import http_header_util, memorizingfile, extensions
+from mod_pywebsocket.stream import ConnectionTerminatedException
 
 ## derived partially from mod_pywebsocket.standalone
 
@@ -272,6 +273,8 @@ class WebSocketServer(Process,
                     self.socket = socket_
                     handle_request()
                 self.socket = None
+        except KeyboardInterrupt:
+            pass
         finally:
             self.__ws_is_shut_down.set()
 
@@ -321,7 +324,9 @@ class WebsocketDispatch(dispatch.Dispatcher):
             try:
                 msg = request.ws_stream.receive_message()
                 service.handle_message(msg)
-            except (socket.error, socket.herror):
+            except ConnectionTerminatedException:
+                break
+            except socket.herror:
                 self.log.debug('WS receive: ' + str(sys.exc_info()[1]))
                 break
         try:

@@ -80,7 +80,7 @@ class configuration(lib_config):
             if err != '':
                 self.found = False
                 return self.found
-            self.environment['MPICH_FLAGS'] = out[3:]
+            self.environment['MPICH_FLAGS'] = out.split()[1:]
         except OSError:
             self.found = False
         return self.found

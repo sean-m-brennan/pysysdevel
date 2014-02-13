@@ -78,7 +78,7 @@ class configuration(lib_config):
             if err != '':
                 self.found = False
                 return self.found
-            self.environment['OPENMPI_FLAGS'] = out[3:]
+            self.environment['OPENMPI_FLAGS'] = out.split()[1:]
         except OSError:
             self.found = False
         return self.found

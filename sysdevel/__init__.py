@@ -37,7 +37,7 @@ CONFIG_DIR = os.path.realpath(os.path.abspath(
 
 SERVER_SUPPORT_DIR = os.path.realpath(os.path.abspath(
     os.path.dirname(__file__)))
-SERVER_SUPPORT_MODULES = ['serve', 'daemon']
+SERVER_SUPPORT_MODULES = ['serve']
 
 CLIENT_SUPPORT_DIR = os.path.realpath(os.path.abspath(
     os.path.join(os.path.dirname(__file__), 'ui')))

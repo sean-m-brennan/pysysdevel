@@ -662,6 +662,19 @@ def install_pyscript(website, name, locally=True):
         raise ConfigError(name, 'Unable to install: ' + str(sys.exc_info()[1]))
 
 
+def install_pypkg_process(cmd_line, environ, log, shell):
+    try:
+        p = subprocess.Popen(cmd_line, env=environ, stdout=log, stderr=log,
+                             shell=shell)
+        status = process_progress(p)
+        log.close()
+    except KeyboardInterrupt:
+        p.terminate()
+        log.close()
+        raise
+    return status
+
+
 def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
                                 patch=None, extra_cmds=None, extra_args=None):
     compiler = []
@@ -700,7 +713,7 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
             environ['PYTHONPATH'] = target_lib_dir
             cmd_line = [sys.executable, 'setup.py'] + extra_cmds + \
                 ['build'] + compiler + ['install', '--home=' + target_dir,
-                 '--install-lib=' + target_lib_dir, "--prefix=''",] + extra_args
+                 '--install-lib=' + target_lib_dir,] + extra_args
         else:
             sudo_prefix = []
             if not as_admin():
@@ -714,16 +727,23 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
             log.write('Env: ' + str(environ) + '\n')
         log.write('\n')
         log.flush()
-        try:
-            p = subprocess.Popen(cmd_line, env=environ, stdout=log, stderr=log,
-                                 shell=shell)
-            status = process_progress(p)
-            log.close()
-        except KeyboardInterrupt:
-            p.terminate()
-            log.close()
-            raise
+        status = install_pypkg_process(cmd_line, environ, log, shell)
+        failed = False
         if status != 0:
+            log = open(log_file, 'r')
+            for line in log:
+                pass
+            log.close()
+            failed = True
+            if "error: must supply either home or prefix/exec-prefix -- not both" in line:
+                log = open(log_file, 'a')
+                log.write("\nRETRYING\n")
+                log.flush()
+                cmd_line.append("--prefix=")
+                status = install_pypkg_process(cmd_line, environ, log, shell)
+                if status == 0:
+                    failed = False
+        if failed:
             sys.stdout.write(' failed; See ' + log_file)
             raise ConfigError(name, 'Required, but could not be ' +
                               'installed; See ' + log_file)

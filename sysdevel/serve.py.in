@@ -24,6 +24,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
+# pylint: disable=W0105
 '''
 NOTE: requires the following be defined in distutils environment:
   WEBSOCKET_ORIGIN
@@ -40,16 +41,16 @@ import logging
 import time
 import tempfile
 import socket
-import inspect
 import traceback
 try:
     import json
 except ImportError:
     import simplejson as json
 
-from sysdevel.modeling import websocketserver, websockethandler, daemon
+from sysdevel.modeling import websocketserver, websockethandler, daemon, models
 
-from query import query  ## user defined, see sysdevel.modeling.generic_query.py
+## user defined and co-located, see sysdevel.modeling.generic_query.py
+from .query import query
 
 
 WEBSOCKET_HOST     = socket.getfqdn()
@@ -132,7 +133,7 @@ class ServiceQuery(websockethandler.WebHandlerService):
                             
             if not handled:
                 self.log.warn("Unknown command: " + message)
-        except Exception:
+        except Exception:  # pylint: disable=W0703
             self.log.warn(traceback.format_exc())
                 
     def closing(self):
@@ -161,10 +162,10 @@ class ServiceBatch(websockethandler.WebHandlerService):
                 if self.socket_dispatch != None:
                     error = 'ERROR:Invalid parameters.'
                     self.socket_dispatch.send_data(error)
-        except:
+        except:  # pylint: disable=W0702
             pass
 
-    def handle_message(self, unused):
+    def handle_message(self, _):
         ## not using input
         results = "RESULT:"
         try:
@@ -182,7 +183,7 @@ class ServiceBatch(websockethandler.WebHandlerService):
             error = "ERROR:" + str(e)
             if self.socket_dispatch != None:
                 self.socket_dispatch.send_data(error)
-        except:
+        except:  # pylint: disable=W0702
             pass
 
     def closing(self):
@@ -230,9 +231,9 @@ class ServiceServer(websockethandler.WebServer):
         try:
             self.webserver.quit()
             self.webserver.join(1)
-        except Exception:
-            e = sys.exc_info()[1]
-            self.log.error('webserver thread: ' + str(e))
+        except RuntimeError:
+            logging.getLogger().error('webserver thread: ' +
+                                      str(sys.exc_info()[1]))
 
 
 class ServiceDaemon(daemon.Daemon):
@@ -252,7 +253,7 @@ class ServiceDaemon(daemon.Daemon):
                                                          WEBSOCKET_TLS_PKEY,
                                                          WEBSOCKET_TLS_CERT,
                                                          True)
-        daemon.Daemon.__init__(self, log_file)
+        super(ServiceDaemon, self).__init__(log_file)
         self.log = logging.getLogger()
 
     def stop(self):
@@ -274,9 +275,7 @@ class ServiceDaemon(daemon.Daemon):
 
 
 def main(argv=None):
-    app_name = SERVICE_NAME + 'server.main()'
     if argv is None:
-        app_name = os.path.split(sys.argv[0])[1]
         argv = sys.argv[1:]
 
     if '--no-daemon' in argv:
@@ -292,7 +291,6 @@ def main(argv=None):
         if '-v' in argv or '--verbose' in argv:
             verbose = True
             level = logging.DEBUG
-        extras = []
         try:
             server = ServiceServer(None, level, verbose)
             server.run()

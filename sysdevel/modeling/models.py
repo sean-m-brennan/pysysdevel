@@ -42,7 +42,7 @@ class UnknownModelException(Exception):
 
 ##############################
 
-class DataModel(object):
+class DataModel(dict):
     '''
     Model of Model-View-Controller pattern. Container for data updates by
     multiple controllers, read by viewer for display.

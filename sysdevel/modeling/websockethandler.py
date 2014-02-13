@@ -61,8 +61,8 @@ class WebHandlerService(Process):
     Abstract class for handling messages from a web client
     '''
     def __init__(self, name):
+        super(WebHandlerService, self).__init__(name=name)
         self.log = logging.getLogger(self.__class__.__name__)
-        super(WebHandlerService, self).__init__(self, name=name)
 
     def closing(self):
         raise NotImplementedError('WebHandlerService must be subclassed.')
