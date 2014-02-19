@@ -39,9 +39,9 @@ from ..filesystem import mkdir
 from .. import options
 from ...util import is_string
 
-INTERLEAVED = True
+INTERLEAVED_OUTPUT = True
 
-if INTERLEAVED:
+if INTERLEAVED_OUTPUT:
     #pylint: disable=W0611
     from threading import Thread
     try:
@@ -126,7 +126,7 @@ class dependencies(Command):
                                          shell=shell)
                     log = open(logfile, 'a')
                     log.write(pkg_name.upper() + ':\n')
-                    if INTERLEAVED:
+                    if INTERLEAVED_OUTPUT:
                         out = ''
                         o_q = Queue()
                         o = Thread(target=enqueue_output, args=(p.stdout, o_q))
@@ -197,7 +197,8 @@ class dependencies(Command):
         if self.sublevel == 0:
             if self.show:
                 print(self.distribution.metadata.name + ' ' +
-                      token + ', '.join(deps_list))
+                      token + ', '.join(set([' '.join(d.split())
+                                             for d in deps_list])))
             if not self.show or 'build' in sys.argv:
                 env_old = self.distribution.environment
                 env = configure_system(self.requirements,
