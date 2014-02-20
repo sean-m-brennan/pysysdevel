@@ -335,11 +335,11 @@ class WebsocketDispatch(dispatch.Dispatcher):
             pass
         service.quit()
 
-    def send_data(self, data):
+    def send_data(self, data, binary=False):
         if len(self.clients) > 0:
             for s in self.clients:
                 try:
-                    s.send_message(data, binary=False)
+                    s.send_message(data, binary=binary)
                 except socket.error:
                     self.log.debug('WS send: ' + str(sys.exc_info()[1]))
                     try:

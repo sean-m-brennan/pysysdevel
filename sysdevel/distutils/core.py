@@ -32,24 +32,21 @@ setup_setuptools()
 
 import sys
 
+SUPPORT_SCONS = False
+
 have_numpy = False
 try:
     from numpy.distutils.numpy_distribution import NumpyDistribution as oldDistribution
     from numpy.distutils.command import config, build_ext, install_headers
-    from numpy.distutils.command import bdist_rpm, scons
+    from numpy.distutils.command import bdist_rpm
+    if SUPPORT_SCONS:
+        from numpy.distutils.command import scons
     have_numpy = True
 
 except ImportError:
-    try:
-        print('NumPy not found. Failover to Distutils2 alone.')
-        from distutils2.dist import Distribution as oldDistribution
-        from distutils2.command import config, build_ext, install_headers
-        ## no bdist_rpm in distutils2
-
-    except ImportError:
-        print('Distutils2 not found. Failover to old distutils.')
-        from distutils.dist import Distribution as oldDistribution
-        from distutils.command import config, build_ext, install_headers, bdist_rpm
+    print('NumPy not found. Failover to distutils alone.')
+    from distutils.dist import Distribution as oldDistribution
+    from distutils.command import config, build_ext, install_headers, bdist_rpm
 
         # TODO Python 3 'packaging' module
 
@@ -291,7 +288,7 @@ my_cmdclass = {'dependencies':     dependencies.dependencies,
                'test':             test.test,
                }
 
-if have_numpy:
+if have_numpy and SUPPORT_SCONS:
     my_cmdclass['scons']         = scons.scons
 
 if have_setuptools:
