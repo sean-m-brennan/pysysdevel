@@ -22,12 +22,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Custom event handling for wxPython
 """
 
-import events
+from . import events
 
 try:
     import warnings
@@ -58,5 +58,5 @@ try:
             wx.PostEvent(rcvr, self)
 
 
-except:
+except ImportError:
     pass

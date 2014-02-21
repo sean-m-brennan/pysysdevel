@@ -23,6 +23,8 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
 
+# pylint: disable=F0401
+
 from pyjamas import Window
 from pyjamas import logging
 from pyjamas.HTTPRequest import HTTPRequest
@@ -34,7 +36,7 @@ try:
 except ImportError:
     import simplejson as json
 
-import websocketclient
+from . import websocketclient
 
 
 
@@ -90,15 +92,30 @@ def multiline_text(text):
 class WebUI(object):
     @classmethod
     def main(klass, argv=None):
-        klass().__init_UI()
+        klass(argv).__init_UI()
 
 
-    def __init__(self):
+    def __init__(self, argv=None):
         self.server = '@@{WEBSOCKET_SERVER}'
         self.resource = '@@{WEBSOCKET_RESOURCE}'
+        if argv:
+            for arg in argv:
+                if arg == '-s' or arg == '--server':
+                    idx = argv.index(arg)
+                    self.server = argv[idx+1]
+                elif arg == '-r' or arg == '--resource':
+                    idx = argv.index(arg)
+                    self.resource = argv[idx+1]
+        if 'WEBSOCKET_' in self.server or 'WEBSOCKET_' in self.resource:
+            raise Exception('Invalid configuration for WebUI')
         self.log = logging.getConsoleLogger()
+        self.ws = None
+        self.ws_dh = None
+        self.php_script = None
+        self.php_dh = None
 
 
+    #FIXME why two-phase?
     def __init_UI(self, data_callback=None):
         Window.addWindowCloseListener(self)
 
@@ -271,13 +288,13 @@ JS("""
 """)
 
 
-def strptime(datestring, format):
+def strptime(datestring, fmt):
     '''
     Simple strptime replacement. No timezone, no locale.
     '%f' format is truncated to milliseconds.
     PyJS implementation is incorrect for dates and incomplete for times.
     '''
     try:
-        return datetime.fromtimestamp(float(JS("better_strptime(@{{datestring}}.valueOf(), @{{format}}.valueOf()).getTime() / 1000.0")))
+        return datetime.fromtimestamp(float(JS("better_strptime(@{{datestring}}.valueOf(), @{{fmt}}.valueOf()).getTime() / 1000.0")))
     except:
-        raise ValueError("Invalid or unsupported values for strptime: '%s', '%s'" % (datestring, format))
+        raise ValueError("Invalid or unsupported values for strptime: '%s', '%s'" % (datestring, fmt))

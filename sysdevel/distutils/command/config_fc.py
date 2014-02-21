@@ -29,6 +29,7 @@ Custom Fortran compiler config
 
 try:
     import os
+    import platform
     from numpy.distutils import log
     # pylint: disable=W0201
     from numpy.distutils.command.config_compiler import config_fc as old_cfg_fc
@@ -43,13 +44,14 @@ try:
                 old_ldflags = os.environ['LDFLAGS']
             except KeyError:
                 old_ldflags = ''
-            #TODO? if not 'darwin' in platform.system().lower():
-            os.environ['LDFLAGS'] = old_ldflags + ' -shared'
+            if 'darwin' in platform.system().lower():
+                os.environ['LDFLAGS'] = old_ldflags + ' -shared' + ' -lpython'
+            else:
+                os.environ['LDFLAGS'] = old_ldflags + ' -shared'
 
 
         def finalize_options(self):
             """ Perhaps not necessary? (potential OSX problem)
-            import platform
             from ..prerequisites import gcc_is_64bit
             if ((self.f77exec is None and self.f90exec is None) or \
                 'gfortran' in self.f77exec or 'gfortran' in self.f90exec) and \

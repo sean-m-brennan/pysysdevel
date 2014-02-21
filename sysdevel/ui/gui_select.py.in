@@ -25,6 +25,8 @@ permissions and limitations under the License.
 
 ## Note web interfaces never see this module
 
+import sys
+
 (INVALID, WX, GTK, QT4, QT, FLTK, TK, BE_MAX) = (0, 1, 2, 4, 8, 16, 32, 63)
 BE_MIN = WX
 TEXT = 2 * (BE_MAX + 1)
@@ -61,13 +63,19 @@ BACKEND        = BE_MIN
 HANDLER_OBJECT = object
 
 
-ENABLE_WX    = @@{WX_ENABLED}   ## requires wxPython
-ENABLE_GTK   = @@{GTK_ENABLED}  ## requires PyGTK
-ENABLE_QT4   = @@{QT4_ENABLED}  ## requires PyQt4
-ENABLE_QT3   = @@{QT3_ENABLED}  ## requires PyQt
-ENABLE_FLTK  = @@{FLTK_ENABLED} ## requires pyFLTK
-ENABLE_TK    = @@{TK_ENABLED}   ## requires TkInter
+## Configured flags
+try:
+    ENABLE_WX    = @@{WX_ENABLED}   ## requires wxPython
+    ENABLE_GTK   = @@{GTK_ENABLED}  ## requires PyGTK
+    ENABLE_QT4   = @@{QT4_ENABLED}  ## requires PyQt4
+    ENABLE_QT3   = @@{QT3_ENABLED}  ## requires PyQt
+    ENABLE_FLTK  = @@{FLTK_ENABLED} ## requires pyFLTK
+    ENABLE_TK    = @@{TK_ENABLED}   ## requires TkInter
+except SyntaxError:
+    raise Exception('GUI select misconfigured.')
 
+
+# pylint: disable=W0612,F0401
 
 def __be_setup__(be):
     import warnings
@@ -78,7 +86,7 @@ def __be_setup__(be):
         return True
     elif be == GTK and ENABLE_GTK:
         warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-        import gtk, gobject, gtkhtml2, gtk.glade
+        import gtk, gobject, gtk.glade #, gtkhtml2
         warnings.resetwarnings()
         return True
     elif be == QT4 and ENABLE_QT4:
@@ -97,7 +105,7 @@ def __be_setup__(be):
 
 
 def chooseBackend(preference=None, debug=False):
-    global BACKEND
+    global BACKEND  # pylint: disable=W0603
     if preference is None or preference == TEXT:
         BACKEND = TEXT
         return BACKEND
@@ -118,7 +126,7 @@ def chooseBackend(preference=None, debug=False):
                 BACKEND <<= 1
             else:
                 break
-        except Exception:
+        except ImportError:
             if debug:
                 e = sys.exc_info()[1]
                 sys.stderr.write(BackendNames[BACKEND][:-3] +
@@ -144,15 +152,15 @@ def UIFactory(app, has_log, pkg=None):
         pkg_prefix = pkg + '.'
 
     if be == TEXT:
-        import txt_gui
+        from . import txt_gui
         mod_name = pkg_prefix + 'txt_' + app.key
         return txt_gui.TXT_GUI(mod_name, app, app.resource_file, has_log)
     elif be == WX:
-        import wx_gui
+        from . import wx_gui
         mod_name = pkg_prefix + 'wx_' + app.key
         return wx_gui.WX_GUI(mod_name, app, app.resource_file, has_log)
     elif be == GTK:
-        import gtk_gui
+        from . import gtk_gui
         mod_name = pkg_prefix + 'gtk_' + app.key
         return gtk_gui.GTK_GUI(mod_name, app, app.resource_file, has_log)
     # TODO: implement other backends

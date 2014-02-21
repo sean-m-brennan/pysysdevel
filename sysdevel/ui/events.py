@@ -22,12 +22,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Custom events
 """
 
-import gui_select
+# pylint: disable=E0611
+from . import gui_select
 
 
 (FATAL, ERROR, WARNING, INFO, DEBUG, NOTICE, MESSAGE) = list(range(7))
@@ -67,12 +68,12 @@ def EventFactory(string, ident=NOTICE, context=None, tpl=()):
     backend = gui_select.BACKEND
 
     if backend == gui_select.WX:
-        import wx_events
-        return wx_events.wxEvent(string, ident, context, tpl)
+        from .wx_events import wxEvent
+        return wxEvent(string, ident, context, tpl)
     elif backend == gui_select.GTK:
-        import gtk_events
-        return gtk_events.gtkEvent(string, ident, context, tpl)
+        from .gtk_events import gtkEvent
+        return gtkEvent(string, ident, context, tpl)
     ## TODO: other backends' events
     else:
-        import txt_events
-        return txt_events.txtEvent(string, ident, context, tpl)
+        from .txt_events import txtEvent
+        return txtEvent(string, ident, context, tpl)

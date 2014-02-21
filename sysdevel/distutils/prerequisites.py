@@ -731,11 +731,15 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
         failed = False
         if status != 0:
             log = open(log_file, 'r')
+            prefix_error = False
+            err = "error: must supply either home or prefix/exec-prefix -- not both"
             for line in log:
-                pass
+                if err in line:
+                    prefix_error = True
+                break
             log.close()
             failed = True
-            if "error: must supply either home or prefix/exec-prefix -- not both" in line:
+            if prefix_error:
                 log = open(log_file, 'a')
                 log.write("\nRETRYING\n")
                 log.flush()

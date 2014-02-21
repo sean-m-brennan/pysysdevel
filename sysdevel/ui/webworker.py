@@ -22,13 +22,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 WebWorker support for pyjamas 
 """
 
+# pylint: disable=F0401
+
 from __pyjamas__ import JS
-from pyjamas import Window
 from pyjamas import logging
 log = logging.getConsoleLogger()
 
@@ -51,14 +52,15 @@ class WebWorker(object):
         """
         self.module = self.function = None
         try:
-            is_mod = isinstance(module_or_function, basestring):
+            is_mod = isinstance(module_or_function, basestring)
         except NameError:
-            is_mod = isinstance(module_or_function, str):
+            is_mod = isinstance(module_or_function, str)
         if is_mod:
             self.module = module_or_function
         else:
             self.function = module_or_function
         self.callback = callback
+        self._wk = None
         if _worker_supported():
             if self.module:
                 JS("""@{{self}}._wk = new $wnd.Worker(@{{self.module}} + '.js');""")
@@ -67,8 +69,6 @@ class WebWorker(object):
                 self._wk.postMessage(self.function.__name__)
             self._wk.onmessage = self.onMessage
             self._wk.onerror = self.onError
-        else:
-            self._wk = None
 
 
     def run(self, data):

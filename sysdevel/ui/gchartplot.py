@@ -23,10 +23,9 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
 
-import math
-
 ## no js dependency
 
+# pylint: disable=F0401
 from pyjamas import logging
 log = logging.getConsoleLogger()
 
@@ -42,17 +41,17 @@ class GWTCanvasBasedCanvasFactory(object):
 
 
 class Plotter(SimplePanel):
-    def __init__(self, width=800, height=600, colors=['red', 'blue', 'green']):
+    def __init__(self, width=800, height=600, colors=('red', 'blue', 'green')):
         SimplePanel.__init__(self)
         GChart.setCanvasFactory(GWTCanvasBasedCanvasFactory())
-        self.colors = colors
+        self.colors = list(colors)
         self.series = []
         self.canvas = GChart.GChart()
         self.canvas.setChartSize(width, height)
         self.canvas.setBorderStyle("none")
         self.canvas.getXAxis().setHasGridlines(True)
         self.canvas.getYAxis().setHasGridlines(True)
-        self.add(self.canvas)
+        self.add(self.canvas)  # pylint: disable=E1101
 
     def update(self, plot):
         self.series = plot['series']
@@ -75,7 +74,7 @@ class Plotter(SimplePanel):
         self.canvas.update()
 
 
-    def plot2d(self, num, series, labels, x_values, y_values, x_ticks, y_ticks):
+    def plot2d(self, _, series, labels, x_values, y_values, x_ticks, y_ticks):
         self.canvas.addCurve()
         self.canvas.getCurve().getSymbol().setFillSpacing(0)
         self.canvas.getCurve().setYAxis(GChartConsts.Y_AXIS)

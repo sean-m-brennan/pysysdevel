@@ -22,14 +22,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Custom single-thread event handling
 """
 
-import sys
 import Queue
-import events
+
+from . import events
 
 
 ## General asynchronous event facility ##########
@@ -42,7 +42,7 @@ def pop_evt_queue(timeout=None):
         return None
     try:
         __GenericEventList__.task_done()
-    except:
+    except ValueError:
         pass
     return evt
 
@@ -52,7 +52,7 @@ class genericAsynchEventType(object):
         self.queue = __GenericEventList__
         self.function = None
 
-    def Bind(self, pid, fctn):
+    def Bind(self, _, fctn):
         self.function = fctn
 
 
@@ -60,7 +60,7 @@ class genericAsynchEvent(object):
     def __init__(self, evt_t):
         self.etype = evt_t
 
-    def Post(self, rcvr):
+    def Post(self, _):
         self.etype.queue.put(self)
 
     def Handle(self):

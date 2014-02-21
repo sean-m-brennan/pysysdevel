@@ -25,7 +25,7 @@ permissions and limitations under the License.
 
 import sys
 
-SPLASH_DURATION        = 1000  ## in milliseconds
+SPLASH_DURATION = 1000  ## in milliseconds
 
 
 class GUI(object):
@@ -66,6 +66,7 @@ class transplant(object):
         self.method = method
         setattr(host, method_name or method.__name__, self)
 
+    # pylint: disable=W0142
     def __call__(self, *args, **kwargs):
         nargs = [self.host]
         nargs.extend(args)

@@ -27,22 +27,28 @@ class __OneTimeCustomException(Exception):
     pass
 
 
+# pylint: disable=W0611
 try:
     try:
+        # pylint: disable=F0401
         import pyjd
         if not pyjd.is_desktop:
             raise __OneTimeCustomException('Compiling with pyjs.')
     except ImportError:
         pass
-
     ## WxPython
+
+    def strptime(*args, **kwargs):
+        from datetime import datetime
+        return datetime.strptime(*args, **kwargs)
+
     # FIXME wx ui objects
 
-    from datetime.datetime import strptime
-    from flex_ui import FlexUI, multiline_text
+    from .flex_ui import FlexUI, multiline_text
     UserInterface = FlexUI
 
 except __OneTimeCustomException:
+    # pylint: disable=F0401
     ## Pyjamas
     from pyjamas import Window
     from pyjamas.ui.RootPanel import RootPanel
@@ -66,12 +72,12 @@ except __OneTimeCustomException:
     from pyjamas.ui import HasAlignment
 
     try:
-        import gchartplot as plotter
-    except:
+        from . import gchartplot as plotter
+    except ImportError:
         try:
-            import raphaelplot as plotter
-        except:
+            from . import raphaelplot as plotter
+        except ImportError:
             raise ImportError('No plotting modules available')
 
-    from web_ui import WebUI, strptime, multiline_text
+    from .web_ui import WebUI, strptime, multiline_text
     UserInterface = WebUI

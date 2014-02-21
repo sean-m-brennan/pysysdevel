@@ -27,6 +27,7 @@ permissions and limitations under the License.
 
 import sys
 import os
+import platform
 
 try:
     import logging
@@ -37,7 +38,8 @@ except ImportError:
     sys.stderr.flush()
     LOGGABLE = False
 
-import gui_select
+# pylint: disable=E0611
+from . import gui_select
 
 
 
@@ -51,13 +53,6 @@ class FlexUI(object):
     IMAGE_DIR = 'img'
     DOCS_DIR = 'doc'
     LOGFILE = 'flex.log'
-
-    @classmethod
-    def main(klass, argv=sys.argv):
-        app = klass(argv)
-        app.__init_UI()
-        app.Start()
-
 
     def __init__(self, argv):
         if argv == sys.argv:
@@ -75,6 +70,7 @@ class FlexUI(object):
         self.web_daemon = False
         self.no_gui = False
         self.log = FalseLog()
+        self.gui = None
 
         self.handle_options()
 
@@ -85,7 +81,7 @@ class FlexUI(object):
         self.data_threads = []
         ## Add data acquisition threads
 
-        ## Call self.__init_UI()
+        ## Subclasses decide whether to run __init_UI() directly here or not
 
 
     def __init_UI(self):
@@ -126,7 +122,7 @@ class FlexUI(object):
                 self.usage()
                 sys.exit()
             elif self.argv[i].startswith('-v'):
-                for flag in self.argv[i][1:]:
+                for _ in self.argv[i][1:]:
                     self.debug_level += 1
                 i += 1
             elif self.argv[i] == '--backend':

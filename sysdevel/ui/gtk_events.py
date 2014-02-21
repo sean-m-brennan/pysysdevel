@@ -22,12 +22,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Custom GTK events
 """
 
-import events
+from . import events
 
 try:
     import warnings
@@ -39,9 +39,6 @@ try:
 
 
     class gtkEvent(events.Event, gobject.GObject):
-        """
-        Custom GTK events
-        """
         OK          = gtk.BUTTONS_OK
         CANCEL      = gtk.BUTTONS_CANCEL
         INFORMATION = gtk.MESSAGE_INFO
@@ -49,18 +46,19 @@ try:
         QUESTION    = gtk.MESSAGE_QUESTION
         ERROR       = gtk.MESSAGE_ERROR
 
+        # pylint: disable=W0231
         def __init__(self, string, ident=events.NOTICE, context=None, tpl=()):
             self.__gobject_init__()
             events.Event.__init__(self, string, ident, context, tpl)
 
         def Post(self, rcvr):
-            self.connect(events.gse_msgs[self._msg_id],
+            self.connect(events.primary_msgs[self._msg_id],
                          rcvr.EventDistributor)
-            self.emit(events.gse_msgs[self._msg_id])
+            self.emit(events.primary_msgs[self._msg_id])
 
     
     gobject.type_register(gtkEvent)
 
 
-except:
+except ImportError:
     pass

@@ -25,6 +25,8 @@ permissions and limitations under the License.
 
 import math
 
+# pylint: disable=F0401,E1101
+
 from pyjamas.Timer import Timer
 from pyjamas import Window
 from pyjamas.ui.RootPanel import RootPanel
@@ -46,6 +48,7 @@ class Spinner(PopupPanel):
         self.numSectors  = 12
         self.size        = self.r2*2 + self.width*2
         self.speed       = 1.5  # seconds per rotation
+        self._timer      = None
 
         self.canvas = Raphael(self.size, self.size)
         self.sectors = []
@@ -85,7 +88,7 @@ class Spinner(PopupPanel):
         self._timer.scheduleRepeating(period)        
 
 
-    def onTimer(self, timerID):
+    def onTimer(self, _):
         self.opacity.insert(0, self.opacity.pop())
         for i in range(self.numSectors):
             self.sectors[i].setAttr("opacity", self.opacity[i])
@@ -94,7 +97,7 @@ class Spinner(PopupPanel):
 __spinner = None
 
 def start_spinner(container, run_str='Processing<br>Please wait...'):
-    global __spinner
+    global __spinner  # pylint: disable=W0603
     __spinner = Spinner(run_str)
     RootPanel().add(__spinner)
     center = (Window.getClientWidth() - __spinner.size) / 2

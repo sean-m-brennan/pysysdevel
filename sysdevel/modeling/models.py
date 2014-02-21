@@ -54,6 +54,7 @@ class DataModel(dict):
     datetime_format = date_format + datetime_sep + time_format
 
     def __init__(self):
+        dict.__init__(self)
         self._pipeline = dict()
         self._index = 0
 

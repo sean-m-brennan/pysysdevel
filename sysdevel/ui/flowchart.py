@@ -24,7 +24,10 @@ permissions and limitations under the License.
 """
 
 try:
+    # pylint: disable=F0401
     from __pyjamas__ import JS
+
+    # pylint: disable=W0613,W0102
 
     def add_endpoint(what, style={}, extra={}):
         return JS("""$wnd.jsPlumb.addEndpoint( @{{what}}, @{{style}}, @{{extra}} )""")
@@ -67,12 +70,13 @@ class Flowchart(object):
         if onConnect is None:
             self.connect_callback = self.debugConnect
 
+        self.debug = False
         self.ready = False
-        self.source_backlog = [];
-        self.sink_backlog = [];
-        self.connection_backlog = [];
-        self.allSourceEndpoints = [];
-        self.allTargetEndpoints = [];
+        self.source_backlog = []
+        self.sink_backlog = []
+        self.connection_backlog = []
+        self.allSourceEndpoints = []
+        self.allTargetEndpoints = []
 
         connectorPaintStyle = {
             'lineWidth': connect_size,

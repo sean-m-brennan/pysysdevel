@@ -22,12 +22,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 WebSockets support for pyjamas 
 """
 
 import sys
+
+# pylint: disable=F0401
 
 from __pyjamas__ import JS
 from pyjamas import Window
@@ -66,7 +68,7 @@ class WebSocketClient(object):
 
 
     def _detect_socket_support(self):
-        loc = JS("""$wnd.location.href""")
+        #loc = JS("""$wnd.location.href""")
         if JS("""typeof $wnd.WebSocket != 'undefined'"""):
             self._socket_type = 'ws'
 
@@ -98,9 +100,8 @@ class WebSocketClient(object):
     def send(self, message):
         try:
             self._ws.send(message)
-        except Exception:
-            e = sys.exc_info()[1]
-            log.debug(str(e))
+        except Exception:  # pylint: disable=W0703
+            log.debug(str(sys.exc_info()[1]))
 
 
     def close(self):
@@ -120,13 +121,13 @@ class WebSocketClient(object):
         log.error('WebSocket error: ' + evt)
 
 
-    def onOpen(self, evt):
+    def onOpen(self, _):
         if self._ws != None:
             log.debug('WS connected to ' + self.uri)
         self._opened = True
 
 
-    def onClose(self, evt):
+    def onClose(self, _):
         if self._opened:
             msg = 'Lost connection with the websocket server.'
             if self.has_fallback:
@@ -142,6 +143,5 @@ class WebSocketClient(object):
     def onMessage(self, evt):
         try:
             self.handler.receive(evt.data)
-        except Exception:
-            e = sys.exc_info()[1]
-            log.debug(str(e))
+        except Exception:  # pylint: disable=W0703
+            log.debug(str(sys.exc_info()[1]))

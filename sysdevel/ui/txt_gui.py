@@ -22,23 +22,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 Textual User Interface
 """
 
 import sys
-import os
-import time
-import threading
 
-import gui
-import txt_events
+from . import gui
+from . import txt_events
 
 
 ##############################
 
 class TXT_GUI(gui.GUI):
+    # pylint: disable=W0613
     def __init__(self, impl_mod, parent, resfile=None, has_log=True):
         gui.GUI.__init__(self)
 
@@ -47,9 +45,10 @@ class TXT_GUI(gui.GUI):
             __import__(self.implementation)
             impl = sys.modules[self.implementation]
             impl.txtSetup(self)
-        except Exception, e:
+        except Exception:  # pylint: disable=W0703
             sys.stderr.write('Application ' + self.implementation +
-                             ' not enabled/available\n' + str(e) + '\n')
+                             ' not enabled/available\n' +
+                             str(sys.exc_info()[1]) + '\n')
             sys.exit(1)
 
 

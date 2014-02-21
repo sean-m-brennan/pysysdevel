@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -22,7 +23,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 GTK-based Graphical User Interface classes that extend the virtual classes
 loaded from a Glade file and provide functionality to the GUI layout
@@ -31,7 +32,7 @@ loaded from a Glade file and provide functionality to the GUI layout
 import sys
 import os
 
-import gui
+from . import gui
 
 try:
     import warnings
@@ -65,6 +66,7 @@ try:
 
     ##############################
 
+    # pylint: disable=W0613
     class GTK_GUI(gui.GUI):
         def __init__(self, impl_mod, parent, resfile=None, has_log=True):
             gui.GUI.__init__(self, impl_mod, parent)
@@ -72,28 +74,31 @@ try:
             self.resource_file = None
             if resfile:
                 self.resource_file = resfile + '.glade'
+            self.main_frame = None  ## defined by glade
+            self.helper_frame = None  ## defined by glade
 
             xpm_icon = os.path.join(self.app.IMAGE_DIR, self.app.key + '.xpm')
             try:
                 __import__(self.implementation)
                 impl = sys.modules[self.implementation]
                 impl.gtkSetup(self, xpm_icon)
-            except Exception:
-                e = sys.exc_info()[1]
+            except Exception:  # pylint: disable=W0703
                 sys.stderr.write('Application ' + self.implementation +
-                                 ' not enabled/available\n' + str(e) + '\n')
+                                 ' not enabled/available\n' +
+                                 str(sys.exc_info()[1]) + '\n')
                 sys.exit(1)
-            splash = SplashScreen(os.path.join(self.app.IMAGE_DIR,
-                                               'itar_warning.xpm'))
+            SplashScreen(os.path.join(self.app.IMAGE_DIR,
+                                      self.app.key + '_splash.xpm'))
 
         def Run(self):
             gtk.main()
 
-        def onExit(self, widget=None, data=None):
+        def onExit(self):
             gtk.main_quit()
 
-        def onHelp(self, widget=None, data=None):
-            self.helper_frame.show_all()
+        def onHelp(self):
+            if self.helper_frame:
+                self.helper_frame.show_all()
 
         def onAbout(self, widget=None, data=None):
             dialog = gtk.AboutDialog()
@@ -114,6 +119,5 @@ try:
     ## end GTK_GUI
     ##############################
 
-except Exception:
-    e = sys.exc_info()[1]
-    print(e)
+except ImportError:
+    print(sys.exc_info()[1])

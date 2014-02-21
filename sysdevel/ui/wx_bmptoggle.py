@@ -22,12 +22,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 BitmapToggleButton
 """
 
-import warnings, os
+import os
 
 try:
     import warnings
@@ -38,25 +38,19 @@ try:
     warnings.resetwarnings()
 
 
-    IMAGE_DIR = 'img'
-
-    def initialize(image_dir):
-        """
-        MUST be run before using the BitmapToggleButton
-        """
-        global IMAGE_DIR
-        IMAGE_DIR = image_dir
-
-
     class BitmapToggleButton(GenBitmapToggleButton):
         """
         Implements the wx.lib.buttons BitmapToggleButton.
         """
-        def __init__(self, parent, id=-1, bitmap=wx.NullBitmap,
+        image_dir = 'img'
+
+        def __init__(self, parent, ident=-1, bitmap=wx.NullBitmap,
                      pos=wx.DefaultPosition, size=wx.DefaultSize, style=0,
                      validator=wx.DefaultValidator, name='bitmaptogglebutton'):
-            GenBitmapToggleButton.__init__(self, parent, id, bitmap, 
+            GenBitmapToggleButton.__init__(self, parent, ident, bitmap, 
                                            pos, size, style, validator, name)
+
+        
 
 
     class PreBitmapToggleButton(GenBitmapToggleButton):
@@ -65,17 +59,19 @@ try:
         BitmapToggleButton.
         """
         def __init__(self):
+            # pylint: disable=W0231
             b = wx.PrePyControl()
             self.PostCreate(b)
 
-        def Create(self, parent, id=-1, bitmap=wx.NullBitmap, 
+        # pylint: disable=W0221
+        def Create(self, parent, ident=-1, bitmap=wx.NullBitmap, 
                    pos=wx.DefaultPosition, size=wx.DefaultSize,
                    style=wx.BORDER_DEFAULT, validator=wx.DefaultValidator,
                    name='bitmaptogglebutton'):
             cstyle = style
             if cstyle & wx.BORDER_MASK == 0:
                 cstyle = wx.BORDER_NONE
-            wx.PyControl.Create(self, parent, id,
+            wx.PyControl.Create(self, parent, ident,
                                 pos, size, style, validator, name)
             self.bmpDisabled = None
             self.bmpFocus = None
@@ -126,7 +122,8 @@ try:
             button = self.GetInstance()
             if button is None:
                 button = PreBitmapToggleButton()
-            filename = os.path.join(IMAGE_DIR, self.GetText('bitmap'))
+            filename = os.path.join(BitmapToggleButton.image_dir,
+                                    self.GetText('bitmap'))
             bmp = None
             if filename != None and filename != '':
                 bmp = wx.Bitmap(filename, wx.BITMAP_TYPE_ANY)
@@ -137,5 +134,5 @@ try:
             self.SetupWindow(button)
             return button
 
-except:
+except ImportError:
     pass

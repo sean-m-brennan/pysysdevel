@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -22,7 +23,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-
+# pylint: disable=W0105
 """
 WX-based Graphical User Interface classes that extend the virtual classes
 loaded from an XRC file and provide functionality to the GUI layout
@@ -32,8 +33,8 @@ import sys
 import os
 import platform
 
-import events
-import gui
+from . import events
+from . import gui
 
 try:
     import warnings
@@ -42,7 +43,7 @@ try:
     import wx
     import wx.xrc as xrc
     warnings.resetwarnings()
-    import wx_bmptoggle
+    from . import wx_bmptoggle
 
     ##############################
 
@@ -52,9 +53,11 @@ try:
         See http://wiki.wxpython.org/UsingXmlResources
         """
         def __init__(self, other):
+            wx.EvtHandler.__init__(self)
             self.this = other.this
             del other.this
             self.thisown = 1
+            # pylint: disable=E1101
             if hasattr(self, '_setOORInfo'):
                 self._setOORInfo(self)
             if hasattr(self, '_setCallbackInfo'):
@@ -64,11 +67,13 @@ try:
     class XrcFrame(wx.Frame, XrcEvtHandler):
         def __init__(self, other):
             XrcEvtHandler.__init__(self, other)
+            wx.Frame.__init__(self)
 
 
     class XrcDialog(wx.Dialog, XrcEvtHandler):
         def __init__(self, other):
             XrcEvtHandler.__init__(self, other)
+            wx.Dialog.__init__(self)
 
 
     ##############################
@@ -77,11 +82,13 @@ try:
     class WX_GUI(gui.GUI, wx.App):
         def __init__(self, impl_mod, parent, resfile=None, has_log=True):
             gui.GUI.__init__(self)
-
-            bmptoggle.initialize(self.app.IMAGE_DIR)
+            self.resource = None
+            wx_bmptoggle.BitmapToggleButton.image_dir = self.app.IMAGE_DIR
             self.resource_file = None
             if resfile:
                 self.resource_file = resfile + '.xrc'
+            self.main_frame = None  ## defined by xrc
+            self.helper_frame = None  ## defined by xrc
             wx.App.__init__(self, redirect=(not has_log))
 
 
@@ -90,26 +97,27 @@ try:
             self.resource.InsertHandler(
                 wx_bmptoggle.BitmapToggleButtonXmlHandler())
             wx.InitAllImageHandlers()
-            xpm_icon = os.path.join(self.app.IMAGE_DIR, self.app.key + '.xpm')
+            xpm_icon = os.path.join(self.app.IMAGE_DIR,
+                                    self.app.key + '_icon.xpm')
             try:
                 __import__(self.implementation)
                 impl = sys.modules[self.implementation]
                 impl.wxSetup(self, xpm_icon)
-            except Exception:
-                e = sys.exc_info()[1]
+            except (ImportError, AttributeError):
                 sys.stderr.write('Application ' + self.implementation +
-                                 ' not enabled/available\n' + str(e) + '\n')
+                                 ' not enabled/available\n' +
+                                 str(sys.exc_info()[1]) + '\n')
                 sys.exit(1)
 
             image = wx.Image(os.path.join(self.app.IMAGE_DIR,
-                                          "itar_warning.xpm"),
+                                          self.app.key + '_splash.xpm'),
                              wx.BITMAP_TYPE_XPM)
             bitmap = image.ConvertToBitmap()
-            splash = wx.SplashScreen(bitmap,
-                                     wx.SPLASH_CENTRE_ON_PARENT |
-                                     wx.SPLASH_TIMEOUT, gui.SPLASH_DURATION,
-                                     self.main_frame, wx.ID_ANY)
-            self.ShowAll()
+            wx.SplashScreen(bitmap,
+                            wx.SPLASH_CENTRE_ON_PARENT |
+                            wx.SPLASH_TIMEOUT, gui.SPLASH_DURATION,
+                            self.main_frame, wx.ID_ANY)
+            self.main_frame.ShowAll()
             wx.YieldIfNeeded()
             return True
 
@@ -132,7 +140,12 @@ try:
             self.main_frame.Close()
 
 
-        def onAbout(self, event):
+        def onHelp(self):
+            if self.helper_frame:
+                self.helper_frame.ShowAll()
+
+
+        def onAbout(self, _):
             wx.MessageBox(self.app.name + ' version ' + self.app.version +
                           '\n' + 'Copyright © ' + self.app.copyright,
                           'About ' + self.app.short_name)
@@ -198,6 +211,5 @@ try:
     ## end WX_GUI
     ##############################
 
-except Exception:
-    e = sys.exc_info()[1]
-    print(e)
+except ImportError:
+    print(sys.exc_info()[1])

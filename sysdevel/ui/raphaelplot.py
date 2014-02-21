@@ -23,7 +23,7 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
 
-import math
+# pylint: disable=F0401,W0611
 
 import raphael.min.js
 
@@ -37,7 +37,7 @@ class Plotter(SimplePanel):
         self.color = color
         self.series = []
         self.canvas = Raphael(width, height)   
-        self.add(self.canvas)
+        self.add(self.canvas)  # pylint: disable=E1101
 
     def update(self, history):
         self.series = history
@@ -53,8 +53,8 @@ class Plotter(SimplePanel):
 
 
     def plot2d(self, x_values, y_values, series, labels):
-        pass #FIXME
+        pass #FIXME implement plot2d
 
 
     def plot3d(self, x_values, y_values, z_values, series, labels):
-        pass #FIXME
+        pass #FIXME implement plot3d
