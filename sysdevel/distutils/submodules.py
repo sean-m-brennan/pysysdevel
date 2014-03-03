@@ -53,7 +53,7 @@ def git_pull(submodules):
             try:  ## specific revision
                 os.chdir(sub[0])
                 subprocess.check_call(['git', 'checkout', sub[2]], shell=shell)
-            except subprocess.CalledProcessError:
+            except (IndexError, subprocess.CalledProcessError):
                 pass
         elif os.path.exists(os.path.join(sub[0], '.git')):
             ## no revision => get up-to-date

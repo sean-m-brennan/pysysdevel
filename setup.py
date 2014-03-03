@@ -75,7 +75,7 @@ setup(name         = 'pysysdevel',
 
 
 if create_documentation:
-    print 'running build_doc'
+    print('running build_doc')
     sys.path.append('.')
     from sysdevel.distutils.command.build_org import make_doc as make_org
     from sysdevel.distutils.command.build_docbook import make_doc as make_docbook
