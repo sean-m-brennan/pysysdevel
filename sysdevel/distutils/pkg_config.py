@@ -426,19 +426,19 @@ class pkg_config(object):
         self.runscripts        = runscripts
         self.generated_scripts = []
         self.tests             = []
-        self.package_files     = dict({self.PACKAGE: data_files})
-        self.extra_data_files  = extra_data
-        self.required_pkgs     = dict({self.PACKAGE: req_pkgs})
-        self.dynamic_modules   = dict({self.PACKAGE: dyn_mods})
+        self.package_files     = dict({self.PACKAGE: list(data_files)})
+        self.extra_data_files  = list(extra_data)
+        self.required_pkgs     = dict({self.PACKAGE: list(req_pkgs)})
+        self.dynamic_modules   = dict({self.PACKAGE: list(dyn_mods)})
         self.logo_bmp_path     = None
         self.environment       = environ
-        self.prerequisites     = prereq
-        self.redistributed     = redistrib
+        self.prerequisites     = list(prereq)
+        self.redistributed     = list(redistrib)
         self.image_dir         = img_dir
         self.build_dir         = build_dir
         self.build_config      = 'release'
-        self.extra_pkgs        = extra_pkgs
-        self.extra_libraries   = extra_libs
+        self.extra_pkgs        = list(extra_pkgs)
+        self.extra_libraries   = list(extra_libs)
         self.missing_libraries = []
         self.has_extension     = False
 

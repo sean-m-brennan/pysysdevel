@@ -32,16 +32,13 @@ setup_setuptools()
 
 import sys
 
-SUPPORT_SCONS = False
-
-have_numpy = False
+scons_support = False
+numpy_support = False
 try:
     from numpy.distutils.numpy_distribution import NumpyDistribution as oldDistribution
     from numpy.distutils.command import config, build_ext, install_headers
     from numpy.distutils.command import bdist_rpm
-    if SUPPORT_SCONS:
-        from numpy.distutils.command import scons
-    have_numpy = True
+    numpy_support = True
 
 except ImportError:
     print('NumPy not found. Failover to distutils alone.')
@@ -49,6 +46,14 @@ except ImportError:
     from distutils.command import config, build_ext, install_headers, bdist_rpm
 
         # TODO Python 3 'packaging' module
+
+
+if numpy_support:
+    try:
+        from numpy.distutils.command import scons
+        scons_support = True
+    except ImportError:
+        pass
 
 from .numpy_utils import is_sequence
 from ..util import is_string
@@ -288,20 +293,20 @@ my_cmdclass = {'dependencies':     dependencies.dependencies,
                'test':             test.test,
                }
 
-if have_numpy and SUPPORT_SCONS:
+if scons_support:
     my_cmdclass['scons']         = scons.scons
 
 if have_setuptools:
-    if have_numpy:
+    if numpy_support:
         # Use our own versions of develop and egg_info to ensure that build_src
         # is handled appropriately.
         from numpy.distutils.command import develop, egg_info
         
     my_cmdclass['bdist_egg']     = bdist_egg.bdist_egg
-    if have_numpy:
+    if numpy_support:
         my_cmdclass['develop']   = develop.develop
     my_cmdclass['easy_install']  = easy_install.easy_install
-    if have_numpy:
+    if numpy_support:
         my_cmdclass['egg_info']  = egg_info.egg_info
     
 if allows_py2app:

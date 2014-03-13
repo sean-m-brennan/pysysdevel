@@ -299,36 +299,45 @@ class py_config(config):
         self.indexed = pkg
         if indexed_as:
             self.indexed = indexed_as
+        self.installed = False
 
 
     def is_installed(self, environ, version=None, strict=False):
-        try:
-            impl = __import__(self.pkg.lower())
-            check_version = False
-            if hasattr(impl, '__version__'):
-                ver = impl.__version__
-                check_version = True
-            elif hasattr(impl, 'version'):
-                ver = impl.version
-                check_version = True
-            elif hasattr(impl, 'VERSION'):
-                ver = impl.VERSION
-                check_version = True
-            if check_version:
-                not_ok = (compare_versions(ver, version) == -1)
-                if strict:
-                    not_ok = (compare_versions(ver, version) != 0)
-                if not_ok:
-                    if self.debug:
-                        print('Wrong version of ' + self.pkg + ': ' +
-                              str(ver) + ' vs ' + str(version))
-                    self.found = False
-                    return self.found
-            self.found = True
-        except ImportError:
-            if self.debug:
-                print(sys.exc_info()[1])
-        return self.found
+        if self.installed:
+            ## Exclude numpy since it's already loaded (used in building)
+            if not self.pkg == 'numpy':
+                #FIXME install check for python pkgs frequently fails
+                ## Check sys.path & site instead
+                pass
+            return True #FIXME
+        else:
+            try:
+                impl = __import__(self.pkg.lower())
+                check_version = False
+                if hasattr(impl, '__version__'):
+                    ver = impl.__version__
+                    check_version = True
+                elif hasattr(impl, 'version'):
+                    ver = impl.version
+                    check_version = True
+                elif hasattr(impl, 'VERSION'):
+                    ver = impl.VERSION
+                    check_version = True
+                if check_version:
+                    not_ok = (compare_versions(ver, version) == -1)
+                    if strict:
+                        not_ok = (compare_versions(ver, version) != 0)
+                    if not_ok:
+                        if self.debug:
+                            print('Wrong version of ' + self.pkg + ': ' +
+                                  str(ver) + ' vs ' + str(version))
+                        self.found = False
+                        return self.found
+                    self.found = True
+            except ImportError:
+                if self.debug:
+                    print(sys.exc_info()[1])
+            return self.found
 
 
     def install(self, environ, version, strict=False, locally=True):
@@ -360,14 +369,9 @@ class py_config(config):
                                 archive = src_dir + '.tar'
                                 fetch(website, archive, archive)
             install_pypkg(src_dir, website, archive, locally=locally)
+            self.installed = True
             if not self.is_installed(environ, version, strict):
-                ## Exclude numpy since it's already loaded (used in building)
-                if not self.pkg == 'numpy':
-                    print('Warning: ' + self.pkg +
-                          ' installation may have failed')
-                    #FIXME install check for python pkgs frequently fails
-                    ## Check sys.path & site instead
-                    #    raise ConfigError(self.pkg, 'Installation failed.')
+                raise ConfigError(self.pkg, 'Installation failed.')
 
 
 
