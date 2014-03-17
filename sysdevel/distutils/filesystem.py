@@ -113,11 +113,14 @@ def copy_tree(src, dst, preserve_mode=1, preserve_times=1, preserve_symlinks=0,
 
 
 def recursive_chown(directory, uid, gid):
-    for root, dirnames, filenames in os.walk(directory):
-        for dirname in dirnames:
-            os.chown(os.path.join(root, dirname), uid, gid)
-        for filename in filenames:
-            os.chown(os.path.join(root, filename), uid, gid)
+    try:
+        for root, dirnames, filenames in os.walk(directory):
+            for dirname in dirnames:
+                os.chown(os.path.join(root, dirname), uid, gid)
+            for filename in filenames:
+                os.chown(os.path.join(root, filename), uid, gid)
+    except AttributeError:
+        pass  ## not for Windows
 
 
 def symlink(original, target):
