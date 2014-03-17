@@ -23,33 +23,13 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
 
-class __OneTimeCustomException(Exception):
-    pass
-
 
 # pylint: disable=W0611
 try:
-    try:
-        # pylint: disable=F0401
-        import pyjd
-        if not pyjd.is_desktop:
-            raise __OneTimeCustomException('Compiling with pyjs.')
-    except ImportError:
-        pass
-    ## WxPython
-
-    def strptime(*args, **kwargs):
-        from datetime import datetime
-        return datetime.strptime(*args, **kwargs)
-
-    # FIXME wx ui objects
-
-    from .flex_ui import FlexUI, multiline_text
-    UserInterface = FlexUI
-
-except __OneTimeCustomException:
     # pylint: disable=F0401
     ## Pyjamas
+    import pyjd  ## i.e. are we in pyjsbuild
+
     from pyjamas import Window
     from pyjamas.ui.RootPanel import RootPanel
     from pyjamas.ui.SimplePanel import SimplePanel
@@ -81,3 +61,16 @@ except __OneTimeCustomException:
 
     from .web_ui import WebUI, strptime, multiline_text
     UserInterface = WebUI
+
+
+except ImportError:
+    ## WxPython
+
+    def strptime(*args, **kwargs):
+        from datetime import datetime
+        return datetime.strptime(*args, **kwargs)
+
+    # FIXME wx ui objects
+
+    from .flex_ui import FlexUI, multiline_text
+    UserInterface = FlexUI
