@@ -64,14 +64,17 @@ class dependencies(Command):
     user_options = [('show', 's', 'show the dependencies'),
                     ('show-subpackages', None,
                      'show the dependencies of individual sub-packages'),
-                    ('sublevel=', None, 'sub-package level'),]
+                    ('sublevel=', None, 'sub-package level'),
+                    ('local-install', None,
+                     'local installation of dependencies'),]
 
 
     def initialize_options(self):
         self.show = False
         self.show_subpackages = False
+        self.local_install = False
         self.sublevel = 0
-        self.ran = False
+        self.log_only = False
 
     def finalize_options(self):
         if self.sublevel is None:
@@ -83,7 +86,6 @@ class dependencies(Command):
 
 
     def run(self):
-        self.ran = True
         options.set_top_level(self.sublevel)
         token = 'Package dependencies: '
         logfile = os.path.join(options.target_build_dir, 'config.log')
@@ -107,18 +109,40 @@ class dependencies(Command):
             for (pkg_name, pkg_dir) in self.distribution.subpackages:
                 rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
                 if not rf.is_sysdevel_build:
+                    ## not sysdevel, look in setup.py requires keyword
                     self.requirements += rf.requires_list
                     if self.show_subpackages:
                         print(pkg_name.upper() + ':  ' +
-                              ', '.join(rf.requires_list))
+                              ', '.join([r if is_string(r) else r[0]
+                                         for r in rf.requires_list]))
                 else:
+                    cmd = [sys.executable, os.path.join(pkg_dir, 'setup.py'),
+                           ] + argv + ['--sublevel=' + str(self.sublevel + 1)]
+                    p = subprocess.Popen(cmd,
+                                         stdout=subprocess.PIPE,
+                                         shell=shell)
+                    out = p.communicate()[0].strip()
+                    if p.wait() != 0:
+                        raise Exception('Dependency check failed for ' +
+                                        pkg_name)
+                    p_list = out[out.find(token)+len(token):]
+                    if self.show_subpackages:
+                        print(pkg_name.upper() + ': ' + str(p_list))
+                    self.requirements += p_list.split(',')
+                    '''
                     if rf.needs_early_config:
-                        print('Previewing dependencies for ' + pkg_name +
+                        print('Dependencies for ' + pkg_name +
                               ' configuration ...')
                     ## do nothing else but check dependencies
                     cmd = [sys.executable, os.path.join(pkg_dir, 'setup.py'),
                            'dependencies',
                            '--sublevel=' + str(self.sublevel + 1)]
+                    if self.local_install:
+                        cmd.append('--local-install')
+                    if self.show:
+                        cmd.append('--show')
+                    if self.show_subpackages:
+                        cmd.append('--show-subpackages')
                     if not os.path.exists(options.target_build_dir):
                         mkdir(options.target_build_dir)
                     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
@@ -139,11 +163,15 @@ class dependencies(Command):
                                 line = o_q.get_nowait()
                                 out += line
                                 log.write(line)
+                                if not self.log_only:
+                                    print(line),
                             except Exception:  # pylint: disable=W0703
                                 pass
                             try:
                                 line = e_q.get_nowait()
                                 log.write(line)
+                                if not self.log_only:
+                                    print(line),
                             except Exception:  # pylint: disable=W0703
                                 pass
                         o.join()
@@ -152,7 +180,10 @@ class dependencies(Command):
                         out, err = p.communicate()
                         log.write(out)
                         log.write(err)
-
+                        if not self.log_only:
+                            print(out),
+                            print(err),
+                                    
                     log.write('\n\n')
                     log.close()
                     if p.wait() != 0:
@@ -166,6 +197,7 @@ class dependencies(Command):
                     self.requirements += p_list.split(',')
                     if self.show_subpackages:
                         print(pkg_name.upper() + ':  ' + p_list)
+                    '''
             while 'None' in self.requirements:
                 self.requirements.remove('None')
 
@@ -195,14 +227,16 @@ class dependencies(Command):
         self.requirements = versioned + unversioned
 
         if self.sublevel == 0:
+            env_old = self.distribution.environment
+            env = configure_system(self.requirements,
+                                   self.distribution.version,
+                                   install=(not self.show),
+                                   locally=self.local_install)
             if self.show:
                 print(self.distribution.metadata.name + ' ' +
                       token + ', '.join(set([' '.join(d.split())
                                              for d in deps_list])))
-            if not self.show or 'build' in sys.argv:
-                env_old = self.distribution.environment
-                env = configure_system(self.requirements,
-                                       self.distribution.version)
+            else:
                 self.distribution.environment = dict(list(env_old.items()) +
                                                      list(env.items()))
         else:  ## sysdevel subpackage, collect via stdout (see above)

@@ -35,9 +35,13 @@ import imp
 import glob
 import traceback
 
-from .prerequisites import programfiles_directories, find_header, find_library, find_definitions, find_program, system_uses_homebrew, compare_versions, install_pypkg, RequirementsFinder, compare_versions, ConfigError
+from .prerequisites import programfiles_directories, find_header, find_library
+from .prerequisites import find_definitions, find_program, system_uses_homebrew
+from .prerequisites import compare_versions, install_pypkg, RequirementsFinder
+from .prerequisites import ConfigError, read_cache
 from .filesystem import glob_insensitive
-from .fetching import urlretrieve, fetch, open_archive, DownloadError, URLError, HTTPError, ContentTooShortError
+from .fetching import urlretrieve, fetch, open_archive, DownloadError
+from .fetching import URLError, HTTPError, ContentTooShortError
 from .building import process_progress
 from . import options
 
@@ -52,7 +56,7 @@ class config(object):
         else:
             self.dependencies = dependencies
         self.debug = debug
-        self.environment = dict()
+        self.environment = read_cache()
         self.found = False
         self.force = force
 
@@ -312,6 +316,7 @@ class py_config(config):
             return True #FIXME
         else:
             try:
+                import site
                 impl = __import__(self.pkg.lower())
                 check_version = False
                 if hasattr(impl, '__version__'):
@@ -371,7 +376,8 @@ class py_config(config):
             install_pypkg(src_dir, website, archive, locally=locally)
             self.installed = True
             if not self.is_installed(environ, version, strict):
-                raise ConfigError(self.pkg, 'Installation failed.')
+                print(str(self.pkg) + ' claims failed')
+                #raise ConfigError(self.pkg, 'Installation failed.')
 
 
 

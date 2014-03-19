@@ -288,12 +288,6 @@ class test(Command):
 
     def run(self):
         failed = False
-
-        ## before anything else (runs in case build hasn't run)
-        deps = self.get_finalized_command('dependencies')
-        if self.sublevel == 0 and not deps.ran:
-            self.run_command('dependencies')
-
         build = self.get_finalized_command('build')
         if self.sublevel == 0 and not build.ran:
             self.run_command('build')

@@ -49,7 +49,6 @@ class install(old_install):
     def initialize_options (self):
         old_install.initialize_options(self)
         self.sublevel = 0
-        self.ran = False
 
     def finalize_options(self):
         old_install.finalize_options(self)
@@ -75,12 +74,6 @@ class install(old_install):
                     ]
 
     def run(self):
-        ## before anything else (runs in case build hasn't run)
-        deps = self.get_finalized_command('dependencies')
-        if self.sublevel == 0 and not deps.ran:
-            self.run_command('dependencies')
-
-        self.ran = True
         if self.distribution.subpackages != None:
             build = self.get_finalized_command('build')
 

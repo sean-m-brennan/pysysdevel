@@ -107,12 +107,6 @@ class build(old_build):
 
 
     def run(self):
-        ## before anything else
-        deps = self.get_finalized_command('dependencies')
-        if self.sublevel == 0 and not deps.ran:
-            self.run_command('dependencies')
-
-        self.ran = True
         if self.distribution.subpackages != None:
             if self.get_finalized_command('install').ran:
                 return  ## avoid build after install
@@ -136,3 +130,4 @@ class build(old_build):
                                 argv, self.distribution.quit_on_error)
 
         old_build.run(self)
+        self.ran = True

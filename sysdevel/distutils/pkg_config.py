@@ -55,6 +55,9 @@ def handle_arguments(argv, option_list=()):
     opts['bundle'] = False
     opts['runscript'] = ''
     opts['ziplib'] = None
+    opts['install'] = True
+    opts['sublevel'] = 0
+    opts['locally'] = False
 
     bundle = False
     if 'py2exe' in argv:
@@ -64,6 +67,13 @@ def handle_arguments(argv, option_list=()):
     app = ''
     runscript = ''
     for arg in argv:
+        if arg == '--show':
+            opts['install'] = False
+        if arg == '--local-install':
+            opts['locally'] = True
+        if arg.startswith('--sublevel='):
+            opts['sublevel'] = int(arg[11:])
+
         if arg == '-b' or arg == '--build_base':
             idx = argv.index(arg)
             options.set_build_dir(argv[idx+1])

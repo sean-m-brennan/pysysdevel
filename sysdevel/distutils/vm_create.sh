@@ -19,17 +19,18 @@ OVA_ONLY=false
 VM_WORKING_DIR="${PWD}/VM"
 
 
-VM_SRC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+VM_SRC_DIR="$(pwd)"
 VM_TFTP_DIR="${VM_WORKING_DIR}/TFTP"
 VM_SERVER_PIDS=()
 VM_NAME=""
 VM_NET_NAME=""
 
-SERVER_NAME=`hostname`
+SERVER_NAME=$(hostname)
 SERVER_IP=${SERVER_NAME}
 SERVER_PORT=7999
 SERVER_ADDRESS=http://${SERVER_IP}:${SERVER_PORT}
 
+TARGET_SUBNET="10.0.2"
 
 function create_repository {
     here="${PWD}"
@@ -76,8 +77,21 @@ function pull_repository {
 
 function tftp_prep {
     here=${VM_SRC_DIR}
-    declare -a local_repos=("${1}")
-    declare -a remote_repos=("${2}")
+    local_repos=()
+    remote_repos=()
+    while test $# -gt 0; do
+	case $1 in
+	    --local)
+		local_repos=("${2}")
+		shift
+		;;
+	    --remote)
+		remote_repos=("${2}")
+		shift
+		;;
+	esac
+	shift
+    done
 
     SYSLINUX_VERSION=5.00  ## NOTE: 6.01 doesn't work
     SYSLINUX_WEBSITE=http://www.kernel.org/pub/linux/utils/boot/syslinux
@@ -127,9 +141,10 @@ function tftp_prep {
     cp ${SYSLINUX_DIR}/com32/libutil/libutil_com.c32 "${VM_TFTP_DIR}/"
     cd $here
     cp *.cfg "${VM_TFTP_DIR}/"  ## Kickstart files
-    cp *.bmp "${VM_TFTP_DIR}/"
-    cp *.png "${VM_TFTP_DIR}/"
-    HTTP_PROXY_OPTION="http_proxy=${HTTP_PROXY}"
+    cp *.bmp "${VM_TFTP_DIR}/" 2>/dev/null || true
+    cp *.png "${VM_TFTP_DIR}/" 2>/dev/null || true
+    cp *.repo "${VM_TFTP_DIR}/" 2>/dev/null || true ## Custom repositories
+    #HTTP_PROXY_OPTION="proxy=\"${HTTP_PROXY}\""
     cat >"${VM_TFTP_DIR}/pxelinux.cfg/default" <<EOF
 default menu.c32
 prompt 0
@@ -139,7 +154,7 @@ ontimeout ${TARGET_LABEL}
 LABEL centos
         MENU LABEL CentOS
         kernel ${CENTOS_DISTRO}/vmlinuz
-        append initrd=${CENTOS_DISTRO}/initrd.img ks=${SERVER_ADDRESS}/centos.cfg ${HTTP_PROXY_OPTION}
+        append initrd=${CENTOS_DISTRO}/initrd.img ks=${SERVER_ADDRESS}/centos.cfg ksdevice=eth0 ${HTTP_PROXY_OPTION}
 
 LABEL debian
         MENU LABEL Debian
@@ -173,15 +188,21 @@ EOF
     VM_SERVER_PIDS+=${server_pid}
 
     idx=0
-    for repo in "${local_repos[@]}"; do
-	VM_SERVER_PIDS+=$(create_repository $idx ${repo})
-	idx=$(($idx+1))
-    done
+    if [ "${#local_repos[@]}" -gt "0" ] && [ "${local_repos[0]}" != "" ]; then
+        for repo in "${local_repos[@]}"; do
+  	    echo "Local repository  $repo"
+	    VM_SERVER_PIDS+=$(create_repository $idx ${repo})
+	    idx=$(($idx+1))
+        done
+    fi
 
-    for repo in "${remote_repos[@]}"; do
-	VM_SERVER_PIDS+=$(pull_repository $idx ${repo})
-	idx=$(($idx+1))
-    done
+    if [ "${#remote_repos[@]}" -gt "0" ] && [ "${remote_repos[0]}" != "" ]; then
+        for repo in "${remote_repos[@]}"; do
+	    echo "Remote repository  $repo"
+	    VM_SERVER_PIDS+=$(pull_repository $idx ${repo})
+	    idx=$(($idx+1))
+        done
+    fi
 }
 
 function tftp_cleanup {
@@ -203,10 +224,13 @@ function vbox_init {
     version=$3
     disk_size=$4
     license_file=$5
+    nataddr=$6
+    hostonly=$7
+    name_extra=$8
 
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
     VM_NET_NAME=${lower_name}
-    VM_NAME=${lower_name}_vm_${version}_${TARGET_ARCH}
+    VM_NAME=${lower_name}_vm_${version}_${TARGET_ARCH}${name_extra}
     LOGO_FILE=${lower_name}.bmp
 
     VBOX_VM_DIR="${VM_WORKING_DIR}"
@@ -253,12 +277,36 @@ function vbox_init {
 	if [ -e "${VM_SRC_DIR}/${LOGO_FILE}" ]; then
 	    echo "Using logo: ${VM_SRC_DIR}/${LOGO_FILE}"
 	    cp "${VM_SRC_DIR}/${LOGO_FILE}" "${VM_NAME}/"
-	    VBoxManage modifyvm "${VM_NAME}" --bioslogoimagepath "${LOGO_FILE}"
+	    VBoxManage modifyvm "${VM_NAME}" --bioslogoimagepath "${VM_NAME}/${LOGO_FILE}"
+	fi
+
+	if [ "$nataddr" = "0" ]; then
+	    nataddr=""
 	fi
 	VBoxManage modifyvm "${VM_NAME}" --nictype1 ${NIC}
 	VBoxManage modifyvm "${VM_NAME}" --nic1 nat
+	## Allow static IPs on the NAT network
+	VBoxManage modifyvm "${VM_NAME}" --natdnsproxy1 on
+	VBoxManage modifyvm "${VM_NAME}" --natdnshostresolver1 on
+	echo "Port forwarding to $nataddr"
+	VBoxManage modifyvm "${VM_NAME}" --natpf1 "guestweb,tcp,,8080,$nataddr,80"
+	VBoxManage modifyvm "${VM_NAME}" --natpf1 "guestssh,tcp,,2222,$nataddr,22"
+
 	VBoxManage setextradata "${VM_NAME}" "VBoxInternal/Devices/${NIC_TYPE}/0/LUN#0/Config/BootFile" "pxelinux.0"
 	VBoxManage setextradata "${VM_NAME}" "VBoxInternal/Devices/${NIC_TYPE}/0/LUN#0/Config/TFTPPrefix" "${VM_TFTP_DIR}"
+
+	if [ x"$hostonly" != x0 ]; then
+	    echo "Host-Only interface IP ${hostonly}"
+	    VBoxManage hostonlyif ipconfig vboxnet0 --ip ${hostonly} --netmask 255.255.255.0
+	    if [ $? -ne 0 ]; then
+		VBoxManage hostonlyif create
+		VBoxManage hostonlyif ipconfig vboxnet0 --ip ${hostonly} --netmask 255.255.255.0
+	    fi
+	    VBoxManage modifyvm "${VM_NAME}" --nictype2 ${NIC}
+	    VBoxManage modifyvm "${VM_NAME}" --nic2 hostonly
+	    VBoxManage modifyvm "${VM_NAME}" --hostonlyadapter2 vboxnet0
+	fi
+
 	VBoxManage setextradata "${VM_NAME}" "GUI/Input/AutoCapture" "false"
 	VBoxManage setextradata global "GUI/SuppressMessages" "remindAboutAutoCapture,confirmInputCapture,remindAboutMouseIntegrationOn,remindAboutWrongColorDepth,confirmGoingFullscreen,remindAboutMouseIntegrationOff,remindAboutInputCapture"
 	cd $here
@@ -290,13 +338,16 @@ EOF
     else
 	VBoxManage export "${VM_NAME}" -o "${PWD}/${VM_NAME}.ova" --vsys 0 --product ${name} --vendor ${vendor} --version ${version}
     fi
-    if [ -e "${VM_SRC_DIR}/${LOGO_FILE}" ]; then
-	tar -xf "${VM_NAME}.ova" "${VM_NAME}.ovf"
-	mv "${VM_NAME}.ovf" "${VM_NAME}.ovf.old"
-	sed "s|^\(.*\)\(<File ovf[^/>]*/>\)\(.*\)$|\1\2\n    <File ovf:href=\"diorama.bmp\" ovf:id=\"file2\"/>\3|" "${VM_NAME}.ovf.old" >"${VM_NAME}.ovf"
-	tar -uf "${VM_NAME}.ova" "${VM_NAME}.ovf"
-	tar -rf "${VM_NAME}.ova" "${VM_SRC_DIR}/${LOGO_FILE}"
-	rm -f *.ovf*
+    echo "$PWD  $VM_NAME/$LOGO_FILE"
+    if [ -e ${VM_NAME}/${LOGO_FILE} ]; then
+	echo "Inserting boot logo: ${LOGO_FILE}"
+	mkdir ova_tmp
+	cp ${VM_NAME}/${LOGO_FILE} ova_tmp/
+	tar -xf ${VM_NAME}.ova -C ova_tmp
+	mv ova_tmp/${VM_NAME}.ovf ${VM_NAME}.ovf.old
+	sed "s|^\(.*\)\(<File ovf[^/>]*/>\)\(.*\)$|\1\2\n    <File ovf:href=\"diorama.bmp\" ovf:id=\"file2\"/>\3|" ${VM_NAME}.ovf.old >ova_tmp/${VM_NAME}.ovf
+	tar -cf ${VM_NAME}.ova -C ova_tmp *
+	rm -rf ova_tmp
     fi
 }
 
@@ -306,10 +357,9 @@ function vbox_cleanup {
     VBoxManage unregistervm "${VM_NAME}"
     unset VBOX_USER_HOME
     unset VBOX_IPC_SOCKETID
-    rm -rf /tmp/vbox*
-    rm -rf /tmp/.vbox*
+    rm -rf /tmp/vbox* || true
+    rm -rf /tmp/.vbox* || true
 }
-
 
 
 function kvm_init {
@@ -318,6 +368,9 @@ function kvm_init {
     version=$3
     disk_size=$4
     license_file=$5
+    nataddr=$6
+    hostonly=$7
+    name_extra=$8
 
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
     VM_NET_NAME=${lower_name}
@@ -331,7 +384,6 @@ function kvm_init {
     ##    unix_sock_rw_perms = "0770"
     ##    auth_unix_ro = "none"
     ##    auth_unix_rw = "none"
-    virsh connect qemu:///system
 
     if [ ! -d "${VM_WORKING_DIR}/${VM_NAME}" ]; then
 	here="${PWD}"
@@ -347,10 +399,10 @@ function kvm_init {
 <network>
   <name>${VM_NET_NAME}</name>
   <forward mode='nat' />
-  <ip address="10.0.2.2" netmask="255.255.255.0">
+  <ip address="${TARGET_SUBNET}.2" netmask="255.255.255.0">
     <tftp root="${VM_TFTP_DIR}"/> 
     <dhcp>
-      <range start="10.0.2.3" end="10.0.2.50" />
+      <range start="${TARGET_SUBNET}.5" end="${TARGET_SUBNET}.50" />
       <bootp file="pxelinux.0"/>           
     </dhcp>
   </ip>
@@ -364,14 +416,20 @@ EOF
     <boot dev='hd'/>
     <boot dev='network'/>
     <boot dev='cdrom'/>
+EOF
+	if [ -e "${VM_SRC_DIR}/${LOGO_FILE}" ]; then
+	    cat >>"${VM_NAME}/${VM_NAME}.xml" <<EOF
     <bootmenu enable='yes' splash='${LOGO_FILE}'/>
+EOF
+	fi
+	cat >>"${VM_NAME}/${VM_NAME}.xml" <<EOF
   </os>
   <memory>2048</memory>
   <vcpu>1</vcpu>
   <devices>
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw' cache='none' io='threads'/>
-      <source dev='${VM_NAME}.img'/>
+      <source file='${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img'/>
       <target dev='hda' bus='ide'/>
       <address type='drive' controller='0' bus='0' unit='0'/>
     </disk>
@@ -388,39 +446,85 @@ EOF
 EOF
 	cat >install_${VM_NAME}.sh <<EOF
 #!/bin/sh
-virsh create "${VM_NAME}/${VM_NAME}.xml"
+virsh --connect qemu:///system create "${VM_NAME}/${VM_NAME}.xml"
 EOF
     fi
 
-    virsh net-create --file "${VM_WORKING_DIR}/${VM_NAME}/${VM_NET_NAME}-net.xml"
-    virsh create "${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml"
+    ## Fails in CentOS w/ SELinux enforcing
+    virsh -c qemu:///system net-create --file "${VM_WORKING_DIR}/${VM_NAME}/${VM_NET_NAME}-net.xml"
+    virsh -c qemu:///system create "${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml"
 
-    virsh start "${VM_NAME}"
+    virsh -c qemu:///system resume "${VM_NAME}"
+    sleep 30
     if $OVERSEE; then
-	virt-viewer "${VM_NAME}"
+	virt-viewer -c qemu:///system "${VM_NAME}" || true
     else
 	echo "Headless install - no feedback." 1>&2
     fi
+
+    while [[ $(virsh --connect qemu:///system list) == *${VM_NAME}* ]]; do
+	sleep 60
+    done
 }
 
 function kvm_cleanup {
     set +e
     echo "Restore original KVM config" 1>&2
-    virsh net-destroy ${VM_NET_NAME}
+    virsh --connect qemu:///system net-destroy ${VM_NET_NAME}
+}
+
+
+function vagrant_init {
+    name=$1
+    vendor=$2
+    version=$3
+    disk_size=$4
+    license_file=$5
+    nataddr=$6
+    hostonly=$7
+    name_extra=$8
+
+    lower_name=$(echo ${name} | tr [:upper:] [:lower:])
+
+    vbox_init $@
+
+    vagrant package --base ${VM_NAME}
+    vagrant box add ${lower_name}-${version} package.box
+}
+
+function vagrant_cleanup {
+    vbox_cleanup 
 }
 
 
 
 function vm_init {
-    declare -a local=("${1}")
-    declare -a remote=("${2}")
-    tftp_prep "${local[@]}" "${remote[@]}"
-    shift
-    shift
+    args=""
+    prep_args=""
+    while test $# -gt 0; do
+	case $1 in
+	    --local)
+		prep_args="$prep_args $1 ${2}"
+		shift
+		;;
+	    --remote)
+		prep_args="$prep_args $1 ${2}"
+		shift
+		;;
+	    *)
+		args="$args $1"
+		;;
+	esac
+	shift
+    done
+
+    tftp_prep $prep_args
     if [ "${VIRTUALIZER}" = "kvm" ]; then
-	kvm_init $@
+	kvm_init $args
+    elif [ "${VIRTUALIZER}" = "vagrant" ]; then
+	vagrant_init $args
     else
-	vbox_init $@
+	vbox_init $args
     fi
 }
 
@@ -428,6 +532,8 @@ function vm_cleanup {
     set +e
     if [ "${VIRTUALIZER}" = "kvm" ]; then
 	kvm_cleanup
+    elif [ "${VIRTUALIZER}" = "vagrant" ]; then
+	vagrant_cleanup
     else
 	vbox_cleanup
     fi
@@ -438,11 +544,14 @@ function vm_cleanup {
 
 function create_virtual_machine {
     cleanup_only=false
-    local_repos=()
-    remote_repos=()
+    local_args=""
+    remote_args=""
     disk_size=8096
     name="project"
     vendor="me"
+    extra_name=""
+    nat_addr="0"
+    hostonly_net="0"
     license_file="LICENSE"
     version=$(date +%Y%m%d)
 
@@ -450,11 +559,11 @@ function create_virtual_machine {
     while test $# -gt 0; do
 	case $1 in
 	    --local)
-		local_repos=("${2}")
+		local_args="$1 ${2}"
 		shift
 		;;
 	    --remote)
-		remote_repos=("${2}")
+		remote_args="$1 ${2}"
 		shift
 		;;
 	    --name)
@@ -477,12 +586,27 @@ function create_virtual_machine {
 		version=$2
 		shift
 		;;
+	    --extra-name)
+		extra_name=$2
+		shift
+		;;
+	    --nat-address)
+		nat_addr="$2"
+		shift
+		;;
+	    --hostonly-address)
+		hostonly_net="$2"
+		shift
+		;;
 
 	    --kvm)
 		VIRTUALIZER=kvm
 		;;
 	    --vbox | --virtualbox)
 		VIRTUALIZER=vbox
+		;;
+	    --vagrant)
+		VIRTUALIZER=vagrant
 		;;
 	    --ova)
 		OVA_ONLY=true
@@ -525,11 +649,11 @@ function create_virtual_machine {
     if $cleanup_only; then
 	exit
     fi
-    if [ "${VIRTUALIZER}" = "kvm" ]; then
+    if [ "${VIRTUALIZER}" != "vbox" ]; then
 	OVA_ONLY=false
     fi
 
-    vm_init "${local_repos[@]}" "${remote_repos[@]}" ${name} ${vendor} ${version} ${disk_size} ${license_file}
+    vm_init ${name} ${vendor} ${version} ${disk_size} ${license_file} ${nat_addr} ${hostonly_net} ${extra_name} ${local_args} ${remote_args}
     if ! $OVA_ONLY; then
 	echo "Archiving ${VM_NAME}" 1>&2
 	tar cjf ${VM_NAME}.tar.bz2 -C ${VM_WORKING_DIR} ${VM_NAME} install_${VM_NAME}.sh

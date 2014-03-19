@@ -69,7 +69,7 @@ def simplify_version(version):
 
 def configure_system(prerequisite_list, version,
                      required_python_version='2.4', install=True, quiet=False,
-                     sublevel=0, out=sys.stdout, err=sys.stderr):
+                     sublevel=0, out=sys.stdout, err=sys.stderr, locally=False):
     '''
     Given a list of required software and optionally a Python version,
     verify that python is the proper version and that
@@ -77,7 +77,7 @@ def configure_system(prerequisite_list, version,
     Install missing prerequisites that have an installer defined.
     '''
     options.set_top_level(sublevel)
-    
+
     environment = dict()
     try:
         environment = read_cache()
@@ -123,7 +123,7 @@ def configure_system(prerequisite_list, version,
             if len(help_name) > 0:
                 environment = __configure_package(environment, help_name,
                                                   skip, install, quiet,
-                                                  out, err)
+                                                  out, err, locally)
         save_cache(environment)
     except Exception:  # pylint: disable=W0703
         logfile = os.path.join(options.target_build_dir, 'config.log')
@@ -141,11 +141,11 @@ def configure_system(prerequisite_list, version,
 
 def configure_package(which):
     return __configure_package(dict(), which, skip=False,
-                               install=True, quiet=False)
+                               install=True, quiet=False)#FIXME locally
 
 
 def __configure_package(environment, help_name, skip, install, quiet,
-                        out=sys.stdout, err=sys.stderr):
+                        out=sys.stdout, err=sys.stderr, locally=False):
     help_name, req_version, strict = requirement_versioning(help_name)
     if help_name is None:
         return environment
@@ -207,14 +207,15 @@ def __configure_package(environment, help_name, skip, install, quiet,
                                     options.local_lib_dir)
     if not local_python_dir in sys.path:
         sys.path.insert(0, local_python_dir)
-    return __run_helper__(environment, help_name, helper,
-                          req_version, strict, skip, install, quiet, out, err)
+    return __run_helper__(environment, help_name, helper, req_version,
+                          strict, skip, install, quiet, out, err, locally)
 
 
 configured = []
 
-def __run_helper__(environment, short_name, helper, version, strict,
-                   skip, install, quiet, out=sys.stdout, err=sys.stderr):
+def __run_helper__(environment, short_name, helper, version,
+                   strict, skip, install, quiet,
+                   out=sys.stdout, err=sys.stderr, locally=False):
     configured.append(short_name)
     try:
         cfg = helper.configuration()
@@ -231,24 +232,31 @@ def __run_helper__(environment, short_name, helper, version, strict,
         if dep_name in configured:
             continue
         environment = __configure_package(environment, dep,
-                                          skip, install, quiet, out, err)
+                                          skip, install, quiet,
+                                          out, err, locally)
         save_cache(environment)
+    environment = read_cache()
     quiet = False
     if not quiet:
-        out.write('Checking for ' + short_name + ' ')
+        msg = 'Checking for ' + short_name
         if version:
-            out.write('v.' + version)
+            msg += ' v.' + version
         if strict:
-            out.write(' (strict)')
-        out.write('\n')
+            msg += ' (strict)'
+        msg += ' ' * (40 - len(msg))
+        out.write(msg)
         out.flush()
     if skip:
         cfg.null()
     elif cfg.force or not cfg.is_installed(environment, version, strict):
-        if not install:
-            raise Exception(short_name + ' cannot be found.')
-        #TODO: global install option
-        cfg.install(environment, version, strict, True)
+        if install:
+            if not quiet:
+                out.write('Installing...\n')
+            cfg.install(environment, version, strict, locally)
+        elif not quiet:
+            out.write('not found.\n')
+    else:
+        out.write('found.\n')
     env = dict(list(cfg.environment.items()) + list(environment.items()))
     if not 'PREREQUISITES' in env:
         env['PREREQUISITES'] = [short_name]

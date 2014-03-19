@@ -108,7 +108,7 @@ class configuration(lib_config):
             else:
                 global_install('HDF5', website,
                                brew='hdf5', port='hdf5',
-                               deb='hdf5-devel', rpm='libhdf5-dev')
+                               deb='libhdf5-dev', rpm='hdf5-devel')
             if not self.is_installed(environ, version, strict):
                 raise Exception('HDF5 installation failed.')
 
