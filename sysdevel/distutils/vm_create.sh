@@ -446,23 +446,25 @@ EOF
 EOF
 	cat >install_${VM_NAME}.sh <<EOF
 #!/bin/sh
-virsh --connect qemu:///system create "${VM_NAME}/${VM_NAME}.xml"
+virsh -c qemu:///system create "${VM_NAME}/${VM_NAME}.xml"
 EOF
     fi
 
-    ## Fails in CentOS w/ SELinux enforcing
+    ## Fails w/ SELinux enforcing
     virsh -c qemu:///system net-create --file "${VM_WORKING_DIR}/${VM_NAME}/${VM_NET_NAME}-net.xml"
-    virsh -c qemu:///system create "${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml"
+    virsh -c qemu:///system net-list
 
-    virsh -c qemu:///system resume "${VM_NAME}"
-    sleep 30
-    if $OVERSEE; then
-	virt-viewer -c qemu:///system "${VM_NAME}" || true
-    else
-	echo "Headless install - no feedback." 1>&2
-    fi
+    #virsh -c qemu:///system create "${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml"
 
-    while [[ $(virsh --connect qemu:///system list) == *${VM_NAME}* ]]; do
+    #virsh -c qemu:///system resume "${VM_NAME}"
+    #if $OVERSEE; then
+#	virt-viewer -c qemu:///system "${VM_NAME}" || true
+    #else
+#	echo "Headless install - no feedback." 1>&2
+    #fi
+    virt-install -c qemu:///system --name ${VM_NAME} --ram 2048 --vcpus 1 --disk path=${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img --network network:${VM_NET_NAME} --arch x86_64 --pxe
+
+    while [[ $(virsh -c qemu:///system list) == *${VM_NAME}* ]]; do
 	sleep 60
     done
 }
@@ -470,7 +472,10 @@ EOF
 function kvm_cleanup {
     set +e
     echo "Restore original KVM config" 1>&2
-    virsh --connect qemu:///system net-destroy ${VM_NET_NAME}
+    virsh -c qemu:///system net-destroy ${VM_NET_NAME}
+    if [[ $(virsh -c qemu:///system list) == *${VM_NAME}* ]]; then
+	virsh -c qemu:///system destroy ${VM_NAME}
+    fi
 }
 
 
@@ -485,11 +490,14 @@ function vagrant_init {
     name_extra=$8
 
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
+    provider=$VAGRANT_DEFAULT_PROVIDER
+    if [ "x$provider" = "x" ]; then
+	provider=virtualbox
+    fi
 
     vbox_init $@
 
-    vagrant package --base ${VM_NAME}
-    vagrant box add ${lower_name}-${version} package.box
+    vagrant package --base ${VM_NAME} --output ${lower_name}.${provider}.box
 }
 
 function vagrant_cleanup {
