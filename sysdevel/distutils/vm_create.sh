@@ -15,9 +15,9 @@ TARGET_OS=CENTOS
 TARGET_ARCH=
 VERBOSE=false
 OVERSEE=false
-OVA_ONLY=false
+INSTALLER=false
+TARGET_PROVIDER=virtualbox
 VM_WORKING_DIR="${PWD}/VM"
-
 
 VM_SRC_DIR="$(pwd)"
 VM_TFTP_DIR="${VM_WORKING_DIR}/TFTP"
@@ -30,14 +30,16 @@ SERVER_IP=${SERVER_NAME}
 SERVER_PORT=7999
 SERVER_ADDRESS=http://${SERVER_IP}:${SERVER_PORT}
 
-TARGET_SUBNET="10.0.2"
+TARGET_SUBNET=10.0.2
+TARGET_ADRESS=${TARGET_SUBNET}.150
+
 
 function create_repository {
     here="${PWD}"
     number=$1
     repo_dir="$2"
     cd "${repo_dir}"
-    if [ "${TARGET_OS}" = "CENTOS" ]; then
+    if [ "${TARGET_OS}" = "CENTOS" || "${TARGET_OS}" = "FEDORA" ]; then
 	createrepo ./ --update 1>&2
     else
 	debarchiver --addoverride --autoscanall 1>&2
@@ -76,7 +78,7 @@ function pull_repository {
 
 
 function tftp_prep {
-    here=${VM_SRC_DIR}
+    here="${VM_SRC_DIR}"
     local_repos=()
     remote_repos=()
     while test $# -gt 0; do
@@ -93,6 +95,7 @@ function tftp_prep {
 	shift
     done
 
+
     SYSLINUX_VERSION=5.00  ## NOTE: 6.01 doesn't work
     SYSLINUX_WEBSITE=http://www.kernel.org/pub/linux/utils/boot/syslinux
     SYSLINUX_DIR=syslinux-${SYSLINUX_VERSION}
@@ -100,13 +103,22 @@ function tftp_prep {
     CENTOS_DISTRO=CentOS
     CENTOS_VERSION=6
     CENTOS_ARCH=x86_64
-    CENTOS_WEBSITE=http://mirror.centos.org/centos/${CENTOS_VERSION}/os/${CENTOS_ARCH}/images/pxeboot
+    CENTOS_WEBSITE=http://mirror.centos.org/centos/${CENTOS_VERSION}/os/${CENTOS_ARCH}
+    CENTOS_IMG_SITE=${CENTOS_WEBSITE}/images/pxeboot
     CENTOS_IMG=initrd.img
+
+    FEDORA_DISTRO=Fedora
+    FEDORA_VERSION=20
+    FEDORA_ARCH=x86_64
+    FEDORA_WEBSITE=http://dl.fedoraproject.org/pub/fedora/linux/releases/${FEDORA_VERSION}/Fedora/${FEDORA_ARCH}/os
+    FEDORA_IMG_SITE=${FEDORA_WEBSITE}/images/pxeboot
+    FEDORA_IMG=initrd.img
 
     DEBIAN_DISTRO=debian
     DEBIAN_VERSION=wheezy
     DEBIAN_ARCH=amd64
-    DEBIAN_WEBSITE=http://ftp.us.debian.org/debian/dists/${DEBIAN_VERSION}/main/installer-${DEBIAN_ARCH}/current/images/cdrom/
+    DEBIAN_WEBSITE=http://ftp.us.debian.org/debian/dists/${DEBIAN_VERSION}/main/installer-${DEBIAN_ARCH}/current
+    DEBIAN_IMG_SITE=${DEBIAN_WEBSITE}/images/cdrom
     DEBIAN_IMG=initrd.gz
 
 
@@ -114,11 +126,17 @@ function tftp_prep {
     eval TARGET_DISTRO=\$${TARGET_OS}_DISTRO
     eval TARGET_ARCH=\$${TARGET_OS}_ARCH
     eval TARGET_WEBSITE=\$${TARGET_OS}_WEBSITE
+    eval TARGET_IMG_SITE=\$${TARGET_OS}_IMG_SITE
     eval TARGET_IMG=\$${TARGET_OS}_IMG
-
 
     mkdir -p "${VM_WORKING_DIR}"
     cd "${VM_WORKING_DIR}"
+
+    if [ "$TARGET_PROVIDER" != "virtualbox" ]; then
+	cd "${here}"
+	return 0
+    fi
+
     echo "Fetch SysLinux" 1>&2
     if $VERBOSE; then
 	wget -N ${SYSLINUX_WEBSITE}/${SYSLINUX_DIR}.tar.bz2
@@ -154,12 +172,17 @@ ontimeout ${TARGET_LABEL}
 LABEL centos
         MENU LABEL CentOS
         kernel ${CENTOS_DISTRO}/vmlinuz
-        append initrd=${CENTOS_DISTRO}/initrd.img ks=${SERVER_ADDRESS}/centos.cfg ksdevice=eth0 ${HTTP_PROXY_OPTION}
+        append initrd=${CENTOS_DISTRO}/initrd.img ks=${SERVER_ADDRESS}/ks.cfg ksdevice=eth0 ${HTTP_PROXY_OPTION}
+
+LABEL fedora
+        MENU LABEL Fedora
+        kernel ${FEDORA_DISTRO}/vmlinuz
+        append initrd=${FEDORA_DISTRO}/initrd.img ks=${SERVER_ADDRESS}/ks.cfg ksdevice=eth0 ${HTTP_PROXY_OPTION}
 
 LABEL debian
         MENU LABEL Debian
         kernel ${DEBIAN_DISTRO}/vmlinuz
-        append auto=true  auto url=${SERVER_ADDRESS}/debian.cfg ${HTTP_PROXY_OPTION} priority=critical DEBIAN_FRONTEND=noninteractive install debconf/priority=medium debian-installer/allow_unauthenticated=true vga=788 initrd=${DEBIAN_DISTRO}/initrd.gz -- quiet
+        append auto=true  auto url=${SERVER_ADDRESS}/ks.cfg ${HTTP_PROXY_OPTION} priority=critical DEBIAN_FRONTEND=noninteractive install debconf/priority=medium debian-installer/allow_unauthenticated=true vga=788 initrd=${DEBIAN_DISTRO}/initrd.gz -- quiet
 
 LABEL localboot
         MENU LABEL Boot from disk
@@ -169,11 +192,11 @@ EOF
     echo "Fetch ${TARGET_DISTRO} boot images" 1>&2
     mkdir -p "${VM_TFTP_DIR}/${TARGET_DISTRO}"
     if $VERBOSE; then
-	wget -N -P "${VM_TFTP_DIR}/${TARGET_DISTRO}" ${TARGET_WEBSITE}/vmlinuz
-	wget -N -P "${VM_TFTP_DIR}/${TARGET_DISTRO}" ${TARGET_WEBSITE}/${TARGET_IMG}
+	wget -N -P "${VM_TFTP_DIR}/${TARGET_DISTRO}" ${TARGET_IMG_SITE}/vmlinuz
+	wget -N -P "${VM_TFTP_DIR}/${TARGET_DISTRO}" ${TARGET_IMG_SITE}/${TARGET_IMG}
     else
-	wget -N -P "${VM_TFTP_DIR}/${TARGET_DISTRO}" ${TARGET_WEBSITE}/vmlinuz 2>/dev/null
-	wget -N -P "${VM_TFTP_DIR}/${TARGET_DISTRO}" ${TARGET_WEBSITE}/${TARGET_IMG} 2>/dev/null
+	wget -N -P "${VM_TFTP_DIR}/${TARGET_DISTRO}" ${TARGET_IMG_SITE}/vmlinuz 2>/dev/null
+	wget -N -P "${VM_TFTP_DIR}/${TARGET_DISTRO}" ${TARGET_IMG_SITE}/${TARGET_IMG} 2>/dev/null
     fi
 
     set +e
@@ -206,6 +229,10 @@ EOF
 }
 
 function tftp_cleanup {
+    if [ "$TARGET_PROVIDER" != "virtualbox" ]; then
+	return 0
+    fi
+
     set +e
     for pid in "${VM_SERVER_PIDS[@]}"; do
 	if [ "${pid}" != "" ]; then
@@ -222,11 +249,12 @@ function vbox_init {
     name=$1
     vendor=$2
     version=$3
-    disk_size=$4
-    license_file=$5
-    nataddr=$6
-    hostonly=$7
-    name_extra=$8
+    mem_size=$4
+    disk_size=$5
+    license_file=$6
+    nataddr=$7
+    hostonly=$8
+    name_extra=$9
 
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
     VM_NET_NAME=${lower_name}
@@ -255,7 +283,11 @@ function vbox_init {
 
     VBOX_DEF="${VBOX_VM_DIR}/VirtualBox.xml"
     if [ ! -e "${VBOX_DEF}" ]; then
-	xml_file=$(find ${HOME} -name VirtualBox.xml)
+	xml_file=$(find ${HOME} -name VirtualBox.xml -print -quit)
+	if [ $? -ne 0 ]; then
+	    echo "VirtualBox must be run at least once before using this script."
+	    exit 1
+	fi
 	cp "${xml_file}" "${VBOX_DEF}"
     fi
     mv ${VBOX_DEF} ${VBOX_DEF}.old
@@ -272,7 +304,7 @@ function vbox_init {
 	VBoxManage createhd --filename "${VM_NAME}/${VM_NAME}.vdi" --size ${disk_size}
 	VBoxManage storagectl "${VM_NAME}" --name "SATA Controller" --add sata --controller IntelAHCI --hostiocache on
 	VBoxManage storageattach "${VM_NAME}" --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium "${VM_NAME}/${VM_NAME}.vdi"
-	VBoxManage modifyvm "${VM_NAME}" --memory 2048
+	VBoxManage modifyvm "${VM_NAME}" --memory ${mem_size}
 	VBoxManage modifyvm "${VM_NAME}" --boot1 disk --boot2 net --boot3 dvd --boot4 none
 	if [ -e "${VM_SRC_DIR}/${LOGO_FILE}" ]; then
 	    echo "Using logo: ${VM_SRC_DIR}/${LOGO_FILE}"
@@ -310,7 +342,7 @@ function vbox_init {
 	VBoxManage setextradata "${VM_NAME}" "GUI/Input/AutoCapture" "false"
 	VBoxManage setextradata global "GUI/SuppressMessages" "remindAboutAutoCapture,confirmInputCapture,remindAboutMouseIntegrationOn,remindAboutWrongColorDepth,confirmGoingFullscreen,remindAboutMouseIntegrationOff,remindAboutInputCapture"
 	cd $here
-	if ! $OVA_ONLY; then
+	if $INSTALLER; then
 	    cat >install_${VM_NAME}.sh <<EOF
 #!/bin/sh
 VBoxManage registervm "${VM_NAME}/${VM_NAME}.vbox"
@@ -362,15 +394,16 @@ function vbox_cleanup {
 }
 
 
-function kvm_init {
+function libvirt_init {
     name=$1
     vendor=$2
     version=$3
-    disk_size=$4
-    license_file=$5
-    nataddr=$6
-    hostonly=$7
-    name_extra=$8
+    mem_size=$4
+    disk_size=$5
+    license_file=$6
+    nataddr=$7
+    hostonly=$8
+    name_extra=$9
 
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
     VM_NET_NAME=${lower_name}
@@ -385,123 +418,229 @@ function kvm_init {
     ##    auth_unix_ro = "none"
     ##    auth_unix_rw = "none"
 
+    if [[ $(virsh -c qemu:///system list) == *${VM_NAME}* ]]; then
+	virsh -c qemu:///system destroy ${VM_NAME}
+    fi
+    if [[ $(virsh -c qemu:///system list --all) == *${VM_NAME}* ]]; then
+	virsh -c qemu:///system undefine ${VM_NAME}
+    fi
     if [ ! -d "${VM_WORKING_DIR}/${VM_NAME}" ]; then
 	here="${PWD}"
 	cd "${VM_WORKING_DIR}"
-	echo "Create KVM machine" 1>&2
+	echo "Create LibVirt machine" 1>&2
 	mkdir -p "${VM_NAME}"
 	qemu-img create -f qcow2 "${VM_NAME}/${VM_NAME}".img ${disk_size}M
+	## FIXME enable port forwarding?
+	#cat >${VM_NAME}/${VM_NET_NAME}-net.xml <<EOF
+#EOF
 	if [ -e "${VM_SRC_DIR}/${LOGO_FILE}" ]; then
 	    echo "Using logo: ${VM_SRC_DIR}/${LOGO_FILE}"
 	    cp "${VM_SRC_DIR}/${LOGO_FILE}" "${VM_NAME}/"
 	fi
-	cat >"${VM_NAME}/${VM_NET_NAME}-net.xml" <<EOF
-<network>
-  <name>${VM_NET_NAME}</name>
-  <forward mode='nat' />
-  <ip address="${TARGET_SUBNET}.2" netmask="255.255.255.0">
-    <tftp root="${VM_TFTP_DIR}"/> 
-    <dhcp>
-      <range start="${TARGET_SUBNET}.5" end="${TARGET_SUBNET}.50" />
-      <bootp file="pxelinux.0"/>           
-    </dhcp>
-  </ip>
-</network>
-EOF
-	cat >"${VM_NAME}/${VM_NAME}.xml" <<EOF
-<domain type='kvm'>
-  <name>${VM_NAME}</name>
-  <os>
-    <type arch='x86_64' machine='pc'>hvm</type>
-    <boot dev='hd'/>
-    <boot dev='network'/>
-    <boot dev='cdrom'/>
-EOF
-	if [ -e "${VM_SRC_DIR}/${LOGO_FILE}" ]; then
-	    cat >>"${VM_NAME}/${VM_NAME}.xml" <<EOF
-    <bootmenu enable='yes' splash='${LOGO_FILE}'/>
-EOF
+    fi
+
+    if [ -e "${VM_WORKING_DIR}/${VM_NAME}/${VM_NET_NAME}-net.xml" ]; then
+	if [[ $(virsh -c qemu:///system net-list --all) != *${VM_NET_NAME}* ]]; then
+	    virsh -c qemu:///system net-define --file "${VM_WORKING_DIR}/${VM_NAME}/${VM_NET_NAME}-net.xml"
+	    virsh -c qemu:///system net-autostart ${VM_NET_NAME}
 	fi
-	cat >>"${VM_NAME}/${VM_NAME}.xml" <<EOF
-  </os>
-  <memory>2048</memory>
-  <vcpu>1</vcpu>
-  <devices>
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='raw' cache='none' io='threads'/>
-      <source file='${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img'/>
-      <target dev='hda' bus='ide'/>
-      <address type='drive' controller='0' bus='0' unit='0'/>
-    </disk>
-    <interface type='network'>     
-      <mac address='52:54:00:66:79:14'/>
-      <source network='${VM_NET_NAME}'/>      
-      <target dev='vnet0'/>
-      <alias name='net0'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
-    </interface>
-    <graphics type='vnc' port='-1' autoport='yes' keymap='en-us'/>
-  </devices>
-</domain>
-EOF
+	if [[ $(virsh -c qemu:///system net-list) != *${VM_NET_NAME}* ]]; then
+	    virsh -c qemu:///system net-start ${VM_NET_NAME}
+	fi
+    fi
+
+    virt_type=""
+    if [ "$VIRTUALIZER" = "kvm" ]; then
+	virt_type="--virt-type=kvm"
+    fi
+
+    if $INSTALLER; then
 	cat >install_${VM_NAME}.sh <<EOF
 #!/bin/sh
 virsh -c qemu:///system create "${VM_NAME}/${VM_NAME}.xml"
 EOF
     fi
 
-    ## Fails w/ SELinux enforcing
-    virsh -c qemu:///system net-create --file "${VM_WORKING_DIR}/${VM_NAME}/${VM_NET_NAME}-net.xml"
-    virsh -c qemu:///system net-list
+    virt-install --connect qemu:///system --name ${VM_NAME} --ram ${mem_size} \
+	--vcpus 1 --noreboot --hvm ${virt_type} --noautoconsole \
+	--disk path=${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img,format=qcow2 \
+	--network network:default --location=${TARGET_WEBSITE} \
+	--initrd-inject=${here}/ks.cfg --extra-args="ks=file:/ks.cfg"
 
-    #virsh -c qemu:///system create "${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml"
-
-    #virsh -c qemu:///system resume "${VM_NAME}"
-    #if $OVERSEE; then
-#	virt-viewer -c qemu:///system "${VM_NAME}" || true
-    #else
-#	echo "Headless install - no feedback." 1>&2
-    #fi
-    virt-install -c qemu:///system --name ${VM_NAME} --ram 2048 --vcpus 1 --disk path=${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img --network network:${VM_NET_NAME} --arch x86_64 --pxe
+    if $OVERSEE; then
+	virt-viewer -c qemu:///system "${VM_NAME}" || true
+    else
+	echo "Headless install - no feedback." 1>&2
+    fi
 
     while [[ $(virsh -c qemu:///system list) == *${VM_NAME}* ]]; do
-	sleep 60
+	sleep 10
     done
+
+    virsh -c qemu:///system dumpxml ${VM_NAME} >${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml
 }
 
-function kvm_cleanup {
+function libvirt_cleanup {
     set +e
-    echo "Restore original KVM config" 1>&2
-    virsh -c qemu:///system net-destroy ${VM_NET_NAME}
+    echo "Restore original LibVirt config" 1>&2
     if [[ $(virsh -c qemu:///system list) == *${VM_NAME}* ]]; then
 	virsh -c qemu:///system destroy ${VM_NAME}
     fi
+    if [[ $(virsh -c qemu:///system list --all) == *${VM_NAME}* ]]; then
+	virsh -c qemu:///system undefine ${VM_NAME}
+    fi
+    if [[ $(virsh -c qemu:///system net-list) == *${VM_NET_NAME}* ]]; then
+	virsh -c qemu:///system net-destroy ${VM_NET_NAME}
+    fi
+    if [[ $(virsh -c qemu:///system net-list --all) == *${VM_NET_NAME}* ]]; then
+	virsh -c qemu:///system net-undefine ${VM_NET_NAME}
+    fi
 }
+
+function libvirt_port_forwarding {
+    name=$1
+    vendor=$2
+    version=$3
+    mem_size=$4
+    disk_size=$5
+    license_file=$6
+    nataddr=$7
+    hostonly=$8
+    name_extra=$9
+
+    lower_name=$(echo ${name} | tr [:upper:] [:lower:])
+    VM_NET_NAME=${lower_name}
+    VM_NAME=${lower_name}_vm_${version}_${TARGET_ARCH}
+
+    prologue="#!/bin/bash"
+    if [ -e /etc/libvirt/hooks/qemu ]; then
+	cp /etc/libvirt/hooks/qemu old_hooks.sh
+	prologue=""
+    fi
+    cat >>/etc/libvirt/hooks/qemu <<EOF
+${prologue}
+
+Guest_name="${VM_NAME}"
+Host_port=8888
+Guest_ipaddr=${nataddr}
+Guest_port=80
+
+if [ $1 = $Guest_name ]; then
+    if [[ $2 = "stopped" || $2 = "reconnect" ]]; then
+        iptables -t nat -D PREROUTING -p tcp --dport $Host_port -j DNAT  --to $Guest_ipaddr:$Guest_port
+       	iptables -D FORWARD -d $Guest_ipaddr/32 -p tcp -m state --state NEW,RELATED,ESTABLISHED -m tcp --dport $Guest_port -j ACCEPT
+    fi
+    if [[ $2 = "start" || $2 = "reconnect" ]]; then
+        iptables -t nat -I PREROUTING -p tcp --dport $Host_port -j DNAT --to $Guest_ipaddr:$Guest_port
+       	iptables -I FORWARD -d $Guest_ipaddr/32 -p tcp -m state --state NEW,RELATED,ESTABLISHED -m tcp --dport $Guest_port -j ACCEPT
+    fi
+fi
+EOF
+    chmod +x /etc/libvirt/hooks/qemu
+}
+
 
 
 function vagrant_init {
     name=$1
     vendor=$2
     version=$3
-    disk_size=$4
-    license_file=$5
-    nataddr=$6
-    hostonly=$7
-    name_extra=$8
-
+    mem_size=$4
+    disk_size=$5
+    license_file=$6
+    nataddr=$7
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
-    provider=$VAGRANT_DEFAULT_PROVIDER
-    if [ "x$provider" = "x" ]; then
-	provider=virtualbox
+
+    export VAGRANT_DEFAULT_PROVIDER=$TARGET_PROVIDER
+    if [ "$TARGET_PROVIDER" = "virtualbox" ]; then
+	vbox_init $@
+
+	rm -f ${lower_name}.virtual.box
+	vagrant package --base ${VM_NAME} --output ${lower_name}.virtualbox.box
+    
+	vbox_cleanup
+
+    elif [ "$TARGET_PROVIDER" = "libvirt" ] || [ "$TARGET_PROVIDER" = "kvm" ]; then
+	libvirt_init $@
+
+	cat >${VM_WORKING_DIR}/${VM_NAME}/metadata.json <<EOF
+{
+  "provider" : "libvirt",
+  "format" : "qcow2",
+  "virtual_size" : $(($disk_size / 1024))
+}
+EOF
+	net_name="vagrant"
+	if [ "$TARGET_PROVIDER" = "libvirt" ]; then
+	    net_name="vagrant-libvirt"
+	fi
+	virt_type="$VIRTUALIZER"
+	if [ "$VIRTUALIZER" = "kvm" ]; then
+	    virt_type="qemu"
+	fi
+	key_file=
+	key_config=
+	if [ -e ${here}/vagrant_key ]; then
+	    cp ${here}/vagrant_key ${VM_WORKING_DIR}/${VM_NAME}/
+	    key_file=vagrant_key
+	key_config="
+  # Secure private SSH key.
+  # The public key must be present in authorized_keys on the guest.
+  config.ssh.private_key_path \"./vagrant_key\"
+"
+	fi
+	cat >${VM_WORKING_DIR}/${VM_NAME}/Vagrantfile <<EOF
+Vagrant.configure("2") do |config|
+  config.vm.base_mac = "080027129698"
+  ${key_config}
+
+  # No extra options for kvm vagrant provider (plugin).
+
+  # Options for libvirt vagrant provider (plugin).
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.driver = "${virt_type}"
+
+    # The name of the server, where libvirtd is running.
+    libvirt.host = "localhost"
+    # If use ssh tunnel to connect to Libvirt.
+    libvirt.connect_via_ssh = false
+    # Libvirt storage pool name, where box image and instance snapshots will
+    # be stored.
+    libvirt.storage_pool_name = "default"
+
+    # The username and password to access Libvirt. Password is not used when
+    # connecting via ssh.
+    #libvirt.username = "root"
+    #libvirt.password = "secret"
+  end
+end
+EOF
+	rm -f ${lower_name}.${TARGET_PROVIDER}.box
+	mv "${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img" "${VM_WORKING_DIR}/${VM_NAME}/box.img"
+
+	sed "s|source file='${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img'|source file='box.img'|" <"${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml" | sed "s|source network='default'|source network='${net_name}'|" >"${VM_WORKING_DIR}/${VM_NAME}/box.xml"
+	cd ${here}
+	tar czf ${lower_name}.${TARGET_PROVIDER}.box -C "${VM_WORKING_DIR}/${VM_NAME}" metadata.json Vagrantfile box.img ${key_file}
+
+	libvirt_cleanup
     fi
-
-    vbox_init $@
-
-    vagrant package --base ${VM_NAME} --output ${lower_name}.${provider}.box
 }
 
 function vagrant_cleanup {
-    vbox_cleanup 
+    return 0
+}
+
+
+function get_vagrant_keys {
+    rm -f vagrant_key*
+    if [ "$1" = "--insecure" ]; then
+	wget https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant -O vagrant_key_insecure 2>&1 >/dev/null
+	wget https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant.pub -O vagrant_key_insecure.pub 2>&1 >/dev/null
+	echo vagrant_key_insecure.pub
+    else
+	ssh-keygen -t rsa -C "Secure vagrant key" -N '' -f vagrant_key -q
+	echo vagrant_key.pub
+    fi
 }
 
 
@@ -528,7 +667,7 @@ function vm_init {
 
     tftp_prep $prep_args
     if [ "${VIRTUALIZER}" = "kvm" ]; then
-	kvm_init $args
+	libvirt_init $args
     elif [ "${VIRTUALIZER}" = "vagrant" ]; then
 	vagrant_init $args
     else
@@ -539,7 +678,7 @@ function vm_init {
 function vm_cleanup {
     set +e
     if [ "${VIRTUALIZER}" = "kvm" ]; then
-	kvm_cleanup
+	libvirt_cleanup
     elif [ "${VIRTUALIZER}" = "vagrant" ]; then
 	vagrant_cleanup
     else
@@ -550,10 +689,44 @@ function vm_cleanup {
 
 
 
+function get_target_gateway {
+    gw=10.0.2.2  ## virtualbox default
+    while test $# -gt 0; do
+	case $1 in
+	    --kvm | --libvirt)
+		gw=$(virsh net-dumpxml default | grep "ip address" | cut -d"'" -f2)
+		;;
+	esac
+	shift
+    done
+    echo $gw
+}
+
+function get_target_subnet {
+    ipaddr=$(get_target_gateway $@)
+    IFS=. read -r ip1 ip2 ip3 ip4 <<< "$ipaddr"
+    printf "%d.%d.%d" "$ip1" "$ip2" "$ip3"
+}
+
+function get_target_nameserver {
+    ns=10.0.2.3  ## virtualbox default
+    while test $# -gt 0; do
+	case $1 in
+	    --kvm | --libvirt)
+		ns=$(get_target_gateway $@)
+		;;
+	esac
+	shift
+    done
+    echo $ns
+}
+
+
 function create_virtual_machine {
     cleanup_only=false
     local_args=""
     remote_args=""
+    mem_size=2048
     disk_size=8096
     name="project"
     vendor="me"
@@ -586,6 +759,10 @@ function create_virtual_machine {
 		license_file=$2
 		shift
 		;;
+	    --memory)
+		mem_size=$2
+		shift
+		;;
 	    --disk)
 		disk_size=$2
 		shift
@@ -606,24 +783,53 @@ function create_virtual_machine {
 		hostonly_net="$2"
 		shift
 		;;
+	    --with-installer)
+		INSTALLER=true
+		;;
 
 	    --kvm)
 		VIRTUALIZER=kvm
+		if [ $TARGET_PROVIDER = virtualbox ]; then
+		    TARGET_PROVIDER=kvm
+		fi
+		;;
+	    --xen)  ## Xen hypervisor
+		VIRTUALIZER=kvm
+		TARGET_PROVIDER=libvirt
+		;;
+		--lxc)  ## Linux Containers
+		VIRTUALIZER=kvm
+		TARGET_PROVIDER=libvirt
+		;;
+	    --esx)  ## VMware ESX
+		VIRTUALIZER=esx
+		TARGET_PROVIDER=libvirt
+		;;
+	    --vmwarews)  ## VMware Workstation
+		VIRTUALIZER=esx
+		TARGET_PROVIDER=libvirt
+		;;
+	    --libvirt)
+		if [ $VIRTUALIZER = vbox ]; then
+		    VIRTUALIZER=kvm
+		fi
+		TARGET_PROVIDER=libvirt
 		;;
 	    --vbox | --virtualbox)
 		VIRTUALIZER=vbox
+		TARGET_PROVIDER=virtualbox
 		;;
 	    --vagrant)
 		VIRTUALIZER=vagrant
-		;;
-	    --ova)
-		OVA_ONLY=true
 		;;
 	    --debian)
 		TARGET_OS=DEBIAN
 		;;
 	    --centos)
 		TARGET_OS=CENTOS
+		;;
+	    --fedora)
+		TARGET_OS=FEDORA
 		;;
 	    --cleanup)
 		cleanup_only=true
@@ -657,12 +863,9 @@ function create_virtual_machine {
     if $cleanup_only; then
 	exit
     fi
-    if [ "${VIRTUALIZER}" != "vbox" ]; then
-	OVA_ONLY=false
-    fi
 
-    vm_init ${name} ${vendor} ${version} ${disk_size} ${license_file} ${nat_addr} ${hostonly_net} ${extra_name} ${local_args} ${remote_args}
-    if ! $OVA_ONLY; then
+    vm_init ${name} ${vendor} ${version} ${mem_size} ${disk_size} ${license_file} ${nat_addr} ${hostonly_net} ${extra_name} ${local_args} ${remote_args}
+    if $INSTALLER; then
 	echo "Archiving ${VM_NAME}" 1>&2
 	tar cjf ${VM_NAME}.tar.bz2 -C ${VM_WORKING_DIR} ${VM_NAME} install_${VM_NAME}.sh
     fi
