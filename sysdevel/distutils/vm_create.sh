@@ -11,6 +11,7 @@
 
 
 VIRTUALIZER=vbox
+VAGRANT=false
 TARGET_OS=CENTOS
 TARGET_ARCH=
 VERBOSE=false
@@ -578,21 +579,9 @@ EOF
 	if [ "$VIRTUALIZER" = "kvm" ]; then
 	    virt_type="qemu"
 	fi
-	key_file=
-	key_config=
-	if [ -e ${here}/vagrant_key ]; then
-	    cp ${here}/vagrant_key ${VM_WORKING_DIR}/${VM_NAME}/
-	    key_file=vagrant_key
-	key_config="
-  # Secure private SSH key.
-  # The public key must be present in authorized_keys on the guest.
-  config.ssh.private_key_path \"./vagrant_key\"
-"
-	fi
 	cat >${VM_WORKING_DIR}/${VM_NAME}/Vagrantfile <<EOF
 Vagrant.configure("2") do |config|
   config.vm.base_mac = "080027129698"
-  ${key_config}
 
   # No extra options for kvm vagrant provider (plugin).
 
@@ -615,6 +604,7 @@ Vagrant.configure("2") do |config|
   end
 end
 EOF
+	echo "Packaging ${VM_NAME}"
 	rm -f ${lower_name}.${TARGET_PROVIDER}.box
 	mv "${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img" "${VM_WORKING_DIR}/${VM_NAME}/box.img"
 
@@ -631,14 +621,34 @@ function vagrant_cleanup {
 }
 
 
+function get_vagrant_location {
+    version=$(vagrant --version | cut -d ' ' -f2)
+    case $(uname) in
+	Linux)
+	    prefix="/opt/vagrant"
+	    if [ ! -d $prefix ]; then
+		## Installed through Ruby
+		prefix="/usr/local/vagrant"
+	    fi
+	    ;;
+	Darwin)
+	    prefix="/Applications/Vagrant"
+	    ;;
+	MINGW* | CYGWIN*)
+	    prefix=$(which vagrant | xargs dirname | xargs dirname)
+	    ;;
+    esac
+    echo "${prefix}/embedded/gems/gems/vagrant-${version}"
+}
+
 function get_vagrant_keys {
-    rm -f vagrant_key*
     if [ "$1" = "--insecure" ]; then
-	wget https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant -O vagrant_key_insecure 2>&1 >/dev/null
-	wget https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant.pub -O vagrant_key_insecure.pub 2>&1 >/dev/null
-	echo vagrant_key_insecure.pub
+	echo $(get_vagrant_location)/keys/vagrant.pub
     else
-	ssh-keygen -t rsa -C "Secure vagrant key" -N '' -f vagrant_key -q
+	if [ ! -e vagrant_key ] || [ ! -e vagrant_key.pub ]; then
+	    rm -f vagrant_key*
+	    ssh-keygen -t rsa -C "Secure vagrant key" -N '' -f vagrant_key -q
+	fi
 	echo vagrant_key.pub
     fi
 }
@@ -666,23 +676,27 @@ function vm_init {
     done
 
     tftp_prep $prep_args
-    if [ "${VIRTUALIZER}" = "kvm" ]; then
-	libvirt_init $args
-    elif [ "${VIRTUALIZER}" = "vagrant" ]; then
+    if [ $VAGRANT ]; then
 	vagrant_init $args
     else
-	vbox_init $args
+	if [ "${VIRTUALIZER}" = "vbox" ]; then
+	    vbox_init $args
+	else
+	    libvirt_init $args
+	fi
     fi
 }
 
 function vm_cleanup {
     set +e
-    if [ "${VIRTUALIZER}" = "kvm" ]; then
-	libvirt_cleanup
-    elif [ "${VIRTUALIZER}" = "vagrant" ]; then
+    if [ $VAGRANT ]; then
 	vagrant_cleanup
     else
-	vbox_cleanup
+	if [ "${VIRTUALIZER}" = "vbox" ]; then
+	    vbox_cleanup
+	else
+	    libvirt_cleanup
+	fi
     fi
     tftp_cleanup
 }
@@ -797,7 +811,7 @@ function create_virtual_machine {
 		VIRTUALIZER=kvm
 		TARGET_PROVIDER=libvirt
 		;;
-		--lxc)  ## Linux Containers
+	    --lxc)  ## Linux Containers
 		VIRTUALIZER=kvm
 		TARGET_PROVIDER=libvirt
 		;;
@@ -820,7 +834,7 @@ function create_virtual_machine {
 		TARGET_PROVIDER=virtualbox
 		;;
 	    --vagrant)
-		VIRTUALIZER=vagrant
+		VAGRANT=true
 		;;
 	    --debian)
 		TARGET_OS=DEBIAN

@@ -148,6 +148,9 @@ def create_runscript(pkg, mod, target, extra):
                 "        bases.append(os.path.join(here, '..', lib, ver, 'site-packages'))\n" +
                 "for base in bases:\n" +
                 "    sys.path.insert(0, os.path.abspath(base))\n\n" +
+                "import site\n" +
+                "for base in bases:\n" +
+                "    site.addsitedir(os.path.abspath(base))\n\n" +
                 "##############################\n\n" +
                 extra +
                 "from " + pkg + " import " + mod + "\n" +

@@ -33,6 +33,8 @@ except ImportError:
     from threading import Thread as Process
 import logging
 
+from .models import DataViewer
+
 
 def json_handler(obj):
     import datetime
@@ -50,6 +52,13 @@ def json_handler(obj):
         return obj.tolist()
     elif HAVE_SPACEPY and type(obj) == spacepy.datamodel.dmarray:
         return obj.tolist()
+    elif isinstance(obj, DataViewer):
+        import inspect
+        discard = dir(type('dummy', (object,), {}))
+        discard += inspect.getmembers(obj,
+                                      lambda x: inspect.isbuiltin(x) or \
+                                      inspect.ismethod(x))
+        return [item for item in inspect.getmembers(obj) if item not in discard]
     else:
         raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))
 

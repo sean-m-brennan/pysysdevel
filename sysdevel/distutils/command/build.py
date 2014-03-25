@@ -108,8 +108,8 @@ class build(old_build):
 
     def run(self):
         if self.distribution.subpackages != None:
-            if self.get_finalized_command('install').ran:
-                return  ## avoid build after install
+            #if self.get_finalized_command('install').ran:
+            #    return  ## avoid build after install
             try:
                 os.makedirs(self.build_base)
             except OSError:

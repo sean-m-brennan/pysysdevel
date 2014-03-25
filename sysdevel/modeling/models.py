@@ -48,10 +48,11 @@ class DataModel(dict):
     multiple controllers, read by viewer for display.
     '''
 
-    date_format = '%Y/%m/%d'
+    date_format = '%Y-%m-%d'
     time_format = '%H:%M:%S'
-    datetime_sep = ' '
-    datetime_format = date_format + datetime_sep + time_format
+    datetime_sep = 'T'
+    datetime_tz = 'Z'
+    datetime_format = date_format + datetime_sep + time_format + datetime_tz
 
     def __init__(self):
         dict.__init__(self)
@@ -181,17 +182,23 @@ class GenericPlot(DataViewer):
     '''
     ## Also an abstract class  # pylint: disable=W0223
     def __init__(self, axes=2, **kwargs):
-        DataViewer.__init__(self, **kwargs)
+        DataViewer.__init__(self) #, **kwargs) #FIXME why is this here?
         self.chart_title = 'Chart'
         self.axes = axes
-        self.series = []
+        self._series = []
+
+
+    @property
+    def series(self):
+        return [dir(s) for s in self._series]
+
+
+    def add(self, series):
+        self._series.append(series)
 
 
     def __dir__(self):
-        return {
-            'chart_title': self.chart_title,
-            'series': [s.__dict__ for s in self.series],
-            }
+        return ['chart_title', 'series']
 
 
     def view(self, data_model):
@@ -201,14 +208,14 @@ class GenericPlot(DataViewer):
         '''
         s = PlotSeries(self.axes)
         s.view(data_model)
-        self.series.append(s)
+        self._series.append(s)
 
 
     def plot(self):
         import pylab as plot
 
         fig = plot.figure()
-        for s in self.series:
+        for s in self._series:
             axes = fig.add_subplot(111)
             if s.axes == 3:
                 axes.plot(s.x_values, s.y_values, s.z_values)
@@ -247,25 +254,11 @@ class PlotSeries(DataViewer):
 
     def __dir__(self):
         if self.axes == 3:
-            return {
-                'name': self.name,
-                'x_values': self.x_values,
-                'x_ticks': self.x_ticks,
-                'y_values': self.y_values,
-                'y_ticks': self.y_ticks,
-                'z_values': self.z_values,
-                'z_ticks': self.z_ticks,
-                'labels': self.labels,
-                }
+            return ['name', 'labels', 'x_values', 'x_ticks',
+                    'y_values', 'y_ticks', 'z_values', 'z_ticks']
         else:
-            return {
-                'name': self.name,
-                'x_values': self.x_values,
-                'x_ticks': self.x_ticks,
-                'y_values': self.y_values,
-                'y_ticks': self.y_ticks,
-                'labels': self.labels,
-                }
+            return ['name', 'labels', 'x_values', 'x_ticks',
+                    'y_values', 'y_ticks']
 
     @property
     def x_ticks(self):

@@ -55,6 +55,7 @@ if numpy_support:
     except ImportError:
         pass
 
+from .prerequisites import read_cache
 from .numpy_utils import is_sequence
 from ..util import is_string
 from . import options
@@ -73,11 +74,13 @@ class CustomDistribution(oldDistribution):
     def __init__(self, attrs=None):
         old_attrs = attrs
         ## setup the environment for custom commands
-        self.environment = attrs.get('environment')
-        if self.environment != None:
+        given_environ = attrs.get('environment')
+        if given_environ != None:
+            self.environment = dict(list(given_environ.items()) +
+                                    list(read_cache().items()))
             del old_attrs['environment']
         else:
-            self.environment = dict()
+            self.environment = read_cache()
         ## non-python required libraries and executables
         self.extern_requires = attrs.get('extern_requires')
         if self.extern_requires != None:

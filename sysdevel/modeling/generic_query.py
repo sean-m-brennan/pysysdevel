@@ -83,18 +83,23 @@ class Query(object):
             args = sys.argv
 
         try:
-            ## example: ./query.py --web 3 some_json_encoded_string
+            ## example: ./query.py --web 3 some_json_encoded_params_string
             web_idx = args.index('--web')
-            step = int(args[web_idx+1])
+            try:
+                step = int(args[web_idx+1])
+                method_name = 'step%d' % step
+            except ValueError:
+                method_name = args[web_idx+1]
             json_str = ' '.join(args[web_idx+2:])
             try:
                 import json
             except ImportError:
                 import simplejson as json
             params = json.loads(json_str)
-            method = getattr(self, 'step%d' % step)
+            method = getattr(self, method_name)
             results = method(params)
-            print(json.dumps(results, default=json_handler))
+            # FIXME DataViewer object JSON is broken
+            #print(json.dumps(results, default=json_handler))
         except ValueError:
             ## example: ./query.py --param1=val1 --param2 val2 --param3 = val3
             kwargs = dict()
@@ -103,18 +108,29 @@ class Query(object):
                 if arg == '=':
                     continue  ## ignore bare equals
                 if arg.startswith('--'):
-                    if param_name:  ## i.e. '--param1 --param2'
+                    if param_name:
+                        ## i.e. '--param1 --param2'
                         kwargs[param_name] = None
                     if '=' in arg:
                         args = arg.split('=')
                         param_name = args[0][2:]
                         if args[1] != '':
-                            kwargs[param_name] = args[1]  ## i.e. '--param=value'
-                            param_name = None
+                            ## i.e. '--param=value'
+                            kwargs[param_name] = args[1]
                         else:
-                            continue  ## i.e. '--param= value'
+                            ## i.e. '--param= value'
+                            continue
                 elif param_name:
-                    kwargs[param_name] = arg  ## i.e. '--param value'
+                    if param_name in kwargs.keys():
+                        if kwargs[param_name] is None:
+                            kwargs[param_name] = arg
+                        else:
+                            ## i.e. '--param value1 value2'
+                            kwargs[param_name] = list(kwargs[param_name])
+                            kwargs[param_name].append(arg)
+                    else:
+                        ## i.e. '--param value'
+                        kwargs[param_name] = arg
                 else:
                     continue  ## ignore bare values
 

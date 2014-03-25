@@ -3,6 +3,7 @@ import os
 import glob
 import sys
 import subprocess
+import shutil
 
 from ..prerequisites import find_program, as_admin, ConfigError
 from ..building import process_progress
@@ -47,6 +48,8 @@ class configuration(py_config):
 
 
     def install(self, environ, version, strict=False, locally=True):
+        ## always locally, o.w. won't work
+        locally = True
         if not self.found:
             if version is None:
                 version = self.version

@@ -43,7 +43,7 @@ except ImportError:
     from distutils.command.build_ext import build_ext
 
 from ..filesystem import mkdir, copy_tree, recursive_chown
-from ..prerequisites import find_program
+from ..prerequisites import find_program, ConfigError
 from ..building import configure_file, configure_files
 from .. import options
 from ... import CLIENT_SUPPORT_DIR
@@ -80,7 +80,7 @@ class build_js(build_ext):
         if self.pyjscompiler is None:
             try:
                 self.pyjscompiler = find_program('pyjsbuild', [self.pyjspath])
-            except Exception:  # pylint: disable=W0703
+            except ConfigError:  # pylint: disable=W0703
                 pass
 
 
@@ -92,6 +92,7 @@ class build_js(build_ext):
         self.run_command('build_src')
         build = self.get_finalized_command('build')
         environ = self.distribution.environment
+        print 'Environ: ' + str(environ)
 
         for wext in self.web_ext_modules:
             if self.distribution.verbose:
@@ -132,9 +133,12 @@ class build_js(build_ext):
                         configure_file(environ, s,
                                        os.path.join(working_dir,
                                                     os.path.basename(s)))
-                    import pyjs  # pylint: disable=F0401,W0611,W0612
+                    #import pyjs  # pylint: disable=F0401,W0611,W0612
                     ## TODO: use pyjs module directly (instead of 'pyjsbuild')
-                    compiler = environ['PYJSBUILD'] or self.pyjscompiler
+                    try:
+                        compiler = environ['PYJSBUILD']
+                    except KeyError:
+                        compiler = self.pyjscompiler
                     if compiler is None:
                         raise DistutilsExecError("no value pyjsbuild executable found or given")
                     cmd_line = [os.path.abspath(compiler)]
