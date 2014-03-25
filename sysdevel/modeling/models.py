@@ -190,7 +190,11 @@ class GenericPlot(DataViewer):
 
     @property
     def series(self):
-        return [dir(s) for s in self._series]
+        d = dict()
+        for s in self._series:
+            for z in dir(s):
+                d[z] = getattr(s, z)
+        return d
 
 
     def add(self, series):

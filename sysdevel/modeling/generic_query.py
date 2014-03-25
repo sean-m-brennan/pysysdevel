@@ -98,8 +98,7 @@ class Query(object):
             params = json.loads(json_str)
             method = getattr(self, method_name)
             results = method(params)
-            # FIXME DataViewer object JSON is broken
-            #print(json.dumps(results, default=json_handler))
+            print(json.dumps(results, default=json_handler))
         except ValueError:
             ## example: ./query.py --param1=val1 --param2 val2 --param3 = val3
             kwargs = dict()
