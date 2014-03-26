@@ -35,7 +35,6 @@ import fnmatch
 import struct
 import glob
 import traceback
-import site
 import ast
 import re
 import shutil
@@ -755,7 +754,6 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
             if options.VERBOSE:
                 sys.stdout.write(' done\n')
         if locally:
-            site.addsitedir(target_lib_dir)
             if not target_lib_dir in sys.path:
                 sys.path.insert(0, target_lib_dir)
         os.chdir(here)

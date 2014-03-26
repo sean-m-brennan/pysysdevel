@@ -316,7 +316,6 @@ class py_config(config):
             return True #FIXME
         else:
             try:
-                import site
                 impl = __import__(self.pkg.lower())
                 check_version = False
                 if hasattr(impl, '__version__'):
