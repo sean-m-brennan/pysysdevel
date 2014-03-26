@@ -89,7 +89,7 @@ def handle_arguments(argv, option_list=()):
                         runscript = os.path.join(root, filename)
                         break
             argv.remove(arg)
-            break
+
         if arg.startswith('--ziplib'):
             if '=' in arg:
                 opts['ziplib'] = arg[9:]
@@ -97,7 +97,8 @@ def handle_arguments(argv, option_list=()):
                     opts['ziplib'] += '.zip'
             else:
                 opts['ziplib'] = options.default_py2exe_library
-            
+            argv.remove(arg)
+
     if bundle and app != '' and runscript != '':
         opts['bundle'] = bundle
         opts['runscript'] = runscript
