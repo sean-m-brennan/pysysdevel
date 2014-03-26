@@ -29,7 +29,7 @@ class configuration(prog_config):
         classpaths = []
         if not limit:
             try:
-                pathlist = environ['CLASSPATH'].split(os.pathsep)
+                pathlist = environ['CLASSPATH']#.split(os.pathsep)
                 for path in pathlist:
                     classpaths.append(os.path.dirname(path))
             except KeyError:
@@ -42,10 +42,12 @@ class configuration(prog_config):
                 classpaths.append(os.path.join(d, 'ANTLR', 'lib'))
 
         try:
+            java_home = None
+            if 'JAVA_HOME' in environ.keys():
+                java_home = os.path.join(environ['JAVA_HOME'], 'lib')
             jarfile = find_file('antlr*' + version[0] + '*.jar',
                                 ['/usr/share/java', '/usr/local/share/java',
-                                 '/opt/local/share/java',
-                                 os.path.join(environ['JAVA_HOME'], 'lib'),
+                                 '/opt/local/share/java', java_home,
                                  antlr_root,] + classpaths)
             self.environment['ANTLR'] = [environ['JAVA'],
                                          "-classpath", os.path.abspath(jarfile),
