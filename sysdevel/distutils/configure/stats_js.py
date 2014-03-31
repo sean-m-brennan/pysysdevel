@@ -11,13 +11,16 @@ class configuration(file_config):
     Fetch three.js stats tool
     """
     def __init__(self):
-        file_config.__init__(self, debug=False)
+        file_config.__init__(self, 'stats.min.js',
+                             os.path.join(options.target_build_dir,
+                                          options.javascript_dir),
+                             debug=False)
 
 
     def install(self, environ, version, strict=False, locally=True):
         website = 'https://github.com/mrdoob/stats.js/blob/master/build/'
-        js_file = 'stats.min.js'
-        js_dir = os.path.join(options.target_build_dir, options.javascript_dir)
+        js_file = self.targets[0]
+        js_dir = self.target_dir
         if not os.path.exists(js_dir):
             os.makedirs(js_dir)
         if not os.path.exists(os.path.join(js_dir, js_file)):

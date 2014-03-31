@@ -3,7 +3,6 @@ import os
 import glob
 import sys
 import subprocess
-import shutil
 
 from ..prerequisites import find_program, as_admin, ConfigError
 from ..building import process_progress

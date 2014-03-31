@@ -27,6 +27,9 @@ permissions and limitations under the License.
 'dependencies' command for printing a list of all dependencies for this setup
 """
 
+INTERLEAVED_OUTPUT = True
+
+
 import os
 import sys
 import platform
@@ -38,8 +41,6 @@ from ..configure import configure_system
 from ..filesystem import mkdir
 from .. import options
 from ...util import is_string
-
-INTERLEAVED_OUTPUT = True
 
 if INTERLEAVED_OUTPUT:
     #pylint: disable=W0611
@@ -65,16 +66,17 @@ class dependencies(Command):
                     ('show-subpackages', None,
                      'show the dependencies of individual sub-packages'),
                     ('sublevel=', None, 'sub-package level'),
-                    ('local-install', None,
-                     'local installation of dependencies'),]
+                    ('system-install', None,
+                     'system-wide installation of dependencies'),]
 
 
     def initialize_options(self):
         self.show = False
         self.show_subpackages = False
-        self.local_install = False
+        self.system_install = False
         self.sublevel = 0
         self.log_only = False
+        self.ran = False
 
     def finalize_options(self):
         if self.sublevel is None:
@@ -109,13 +111,14 @@ class dependencies(Command):
             for (pkg_name, pkg_dir) in self.distribution.subpackages:
                 rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
                 if not rf.is_sysdevel_build:
-                    ## not sysdevel, look in setup.py requires keyword
+                    ## not sysdevel, look in setup.py 'requires' keyword
                     self.requirements += rf.requires_list
                     if self.show_subpackages:
                         print(pkg_name.upper() + ':  ' +
                               ', '.join([r if is_string(r) else r[0]
                                          for r in rf.requires_list]))
                 else:
+                    ##FIXME
                     cmd = [sys.executable, os.path.join(pkg_dir, 'setup.py'),
                            ] + argv + ['--sublevel=' + str(self.sublevel + 1)]
                     p = subprocess.Popen(cmd,
@@ -129,6 +132,7 @@ class dependencies(Command):
                     if self.show_subpackages:
                         print(pkg_name.upper() + ': ' + str(p_list))
                     self.requirements += p_list.split(',')
+
                     '''
                     if rf.needs_early_config:
                         print('Dependencies for ' + pkg_name +
@@ -137,12 +141,13 @@ class dependencies(Command):
                     cmd = [sys.executable, os.path.join(pkg_dir, 'setup.py'),
                            'dependencies',
                            '--sublevel=' + str(self.sublevel + 1)]
-                    if self.local_install:
-                        cmd.append('--local-install')
+                    if self.system_install:
+                        cmd.append('--system-install')
                     if self.show:
                         cmd.append('--show')
                     if self.show_subpackages:
                         cmd.append('--show-subpackages')
+
                     if not os.path.exists(options.target_build_dir):
                         mkdir(options.target_build_dir)
                     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
@@ -226,12 +231,12 @@ class dependencies(Command):
         deps_list = unversioned + [r[0] for r in versioned]
         self.requirements = versioned + unversioned
 
+        ## FIXME
         if self.sublevel == 0:
             env_old = self.distribution.environment
-            env = configure_system(self.requirements,
-                                   self.distribution.version,
-                                   install=(not self.show),
-                                   locally=self.local_install)
+            locally = not self.system_install
+            env = configure_system(self.requirements, self.distribution.version,
+                                   install=(not self.show), locally=locally)
             if self.show:
                 print(self.distribution.metadata.name + ' ' +
                       token + ', '.join(set([' '.join(d.split())
@@ -241,3 +246,4 @@ class dependencies(Command):
                                                      list(env.items()))
         else:  ## sysdevel subpackage, collect via stdout (see above)
             print(token + ', '.join(deps_list))
+        self.ran = True

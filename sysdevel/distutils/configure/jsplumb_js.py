@@ -11,8 +11,11 @@ class configuration(file_config):
     Fetch jsPlumb (using jQuery)
     """
     def __init__(self):
-        file_config.__init__(self, dependencies=[('jquery', '1.8.1'),
-                                               ('jquery_ui', '1.8.23')],
+        file_config.__init__(self, 'jquery.jsPlumb.min.js',
+                             os.path.join(options.target_build_dir,
+                                          options.javascript_dir),
+                             dependencies=[('jquery', '1.8.1'),
+                                           ('jquery_ui', '1.8.23')],
                              debug=False)
 
 
@@ -26,8 +29,8 @@ class configuration(file_config):
                       version + '/dist/js/'
         file_parts = file_pattern.split('*')
         js_file = file_parts[0] + version + file_parts[1]
-        js_dir = os.path.join(options.target_build_dir, options.javascript_dir)
-        js_target = 'jquery.jsPlumb.min.js'
+        js_dir = self.target_dir
+        js_target = self.targets[0]
         if not os.path.exists(js_dir):
             os.makedirs(js_dir)
         if not os.path.exists(os.path.join(js_dir, js_target)):

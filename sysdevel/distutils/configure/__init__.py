@@ -223,7 +223,8 @@ def __run_helper__(environment, short_name, helper, version,
         ver_info = ''
         if version:
             ver_info = ' v.' + str(version)
-        print('Error loading ' + short_name + ver_info + '  configuration.')
+        err.write('Error loading ' + short_name + ver_info +
+                  ' configuration.\n')
         raise
     for dep in cfg.dependencies:
         dep_name = dep
@@ -248,14 +249,21 @@ def __run_helper__(environment, short_name, helper, version,
         out.flush()
     if skip:
         cfg.null()
-    elif cfg.force or not cfg.is_installed(environment, version, strict):
+    elif not cfg.is_installed(environment, version, strict):
         if install:
             if not quiet:
                 out.write('Installing...\n')
             cfg.install(environment, version, strict, locally)
         elif not quiet:
             out.write('not found.\n')
-    else:
+    elif cfg.force:
+        if install:
+            if not quiet:
+                out.write('Forcing install...\n')
+            cfg.install(environment, version, strict, locally)
+        elif not quiet:
+            out.write('found.\n')
+    elif not quiet:
         out.write('found.\n')
     env = dict(list(cfg.environment.items()) + list(environment.items()))
     if not 'PREREQUISITES' in env:

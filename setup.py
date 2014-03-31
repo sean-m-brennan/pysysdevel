@@ -55,6 +55,8 @@ setup(name         = 'pysysdevel',
                                    os.path.join('ui', '*.js'),
                                    os.path.join('ui', '*.xrc'),
                                    ]},
+      ## FIXME
+      #requires     = ['mod_pywebsocket', 'pyjamas', 'wx', 'gtk'],# conditional
       classifiers  = [
           'Development Status :: 4 - Beta',
           'Environment :: Console',

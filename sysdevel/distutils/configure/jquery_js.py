@@ -11,7 +11,10 @@ class configuration(file_config):
     Fetch jQuery
     """
     def __init__(self):
-        file_config.__init__(self, debug=False)
+        file_config.__init__(self, 'jquery.min.js',
+                             os.path.join(options.target_build_dir,
+                                          options.javascript_dir),
+                             debug=False)
 
 
     def install(self, environ, version, strict=False, locally=True):
@@ -21,8 +24,8 @@ class configuration(file_config):
             version = latest_version('jquery', website, file_pattern)
         file_parts = file_pattern.split('*')
         js_file = file_parts[0] + version + file_parts[1]
-        js_dir = os.path.join(options.target_build_dir, options.javascript_dir)
-        js_target = 'jquery.min.js'
+        js_dir = self.target_dir
+        js_target = self.targets[0]
         if not os.path.exists(js_dir):
             os.makedirs(js_dir)
         if not os.path.exists(os.path.join(js_dir, js_target)):

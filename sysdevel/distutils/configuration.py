@@ -34,6 +34,8 @@ import subprocess
 import imp
 import glob
 import traceback
+import pkgutil
+from distutils.sysconfig import get_python_lib
 
 from .prerequisites import programfiles_directories, find_header, find_library
 from .prerequisites import find_definitions, find_program, system_uses_homebrew
@@ -160,11 +162,23 @@ class lib_config(config):
 
 
 class file_config(config):
-    def __init__(self, dependencies=None, debug=False, force=False):
+    def __init__(self, filename, dnld_dir,
+                 dependencies=None, debug=False, force=False):
         config.__init__(self, dependencies, debug, force)
+        self.target_dir = dnld_dir
+        self.targets = [filename]  ## list of filenames or (subdir, file) tuples
+
 
     def is_installed(self, environ, version=None, strict=False):
-        return False  ## fetch, or copy from download dir
+        for item in self.targets:
+            if isinstance(item, basestring):
+                if not os.path.exists(os.path.join(self.target_dir, item)):
+                    return False
+            else:
+                if not os.path.exists(os.path.join(self.target_dir,
+                                                   item[0], item[1])):
+                    return False
+        return True
 
 
 
@@ -307,15 +321,16 @@ class py_config(config):
 
 
     def is_installed(self, environ, version=None, strict=False):
-        if self.installed:
-            ## Exclude numpy since it's already loaded (used in building)
-            if not self.pkg == 'numpy':
-                #FIXME install check for python pkgs frequently fails
-                ## Check sys.path & site instead
-                pass
-            return True #FIXME
-        else:
+        local_dirs = [os.path.join(os.path.abspath(options.target_build_dir),
+                                   options.local_lib_dir)]
+        search = local_dirs + [get_python_lib()] + sys.path
+        self.found = self.pkg.lower() in [m[1] for m in
+                                          pkgutil.iter_modules(search)]
+        if self.found and not version is None:
             try:
+                for d in local_dirs:
+                    if not d in sys.path:
+                        sys.path.insert(0, d)
                 impl = __import__(self.pkg.lower())
                 check_version = False
                 if hasattr(impl, '__version__'):
@@ -332,16 +347,17 @@ class py_config(config):
                     if strict:
                         not_ok = (compare_versions(ver, version) != 0)
                     if not_ok:
+                        self.found = False
                         if self.debug:
                             print('Wrong version of ' + self.pkg + ': ' +
                                   str(ver) + ' vs ' + str(version))
-                        self.found = False
                         return self.found
                     self.found = True
             except ImportError:
+                self.found = False
                 if self.debug:
                     print(sys.exc_info()[1])
-            return self.found
+        return self.found
 
 
     def install(self, environ, version, strict=False, locally=True):
@@ -428,7 +444,7 @@ def dynamic_module(pkg, version=None, strict=False, dependencies=None,
            "\n" + \
            "    def is_installed(self, environ, " + \
            "version=None, strict=False):\n" + \
-           "        pypi_config.is_installed(self, environ, " + \
+           "        return pypi_config.is_installed(self, environ, " + \
            repr(version) + ", " + repr(strict) + ")\n" + \
            "\n" + \
            "    def install(self, environ, version, " + \

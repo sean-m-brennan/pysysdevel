@@ -66,7 +66,7 @@ def handle_arguments(argv, option_list=()):
         bundle = True
     app = ''
     runscript = ''
-    for arg in argv:
+    for arg in list(argv):
         if arg == '--show':
             opts['install'] = False
         if arg == '--local-install':
@@ -78,6 +78,7 @@ def handle_arguments(argv, option_list=()):
             idx = argv.index(arg)
             options.set_build_dir(argv[idx+1])
 
+        ## args that won't work with setup
         if arg.startswith('--app='):
             app = runscript = arg[6:].lower()
             runscript = arg[6:].lower()
@@ -158,7 +159,7 @@ def handle_arguments(argv, option_list=()):
 
 def get_options(pkg_cfg, opts):
     '''
-    pkg_config is a 'mydistutils.pkg_config' object.
+    pkg_config is a 'sysdevel.distutils.pkg_config' object.
     options from 'handle_arguments' above.
     '''
     target_os = platform.system().lower()  ## disallow cross-compile
@@ -193,7 +194,8 @@ def get_options(pkg_cfg, opts):
         else:
             gtk_includes = []
 
-        excludes = ['bsddb', 'curses', 'email',
+        excludes = ['distutils', 'setuptools', 'sysdevel.distutils',
+                    'bsddb', 'curses',
                     'pywin.debugger', 'pywin.debugger.dbgcon', 'pywin.dialogs',
                     ]
         dll_excludes = ['mswsock.dll', 'powrprof.dll',

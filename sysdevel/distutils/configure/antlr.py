@@ -29,7 +29,7 @@ class configuration(prog_config):
         classpaths = []
         if not limit:
             try:
-                pathlist = environ['CLASSPATH']#.split(os.pathsep)
+                pathlist = environ['CLASSPATH'] ## from java config
                 for path in pathlist:
                     classpaths.append(os.path.dirname(path))
             except KeyError:
