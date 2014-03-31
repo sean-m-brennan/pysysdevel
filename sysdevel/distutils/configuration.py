@@ -475,7 +475,8 @@ def pypi_url(pkg, src=True):
 
 
 def pypi_archive(which, version):
-    if not version in available_versions(which, pypi_url(which),
+    if version is None or \
+       not version in available_versions(which, pypi_url(which),
                                          which + '-*', True):
         print('Warning: version ' + str(version) + ' of ' + which +
               ' is not available.')
