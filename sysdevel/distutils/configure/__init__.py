@@ -39,7 +39,7 @@ from ..configuration import dynamic_module, latest_pypi_version
 from ..configuration import is_pypi_listed
 from ..pypi_exceptions import pypi_exceptions
 from ..filesystem import mkdir
-from .. import options
+from .. import options as opts
 from ...util import is_string
 
 
@@ -68,15 +68,31 @@ def simplify_version(version):
 
 
 def configure_system(prerequisite_list, version,
-                     required_python_version='2.4', install=True, quiet=False,
-                     sublevel=0, out=sys.stdout, err=sys.stderr, locally=False):
+                     required_python_version='2.4', install=None, quiet=False,
+                     sublevel=None, out=sys.stdout, err=sys.stderr,
+                     locally=None, options=dict()):
     '''
     Given a list of required software and optionally a Python version,
     verify that python is the proper version and that
     other required software is installed.
     Install missing prerequisites that have an installer defined.
     '''
-    options.set_top_level(sublevel)
+    if locally is None:  ## parameter value overrides
+        if 'locally' in options.keys():
+            locally = options['locally']
+        else:
+            locally = False  ## default value
+    if install is None:  ## parameter value overrides
+        if 'install' in options.keys():
+            install = options['install']
+        else:
+            install = True  ## default value
+    if sublevel is None:  ## parameter value overrides
+        if 'sublevel' in options.keys():
+            sublevel = options['sublevel']
+        else:
+            sublevel = 0  ## default value
+    opts.set_top_level(sublevel)
 
     environment = dict()
     try:
@@ -126,9 +142,9 @@ def configure_system(prerequisite_list, version,
                                                   out, err, locally)
         save_cache(environment)
     except Exception:  # pylint: disable=W0703
-        logfile = os.path.join(options.target_build_dir, 'config.log')
-        if not os.path.exists(options.target_build_dir):
-            mkdir(options.target_build_dir)
+        logfile = os.path.join(opts.target_build_dir, 'config.log')
+        if not os.path.exists(opts.target_build_dir):
+            mkdir(opts.target_build_dir)
         log = open(logfile, 'a')
         log.write('** Configuration error. **\n' + traceback.format_exc())
         log.close()
@@ -152,8 +168,8 @@ def __configure_package(environment, help_name, skip, install, quiet,
 
     base = help_name = help_name.strip()
     packages = [__package__ + '.', '',]
-    cfg_dir = os.path.abspath(os.path.join(options.target_build_dir,
-                                           '..', options.user_config_dir))
+    cfg_dir = os.path.abspath(os.path.join(opts.target_build_dir,
+                                           '..',  opts.user_config_dir))
     if os.path.exists(cfg_dir) and not cfg_dir in sys.path:
         sys.path.insert(0, cfg_dir)
     successful = False
@@ -169,7 +185,7 @@ def __configure_package(environment, help_name, skip, install, quiet,
             helper = sys.modules[full_name]
             module_path = os.path.dirname(helper.__file__)
             if not package and \
-               not module_path.endswith(options.user_config_dir):
+               not module_path.endswith(opts.user_config_dir):
                 ## Probably an actual package module
                 raise ImportError('Invalid config')
             successful = True
@@ -203,8 +219,7 @@ def __configure_package(environment, help_name, skip, install, quiet,
                 traceback.print_exc()
             err.write('No setup helper module ' + base + '\n')
             raise ImportError('No configuration found for ' + help_name)
-    local_python_dir = os.path.join(options.target_build_dir,
-                                    options.local_lib_dir)
+    local_python_dir = os.path.join(opts.target_build_dir, opts.local_lib_dir)
     if not local_python_dir in sys.path:
         sys.path.insert(0, local_python_dir)
     return __run_helper__(environment, help_name, helper, req_version,
@@ -237,7 +252,6 @@ def __run_helper__(environment, short_name, helper, version,
                                           out, err, locally)
         save_cache(environment)
     environment = read_cache()
-    quiet = False
     if not quiet:
         msg = 'Checking for ' + short_name
         if version:

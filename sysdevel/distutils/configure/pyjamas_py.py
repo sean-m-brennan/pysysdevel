@@ -29,16 +29,20 @@ class configuration(py_config):
             pyjamas_root = os.environ['PYJAMAS_ROOT']
             pyjs_bin = os.path.join(pyjamas_root, 'bin')
             pyjs_lib = os.path.join(pyjamas_root, 'build', 'lib')
-            self.environment['PYJSBUILD'] = find_program('pyjsbuild', [pyjs_bin])
-            sys.path.insert(0, pyjs_lib)
-            import pyjs  # pylint: disable=F0401,W0611,W0612
+            self.environment['PYJSBUILD'] = find_program('pyjsbuild',
+                                                         [pyjs_bin])
             self.found = True
         except (KeyError, ConfigError, ImportError):
             if self.debug:
                 print(sys.exc_info()[1])
             try:
-                import pyjs  # pylint: disable=F0401,W0611,W0612
-                self.environment['PYJSBUILD'] = find_program('pyjsbuild')
+                local = glob.glob(os.path.join(options.target_build_dir,
+                                               'pyjamas-*'))
+                local_bins = []
+                if len(local):
+                    local_bins.append(os.path.join(local[0], 'bin'))
+                self.environment['PYJSBUILD'] = find_program('pyjsbuild',
+                                                             local_bins)
                 self.found = True
             except (ImportError, ConfigError):
                 if self.debug:
@@ -104,7 +108,6 @@ class configuration(py_config):
             search_path = []
             if locally:
                 search_path.append(working_dir)
-                sys.path.insert(0, os.path.join(working_dir, 'build', 'lib'))
             self.environment['PYJSBUILD'] = find_program('pyjsbuild',
                                                          search_path)
 
