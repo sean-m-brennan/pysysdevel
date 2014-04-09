@@ -76,7 +76,10 @@ def fetch(website, remote, local, quiet=False):
     mkdir(options.download_dir)
     set_downloading_file(remote)
     if not os.path.exists(os.path.join(options.download_dir, local)):
-        urlretrieve(website + remote, os.path.join(options.download_dir, local),
+        url = website + '/' + remote
+        if website.endswith('/'):
+            url = website + remote
+        urlretrieve(url, os.path.join(options.download_dir, local),
                     download_progress, quiet=quiet)
         if options.VERBOSE:
             sys.stdout.write('\n')
@@ -162,13 +165,13 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None,
             try:
                 proxy_url = os.environ['http_proxy']
             except KeyError:
-                raise DownloadError('No proxy specified. ' +
-                                    'Either call urlretrieve with a proxy ' +
-                                    "argument, or provide a 'http_proxy' " +
-                                    'environment variable.')
+                pass
 
-    proxies = ProxyHandler({'http': proxy_url, 'https': proxy_url})
-    opener = build_opener(proxies)
+    if not proxy_url is None:
+        proxies = ProxyHandler({'http': proxy_url, 'https': proxy_url})
+        opener = build_opener(proxies)
+    else:
+        opener = build_opener()
     install_opener(opener)
 
     try:

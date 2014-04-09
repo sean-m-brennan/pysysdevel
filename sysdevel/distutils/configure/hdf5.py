@@ -4,7 +4,8 @@ import sys
 import platform
 import subprocess
 
-from ..prerequisites import programfiles_directories, find_header, find_libraries, check_call, autotools_install, global_install, ConfigError, compare_versions
+from ..prerequisites import programfiles_directories, find_header, find_libraries, check_call, autotools_install_without_fetch, global_install, ConfigError, compare_versions
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 from .. import options
 
@@ -85,12 +86,20 @@ class configuration(lib_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '1.8.10'
+        website = 'http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-' + \
+                  str(version) + '/src/'
+        src_dir = 'hdf5-' + str(version)
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '1.8.10'
-            website = ('http://www.hdfgroup.org/',
-                       'ftp/HDF5/releases/hdf5-' + str(version) + '/src/')
             env = dict()
             if 'windows' in platform.system().lower():
                 env['LIBS'] = '-lws2_32'
@@ -100,13 +109,12 @@ class configuration(lib_config):
                 except subprocess.CalledProcessError:
                     pass
             if locally or 'windows' in platform.system().lower():
-                src_dir = 'hdf5-' + str(version)
-                archive = src_dir + '.tar.gz'
-                autotools_install(environ, website, archive, src_dir, locally,
+                src_dir = self.download(environ, version, strict)
+                autotools_install_without_fetch(environ, src_dir, locally,
                                   extra_cfg=['--enable-cxx','--enable-fortran'],
                                   addtnl_env=env)
             else:
-                global_install('HDF5', website,
+                global_install('HDF5', None,
                                brew='hdf5', port='hdf5',
                                deb='libhdf5-dev', rpm='hdf5-devel')
             if not self.is_installed(environ, version, strict):

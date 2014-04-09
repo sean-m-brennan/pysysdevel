@@ -32,16 +32,33 @@ class configuration(prog_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '1.9.4'
+        website = 'http://dist.neo4j.org/'
+        src_dir = 'neo4j-community-' + str(version)
+        if 'windows' in platform.system().lower():
+            win_ver = version.replace('.', '_')
+            win_arch = 'x32'
+            if struct.calcsize('P') == 8:
+                win_arch = 'x64'
+            src_dir = ''
+            archive = 'neo4j-community_windows-' + win_arch + \
+                      '_' + win_ver + '.exe'
+        else:
+            archive = src_dir + '-unix.tar.gz'
+        fetch(website, archive, archive)
+        if not 'windows' in platform.system().lower():
+            unarchive(archive, src_dir)
+        return src_dir
+
 
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '1.9.4'
-            website = 'http://dist.neo4j.org/'
-            src_dir = 'neo4j-community-' + str(version)
-            archive = src_dir + '-unix.tar.gz'
+            src_dir = self.download(environ, version, strict)
             if 'windows' in platform.system().lower() or \
                (not locally and system_uses_homebrew()):
+                website = ('http://dist.neo4j.org/',)
                 win_ver = version.replace('.', '_')
                 win_arch = 'x32'
                 if struct.calcsize('P') == 8:
@@ -54,14 +71,10 @@ class configuration(prog_config):
                            )
                 self.environment['NEO4J'] = ['neo4j', 'start']
             elif not locally:
-                fetch(website, archive, archive)
-                unarchive(archive, src_dir)
                 local_dir = os.path.join(options.target_build_dir,
                                          src_dir, 'bin')
                 admin_check_call([os.path.join(local_dir, 'neo4j'), 'install'])
             else:
-                fetch(website, archive, archive)
-                unarchive(archive, src_dir)
                 local_dir = os.path.join(options.target_build_dir,
                                          src_dir, 'bin')
                 self.environment['NEO4J'] = [os.path.join(local_dir, 'neo4j'),

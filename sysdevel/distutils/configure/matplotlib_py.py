@@ -2,7 +2,8 @@
 import os
 import sys
 
-from ..prerequisites import compare_versions, install_pypkg
+from ..prerequisites import compare_versions, install_pypkg_without_fetch
+from ..fetching import fetch, unarchive
 from ..configuration import py_config
 from .. import options
 
@@ -42,14 +43,21 @@ class configuration(py_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        website = 'https://github.com/downloads/matplotlib/matplotlib/'
+        if version is None:
+            version = self.version
+        src_dir = 'matplotlib-' + str(version)
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            website = 'https://github.com/downloads/matplotlib/matplotlib/'
-            if version is None:
-                version = self.version
-            src_dir = 'matplotlib-' + str(version)
-            archive = src_dir + '.tar.gz'
-            pth = install_pypkg(src_dir, website, archive, locally=locally)
+            self.download(environ, version, strict)
+            pth = install_pypkg_without_fetch(self.pkg, locally=locally)
 
             if not self.is_installed(environ, version, strict):
                 raise Exception('matplotlib installation failed.')

@@ -35,14 +35,15 @@ import imp
 import glob
 import traceback
 import pkgutil
+import shutil
 from distutils.sysconfig import get_python_lib
 
 from .prerequisites import programfiles_directories, find_header, find_library
 from .prerequisites import find_definitions, find_program, system_uses_homebrew
-from .prerequisites import compare_versions, install_pypkg, RequirementsFinder
-from .prerequisites import ConfigError, read_cache
+from .prerequisites import compare_versions, install_pypkg_without_fetch
+from .prerequisites import RequirementsFinder, ConfigError, read_cache
 from .filesystem import glob_insensitive
-from .fetching import urlretrieve, fetch, open_archive, DownloadError
+from .fetching import urlretrieve, fetch, unarchive, open_archive, DownloadError
 from .fetching import URLError, HTTPError, ContentTooShortError
 from .building import process_progress
 from . import options
@@ -64,6 +65,10 @@ class config(object):
 
     def null(self):
         pass
+
+    def download(self, environ, version, strict=False):
+        # pylint: disable=W0613
+        return ''
 
     def is_installed(self, environ, version, strict=False):
         raise NotImplementedError('is_installed')
@@ -162,11 +167,24 @@ class lib_config(config):
 
 
 class file_config(config):
-    def __init__(self, filename, dnld_dir,
+    def __init__(self, filename, dnld_dir, website,
                  dependencies=None, debug=False, force=False):
         config.__init__(self, dependencies, debug, force)
         self.target_dir = dnld_dir
+        self.website = website
+        self.source = filename
         self.targets = [filename]  ## list of filenames or (subdir, file) tuples
+
+
+    def download(self, environ, version, strict=False):
+        if not version is None:
+            self.website = self.website + '/' + version + '/'
+        for t in self.targets:
+            if isinstance(t, basestring):
+                fetch(self.website, t, t)
+            else:
+                fetch(self.website + '/' + t[0], t[1], t[1])
+        return ''
 
 
     def is_installed(self, environ, version=None, strict=False):
@@ -179,6 +197,23 @@ class file_config(config):
                                                    item[0], item[1])):
                     return False
         return True
+
+
+    def install(self, environ, version, strict=False, locally=True):
+        self.download(environ, version, strict)
+        if not os.path.exists(self.target_dir):
+            os.makedirs(self.target_dir)
+        for t in self.targets:
+            if isinstance(t, basestring):
+                shutil.copy(os.path.join(options.download_dir, t),
+                            self.target_dir)
+            else:
+                js_subdir = os.path.join(self.target_dir, t[0])
+                js_file = t[1]
+                if not os.path.exists(js_subdir):
+                    os.makedirs(js_subdir)
+                shutil.copy(os.path.join(options.download_dir, js_file),
+                            js_subdir)
 
 
 
@@ -317,7 +352,6 @@ class py_config(config):
         self.indexed = pkg
         if indexed_as:
             self.indexed = indexed_as
-        self.installed = False
 
 
     def is_installed(self, environ, version=None, strict=False):
@@ -360,36 +394,51 @@ class py_config(config):
         return self.found
 
 
-    def install(self, environ, version, strict=False, locally=True):
-        if not self.found:
-            website = pypi_url(self.indexed)
-            if version is None:
-                version = self.version
-            src_dir = self.indexed + '-' + str(version)
-            archive = src_dir + '.tar.gz'
+    def download(self, environ, version, strict=False):
+        website = pypi_url(self.indexed)
+        if version is None:
+            version = self.version
+        src_dir = self.indexed + '-' + str(version)
+        archive = src_dir + '.tar.gz'
+        try:
+            fetch(website, archive, archive, quiet=True)
+            unarchive(archive, src_dir)
+            return src_dir
+        except (DownloadError, URLError, HTTPError, ContentTooShortError):
             try:
+                archive = src_dir + '.zip'
                 fetch(website, archive, archive, quiet=True)
+                unarchive(archive, src_dir)
+                return src_dir
             except (DownloadError, URLError, HTTPError, ContentTooShortError):
                 try:
-                    archive = src_dir + '.zip'
+                    archive = src_dir + '.tar.bz2'
                     fetch(website, archive, archive, quiet=True)
+                    unarchive(archive, src_dir)
+                    return src_dir
                 except (DownloadError, URLError, HTTPError, ContentTooShortError):
                     try:
-                        archive = src_dir + '.tar.bz2'
+                        archive = src_dir + '.tgz'
                         fetch(website, archive, archive, quiet=True)
+                        unarchive(archive, src_dir)
+                        return src_dir
                     except (DownloadError, URLError, HTTPError, ContentTooShortError):
                         try:
-                            archive = src_dir + '.tgz'
+                            archive = src_dir + '.tar.Z'
                             fetch(website, archive, archive, quiet=True)
+                            unarchive(archive, src_dir)
+                            return src_dir
                         except (DownloadError, URLError, HTTPError, ContentTooShortError):
-                            try:
-                                archive = src_dir + '.tar.Z'
-                                fetch(website, archive, archive, quiet=True)
-                            except (DownloadError, URLError, HTTPError, ContentTooShortError):
-                                archive = src_dir + '.tar'
-                                fetch(website, archive, archive)
-            install_pypkg(src_dir, website, archive, locally=locally)
-            self.installed = True
+                            archive = src_dir + '.tar'
+                            fetch(website, archive, archive)
+                            unarchive(archive, src_dir)
+                            return src_dir
+
+
+    def install(self, environ, version, strict=False, locally=True):
+        if not self.found:
+            self.download(environ, version, strict)
+            install_pypkg_without_fetch(self.pkg, locally=locally)
             if not self.is_installed(environ, version, strict):
                 print(str(self.pkg) + ' claims failed')
                 #raise ConfigError(self.pkg, 'Installation failed.')
@@ -420,6 +469,12 @@ class pypi_config(py_config):
             z.close()
         py_config.__init__(self, pkg, version, dependencies, indexed_as,
                            debug, force)
+
+
+    def download(self, environ, version, strict=False):
+        if not strict:
+            version = latest_pypi_version(self.indexed, version)
+        return py_config.download(self, environ, version, strict)
 
 
     def install(self, environ, version, strict=False, locally=True):
@@ -475,99 +530,102 @@ def pypi_url(pkg, src=True):
 
 
 def pypi_archive(which, version):
+    archive_types = ['.zip', '.tar.bz2', '.tar.gz', '.tgz', '.tar.Z', '.tar']
     if version is None or \
        not version in available_versions(which, pypi_url(which),
                                          which + '-*', True):
         print('Warning: version ' + str(version) + ' of ' + which +
               ' is not available.')
         version = earliest_pypi_version(which)
-    listing = os.path.join(options.target_build_dir, '.' + which + '_list')
-    if not os.path.exists(listing):
-        urlretrieve(pypi_url(which), listing)
-    f = open(listing, 'r')
-    contents = f.read()
-    f.close()
-    l = len(which + '-' + version)
-    idx = contents.find(which + '-' + version)
-    for archive in ['.zip', '.tar.bz2', '.tar.gz', '.tgz', '.tar.Z', '.tar']:
-        if contents[idx+l:].startswith(archive):
-            return archive
+    try:
+        listing = os.path.join(options.target_build_dir, '.' + which + '_list')
+        if not os.path.exists(listing):
+            urlretrieve(pypi_url(which), listing, quiet=True)
+        f = open(listing, 'r')
+        contents = f.read()
+        f.close()
+        l = len(which + '-' + version)
+        idx = contents.find(which + '-' + version)
+        for archive in archive_types:
+            if contents[idx+l:].startswith(archive):
+                return archive
+    except (DownloadError, URLError, HTTPError, ContentTooShortError):
+        ## Default to whatever is in the third_party directory
+        file_list = glob.glob(os.path.join(options.download_dir, which + '*'))
+        for f in file_list:
+            for archive in archive_types:
+                if archive in f:
+                    return archive
     raise ConfigError(which, 'No source archive available')
 
 
 def available_versions(what, website, pattern, archives=False):
+    archive_types = ['.zip', '.tar.bz2', '.tar.gz', '.tgz', '.tar.Z', '.tar']
     pre = pattern.split('*')[0]
     post = pattern.split('*')[-1]
-    listing = os.path.join(options.target_build_dir, '.' + what + '_list')
-    urlretrieve(website + '/', listing)
-    versions = []
-    f = open(listing, 'r')
-    contents = f.read()
-    f.close()
-    idx = contents.find(pre, 0)
-    l = len(pre)
-    while idx >= 0:
-        endl = contents.find('\n', idx)
-        end = contents.find(post, idx)
-        if archives:
-            end_t = contents.find('.tar', idx, endl)
-            end_z = contents.find('.zip', idx, endl)
-            if end_t > 0 and end_z > 0:
-                end = min(end_t, end_z)
-            else:
-                end = max(end_t, end_z)
-        if end > 0 and end < endl:
-            versions.append(contents[idx+l:end])
-        idx = contents.find(pre, end)
-    return versions
+    try:
+        listing = os.path.join(options.target_build_dir, '.' + what + '_list')
+        urlretrieve(website + '/', listing, quiet=True)
+        versions = []
+        f = open(listing, 'r')
+        contents = f.read()
+        f.close()
+        idx = contents.find(pre, 0)
+        l = len(pre)
+        while idx >= 0:
+            endl = contents.find('\n', idx)
+            end = contents.find(post, idx)
+            if archives:
+                end_t = contents.find('.tar', idx, endl)
+                end_z = contents.find('.zip', idx, endl)
+                if end_t > 0 and end_z > 0:
+                    end = min(end_t, end_z)
+                else:
+                    end = max(end_t, end_z)
+            if end > 0 and end < endl:
+                versions.append(contents[idx+l:end])
+            idx = contents.find(pre, end)
+        return versions
+    except (DownloadError, URLError, HTTPError, ContentTooShortError):
+        ## Default to whatever is in the third_party directory
+        file_list = glob.glob(os.path.join(options.download_dir, pattern))
+        if len(file_list) > 0:
+            pre = os.path.join(options.download_dir, pre)
+            version_list = []
+            for f in file_list:
+                for archive in archive_types:
+                    if archive in f:
+                        version_list.append(f[len(pre):-(len(post) +
+                                                         len(archive))])
+                        break
+            return version_list
+        else:
+            raise
+
 
 
 def latest_version(what, website, pattern,
                    requested='0', archives=False):
-    pre = pattern.split('*')[0]
-    post = pattern.split('*')[-1]
-    try:
-        version = requested
-        versions = available_versions(what, website, pattern, archives)
-        for ver in versions:
-            if compare_versions(version, ver) < 0:
-                version = ver
-        if requested in versions:
-            return requested
-        return version
-    except (DownloadError, URLError, HTTPError, ContentTooShortError):
-        ## Default to whatever is in the third_party directory
-        file_list = glob.glob(os.path.join(options.download_dir, pattern))
-        if len(file_list) > 0:
-            pre = os.path.join(options.download_dir, pre)
-            version = file_list[0][len(pre):-len(post)]
-            return version
-        else:
-            raise
+    version = requested
+    versions = available_versions(what, website, pattern, archives)
+    for ver in versions:
+        if compare_versions(version, ver) < 0:
+            version = ver
+    if requested in versions:
+        return requested
+    return version
 
 
 def earliest_version(what, website, pattern,
                      requested='9999999999', archives=False):
-    pre = pattern.split('*')[0]
-    post = pattern.split('*')[-1]
-    try:
-        version = requested
-        versions = available_versions(what, website, pattern, archives)
-        for ver in versions:
-            if compare_versions(version, ver) > 0:
-                version = ver
-        if requested in versions:
-            return requested
-        return version
-    except (DownloadError, URLError, HTTPError, ContentTooShortError):
-        ## Default to whatever is in the third_party directory
-        file_list = glob.glob(os.path.join(options.download_dir, pattern))
-        if len(file_list) > 0:
-            pre = os.path.join(options.download_dir, pre)
-            version = file_list[0][len(pre):-len(post)]
-            return version
-        else:
-            raise
+    version = requested
+    versions = available_versions(what, website, pattern, archives)
+    for ver in versions:
+        if compare_versions(version, ver) > 0:
+            version = ver
+    if requested in versions:
+        return requested
+    return version
 
 
 def latest_pypi_version(what, requested_ver=None):

@@ -4,7 +4,8 @@ import sys
 import struct
 import subprocess
 
-from ..prerequisites import find_header, find_libraries, find_program, programfiles_directories, autotools_install, global_install, ConfigError
+from ..prerequisites import find_header, find_libraries, find_program, programfiles_directories, autotools_install_without_fetch, global_install, ConfigError
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 from .. import options
 
@@ -84,18 +85,29 @@ class configuration(lib_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '1.6.4'
+        website = 'http://www.open-mpi.org/software/ompi/v' + \
+                  '.'.join(version.split('.')[:2]) + '/downloads/'
+        src_dir = 'openmpi-' + str(version)
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '1.6.4'
-            website = ('http://www.open-mpi.org/',
-                       'software/ompi/v' + '.'.join(version.split('.')[:2]) +
-                       '/downloads/')
             if locally:
-                src_dir = 'openmpi-' + str(version)
-                archive = src_dir + '.tar.gz'
-                autotools_install(environ, website, archive, src_dir, locally)
+                src_dir = self.download(environ, version, strict)
+                autotools_install_without_fetch(environ, src_dir, locally)
             else:
+                if version is None:
+                    version = '1.6.4'
+                website = ('http://www.open-mpi.org/',
+                           'software/ompi/v' + '.'.join(version.split('.')[:2]) +
+                           '/downloads/')
                 global_install('OpenMPI', website,
                                brew='open-mpi', port='openmpi',
                                deb='libopenmpi-dev', rpm='openmpi-devel')

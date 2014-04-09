@@ -59,15 +59,20 @@ class configuration(prog_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '3.1.2'
+        website = 'http://www.antlr' + str(version[0]) + '.org/download/'
+        src_dir = 'antlr-' + str(version)
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '3.1.2'
-            website = 'http://www.antlr' + str(version[0]) + '.org/download/'
-            src_dir = 'antlr-' + str(version)
-            archive = src_dir + '.tar.gz'
-            fetch(website, archive, archive)
-            unarchive( archive, src_dir)
+            src_dir = self.download(environ, version, strict)
             jarfile = os.path.join(options.target_build_dir, src_dir + '.jar')
             if locally:
                 shutil.copy(os.path.join(options.target_build_dir, src_dir,

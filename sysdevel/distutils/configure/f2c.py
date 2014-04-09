@@ -34,11 +34,17 @@ class configuration(config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        website = 'http://www.netlib.org/f2c/'
+        header_file = 'f2c.h'        
+        fetch(website, header_file, header_file)
+        return ''
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            website = 'http://www.netlib.org/f2c/'
+            self.download(environ, version, strict)
             header_file = 'f2c.h'        
-            fetch(''.join(website), header_file, header_file)
             shutil.copy(os.path.join(options.download_dir, header_file),
                         options.target_build_dir)
             self.environment['F2C_INCLUDE_DIR'] = options.target_build_dir

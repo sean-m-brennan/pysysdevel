@@ -2,7 +2,9 @@
 import os
 import sys
 
-from ..prerequisites import find_program, install_pypkg, ConfigError
+from ..prerequisites import find_program, install_pypkg_without_fetch
+from ..prerequisites import ConfigError
+from ..fetching import fetch, unarchive
 from ..configuration import prog_config
 from .. import options
 
@@ -42,14 +44,21 @@ class configuration(prog_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        website = 'http://pypi.python.org/packages/source/c/ctypesgen/'
+        if version is None:
+            version = '0.r125'
+        src_dir = 'ctypesgen-' + version
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            website = 'http://pypi.python.org/packages/source/c/ctypesgen/'
-            if version is None:
-                version = '0.r125'
-            archive = 'ctypesgen-' + version + '.tar.gz'
-            install_pypkg('ctypesgen-' + version, website, archive,
-                          locally=locally)
+            self.download(environ, version, strict)
+            install_pypkg_without_fetch('ctypesgen', locally=locally)
             if locally:
                 prefix = os.path.abspath(options.target_build_dir)
                 if not prefix in options.local_search_paths:

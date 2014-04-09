@@ -2,7 +2,8 @@
 import os
 import platform
 
-from ..prerequisites import autotools_install, global_install, find_program, ConfigError
+from ..prerequisites import autotools_install_without_fetch, global_install, find_program, ConfigError
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 
 class configuration(lib_config):
@@ -36,20 +37,27 @@ class configuration(lib_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '3.2'
+        website = 'http://llvm.org/releases/' + str(version) + '/'
+        src_dir = 'llvm-' + str(version) + '.src'
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '3.2'
-            website = ('http://llvm.org/releases/' + str(version) + '/',)
             if locally or 'windows' in platform.system().lower():
-                src_dir = 'llvm-' + str(version) + '.src'
-                archive = src_dir + '.tar.gz'
+                src_dir = self.download(environ, version, strict)
                 ## Compile with:  REQUIRES_RTTI=1 ./configure --enable-optimized
-                autotools_install(environ, website, archive, src_dir, locally,
-                                  ['--enable-optimized'],
-                                  {'REQUIRES_RTTI': '1'})
+                autotools_install_without_fetch(environ, src_dir, locally,
+                                                ['--enable-optimized'],
+                                                {'REQUIRES_RTTI': '1'})
             else:
-                global_install('LLVM', website,
+                global_install('LLVM', None,
                                brew='llvm', port='llvm-devel',
                                deb='libllvm-dev', rpm='llvm-devel')
             if not self.is_installed(environ, version, strict):

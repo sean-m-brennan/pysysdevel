@@ -1,6 +1,6 @@
 
 from ..configuration import py_config
-from ..prerequisites import install_pypkg, ConfigError
+from ..prerequisites import install_pypkg_without_fetch, ConfigError
 
 class configuration(py_config):
     """
@@ -14,11 +14,7 @@ class configuration(py_config):
 
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            website = 'https://pypi.python.org/packages/source/l/llvmpy/'
-            if version is None:
-                version = self.version
-            src_dir = 'llvmpy-' + str(version)
-            archive = src_dir + '.tar.gz'
+            self.download(environ, version, strict)
             ## Requires LLVM_CONFIG_PATH from llvm_lib
             try:
                 cfg_path = environ['LLVM_CONFIG_PATH']
@@ -26,8 +22,7 @@ class configuration(py_config):
                 raise ConfigError('Python llvm package requires ' +
                                   'a custom-compiled LLVM library, ' +
                                   'which was not found.')
-            install_pypkg(src_dir, website, archive,
-                          env=['LLVM_CONFIG_PATH=' + cfg_path],
-                          locally=locally)
+            install_pypkg_without_fetch(self.pkg, locally=locally,
+                                        env=['LLVM_CONFIG_PATH=' + cfg_path])
             if not self.is_installed(environ, version, strict):
                 raise Exception('LLVM python wrapper installation failed.')

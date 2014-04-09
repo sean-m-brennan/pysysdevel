@@ -81,7 +81,7 @@ def rcs_revision(rcs_type=None):
         elif os.path.exists('CVS'):
             raise Exception('Unsupported Revision Control System.')
         else:  # tarball install
-            return None
+            return 0
 
     if rcs_type.lower() == 'git':
         cmd_line = ['git', 'rev-list', 'HEAD']
@@ -91,7 +91,7 @@ def rcs_revision(rcs_type=None):
     elif rcs_type.lower() == 'svn' or rcs_type.lower() == 'subversion':
         cmd_line = ['svnversion']
     else:
-        raise Exception('Unknown Revision Control System.')
+        raise Exception('Unsupported Revision Control System.')
 
     shell = False
     if 'windows' in platform.system().lower():
@@ -99,7 +99,7 @@ def rcs_revision(rcs_type=None):
     p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE, shell=shell)
     out = p.communicate()[0].strip()
     if p.wait() != 0:
-        raise Exception('Failed to get ' + rcs_type + ' version.')
+        return 0
     if rcs_type.lower() == 'git':
         return len(out.splitlines())
     elif rcs_type.lower() == 'hg' or rcs_type.lower() == 'mercurial':

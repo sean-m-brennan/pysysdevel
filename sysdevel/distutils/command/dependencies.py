@@ -38,7 +38,7 @@ from distutils.core import Command
 
 from ..prerequisites import RequirementsFinder
 from ..configure import configure_system
-from ..filesystem import mkdir
+#from ..filesystem import mkdir
 from .. import options
 from ...util import is_string
 
@@ -67,7 +67,9 @@ class dependencies(Command):
                      'show the dependencies of individual sub-packages'),
                     ('sublevel=', None, 'sub-package level'),
                     ('system-install', None,
-                     'system-wide installation of dependencies'),]
+                     'system-wide installation of dependencies'),
+                    ('download', None,
+                     'download all listed dependencies'),]
 
 
     def initialize_options(self):
@@ -75,6 +77,7 @@ class dependencies(Command):
         self.show_subpackages = False
         self.system_install = False
         self.sublevel = 0
+        self.download = False
         self.log_only = False
         self.ran = False
 
@@ -83,6 +86,8 @@ class dependencies(Command):
             self.sublevel = 0
         self.sublevel = int(self.sublevel)
         if self.show_subpackages:
+            self.show = True
+        if self.download:
             self.show = True
         self.requirements = []  ## may contain (dep_name, version) tuples
 
@@ -234,9 +239,10 @@ class dependencies(Command):
         ## FIXME
         if self.sublevel == 0:
             env_old = self.distribution.environment
-            locally = not self.system_install
             env = configure_system(self.requirements, self.distribution.version,
-                                   install=(not self.show), locally=locally)
+                                   install=(not self.show),
+                                   locally=(not self.system_install),
+                                   download=self.download)
             if self.show:
                 print(self.distribution.metadata.name + ' ' +
                       token + ', '.join(set([' '.join(d.split())

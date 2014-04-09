@@ -28,7 +28,7 @@ class configuration(py_config):
         try:
             pyjamas_root = os.environ['PYJAMAS_ROOT']
             pyjs_bin = os.path.join(pyjamas_root, 'bin')
-            pyjs_lib = os.path.join(pyjamas_root, 'build', 'lib')
+            #pyjs_lib = os.path.join(pyjamas_root, 'build', 'lib')
             self.environment['PYJSBUILD'] = find_program('pyjsbuild',
                                                          [pyjs_bin])
             self.found = True
@@ -50,17 +50,22 @@ class configuration(py_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = self.version
+        website = 'https://github.com/pyjs/pyjs/zipball/'
+        archive = 'pyjs-' + version + '.zip'
+        src_dir = 'pyjamas-' + str(version)
+        fetch(website, version, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         ## always locally, o.w. won't work
         locally = True
         if not self.found:
-            if version is None:
-                version = self.version
-            website = 'https://github.com/pyjs/pyjs/zipball/'
-            archive = 'pyjs-' + version + '.zip'
-            src_dir = 'pyjamas-' + version
-            fetch(website, version, archive)
-            unarchive(archive, src_dir)
+            src_dir = self.download(environ, version, strict)
             if options.VERBOSE:
                 sys.stdout.write('PREREQUISITE pyjamas ')
 

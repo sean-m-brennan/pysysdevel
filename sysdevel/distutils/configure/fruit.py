@@ -33,18 +33,21 @@ class configuration(config):
         self.environment['FRUIT_SOURCE_FILES'] = self.sources
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '3.2.0'
+        website = 'http://downloads.sourceforge.net/project/fortranxunit' + \
+                  '/fruit_' + version + '/'
+        src_dir = 'fruit_' + str(version)
+        archive = src_dir + '.tgz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '3.2.0'
-            website = ('http://downloads.sourceforge.net/project/fortranxunit',
-                       '/fruit_' + version + '/')
-            src_dir = 'fruit_' + str(version)
-            archive = src_dir + '.tgz'
-
-            fetch(''.join(website), archive, archive)
-            unarchive(archive, src_dir)
-
+            src_dir = self.download(environ, version, strict)
             source_dir = os.path.join(options.target_build_dir, src_dir, 'src')
             install_dir = os.path.abspath(options.target_build_dir,
                                           'src', 'fruit')

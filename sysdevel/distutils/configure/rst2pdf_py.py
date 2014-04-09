@@ -1,5 +1,5 @@
 
-from ..prerequisites import install_pypkg
+from ..fetching import fetch, unarchive
 from ..configuration import py_config
 
 class configuration(py_config):
@@ -14,13 +14,12 @@ class configuration(py_config):
                            debug=False)
 
 
-    def install(self, environ, version, strict=False, locally=True):
-        if not self.found:
-            website = 'http://rst2pdf.googlecode.com/files/'
-            if version is None:
-                version = self.version
-            src_dir = 'rst2pdf-' + str(version)
-            archive = src_dir + '.tar.gz' 
-            install_pypkg(src_dir, website, archive, locally=locally)
-            if not self.is_installed(environ, version, strict):
-                raise Exception('rst2pdf installation failed.')
+    def download(self, environ, version, strict=False):
+        website = 'http://rst2pdf.googlecode.com/files/'
+        if version is None:
+            version = self.version
+        src_dir = 'rst2pdf-' + str(version)
+        archive = src_dir + '.tar.gz' 
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir

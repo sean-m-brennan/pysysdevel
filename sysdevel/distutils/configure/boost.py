@@ -110,24 +110,28 @@ class configuration(lib_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '1_44_0'
+        if '.' in version:
+            version = version.replace('.', '_')
+        if len(version.split('_')) < 3:
+            version += '_0'
+        website = 'http://downloads.sourceforge.net/project/boost/' + \
+                  'boost/' + version.replace('_', '.') + '/'
+        src_dir = 'boost_' + str(version)
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '1_44_0'
-            if '.' in version:
-                version = version.replace('.', '_')
-            if len(version.split('_')) < 3:
-                version += '_0'
-            website = ('http://downloads.sourceforge.net/project/boost/',
-                       'boost/' + version.replace('_', '.') + '/')
             if locally or 'windows' in platform.system().lower():
-                src_dir = 'boost_' + str(version)
-                archive = src_dir + '.tar.gz'
+                src_dir = self.download(environ, version, strict)
 
                 here = os.path.abspath(os.getcwd())
-                fetch(''.join(website), archive, archive)
-                unarchive(archive, src_dir)
-
                 if locally:
                     prefix = os.path.abspath(options.target_build_dir)
                     if not prefix in options.local_search_paths:
@@ -171,7 +175,7 @@ class configuration(lib_config):
                 err.close()
                 os.chdir(here)
             else:
-                global_install('Boost', website,
+                global_install('Boost', None,
                                brew='boost',
                                port='boost +python' + ''.join(get_python_version()),
                                deb='libboost-dev',

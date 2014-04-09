@@ -5,7 +5,8 @@ import struct
 import platform
 import subprocess
 
-from ..prerequisites import programfiles_directories, find_libraries, find_header, find_program, autotools_install, global_install, ConfigError
+from ..prerequisites import programfiles_directories, find_libraries, find_header, find_program, autotools_install_without_fetch, global_install, ConfigError
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 from .. import options
 
@@ -86,18 +87,25 @@ class configuration(lib_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '3.0.2'
+        website = 'http://www.mpich.org/static/tarballs/' + str(version) + '/'
+        src_dir = 'mpich-' + str(version)
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '3.0.2'
-            website = ('http://www.mpich.org/',
-                       'static/tarballs/' + str(version) + '/')
+            self.download(environ, version, strict)
             if locally:
-                src_dir = 'mpich-' + str(version)
-                archive = src_dir + '.tar.gz'
-                autotools_install(environ, website, archive, src_dir, locally)
+                src_dir = self.download(environ, version, strict)
+                autotools_install_without_fetch(environ, src_dir, locally)
             else:
-                global_install('MPICH', website,
+                global_install('MPICH', None,
                                brew='mpich2', port='mpich-devel',
                                deb='libmpich2-dev', rpm='mpich2-devel')
             if not self.is_installed(environ, version, strict):

@@ -81,11 +81,27 @@ class configuration(lib_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '34_1'
+        website = 'http://cdaweb.gsfc.nasa.gov/pub/software/cdf/dist/cdf' + \
+                  str(version)
+        os_dir = 'linux'
+        if 'windows' in platform.system().lower():
+            os_dir = 'windows/src_distribution'
+        elif 'darwin' in platform.system().lower():
+            os_dir = 'macosX/src_distribution'
+
+        web_subdir = '/' + os_dir + '/'
+        src_dir = 'cdf' + str(version) + '-dist'
+        archive = src_dir + '-cdf.tar.gz'
+        fetch(website + web_subdir, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '34_1'
-            website = ('http://cdf.gsfc.nasa.gov/',)
             if locally or not 'darwin' in platform.system().lower():
                 here = os.path.abspath(os.getcwd())
                 if locally:
@@ -96,23 +112,13 @@ class configuration(lib_config):
                     prefix = options.global_prefix
                 ## MinGW shell strips backslashes
                 prefix = convert2unixpath(prefix)
-
-                website = ('http://cdaweb.gsfc.nasa.gov/',
-                           'pub/software/cdf/dist/cdf' + str(version))
-                oper_sys = os_dir = 'linux'
+                
+                src_dir = self.download(environ, version, strict)
+                oper_sys = 'linux'
                 if 'windows' in platform.system().lower():
-                    os_dir = 'windows/src_distribution'
                     oper_sys = 'mingw'
                 elif 'darwin' in platform.system().lower():
                     oper_sys = 'macosx'
-                    os_dir = 'macosX/src_distribution'
-
-                web_subdir = '/' + os_dir + '/'
-                src_dir = 'cdf' + str(version) + '-dist'
-                archive = src_dir + '-cdf.tar.gz'
-                fetch(''.join(website) + web_subdir, archive, archive)
-                unarchive(archive, src_dir)
-
                 build_dir = os.path.join(options.target_build_dir, src_dir)
                 os.chdir(build_dir)
                 log = open('build.log', 'w')
@@ -141,6 +147,6 @@ class configuration(lib_config):
                 log.close()
                 os.chdir(here)
             else:
-                global_install('CDF', website, brew='cdf', port='cdf')
+                global_install('CDF', None, brew='cdf', port='cdf')
             if not self.is_installed(environ, version, strict):
                 raise Exception('CDF installation failed.')

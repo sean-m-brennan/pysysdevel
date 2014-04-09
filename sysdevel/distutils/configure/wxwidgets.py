@@ -62,10 +62,12 @@ class configuration(lib_config):
             if version is None:
                 version = '2.8.12'
             website = ('http://prdownloads.sourceforge.net/wxwindows/',)
-            if locally or 'windows' in platform.system().lower():
+            if 'windows' in platform.system().lower():
                 src_dir = 'wxMSW-' + str(version)
                 archive = src_dir + '.zip'
                 autotools_install(environ, website, archive, src_dir, locally)
+            elif locally:
+                pass #FIXME non-windows local install
             else:
                 global_install('wxWidgets', website,
                                brew='wxwidgets', port='wxgtk',

@@ -3,8 +3,9 @@ import os
 import sys
 import platform
 
-from ..prerequisites import find_header, find_libraries, compare_versions, autotools_install, global_install, ConfigError
+from ..prerequisites import find_header, find_libraries, compare_versions, autotools_install_without_fetch, global_install, ConfigError
 from ..headers import get_header_version
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 from .. import options
 
@@ -70,19 +71,24 @@ class configuration(lib_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '3.3.8'
+        website = 'http://download.osgeo.org/geos/'
+        src_dir = 'geos-' + str(version)
+        archive = src_dir + '.tar.bz2'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '3.3.8'
-            website = ('http://trac.osgeo.org/geos/',)
             if locally or 'windows' in platform.system().lower():
-                website = ('http://download.osgeo.org/geos/',)
-                src_dir = 'geos-' + str(version)
-                archive = src_dir + '.tar.bz2'
-                autotools_install(environ, website, archive, src_dir, locally)
+                src_dir = self.download(environ, version, strict)
+                autotools_install_without_fetch(environ, src_dir, locally)
             else:
-                global_install('Geos', website,
-                               None,
+                global_install('Geos', None,
                                brew='geos', port='geos',
                                deb='libgeos-dev', rpm='geos-devel')
             if not self.is_installed(environ, version, strict):

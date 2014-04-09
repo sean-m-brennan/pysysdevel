@@ -1,7 +1,7 @@
 
 import sys
 
-from ..prerequisites import install_pypkg
+from ..fetching import fetch, unarchive
 from ..configuration import py_config
 
 class configuration(py_config):
@@ -23,15 +23,14 @@ class configuration(py_config):
         return self.found
 
 
-    def install(self, environ, version, strict=False, locally=True):
-        if not self.found:
-            if version is None:
-                version = self.version
-            major = '.'.join(version.split('.')[:2])
-            website = 'http://downloads.sourceforge.net/project/pygccxml/' + \
-                      'pygccxml/pygccxml-' + major + '/'
-            src_dir = 'pygccxml-' + str(version)
-            archive = src_dir + '.zip'
-            install_pypkg(src_dir, website, archive, locally=locally)
-            if not self.is_installed(environ, version, strict):
-                raise Exception('PyGCCXML installation failed.')
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = self.version
+        major = '.'.join(version.split('.')[:2])
+        website = 'http://downloads.sourceforge.net/project/pygccxml/' + \
+                  'pygccxml/pygccxml-' + major + '/'
+        src_dir = 'pygccxml-' + str(version)
+        archive = src_dir + '.zip'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir

@@ -3,7 +3,9 @@ import os
 import platform
 import glob
 
-from ..prerequisites import get_python_version, global_install, system_uses_homebrew, homebrew_prefix
+from ..prerequisites import get_python_version, global_install
+from ..prerequisites import system_uses_homebrew, homebrew_prefix
+from ..fetching import fetch, unarchive
 from ..configuration import py_config
 
 class configuration(py_config):
@@ -12,6 +14,10 @@ class configuration(py_config):
     """
     def __init__(self):
         py_config.__init__(self, 'wx', '2.9.4.0', debug=False)
+
+
+    def download(self, environ, version, strict=False):
+        return '' #FIXME
 
 
     def install(self, environ, version, strict=False, locally=True):

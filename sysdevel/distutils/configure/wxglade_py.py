@@ -1,7 +1,8 @@
 
 import sys
 
-from ..prerequisites import find_program, compare_versions, install_pypkg, ConfigError
+from ..prerequisites import find_program, compare_versions, install_pypkg_without_fetch, ConfigError
+from ..fetching import fetch, unarchive
 from ..configuration import prog_config
 from .. import options
 
@@ -35,13 +36,20 @@ class configuration(prog_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '0.6.5'
+        website = 'http://downloads.sourceforge.net/project/wxglade/wxglade/' + version + '/'
+        src_dir = 'wxGlade-' + str(version)
+        archive = src_dir + '.tar.gz' 
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '0.6.5'
-            website = 'http://downloads.sourceforge.net/project/wxglade/wxglade/' + version + '/'
-            src_dir = 'wxGlade-' + version
-            archive = src_dir + '.tar.gz'
-            install_pypkg(src_dir, website, archive, locally=locally)
+            self.download(environ, version, strict)
+            install_pypkg_without_fetch('wxglade', locally=locally)
             if not self.is_installed(environ, version, strict):
-                raise Exception('wxGlade installation failed.')
+                raise ConfigError('wxGlade', 'Installation failed.')

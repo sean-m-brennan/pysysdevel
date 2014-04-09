@@ -67,10 +67,11 @@ def simplify_version(version):
         return ver_tpl[0] + '.' + ver_tpl[1]
 
 
+# pylint: disable=W0102
 def configure_system(prerequisite_list, version,
                      required_python_version='2.4', install=None, quiet=False,
                      sublevel=None, out=sys.stdout, err=sys.stderr,
-                     locally=None, options=dict()):
+                     locally=None, download=None, options=dict()):
     '''
     Given a list of required software and optionally a Python version,
     verify that python is the proper version and that
@@ -81,12 +82,17 @@ def configure_system(prerequisite_list, version,
         if 'locally' in options.keys():
             locally = options['locally']
         else:
-            locally = False  ## default value
+            locally = True  ## default value
     if install is None:  ## parameter value overrides
         if 'install' in options.keys():
             install = options['install']
         else:
             install = True  ## default value
+    if download is None:  ## parameter value overrides
+        if 'download' in options.keys():
+            download = options['download']
+        else:
+            download = False  ## default value
     if sublevel is None:  ## parameter value overrides
         if 'sublevel' in options.keys():
             sublevel = options['sublevel']
@@ -139,7 +145,7 @@ def configure_system(prerequisite_list, version,
             if len(help_name) > 0:
                 environment = __configure_package(environment, help_name,
                                                   skip, install, quiet,
-                                                  out, err, locally)
+                                                  out, err, locally, download)
         save_cache(environment)
     except Exception:  # pylint: disable=W0703
         logfile = os.path.join(opts.target_build_dir, 'config.log')
@@ -155,13 +161,14 @@ def configure_system(prerequisite_list, version,
     return environment
 
 
-def configure_package(which):
+def configure_package(which, locally=True):
     return __configure_package(dict(), which, skip=False,
-                               install=True, quiet=False)#FIXME locally
+                               install=True, quiet=False, locally=locally)
 
 
 def __configure_package(environment, help_name, skip, install, quiet,
-                        out=sys.stdout, err=sys.stderr, locally=False):
+                        out=sys.stdout, err=sys.stderr,
+                        locally=True, download=False):
     help_name, req_version, strict = requirement_versioning(help_name)
     if help_name is None:
         return environment
@@ -223,14 +230,16 @@ def __configure_package(environment, help_name, skip, install, quiet,
     if not local_python_dir in sys.path:
         sys.path.insert(0, local_python_dir)
     return __run_helper__(environment, help_name, helper, req_version,
-                          strict, skip, install, quiet, out, err, locally)
+                          strict, skip, install, quiet, out, err,
+                          locally, download)
 
 
 configured = []
 
 def __run_helper__(environment, short_name, helper, version,
                    strict, skip, install, quiet,
-                   out=sys.stdout, err=sys.stderr, locally=False):
+                   out=sys.stdout, err=sys.stderr,
+                   locally=True, download=False):
     configured.append(short_name)
     try:
         cfg = helper.configuration()
@@ -249,7 +258,7 @@ def __run_helper__(environment, short_name, helper, version,
             continue
         environment = __configure_package(environment, dep,
                                           skip, install, quiet,
-                                          out, err, locally)
+                                          out, err, locally, download)
         save_cache(environment)
     environment = read_cache()
     if not quiet:
@@ -261,6 +270,9 @@ def __run_helper__(environment, short_name, helper, version,
         msg += ' ' * (40 - len(msg))
         out.write(msg)
         out.flush()
+    if download:
+        cfg.download(environment, version, strict)
+
     if skip:
         cfg.null()
     elif not cfg.is_installed(environment, version, strict):

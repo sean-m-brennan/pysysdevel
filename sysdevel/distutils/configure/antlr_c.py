@@ -1,5 +1,6 @@
 
-from ..prerequisites import autotools_install
+from ..prerequisites import autotools_install_without_fetch
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 
 class configuration(lib_config):
@@ -11,13 +12,20 @@ class configuration(lib_config):
 
     ## TODO ANTLR v2 & v4
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '3.1.2'
+        website = 'http://www.antlr3.org/download/'
+        src_dir = 'libantlr3c-' + str(version)
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            website = 'http://www.antlr3.org/download/'
-            if version is None:
-                version = '3.1.2'
-            src_dir = 'libantlr3c-' + str(version)
-            archive = src_dir + '.tar.gz'
-            autotools_install(environ, website, archive, src_dir, locally)
+            src_dir = self.download(environ, version, strict)
+            autotools_install_without_fetch(environ, src_dir, locally)
             if not self.is_installed(environ, version, strict):
                 raise Exception('ANTLR-C runtime installation failed.')

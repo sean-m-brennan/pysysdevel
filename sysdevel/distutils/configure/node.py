@@ -35,7 +35,6 @@ class configuration(prog_config):
         return prev
         
 
-
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:

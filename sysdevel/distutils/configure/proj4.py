@@ -3,7 +3,8 @@ import os
 import sys
 import platform
 
-from ..prerequisites import find_header, find_libraries, autotools_install, global_install, ConfigError
+from ..prerequisites import find_header, find_libraries, autotools_install_without_fetch, global_install, ConfigError
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 from .. import options
 
@@ -57,17 +58,26 @@ class configuration(lib_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '4.8.0'
+        website = 'http://download.osgeo.org/proj/'
+        src_dir = 'proj-' + str(version)
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if version is None:
                 version = '4.8.0'
-            website = ('http://trac.osgeo.org/proj/',)
             if locally or 'windows' in platform.system().lower():
-                website = ('http://download.osgeo.org/proj/',)
-                src_dir = 'proj-' + str(version)
-                archive = src_dir + '.tar.gz'
-                autotools_install(environ, website, archive, src_dir, locally)
+                src_dir = self.download(environ, version, strict)
+                autotools_install_without_fetch(environ, src_dir, locally)
             else:
+                website = ('http://trac.osgeo.org/proj/',)
                 global_install('PROJ4', website,
                                brew='proj', port='libproj4',
                                deb='libproj-dev', rpm='proj-devel')

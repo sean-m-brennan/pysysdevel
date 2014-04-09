@@ -1,7 +1,8 @@
 
 import platform
 
-from ..prerequisites import autotools_install, global_install
+from ..prerequisites import autotools_install_without_fetch, global_install
+from ..fetching import fetch, unarchive
 from ..configuration import lib_config
 
 class configuration(lib_config):
@@ -22,17 +23,24 @@ class configuration(lib_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '1.15'
+        website = 'ftp://ftp.gnu.org/gnu/gsl/'
+        src_dir = 'gsl-' + str(version)
+        archive = src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '1.15'
-            website = ('ftp://ftp.gnu.org/gnu/gsl/',)
             if locally or 'windows' in platform.system().lower():
-                src_dir = 'gsl-' + str(version)
-                archive = src_dir + '.tar.gz'
-                autotools_install(environ, website, archive, src_dir, locally)
+                src_dir = self.download(environ, version, strict)
+                autotools_install_without_fetch(environ, src_dir, locally)
             else:
-                global_install('GSL', website,
+                global_install('GSL', None,
                                brew='gsl', port='gsl-devel',
                                deb='libgsl-dev', rpm='gsl-devel')
             if not self.is_installed(environ, version, strict):

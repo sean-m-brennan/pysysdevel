@@ -3,7 +3,8 @@ import os
 import sys
 import glob
 
-from ..prerequisites import compare_versions, install_pypkg, patch_file
+from ..prerequisites import compare_versions, install_pypkg_without_fetch, patch_file
+from ..fetching import fetch, unarchive
 from ..configuration import py_config
 
 class configuration(py_config):
@@ -57,15 +58,22 @@ class configuration(py_config):
         return self.found
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = self.version
+        website = 'http://downloads.sourceforge.net/project/matplotlib/' + \
+                  'matplotlib-toolkits/basemap-' + version + '/'
+        src_dir = 'basemap-' + str(version)
+        archive =  src_dir + '.tar.gz'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = self.version
-            website = 'http://downloads.sourceforge.net/project/matplotlib/' + \
-                      'matplotlib-toolkits/basemap-' + version + '/'
-            src_dir = 'basemap-' + str(version)
-            archive =  src_dir + '.tar.gz'
-            pth = install_pypkg(src_dir, website, archive, locally=locally)
+            self.download(environ, version, strict)
+            pth = install_pypkg_without_fetch(self.pkg, locally=locally)
             self.environment['BASEMAP_DATA_PATHLIST'] = self.basemap_data_pathlist
             basemap_dir = os.path.join(pth, 'mpl_toolkits', 'basemap')
             self.environment['BASEMAP_DIR'] = basemap_dir

@@ -792,15 +792,13 @@ def install_pypkg(name, website, archive, env=None, src_dir=None, locally=True,
 
 
 
-def autotools_install(environ, website, archive, src_dir, locally=True,
-                      extra_cfg=None, addtnl_env=None):
+def autotools_install_without_fetch(environ, src_dir, locally=True,
+                                    extra_cfg=None, addtnl_env=None):
     if extra_cfg is None:
         extra_cfg = []
     if addtnl_env is None:
         addtnl_env = dict()
     here = os.path.abspath(os.getcwd())
-    fetch(''.join(website), archive, archive)
-    unarchive(archive, src_dir)
 
     if locally:
         prefix = os.path.abspath(options.target_build_dir)
@@ -848,6 +846,13 @@ def autotools_install(environ, website, archive, src_dir, locally=True,
     finally:
         log.close()
         os.chdir(here)
+
+
+def autotools_install(environ, website, archive, src_dir, locally=True,
+                      extra_cfg=None, addtnl_env=None):
+    fetch(''.join(website), archive, archive)
+    unarchive(archive, src_dir)
+    autotools_install_without_fetch(environ, locally, extra_cfg, addtnl_env)
 
 
 def system_uses_apt_get():
@@ -929,6 +934,8 @@ def global_install(what, website_tpl, winstaller=None,
     sys.stdout.write('INSTALLING ' + what + ' in the system\n')
     sys.stdout.flush()
     mkdir(options.target_build_dir)
+    if website_tpl is None:
+        website_tpl = ('','')
     log = open(os.path.join(options.target_build_dir, what + '.log'), 'w')
     if 'windows' in platform.system().lower() and winstaller:
         fetch(''.join(website_tpl), winstaller, winstaller)

@@ -17,21 +17,24 @@ class configuration(lib_config):
         lib_config.__init__(self, "atlas", "atlas_type.h", debug=False)
 
 
+    def download(self, environ, version, strict=False):
+        if version is None:
+            version = '3.10.1'
+        website = 'http://downloads.sourceforge.net/project/math-atlas/' + \
+                  'Stable/' + version + '/'
+        src_dir = 'atlas'
+        archive = src_dir + str(version) + '.tar.bz2'
+        fetch(website, archive, archive)
+        unarchive(archive, src_dir)
+        return src_dir
+
+
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            if version is None:
-                version = '3.10.1'
-            website = ('http://downloads.sourceforge.net/project/math-atlas/',
-                       'Stable/' + version + '/',)
             if locally or 'windows' in platform.system().lower():
                 ## NB: broken on Windows!
-                src_dir = 'atlas'
-                archive = src_dir + str(version) + '.tar.bz2'
-
+                src_dir = self.download(environ, version, strict)
                 here = os.path.abspath(os.getcwd())
-                fetch(''.join(website), archive, archive)
-                unarchive(archive, src_dir)
-
                 if locally:
                     prefix = os.path.abspath(options.target_build_dir)
                     if not prefix in options.local_search_paths:
@@ -39,7 +42,6 @@ class configuration(lib_config):
                 else:
                     prefix = options.global_prefix
                 prefix = convert2unixpath(prefix)  ## MinGW shell strips backslashes
-
                 build_dir = os.path.join(options.target_build_dir,
                                          src_dir, '_build')
                 mkdir(build_dir)
@@ -67,7 +69,7 @@ class configuration(lib_config):
                 log.close()
                 os.chdir(here)
             else:
-                global_install('ATLAS', website,
+                global_install('ATLAS', None,
                                ## part of XCode
                                deb='libatlas-dev', rpm='atlas-devel')
             if not self.is_installed(environ, version, strict):
