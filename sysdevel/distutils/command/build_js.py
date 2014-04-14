@@ -92,7 +92,6 @@ class build_js(build_ext):
         self.run_command('build_src')
         build = self.get_finalized_command('build')
         environ = self.distribution.environment
-        print 'Environ: ' + str(environ)
 
         for wext in self.web_ext_modules:
             if self.distribution.verbose:
@@ -140,7 +139,7 @@ class build_js(build_ext):
                     except KeyError:
                         compiler = self.pyjscompiler
                     if compiler is None:
-                        raise DistutilsExecError("no value pyjsbuild executable found or given")
+                        raise DistutilsExecError("no pyjsbuild executable found or given")
                     cmd_line = [os.path.abspath(compiler)]
                     for arg in wext.extra_compile_args:
                         if 'debug' in arg.lower():

@@ -84,6 +84,7 @@ def process_package(fnctn, build_base, progress, pyexe, argv,
 def process_subpackages(parallel, fnctn, build_base, subpackages,
                         argv, quit_on_error):
     failed_somewhere = False
+    parallel = False ## FIXME
     try:
         if not parallel:
             raise ImportError

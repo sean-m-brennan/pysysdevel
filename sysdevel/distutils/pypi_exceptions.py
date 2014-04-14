@@ -40,7 +40,7 @@ pypi_exceptions = {
     'dateutil':    ('python-dateutil', ('six',)),
     'ephem':       ('pyephem', None),
     'fuzzy':       ('Fuzzy', None),
-    'h5py':        ('h5py', ('hdf5 (>=1.8.3)', 'lzf')),
+    'h5py':        ('h5py', ('hdf5 (>=1.8.4)', 'lzf')),
     'jinja2':      ('Jinja2', None),
     'numba':       ('numba', ('numpy (==1.7.1)', ## due to bug in numba
                               'cython', 'llvmpy', 'llvmmath')),

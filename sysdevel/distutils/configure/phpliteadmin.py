@@ -1,5 +1,6 @@
 
 import os
+import shutil
 from ..fetching import fetch, unarchive
 from ..configuration import file_config
 from .. import options
@@ -23,3 +24,11 @@ class configuration(file_config):
         fetch(self.website, archive, archive)
         unarchive(archive, self.targets[0])
         return ''
+
+
+    def install(self, environ, version, strict=False, locally=True):
+        self.download(environ, version, strict)
+        if not os.path.exists(self.target_dir):
+            os.makedirs(self.target_dir)
+        shutil.copy(os.path.join(options.target_build_dir, self.targets[0]),
+                    self.target_dir)
