@@ -437,8 +437,8 @@ class py_config(config):
 
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            self.download(environ, version, strict)
-            install_pypkg_without_fetch(self.pkg, locally=locally)
+            src_dir = self.download(environ, version, strict)
+            install_pypkg_without_fetch(self.pkg, environ, src_dir, locally)
             if not self.is_installed(environ, version, strict):
                 print(str(self.pkg) + ' claims failed')
                 #raise ConfigError(self.pkg, 'Installation failed.')
@@ -467,7 +467,7 @@ class pypi_config(py_config):
                 if debug:
                     traceback.print_exc()
             z.close()
-        py_config.__init__(self, pkg, version, dependencies, indexed_as,
+        py_config.__init__(self, pkg, version, dependencies, name,
                            debug, force)
 
 
