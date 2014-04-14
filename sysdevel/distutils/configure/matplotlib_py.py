@@ -56,8 +56,9 @@ class configuration(py_config):
 
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            self.download(environ, version, strict)
-            pth = install_pypkg_without_fetch(self.pkg, locally=locally)
+            src_dir = self.download(environ, version, strict)
+            pth = install_pypkg_without_fetch(self.pkg, src_dir=src_dir,
+                                              locally=locally)
 
             if not self.is_installed(environ, version, strict):
                 raise Exception('matplotlib installation failed.')

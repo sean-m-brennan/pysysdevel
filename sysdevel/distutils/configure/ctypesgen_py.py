@@ -57,8 +57,9 @@ class configuration(prog_config):
 
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            self.download(environ, version, strict)
-            install_pypkg_without_fetch('ctypesgen', locally=locally)
+            src_dir = self.download(environ, version, strict)
+            install_pypkg_without_fetch('ctypesgen', src_dir=src_dir,
+                                        locally=locally)
             if locally:
                 prefix = os.path.abspath(options.target_build_dir)
                 if not prefix in options.local_search_paths:

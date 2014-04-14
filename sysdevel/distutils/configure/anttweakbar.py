@@ -27,8 +27,8 @@ class configuration(lib_config):
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             if locally or 'windows' in platform.system().lower():
-                self.download(environ, version, strict)
-                autotools_install_without_fetch(environ, locally)
+                src_dir = self.download(environ, version, strict)
+                autotools_install_without_fetch(environ, src_dir, locally)
             else:
                 global_install('AntTweakBar', None,
                                brew='anttweakbar', port='AntTweakBar',

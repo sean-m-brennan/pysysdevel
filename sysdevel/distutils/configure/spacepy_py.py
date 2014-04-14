@@ -27,8 +27,9 @@ class configuration(py_config):
 
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            self.download(environ, version, strict)
-            install_pypkg_without_fetch(self.pkg, locally=locally)
+            src_dir = self.download(environ, version, strict)
+            install_pypkg_without_fetch(self.pkg, src_dir=src_dir,
+                                        locally=locally)
             #              extra_args=['config_fc', '--fcompiler=gnu95'])
             #TODO install check silently failing
             #if not self.is_installed(environ, version, strict):

@@ -14,7 +14,7 @@ class configuration(py_config):
 
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            self.download(environ, version, strict)
+            src_dir = self.download(environ, version, strict)
             ## Requires LLVM_CONFIG_PATH from llvm_lib
             try:
                 cfg_path = environ['LLVM_CONFIG_PATH']
@@ -22,7 +22,8 @@ class configuration(py_config):
                 raise ConfigError('Python llvm package requires ' +
                                   'a custom-compiled LLVM library, ' +
                                   'which was not found.')
-            install_pypkg_without_fetch(self.pkg, locally=locally,
+            install_pypkg_without_fetch(self.pkg, src_dir=src_dir,
+                                        locally=locally,
                                         env=['LLVM_CONFIG_PATH=' + cfg_path])
             if not self.is_installed(environ, version, strict):
                 raise Exception('LLVM python wrapper installation failed.')

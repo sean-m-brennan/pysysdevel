@@ -49,7 +49,8 @@ class configuration(prog_config):
 
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            self.download(environ, version, strict)
-            install_pypkg_without_fetch('wxglade', locally=locally)
+            src_dir = self.download(environ, version, strict)
+            install_pypkg_without_fetch('wxglade', src_dir=src_dir,
+                                        locally=locally)
             if not self.is_installed(environ, version, strict):
                 raise ConfigError('wxGlade', 'Installation failed.')

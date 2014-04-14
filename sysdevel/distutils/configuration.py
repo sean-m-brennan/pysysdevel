@@ -438,7 +438,7 @@ class py_config(config):
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
             src_dir = self.download(environ, version, strict)
-            install_pypkg_without_fetch(self.pkg, environ, src_dir, locally)
+            install_pypkg_without_fetch(self.pkg, None, src_dir, locally)
             if not self.is_installed(environ, version, strict):
                 print(str(self.pkg) + ' claims failed')
                 #raise ConfigError(self.pkg, 'Installation failed.')

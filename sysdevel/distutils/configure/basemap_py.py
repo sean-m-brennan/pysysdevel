@@ -72,8 +72,9 @@ class configuration(py_config):
 
     def install(self, environ, version, strict=False, locally=True):
         if not self.found:
-            self.download(environ, version, strict)
-            pth = install_pypkg_without_fetch(self.pkg, locally=locally)
+            src_dir = self.download(environ, version, strict)
+            pth = install_pypkg_without_fetch(self.pkg, src_dir=src_dir,
+                                              locally=locally)
             self.environment['BASEMAP_DATA_PATHLIST'] = self.basemap_data_pathlist
             basemap_dir = os.path.join(pth, 'mpl_toolkits', 'basemap')
             self.environment['BASEMAP_DIR'] = basemap_dir
