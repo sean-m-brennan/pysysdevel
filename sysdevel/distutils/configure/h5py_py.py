@@ -5,7 +5,7 @@ from hdf5 import configuration as hdf5_lib
 
 ## Interdependency with hdf5 library is complex
 class configuration(py_config):
-        """
+    """
     Find/install h5py
     """
     def __init__(self):

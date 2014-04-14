@@ -17,7 +17,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "hdf5", "hdf5.h", debug=False)
 
 
-    def get_version(self, environ=tuple()):
+    def get_version(self, environ=dict()):
         base_dirs = []
         limit = False
         if 'HDF5_LIB_DIR' in environ and environ['HDF5_LIB_DIR']:
