@@ -17,8 +17,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "hdf5", "hdf5.h", debug=False)
 
 
-    def is_installed(self, environ, version=None, strict=False):
-        options.set_debug(self.debug)
+    def get_version(self, environ=tuple()):
         base_dirs = []
         limit = False
         if 'HDF5_LIB_DIR' in environ and environ['HDF5_LIB_DIR']:
@@ -44,21 +43,28 @@ class configuration(lib_config):
                 base_dirs.append(environ['MSYS_DIR'])
             except KeyError:
                 pass
-        try:
-            hdf5_lib_dir, hdf5_libs  = find_libraries(self.lib, base_dirs,
-                                                      limit=limit)
-            hdf5_inc_dir = find_header(self.hdr, base_dirs, limit=limit)
+        
+        hdf5_lib_dir, hdf5_libs  = find_libraries(self.lib, base_dirs,
+                                                  limit=limit)
+        hdf5_inc_dir = find_header(self.hdr, base_dirs, limit=limit)
+        h = open(os.path.join(hdf5_inc_dir, 'H5public.h'), 'r')
+        ver = None
+        for line in h.readlines():
+            if 'H5_VERS_INFO' in line:
+                pre = 'HDF5 library version: '
+                v_begin = line.find(pre) + len(pre)
+                v_end = line.find('"', v_begin)
+                ver = line[v_begin:v_end].strip()
+                break
+        h.close()
+        return ver, hdf5_inc_dir, hdf5_lib_dir, hdf5_libs
 
-            h = open(os.path.join(hdf5_inc_dir, 'H5public.h'), 'r')
-            ver = None
-            for line in h.readlines():
-                if 'H5_VERS_INFO' in line:
-                    pre = 'HDF5 library version: '
-                    v_begin = line.find(pre) + len(pre)
-                    v_end = line.find('"', v_begin)
-                    ver = line[v_begin:v_end].strip()
-                    break
-            h.close()
+
+    def is_installed(self, environ, version=None, strict=False):
+        options.set_debug(self.debug)
+        try:
+            ver, hdf5_inc_dir, \
+                hdf5_lib_dir, hdf5_libs = self.get_version(environ)
             not_ok = (compare_versions(ver, version) == -1)
             if strict:
                 not_ok = (compare_versions(ver, version) != 0)
