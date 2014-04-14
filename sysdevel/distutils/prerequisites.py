@@ -690,6 +690,8 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
     target_dir = os.path.abspath(options.target_build_dir)
     target_lib_dir = os.path.join(target_dir, options.local_lib_dir)
 
+    if not os.path.exists(os.path.join(target_dir, src_dir)):
+        mkdir(os.path.join(target_dir, src_dir))
     if patch:
         patch(os.path.join(target_dir, src_dir))
 
