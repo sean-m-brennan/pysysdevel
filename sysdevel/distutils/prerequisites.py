@@ -48,6 +48,7 @@ except ImportError:
 from .filesystem import mkdir
 from .building import process_progress
 from .fetching import fetch, unarchive
+from .dag import dag
 from ..util import is_string
 from . import options
 
@@ -94,30 +95,48 @@ def requirement_versioning(name):
 
 
 class RequirementsFinder(ast.NodeVisitor):
-    req_keywords = ['requires', #'install_requires',
-                    ]
-    cfg_keyword = 'configure_system'
+    keywords = {'setup': ['setup'],
+                'pkgs': ['packages'],
+                'subpkgs': ['subpackages'],
+                'reqs': ['requires', #'install_requires',
+                         ],
+                'cfgsys': ['configure_system'],}
 
-    def __init__(self, filepath=None, filedescriptor=None, codestring=None):
+    def __init__(self, filepath=None, filedescriptor=None, codestring=None,
+                 debug=False):
         ast.NodeVisitor.__init__(self)
         self.variables = {}
+        self.modules = []
+        self.module_objects = {}
         self.is_sysdevel_build = False
         self.is_sysdevel_itself = False
         self.needs_early_config = False
+        self.package = ''
+        self.subpackages_list = []
         self.requires_list = []
+        self.prerequisite_list = []
+        self.setup_directory = '.'
+        self.debug = debug
+
+        sys.path.append(os.path.abspath('.'))
         if filepath:
             if len(glob.glob(os.path.join(os.path.dirname(filepath),
                                           'sysdevel*'))) > 0:
                 self.is_sysdevel_itself = True
+            self.setup_directory = os.path.abspath(os.path.dirname(filepath))
+            self.package = os.path.basename(self.setup_directory).lower()
             self._load_from_path(filepath)
         elif filedescriptor:
             if hasattr(filedescriptor, 'name') and \
                len(glob.glob(os.path.join(os.path.dirname(filedescriptor.name),
                                           'sysdevel*'))) > 0:
                 self.is_sysdevel_itself = True
+                self.setup_directory = os.path.abspath(os.path.dirname(filedescriptor.name))
+                self.package = os.path.basename(self.setup_directory).lower()
             self._load_from_file(filedescriptor)
         elif codestring:
             self._load_from_string(codestring)
+
 
 
     def _load_from_string(self, code):
@@ -140,45 +159,192 @@ class RequirementsFinder(ast.NodeVisitor):
         source.close()
 
 
+    def process_slice(self, slice):
+        start = None
+        end = None
+        step = None
+        if type(slice) == ast.Index:
+            start = slice.value
+        elif type(slice) == ast.Slice:
+            start = slice.lower
+            end = slice.upper
+            step = slice.step
+        return start, end, step
+
+
+    def process_assign(self, target, value):
+        if type(target) == ast.Name:
+            self.variables[target.id] = value
+        elif type(target) == ast.Attribute:
+            self.variables[target.attr] = value
+        elif type(target) == ast.Tuple or type(target) == ast.List:
+            for idx in range(len(target.elts)):
+                self.process_assign(target.elts[idx], (value, idx))
+        elif type(target) == ast.Subscript:
+            start, end, step = self.process_slice(target.slice)
+            if type(target.value) == ast.Name:
+                self.variables[target.value.id] = (value, start, end, step)
+            elif type(target.value) == ast.Attribute:
+                self.variables[target.value.attr] = (value, start, end, step)
+        elif self.debug:
+            print 'Unhandled assign type: ' + str(type(target))
+        if type(value) == ast.Call:
+            self.preprocess_call(value)
+
+
+    def get_attribute(self, name, node):
+        attr = None
+        if type(node.value) == ast.Name:
+            if node.value.id in self.module_objects.keys():
+                here = os.getcwd()
+                os.chdir(self.setup_directory)
+                sys.path.append(self.setup_directory)
+                mod = __import__(self.module_objects[node.value.id],
+                                 globals(), locals(), [node.value.id])
+                sys.path.pop()
+                os.chdir(here)
+                obj = getattr(mod, node.value.id)
+                attr = getattr(obj, name)
+            elif name in globals().keys():
+                attr = globals()[name]
+            else:
+                attr = locals()[name]
+        elif self.debug:
+            print 'Unhandled attribute value type: ' + str(type(node.value))
+        return attr
+
+
+    def get_call_value(self, ast_call, idx=None):
+        function = None
+        if type(ast_call.func) == ast.Name:
+            funct_name = ast_call.func.id
+            if funct_name in globals().keys():
+                function = globals()[funct_name]
+            elif funct_name in locals().keys():
+                function = locals()[funct_name]
+        elif type(ast_call.func) == ast.Attribute:
+            function = self.get_attribute(ast_call.func.attr, ast_call.func)
+        if not function is None:
+            if not idx is None:
+                return function(ast_call.args)[idx]
+            else:
+                return function(ast_call.args)
+        return None
+
+
+    def get_value(self, node, empty=[]):
+        if type(node) == ast.List or type(node) == ast.Tuple:
+            ret_lst = []
+            for elt in node.elts:
+                ret_lst.append(self.get_value(elt, empty))
+            return ret_lst
+        elif type(node) == ast.Str:
+            return ast.literal_eval(node)
+        elif type(node) == ast.Name:
+            return self.get_value(self.variables[node.id])
+        elif type(node) == ast.BinOp:
+            if type(node.op) == ast.Add:
+                return self.get_value(node.left) + self.get_value(node.right)
+        elif type(node) == ast.Subscript:
+            start, end, step = self.process_slice(node.slice)
+            return self.get_value(node.value)[start:end:step]
+        elif type(node) == ast.Attribute:
+            return self.get_attribute(node.attr, node)
+        elif type(node) == ast.Call:
+            self.preprocess_call(node)
+            return self.get_call_value(node)
+        elif type(node) == tuple:
+            if len(node) == 4:  ## subscript
+                value, start, end, step = node
+                return self.get_value(value)[start:end:step]
+            elif len(node) == 2:  ## call assigned to list or tuple
+                ast_call, idx = node
+                return self.get_call_value(ast_call, idx)
+        else:
+            if self.debug:
+                print 'Unhandled value type: ' + str(type(node))
+            return empty
+
+
+    def preprocess_call(self, node):
+        if type(node.func) == ast.Name:
+            self.process_call(node.func.id, node)
+        elif type(node.func) == ast.Attribute:
+            self.process_call(node.func.attr, node)
+        elif self.debug:
+            print 'Unhandled call type: ' + str(type(node.func))
+
+
+    def process_call(self, name, node):
+        if name in self.keywords['cfgsys']:
+            self.needs_early_config = True
+            self.prerequisite_list += self.get_value(node.args[0])
+            if self.debug:
+                print 'Prerequisites: ' + str(self.prerequisite_list)
+        elif name in self.keywords['setup']:  ## keywords in setup function
+            for keywd in node.keywords:
+                if keywd.arg in self.keywords['pkgs']:
+                    pkg_list = self.get_value(keywd.value)
+                    if pkg_list:
+                        self.package = [p for p in pkg_list if not '.' in p][0]
+                        if self.debug:
+                            print 'Package: ' + str(self.package)
+                elif keywd.arg in 'subpackages':
+                    self.subpackages_list += self.get_value(keywd.value)
+                    if self.debug:
+                        print 'Subpackages: ' + str(self.subpackages_list)
+                elif keywd.arg in self.keywords['reqs']:
+                    self.requires_list += self.get_value(keywd.value)
+                    if self.debug:
+                        print 'Requires: ' + str(self.requires_list)
+
+
     def visit_Assign(self, node):
         for target in node.targets:
-            if type(target) == ast.Name:
-                self.variables[str(target.id)] = node.value
-            if type(target) == ast.Tuple:
-                for idx in range(len(target.elts)):
-                    if type(target.elts[idx]) == ast.Name:
-                        if type(node.value) == ast.Tuple:
-                            self.variables[
-                                str(target.elts[idx].id)] = node.value.elts[idx]
-                        #elif type(node.value) == ast.Call:
-                        #   TODO evaluate ast.Call for assignment operator
-            if type(node.value) == ast.Call:
-                if type(node.value.func) == ast.Name:
-                    if node.value.func.id == self.cfg_keyword:
-                        self.needs_early_config = True
+            self.process_assign(target, node.value)
 
 
-    def visit_keyword(self, node):
-        for kw in self.req_keywords:
-            if node.arg == kw:
-                if type(node.value) == ast.List:
-                    self.requires_list = ast.literal_eval(node.value)
-                elif type(node.value) == ast.Name:
-                    self.requires_list = ast.literal_eval(
-                        self.variables[node.value.id])  ## fails on ast.Call
-        
+    def visit_Call(self, node):
+        self.preprocess_call(node)
+
 
     def visit_Import(self, node):
         for name in node.names:
+            self.modules.append(name.name)
             if name.name.startswith('sysdevel') and not self.is_sysdevel_itself:
                 self.is_sysdevel_build = True
 
     def visit_ImportFrom(self, node):
+        for name in node.names:
+            self.module_objects[name.name] = node.module
         if node.module.startswith('sysdevel') and not self.is_sysdevel_itself:
             self.is_sysdevel_build = True
 
     def generic_visit(self, node):
         ast.NodeVisitor.generic_visit(self, node)
+
+
+
+def get_dep_dag(pkg_path):
+    '''
+    Construct a directed acyclic graph of dependencies.
+    Takes the path of the root package.
+    '''
+    def recurse_deps(path):
+        rf = RequirementsFinder(os.path.join(path, 'setup.py'))
+        required = [rf.package]
+        for (pkg_name, pkg_dir) in rf.subpackages_list:  #TODO just pkg_dir?
+            required.append(recurse_deps(os.path.join(path, pkg_dir)).list())
+        for pkg in rf.requires_list:
+            # FIXME get sub dependencies
+            required.append([pkg])
+        for pkg in rf.prerequisite_list:
+            # FIXME get sub dependencies
+            required.append([pkg])
+        return required
+
+    return dag(recurse_deps(pkg_path))
+
 
 
 

@@ -22,10 +22,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
-# pylint: disable=W0105
-"""
-Unordered tree with unique nodes
-"""
 
 class tree(object):
     """
@@ -39,11 +35,11 @@ class tree(object):
             try:
                 arg = self._flat(self._root)  ## verify recursive nature
             except TypeError:
-                raise TypeError("Initializing a tree requires " + \
-                                    "that leaves are also lists.")
+                raise TypeError("Initializing a tree from a list requires " + \
+                                "that leaves are also lists.")
             if len(arg) != len(set(arg)):  ## verify uniqueness constraint
                 raise TypeError("Initializing a tree requires " + \
-                                    "unique nodes and leaves.")
+                                "unique nodes and leaves.")
         else:
             raise TypeError("Initializing a tree requires either a " +
                             "list of lists or another tree.")

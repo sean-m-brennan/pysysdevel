@@ -143,4 +143,5 @@ options = _Options()
 from .core import setup
 from .configure import configure_system, FatalError
 from .pkg_config import pkg_config, handle_arguments, get_options, post_setup
+from .tree import tree
 from .extensions import *  # pylint: disable=W0401
