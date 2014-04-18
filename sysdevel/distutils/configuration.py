@@ -42,10 +42,12 @@ from .prerequisites import programfiles_directories, find_header, find_library
 from .prerequisites import find_definitions, find_program, system_uses_homebrew
 from .prerequisites import compare_versions, install_pypkg_without_fetch
 from .prerequisites import RequirementsFinder, ConfigError, read_cache
+from .prerequisites import requirement_versioning
 from .filesystem import glob_insensitive
 from .fetching import urlretrieve, fetch, unarchive, open_archive, DownloadError
 from .fetching import URLError, HTTPError, ContentTooShortError
 from .building import process_progress
+from .pypi_exceptions import pypi_exceptions
 from . import options
 
 
@@ -636,3 +638,73 @@ def latest_pypi_version(what, requested_ver=None):
 def earliest_pypi_version(what, requested_ver=None):
     return earliest_version(what, pypi_url(what),
                             what + '-*', requested_ver, True)
+
+
+
+DEBUG_PYPI = True
+DEBUG_LOCAL = False
+
+
+def find_package_config(help_name, helper_funct, *args, **kwargs):
+    help_name, req_version, strict = requirement_versioning(help_name)
+    if help_name is None:
+        return None
+
+    base = help_name = help_name.strip()
+    packages = [__package__ + '.', '',]
+    print __package__
+    cfg_dir = os.path.abspath(os.path.join(options.target_build_dir,
+                                           '..',  options.user_config_dir))
+    if os.path.exists(cfg_dir) and not cfg_dir in sys.path:
+        sys.path.insert(0, cfg_dir)
+    successful = False
+    for package in packages:
+        if successful:
+            continue
+        full_name = package + help_name
+        try:
+            if not package and is_pypi_listed(base):
+                ## Likely actual package module
+                raise ImportError('Invalid config')
+            __import__(full_name, globals=globals())
+            helper = sys.modules[full_name]
+            module_path = os.path.dirname(helper.__file__)
+            if not package and \
+               not module_path.endswith(options.user_config_dir):
+                ## Probably an actual package module
+                raise ImportError('Invalid config')
+            successful = True
+        except (ImportError, KeyError):
+            full_name = package + help_name + '_js'
+            try:
+                __import__(full_name, globals=globals())
+                helper = sys.modules[full_name]
+                successful = True
+            except (ImportError, KeyError):
+                full_name = package + help_name + '_py'
+                try:
+                    __import__(full_name, globals=globals())
+                    helper = sys.modules[full_name]
+                    successful = True
+                except (ImportError, KeyError):
+                    if DEBUG_LOCAL and not package and not is_pypi_listed(base):
+                        traceback.print_exc()
+    if not successful:
+        try:
+            ## grab it from the Python Package Index
+            if base in pypi_exceptions.keys():
+                name, deps = pypi_exceptions[base]
+                helper = dynamic_module(base, req_version, strict, deps,
+                                        name, DEBUG_PYPI)
+            else:
+                helper = dynamic_module(base, req_version, strict,
+                                        debug=DEBUG_PYPI)
+        except Exception:
+            if DEBUG_PYPI:
+                traceback.print_exc()
+            raise ImportError('No configuration found for ' + help_name)
+    local_python_dir = os.path.join(options.target_build_dir,
+                                    options.local_lib_dir)
+    if not local_python_dir in sys.path:
+        sys.path.insert(0, local_python_dir)
+    return helper_funct(help_name, helper, req_version, *args, **kwargs)

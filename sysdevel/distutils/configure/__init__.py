@@ -36,15 +36,11 @@ from ..prerequisites import read_cache, save_cache, in_prerequisites
 from ..prerequisites import system_uses_macports, system_uses_homebrew
 from ..prerequisites import requirement_versioning
 from ..configuration import dynamic_module, latest_pypi_version
-from ..configuration import is_pypi_listed
+from ..configuration import is_pypi_listed, find_package_config
 from ..pypi_exceptions import pypi_exceptions
 from ..filesystem import mkdir
 from .. import options as opts
 from ...util import is_string
-
-
-DEBUG_PYPI = True
-DEBUG_LOCAL = False
 
 
 class FatalError(SystemExit):
@@ -146,6 +142,10 @@ def configure_system(prerequisite_list, version,
                 environment = __configure_package(environment, help_name,
                                                   skip, install, quiet,
                                                   out, err, locally, download)
+                #environment = find_package_config(help_name, __run_helper__,
+                #                                  environment, skip,
+                #                                  install, quiet,
+                #                                  out, err, locally, download)
         save_cache(environment)
     except Exception:  # pylint: disable=W0703
         logfile = os.path.join(opts.target_build_dir, 'config.log')
@@ -162,16 +162,21 @@ def configure_system(prerequisite_list, version,
 
 
 def configure_package(which, locally=True):
+    #return find_package_config(which, __run_helper__, dict(), skip=False,
+    #                           install=True, quiet=False, locally=locally)
     return __configure_package(dict(), which, skip=False,
                                install=True, quiet=False, locally=locally)
 
+#FIXME use prerequisites.find_package_config instead
+DEBUG_PYPI = True
+DEBUG_LOCAL = False
 
 def __configure_package(environment, help_name, skip, install, quiet,
                         out=sys.stdout, err=sys.stderr,
                         locally=True, download=False):
     help_name, req_version, strict = requirement_versioning(help_name)
     if help_name is None:
-        return environment
+        return environment ## return None
 
     base = help_name = help_name.strip()
     packages = [__package__ + '.', '',]
@@ -229,15 +234,16 @@ def __configure_package(environment, help_name, skip, install, quiet,
     local_python_dir = os.path.join(opts.target_build_dir, opts.local_lib_dir)
     if not local_python_dir in sys.path:
         sys.path.insert(0, local_python_dir)
-    return __run_helper__(environment, help_name, helper, req_version,
-                          strict, skip, install, quiet, out, err,
+    return __run_helper__(help_name, helper, req_version,
+                          environment, strict, skip, install, quiet, out, err,
                           locally, download)
 
 
 configured = []
 
-def __run_helper__(environment, short_name, helper, version,
-                   strict, skip, install, quiet,
+#FIXME use prerequisites.find_package_config instead
+def __run_helper__(short_name, helper, version,
+                   environment, strict, skip, install, quiet,
                    out=sys.stdout, err=sys.stderr,
                    locally=True, download=False):
     configured.append(short_name)
@@ -259,7 +265,11 @@ def __run_helper__(environment, short_name, helper, version,
         environment = __configure_package(environment, dep,
                                           skip, install, quiet,
                                           out, err, locally, download)
-        save_cache(environment)
+        #environment = find_package_config(dep, __run_helper__, 
+        #                                  environment, skip, install, quiet,
+        #                                  out, err, locally, download)
+        if not environment is None:
+            save_cache(environment)
     environment = read_cache()
     if not quiet:
         msg = 'Checking for ' + short_name

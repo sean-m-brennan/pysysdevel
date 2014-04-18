@@ -39,7 +39,7 @@ class dag(object):
             cycles = self._detect_cycles(adj)  # pylint: disable=W0212
             if cycles:
                 raise TypeError("Initializing an acyclic graph with cycle(s) " +
-                                "due to node(s): " + str(cycles) + ".")
+                                "found due to node(s): " + str(cycles) + ".")
             self._root = dict(adj)
         else:
             raise TypeError("Initializing a dag requires either an adjacency " +
@@ -81,12 +81,16 @@ class dag(object):
         return result
 
     def adjacency_list(self):
+        """
+        Return a dictionary of node connections
+        """
         return self._root
 
     def list(self):
         """
-        Return hierarchical list of lists representation (undo _adj_lst())
+        Return hierarchical list of lists representation
         """
+        ## this reverses what _adj_lst() does
         def nest(key, adj):
             lsts = [key]
             if len(adj[key]) < 1:
@@ -99,7 +103,7 @@ class dag(object):
 
     def __len__(self):
         """
-        'len' operator: Return number of nodes and leaves
+        'len' operator: Return number of nodes
         """
         return len(set(self._root.keys()))
 
@@ -107,7 +111,17 @@ class dag(object):
         """
         'str' operator: Return string representation
         """
-        return str(self.topological_sort()) #FIXME
+        def ascii_art(lst, idx=0):
+            ret_val = ''
+            if idx < 1:
+                ret_val += str(lst[0])
+            else:
+                ret_val += '\n' + ''.join(['|  ' for _ in range(idx-1)]) + \
+                           '+--' + str(lst[0])
+            for l in lst[1:]:
+                ret_val += ascii_art(l, idx+1)
+            return ret_val
+        return ascii_art(self.list())
 
     def __contains__(self, key):
         """
@@ -131,10 +145,12 @@ class dag(object):
 
     def __getitem__(self, key):
         """
-        index operator: Get subtree at a node
+        index operator: Get subgraph at a node
         """
         return self._root[key]
 
+    ##  TODO implement setitem
+    '''
     def __setitem__(self, key, value):
         """
         index assignment operator: Add/change children of a node
@@ -148,10 +164,11 @@ class dag(object):
         else:
             value = [value]
         parent[parent.index(root)] = [root[0]] + value
+    '''
 
     def topological_sort(self):
         """
-        Single list in order from leaves to root
+        Single list in order from leaves to root(s)
         """
         ## DAG is guaranteed to be acyclic from constructor
         unsorted_g = dict(self._root)  ## copy

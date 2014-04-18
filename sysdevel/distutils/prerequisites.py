@@ -48,7 +48,6 @@ except ImportError:
 from .filesystem import mkdir
 from .building import process_progress
 from .fetching import fetch, unarchive
-from .dag import dag
 from ..util import is_string
 from . import options
 
@@ -159,16 +158,16 @@ class RequirementsFinder(ast.NodeVisitor):
         source.close()
 
 
-    def process_slice(self, slice):
+    def process_slice(self, slc):
         start = None
         end = None
         step = None
-        if type(slice) == ast.Index:
-            start = slice.value
-        elif type(slice) == ast.Slice:
-            start = slice.lower
-            end = slice.upper
-            step = slice.step
+        if type(slc) == ast.Index:
+            start = slc.value
+        elif type(slc) == ast.Slice:
+            start = slc.lower
+            end = slc.upper
+            step = slc.step
         return start, end, step
 
 
@@ -232,7 +231,7 @@ class RequirementsFinder(ast.NodeVisitor):
         return None
 
 
-    def get_value(self, node, empty=[]):
+    def get_value(self, node, empty=[]):  # pylint: disable=W0102
         if type(node) == ast.List or type(node) == ast.Tuple:
             ret_lst = []
             for elt in node.elts:
@@ -322,28 +321,6 @@ class RequirementsFinder(ast.NodeVisitor):
 
     def generic_visit(self, node):
         ast.NodeVisitor.generic_visit(self, node)
-
-
-
-def get_dep_dag(pkg_path):
-    '''
-    Construct a directed acyclic graph of dependencies.
-    Takes the path of the root package.
-    '''
-    def recurse_deps(path):
-        rf = RequirementsFinder(os.path.join(path, 'setup.py'))
-        required = [rf.package]
-        for (pkg_name, pkg_dir) in rf.subpackages_list:  #TODO just pkg_dir?
-            required.append(recurse_deps(os.path.join(path, pkg_dir)).list())
-        for pkg in rf.requires_list:
-            # FIXME get sub dependencies
-            required.append([pkg])
-        for pkg in rf.prerequisite_list:
-            # FIXME get sub dependencies
-            required.append([pkg])
-        return required
-
-    return dag(recurse_deps(pkg_path))
 
 
 
