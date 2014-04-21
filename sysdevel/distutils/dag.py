@@ -30,17 +30,20 @@ class dag(object):
     def __init__(self, arg):
         if isinstance(arg, dag):
             ## pre-screened for cycles
-            self._root = arg._deepcopy()  # pylint: disable=W0212
+            self._graph = arg._deepcopy()  # pylint: disable=W0212
+            self._head = arg._head
         elif isinstance(arg, dict):
             ## no cycles possible (would be duplicate keys)
-            self._root = arg
+            self._graph = arg
+            self._head = self.topological_sort[-1]
         elif isinstance(arg, list):
             adj = self._adj_lst(arg)  # pylint: disable=W0212
             cycles = self._detect_cycles(adj)  # pylint: disable=W0212
             if cycles:
                 raise TypeError("Initializing an acyclic graph with cycle(s) " +
                                 "found due to node(s): " + str(cycles) + ".")
-            self._root = dict(adj)
+            self._graph = dict(adj)
+            self._head = arg[0]
         else:
             raise TypeError("Initializing a dag requires either an adjacency " +
                             "dictionary, a list of lists or another dag.")
@@ -67,7 +70,7 @@ class dag(object):
 
     def _deepcopy(self, arg=None):
         if arg is None:
-            arg = self._root
+            arg = self._graph
         if isinstance(arg, list):
             return [self._deepcopy(x) for x in arg]  # pylint: disable=W0212
         return dict(arg.items())
@@ -84,7 +87,7 @@ class dag(object):
         """
         Return a dictionary of node connections
         """
-        return self._root
+        return self._graph
 
     def list(self):
         """
@@ -98,14 +101,13 @@ class dag(object):
             for n in adj[key]:
                 lsts.append(nest(n, adj))
             return lsts
-        first = list(self._root.items())[0][0]
-        return nest(first, self._root)
+        return nest(self._head, self._graph)
 
     def __len__(self):
         """
         'len' operator: Return number of nodes
         """
-        return len(set(self._root.keys()))
+        return len(set(self._graph.keys()))
 
     def __str__(self):
         """
@@ -127,27 +129,27 @@ class dag(object):
         """
         'in' operator: Is key a node or leaf?
         """
-        return key in self._root.keys()
+        return key in self._graph.keys()
 
     def __iter__(self):
         """
         Forward iterator
         """
-        for key in self._root.keys():
+        for key in self._graph.keys():
             yield key
 
     def __reversed__(self):
         """
         'reversed' operator: Reverse iterator
         """
-        for key in self._root.keys().reverse():
+        for key in self._graph.keys().reverse():
             yield key
 
     def __getitem__(self, key):
         """
         index operator: Get subgraph at a node
         """
-        return self._root[key]
+        return self._graph[key]
 
     ##  TODO implement setitem
     '''
@@ -157,7 +159,7 @@ class dag(object):
         """
         if not self.__contains__(key):
             raise IndexError
-        root, parent = self.__descend(key, self._root)
+        root, parent = self.__descend(key, self._graph)
         if type(value) is list:
             if len(value) == 1:
                 value = [value]
@@ -171,7 +173,7 @@ class dag(object):
         Single list in order from leaves to root(s)
         """
         ## DAG is guaranteed to be acyclic from constructor
-        unsorted_g = dict(self._root)  ## copy
+        unsorted_g = dict(self._graph)  ## copy
         sorted_g = []
         while unsorted_g:
             for node, edges in unsorted_g.items():

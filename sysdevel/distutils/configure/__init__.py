@@ -139,13 +139,10 @@ def configure_system(prerequisite_list, version,
 
         for help_name in prerequisite_list:
             if len(help_name) > 0:
-                environment = __configure_package(environment, help_name,
-                                                  skip, install, quiet,
+                environment = find_package_config(help_name, __run_helper__,
+                                                  environment, skip,
+                                                  install, quiet,
                                                   out, err, locally, download)
-                #environment = find_package_config(help_name, __run_helper__,
-                #                                  environment, skip,
-                #                                  install, quiet,
-                #                                  out, err, locally, download)
         save_cache(environment)
     except Exception:  # pylint: disable=W0703
         logfile = os.path.join(opts.target_build_dir, 'config.log')
@@ -162,90 +159,18 @@ def configure_system(prerequisite_list, version,
 
 
 def configure_package(which, locally=True):
-    #return find_package_config(which, __run_helper__, dict(), skip=False,
-    #                           install=True, quiet=False, locally=locally)
-    return __configure_package(dict(), which, skip=False,
+    return find_package_config(which, __run_helper__, dict(), skip=False,
                                install=True, quiet=False, locally=locally)
-
-#FIXME use prerequisites.find_package_config instead
-DEBUG_PYPI = True
-DEBUG_LOCAL = False
-
-def __configure_package(environment, help_name, skip, install, quiet,
-                        out=sys.stdout, err=sys.stderr,
-                        locally=True, download=False):
-    help_name, req_version, strict = requirement_versioning(help_name)
-    if help_name is None:
-        return environment ## return None
-
-    base = help_name = help_name.strip()
-    packages = [__package__ + '.', '',]
-    cfg_dir = os.path.abspath(os.path.join(opts.target_build_dir,
-                                           '..',  opts.user_config_dir))
-    if os.path.exists(cfg_dir) and not cfg_dir in sys.path:
-        sys.path.insert(0, cfg_dir)
-    successful = False
-    for package in packages:
-        if successful:
-            continue
-        full_name = package + help_name
-        try:
-            if not package and is_pypi_listed(base):
-                ## Likely actual package module
-                raise ImportError('Invalid config')
-            __import__(full_name, globals=globals())
-            helper = sys.modules[full_name]
-            module_path = os.path.dirname(helper.__file__)
-            if not package and \
-               not module_path.endswith(opts.user_config_dir):
-                ## Probably an actual package module
-                raise ImportError('Invalid config')
-            successful = True
-        except (ImportError, KeyError):
-            full_name = package + help_name + '_js'
-            try:
-                __import__(full_name, globals=globals())
-                helper = sys.modules[full_name]
-                successful = True
-            except (ImportError, KeyError):
-                full_name = package + help_name + '_py'
-                try:
-                    __import__(full_name, globals=globals())
-                    helper = sys.modules[full_name]
-                    successful = True
-                except (ImportError, KeyError):
-                    if DEBUG_LOCAL and not package and not is_pypi_listed(base):
-                        traceback.print_exc()
-    if not successful:
-        try:
-            ## grab it from the Python Package Index
-            if base in pypi_exceptions.keys():
-                name, deps = pypi_exceptions[base]
-                helper = dynamic_module(base, req_version, strict, deps,
-                                        name, DEBUG_PYPI)
-            else:
-                helper = dynamic_module(base, req_version, strict,
-                                        debug=DEBUG_PYPI)
-        except Exception:
-            if DEBUG_PYPI:
-                traceback.print_exc()
-            err.write('No setup helper module ' + base + '\n')
-            raise ImportError('No configuration found for ' + help_name)
-    local_python_dir = os.path.join(opts.target_build_dir, opts.local_lib_dir)
-    if not local_python_dir in sys.path:
-        sys.path.insert(0, local_python_dir)
-    return __run_helper__(help_name, helper, req_version,
-                          environment, strict, skip, install, quiet, out, err,
-                          locally, download)
 
 
 configured = []
 
-#FIXME use prerequisites.find_package_config instead
-def __run_helper__(short_name, helper, version,
-                   environment, strict, skip, install, quiet,
+def __run_helper__(short_name, helper, version, strict,
+                   environment, skip, install, quiet,
                    out=sys.stdout, err=sys.stderr,
                    locally=True, download=False):
+    out=sys.stdout #FIXME
+    err=sys.stderr #FIXME
     configured.append(short_name)
     try:
         cfg = helper.configuration()
@@ -262,12 +187,9 @@ def __run_helper__(short_name, helper, version,
             dep_name = dep[0]
         if dep_name in configured:
             continue
-        environment = __configure_package(environment, dep,
-                                          skip, install, quiet,
+        environment = find_package_config(dep, __run_helper__, 
+                                          environment, skip, install, quiet,
                                           out, err, locally, download)
-        #environment = find_package_config(dep, __run_helper__, 
-        #                                  environment, skip, install, quiet,
-        #                                  out, err, locally, download)
         if not environment is None:
             save_cache(environment)
     environment = read_cache()

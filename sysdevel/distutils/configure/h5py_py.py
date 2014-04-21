@@ -12,9 +12,11 @@ class configuration(py_config):
         hdf5_ver, _, _, _ = hdf5_lib().get_version()
         if hdf5_ver is None:
             hdf5_ver = '1.8.4'
-        version = '1.3.1'
+        version = '1.3.1'  ## minimum version
         if hdf5_ver >= '1.8.4':
             version = '2.2.1'
+        if version >= '2.2':
+            hdf5_ver = '1.8.4'
         py_config.__init__(self, 'h5py', version,
                            dependencies=['hdf5 (>=' + hdf5_ver  + ')', 'lzf'],
-                           debug=False)
+                           debug=True)

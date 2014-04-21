@@ -38,34 +38,16 @@ from distutils.core import Command
 
 from ..prerequisites import RequirementsFinder
 from ..configure import configure_system
+from ..dependency_graph import get_dep_dag
 #from ..filesystem import mkdir
 from .. import options
 from ...util import is_string
-
-if INTERLEAVED_OUTPUT:
-    #pylint: disable=W0611
-    from threading import Thread
-    try:
-        ## Python 3.x
-        # pylint: disable=F0401
-        from queue import Queue
-    except ImportError:
-        from Queue import Queue
-
-
-    def enqueue_output(out, queue):
-        for line in iter(out.readline, b''):
-            queue.put(line)
-        out.close()
 
 
 # pylint: disable=W0201
 class dependencies(Command):
     description = "package dependencies"
     user_options = [('show', 's', 'show the dependencies'),
-                    ('show-subpackages', None,
-                     'show the dependencies of individual sub-packages'),
-                    ('sublevel=', None, 'sub-package level'),
                     ('system-install', None,
                      'system-wide installation of dependencies'),
                     ('download', None,
@@ -74,182 +56,35 @@ class dependencies(Command):
 
     def initialize_options(self):
         self.show = False
-        self.show_subpackages = False
         self.system_install = False
-        self.sublevel = 0
         self.download = False
         self.log_only = False
         self.ran = False
 
+
     def finalize_options(self):
-        if self.sublevel is None:
-            self.sublevel = 0
-        self.sublevel = int(self.sublevel)
-        if self.show_subpackages:
-            self.show = True
-        if self.download:
-            self.show = True
         self.requirements = []  ## may contain (dep_name, version) tuples
 
 
     def run(self):
-        options.set_top_level(self.sublevel)
-        token = 'Package dependencies: '
-        logfile = os.path.join(options.target_build_dir, 'config.log')
-        if self.sublevel == 0:
-            if os.path.exists(logfile):
-                os.remove(logfile)
+        dep_graph = get_dep_dag(os.getcwd())  ## assumes cwd is setup dir
+        if self.show:
+            print dep_graph
+            sys.exit(0)
 
+        ts = dep_graph.topological_sort()[:-1]
         if self.distribution.subpackages != None:
-            idx = 0
-            for i in range(len(sys.argv)):
-                idx = i
-                if 'setup.py' in sys.argv[idx]:
-                    break
-            argv = list(sys.argv[idx+1:])
-            for arg in sys.argv:
-                if '--sublevel' in arg:
-                    argv.remove(arg)
-            shell=False
-            if 'windows' in platform.system().lower():
-                shell = True
-            for (pkg_name, pkg_dir) in self.distribution.subpackages:
-                rf = RequirementsFinder(os.path.join(pkg_dir, 'setup.py'))
-                if not rf.is_sysdevel_build:
-                    ## not sysdevel, look in setup.py 'requires' keyword
-                    self.requirements += rf.requires_list
-                    if self.show_subpackages:
-                        print(pkg_name.upper() + ':  ' +
-                              ', '.join([r if is_string(r) else r[0]
-                                         for r in rf.requires_list]))
-                else:
-                    ##FIXME
-                    cmd = [sys.executable, os.path.join(pkg_dir, 'setup.py'),
-                           ] + argv + ['--sublevel=' + str(self.sublevel + 1)]
-                    p = subprocess.Popen(cmd,
-                                         stdout=subprocess.PIPE,
-                                         shell=shell)
-                    out = p.communicate()[0].strip()
-                    if p.wait() != 0:
-                        raise Exception('Dependency check failed for ' +
-                                        pkg_name)
-                    p_list = out[out.find(token)+len(token):]
-                    if self.show_subpackages:
-                        print(pkg_name.upper() + ': ' + str(p_list))
-                    self.requirements += p_list.split(',')
-
-                    '''
-                    if rf.needs_early_config:
-                        print('Dependencies for ' + pkg_name +
-                              ' configuration ...')
-                    ## do nothing else but check dependencies
-                    cmd = [sys.executable, os.path.join(pkg_dir, 'setup.py'),
-                           'dependencies',
-                           '--sublevel=' + str(self.sublevel + 1)]
-                    if self.system_install:
-                        cmd.append('--system-install')
-                    if self.show:
-                        cmd.append('--show')
-                    if self.show_subpackages:
-                        cmd.append('--show-subpackages')
-
-                    if not os.path.exists(options.target_build_dir):
-                        mkdir(options.target_build_dir)
-                    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE,
-                                         shell=shell)
-                    log = open(logfile, 'a')
-                    log.write(pkg_name.upper() + ':\n')
-                    if INTERLEAVED_OUTPUT:
-                        out = ''
-                        o_q = Queue()
-                        o = Thread(target=enqueue_output, args=(p.stdout, o_q))
-                        e_q = Queue()
-                        e = Thread(target=enqueue_output, args=(p.stderr, e_q))
-                        o.start()
-                        e.start()
-                        while p.poll() is None:
-                            try:
-                                line = o_q.get_nowait()
-                                out += line
-                                log.write(line)
-                                if not self.log_only:
-                                    print(line),
-                            except Exception:  # pylint: disable=W0703
-                                pass
-                            try:
-                                line = e_q.get_nowait()
-                                log.write(line)
-                                if not self.log_only:
-                                    print(line),
-                            except Exception:  # pylint: disable=W0703
-                                pass
-                        o.join()
-                        e.join()
-                    else:
-                        out, err = p.communicate()
-                        log.write(out)
-                        log.write(err)
-                        if not self.log_only:
-                            print(out),
-                            print(err),
-                                    
-                    log.write('\n\n')
-                    log.close()
-                    if p.wait() != 0:
-                        raise Exception('Dependency check failed for ' +
-                                        pkg_name)
-                    begin = out.find(token)
-                    end = out.find('\n', begin)+1
-                    p_list = out[begin+len(token):end]
-                    if end == 0:
-                        p_list = out[begin+len(token):]
-                    self.requirements += p_list.split(',')
-                    if self.show_subpackages:
-                        print(pkg_name.upper() + ':  ' + p_list)
-                    '''
-            while 'None' in self.requirements:
-                self.requirements.remove('None')
-
-        if self.distribution.build_requires:
-            self.requirements += self.distribution.build_requires
-        if self.distribution.extern_requires:
-            self.requirements += self.distribution.extern_requires
-        if self.distribution.get_requires():
-            self.requirements += list(set(self.distribution.get_requires()))
-        if len(self.requirements) == 0:
-            self.requirements = ['None']
-        self.requirements = list(set(self.requirements))
-
-        unversioned = list(set([r for r in self.requirements if is_string(r)]))
-        versioned = list(set([r for r in self.requirements
-                              if not is_string(r)]))
-        ## check for tuples w/ duplicate 1st element
-        cluster = dict()
-        for r in versioned:
-            if r[0] in cluster:
-                if r[1] > cluster[r[0]]:
-                    cluster[r[0]] = r[1]
-            else:
-                cluster[r[0]] = r[1]
-        versioned = cluster.items()
-        deps_list = unversioned + [r[0] for r in versioned]
-        self.requirements = versioned + unversioned
-
-        ## FIXME
-        if self.sublevel == 0:
-            env_old = self.distribution.environment
-            env = configure_system(self.requirements, self.distribution.version,
-                                   install=(not self.show),
-                                   locally=(not self.system_install),
-                                   download=self.download)
-            if self.show:
-                print(self.distribution.metadata.name + ' ' +
-                      token + ', '.join(set([' '.join(d.split())
-                                             for d in deps_list])))
-            else:
-                self.distribution.environment = dict(list(env_old.items()) +
-                                                     list(env.items()))
-        else:  ## sysdevel subpackage, collect via stdout (see above)
-            print(token + ', '.join(deps_list))
+            for pkg_name, _ in self.distribution.subpackages:
+                for dep in dep_graph.adjacency_list().keys():
+                    if pkg_name == dep or \
+                       (isinstance(dep, tuple) and pkg_name == dep[0]):
+                        ts.remove(dep)
+        self.requirements += ts
+        env_old = self.distribution.environment
+        env = configure_system(self.requirements, self.distribution.version,
+                               install=(not self.download),
+                               locally=(not self.system_install),
+                               download=self.download)
+        self.distribution.environment = dict(list(env_old.items()) +
+                                             list(env.items()))
         self.ran = True

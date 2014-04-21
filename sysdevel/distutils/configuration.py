@@ -43,7 +43,7 @@ from .prerequisites import find_definitions, find_program, system_uses_homebrew
 from .prerequisites import compare_versions, install_pypkg_without_fetch
 from .prerequisites import RequirementsFinder, ConfigError, read_cache
 from .prerequisites import requirement_versioning
-from .filesystem import glob_insensitive
+from .filesystem import glob_insensitive, mkdir
 from .fetching import urlretrieve, fetch, unarchive, open_archive, DownloadError
 from .fetching import URLError, HTTPError, ContentTooShortError
 from .building import process_progress
@@ -513,6 +513,8 @@ def dynamic_module(pkg, version=None, strict=False, dependencies=None,
 
 
 def is_pypi_listed(pkg):
+    if not os.path.exists(options.target_build_dir):
+        mkdir(options.target_build_dir)
     listing = os.path.join(options.target_build_dir, '.' + pkg + '_list_test')
     try:
         urlretrieve(pypi_url(pkg, False), listing, quiet=True)
@@ -540,6 +542,8 @@ def pypi_archive(which, version):
               ' is not available.')
         version = earliest_pypi_version(which)
     try:
+        if not os.path.exists(options.target_build_dir):
+            mkdir(options.target_build_dir)
         listing = os.path.join(options.target_build_dir, '.' + which + '_list')
         if not os.path.exists(listing):
             urlretrieve(pypi_url(which), listing, quiet=True)
@@ -646,17 +650,19 @@ DEBUG_LOCAL = False
 
 
 def find_package_config(help_name, helper_funct, *args, **kwargs):
+    setup_directory = kwargs.get('setup_dir', os.getcwd())
+
     help_name, req_version, strict = requirement_versioning(help_name)
     if help_name is None:
         return None
 
     base = help_name = help_name.strip()
-    packages = [__package__ + '.', '',]
-    print __package__
-    cfg_dir = os.path.abspath(os.path.join(options.target_build_dir,
-                                           '..',  options.user_config_dir))
+    packages = ['sysdevel.distutils.configure.', '',]
+    cfg_dir = os.path.abspath(os.path.join(setup_directory,
+                                           options.user_config_dir))
     if os.path.exists(cfg_dir) and not cfg_dir in sys.path:
         sys.path.insert(0, cfg_dir)
+
     successful = False
     for package in packages:
         if successful:
@@ -707,4 +713,5 @@ def find_package_config(help_name, helper_funct, *args, **kwargs):
                                     options.local_lib_dir)
     if not local_python_dir in sys.path:
         sys.path.insert(0, local_python_dir)
-    return helper_funct(help_name, helper, req_version, *args, **kwargs)
+    return helper_funct(help_name, helper, req_version, strict,
+                        *args, **kwargs)

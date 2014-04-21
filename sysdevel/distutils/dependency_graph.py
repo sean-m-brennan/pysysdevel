@@ -31,41 +31,56 @@ from ..util import is_string
 
 
 
-def _fetch_deps(short_name, helper, version):
+def _fetch_deps(short_name, helper, version, strict, setup_dir=None):
     try:
         cfg = helper.configuration()
     except Exception:
         ver_info = ''
-        if version:
+        if not version is None:
             ver_info = ' v.' + str(version)
         print('Error loading ' + short_name + ver_info + ' configuration.\n')
         raise
-    deps = []
+    if not version is None:
+        results = [(short_name, version, strict)]
+    else:
+        results = [short_name]
     for dep in cfg.dependencies:
-        dep_name = dep
-        if not is_string(dep):
-            dep_name = dep[0]
-        deps += find_package_config(dep_name, _fetch_deps)
-    return [short_name, deps]
+        results.append(find_package_config(dep, _fetch_deps))
+    return results
+
+
+def _recurse_prereqs(path):
+    rf = RequirementsFinder(os.path.join(path, 'setup.py'))
+    required = [rf.package]
+    for _, pkg_dir in rf.subpackages_list:
+        required.append(_recurse_prereqs(os.path.join(path, pkg_dir)))
+    for pkg in rf.requires_list:
+        required.append(find_package_config(pkg, _fetch_deps, setup_dir=path))
+    for pkg in rf.prerequisite_list:
+        required.append(find_package_config(pkg, _fetch_deps, setup_dir=path))
+    return required
+
 
 
 def get_dep_dag(pkg_path):
     '''
     Construct a directed acyclic graph of dependencies.
     Takes the path of the root package.
-
-from sysdevel.distutils.prerequisites import get_dep_dag
-get_dep_dag('/home/brennan/IMPACT/impact')
     '''
-    def recurse_prereqs(path):
-        rf = RequirementsFinder(os.path.join(path, 'setup.py'))
-        required = [rf.package]
-        for (pkg_name, pkg_dir) in rf.subpackages_list:  #TODO just pkg_dir?
-            required.append(recurse_prereqs(os.path.join(path, pkg_dir)))
-        for pkg in rf.requires_list:
-            required.append(find_package_config(pkg, _fetch_deps))
-        for pkg in rf.prerequisite_list:
-            required.append(find_package_config(pkg, _fetch_deps))
-        return required
+    graph = dag(_recurse_prereqs(pkg_path))
 
-    return dag(recurse_prereqs(pkg_path))
+    ## remove duplicates where name,version,strict tuple equals name string
+    adjacency_list = dict(graph.adjacency_list())
+    changed = []
+    for dep in adjacency_list.keys():
+        if isinstance(dep, tuple):
+            if dep[0] in adjacency_list.keys():
+                changed.append(dep)
+                graph._graph[dep] = graph._graph.pop(dep[0])
+    adjacency_list = dict(graph.adjacency_list())
+    for dep in changed:
+        for k,v in adjacency_list.items():
+            if dep[0] in v:
+                graph._graph[k] = [x if x != dep[0] else dep for x in v]
+
+    return graph

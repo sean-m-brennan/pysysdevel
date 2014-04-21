@@ -112,6 +112,7 @@ class build(old_build):
         if self.sublevel == 0 and not deps.ran:
             self.run_command('dependencies')
 
+        options.set_top_level(self.sublevel)
         if self.distribution.subpackages != None:
             if self.get_finalized_command('install').ran:
                 return  ## avoid build after install
