@@ -78,9 +78,13 @@ def get_dep_dag(pkg_path):
                 changed.append(dep)
                 graph._graph[dep] = graph._graph.pop(dep[0])
     adjacency_list = dict(graph.adjacency_list())
+    def _dep_test(x, dep_tpl):
+        if x != dep[0]:
+            return x
+        return dep
     for dep in changed:
         for k,v in adjacency_list.items():
             if dep[0] in v:
-                graph._graph[k] = [x if x != dep[0] else dep for x in v]
+                graph._graph[k] = [_dep_test(x, dep) for x in v]
 
     return graph

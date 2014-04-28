@@ -23,6 +23,11 @@ class configuration(py_config):
 
     def install(self, environ, version, strict=False, locally=True):
         py_config.install(self, environ, version, strict, locally)
-        reload(urllib2)  # pylint: disable=E0602
-        reload(httplib)  # pylint: disable=E0602
-
+        try:
+            reload(urllib2)  # pylint: disable=E0602
+        except NameError:
+            pass
+        try:
+            reload(httplib)  # pylint: disable=E0602
+        except NameError:
+            pass

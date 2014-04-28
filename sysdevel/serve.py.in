@@ -50,7 +50,7 @@ except ImportError:
 from sysdevel.modeling import websocketserver, websockethandler, daemon, models
 
 ## user defined and co-located, see sysdevel.modeling.generic_query.py
-from .query import query
+from .query import query  ##FIXME incompatible with 2.4
 
 
 WEBSOCKET_HOST     = socket.getfqdn()

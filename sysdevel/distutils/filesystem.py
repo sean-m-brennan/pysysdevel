@@ -150,8 +150,11 @@ def is_out_of_date(target, source, additional=None):
  
 
 def glob_insensitive(directory, file_pattern):
-    either = lambda(c): '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
+    def _either(c):
+        if c.isalpha():
+            return '[%s%s]' % (c.lower(), c.upper())
+        return c
     return glob.glob(os.path.join(directory,
-                                  ''.join([either(p) for p in file_pattern])))
+                                  ''.join([_either(p) for p in file_pattern])))
 
 
