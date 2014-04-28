@@ -36,7 +36,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from . import websocketclient
+from sysdevel.ui import websocketclient
 
 
 

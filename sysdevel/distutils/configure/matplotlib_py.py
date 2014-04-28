@@ -2,10 +2,10 @@
 import os
 import sys
 
-from ..prerequisites import compare_versions, install_pypkg_without_fetch
-from ..fetching import fetch, unarchive
-from ..configuration import py_config
-from .. import options
+from sysdevel.distutils.prerequisites import compare_versions, install_pypkg_without_fetch
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import py_config
+from sysdevel.distutils import options
 
 class configuration(py_config):
     """

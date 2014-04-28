@@ -1,6 +1,6 @@
 
-from ..configuration import py_config
-from ..prerequisites import install_pypkg_without_fetch, ConfigError
+from sysdevel.distutils.configuration import py_config
+from sysdevel.distutils.prerequisites import install_pypkg_without_fetch, ConfigError
 
 class configuration(py_config):
     """

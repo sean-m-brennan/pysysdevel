@@ -3,11 +3,11 @@ import os
 import sys
 import platform
 
-from ..prerequisites import find_header, find_library, mingw_check_call, convert2unixpath, ConfigError
-from ..fetching import fetch, unarchive
-from ..configuration import lib_config
-from ..headers import patch_c_only_header
-from .. import options
+from sysdevel.distutils.prerequisites import find_header, find_library, mingw_check_call, convert2unixpath, ConfigError
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import lib_config
+from sysdevel.distutils.headers import patch_c_only_header
+from sysdevel.distutils import options
 
 class configuration(lib_config):
     """

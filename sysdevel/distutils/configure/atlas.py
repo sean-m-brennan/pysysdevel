@@ -2,11 +2,11 @@
 import os
 import platform
 
-from ..prerequisites import convert2unixpath, mingw_check_call, check_call, admin_check_call, global_install
-from ..fetching import fetch, unarchive
-from ..filesystem import mkdir
-from ..configuration import lib_config
-from .. import options
+from sysdevel.distutils.prerequisites import convert2unixpath, mingw_check_call, check_call, admin_check_call, global_install
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils.configuration import lib_config
+from sysdevel.distutils import options
 
 
 class configuration(lib_config):

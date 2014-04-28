@@ -33,7 +33,7 @@ except ImportError:
     from threading import Thread as Process
 import logging
 
-from .models import DataViewer
+from sysdevel.modeling.models import DataViewer
 
 
 def json_handler(obj):

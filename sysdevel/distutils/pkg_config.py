@@ -34,9 +34,9 @@ import warnings
 import glob
 import zipfile
 
-from .prerequisites import read_cache
-from ..util import flatten
-from . import options
+from sysdevel.distutils.prerequisites import read_cache
+from sysdevel.util import flatten
+from sysdevel.distutils import options
 
 
 #TODO unify argv, environ and options handling

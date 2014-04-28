@@ -27,7 +27,7 @@ permissions and limitations under the License.
 Custom event handling for wxPython
 """
 
-from . import events
+from sysdevel.ui import events
 
 try:
     import warnings

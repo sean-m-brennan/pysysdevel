@@ -37,7 +37,7 @@ try:
 except ImportError:
     from distutils.command.build_clib import build_clib
 
-from ..building import safe_eval, build_target, SHARED_LIBRARY
+from sysdevel.distutils.building import safe_eval, build_target, SHARED_LIBRARY
 
 
 class build_shlib(build_clib):

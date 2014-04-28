@@ -45,11 +45,11 @@ try:
 except ImportError:
     import simplejson as json
 
-from .filesystem import mkdir
-from .building import process_progress
-from .fetching import fetch, unarchive
-from ..util import is_string
-from . import options
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils.building import process_progress
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.util import is_string
+from sysdevel.distutils import options
 
 
 class PrerequisiteError(Exception):

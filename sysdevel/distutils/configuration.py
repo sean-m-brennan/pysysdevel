@@ -38,17 +38,12 @@ import pkgutil
 import shutil
 from distutils.sysconfig import get_python_lib
 
-from .prerequisites import programfiles_directories, find_header, find_library
-from .prerequisites import find_definitions, find_program, system_uses_homebrew
-from .prerequisites import compare_versions, install_pypkg_without_fetch
-from .prerequisites import RequirementsFinder, ConfigError, read_cache
-from .prerequisites import requirement_versioning
-from .filesystem import glob_insensitive, mkdir
-from .fetching import urlretrieve, fetch, unarchive, open_archive, DownloadError
-from .fetching import URLError, HTTPError, ContentTooShortError
-from .building import process_progress
-from .pypi_exceptions import pypi_exceptions
-from . import options
+from sysdevel.distutils.prerequisites import programfiles_directories, find_header, find_library, find_definitions, find_program, system_uses_homebrew, compare_versions, install_pypkg_without_fetch, RequirementsFinder, ConfigError, read_cache, requirement_versioning
+from sysdevel.distutils.filesystem import glob_insensitive, mkdir
+from sysdevel.distutils.fetching import urlretrieve, fetch, unarchive, open_archive, DownloadError, URLError, HTTPError, ContentTooShortError
+from sysdevel.distutils.building import process_progress
+from sysdevel.distutils.pypi_exceptions import pypi_exceptions
+from sysdevel.distutils import options
 
 
 ## All these classes are abstract

@@ -2,10 +2,10 @@
 import os
 import shutil
 
-from ..fetching import fetch, unarchive
-from ..filesystem import mkdir
-from ..configuration import config
-from .. import options
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils.configuration import config
+from sysdevel.distutils import options
 
 
 class configuration(config):

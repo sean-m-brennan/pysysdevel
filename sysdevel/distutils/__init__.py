@@ -140,8 +140,9 @@ class _Options(object):
 options = _Options()
 
 
-from .core import setup
-from .configure import configure_system, FatalError
-from .pkg_config import pkg_config, handle_arguments, get_options, post_setup
-from .tree import tree
-from .extensions import *  # pylint: disable=W0401
+from sysdevel.distutils.core import setup
+from sysdevel.distutils.configure import configure_system, FatalError
+from sysdevel.distutils.pkg_config import pkg_config, handle_arguments, get_options, post_setup
+from sysdevel.distutils.tree import tree
+from sysdevel.distutils.dag import dag
+from sysdevel.distutils.extensions import *  # pylint: disable=W0401

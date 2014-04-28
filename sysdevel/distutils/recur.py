@@ -31,7 +31,7 @@ import os
 import sys
 import subprocess
 
-from .building import process_progress
+from sysdevel.distutils.building import process_progress
 
 
 def process_package(fnctn, build_base, progress, pyexe, argv,

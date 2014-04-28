@@ -39,7 +39,7 @@ except ImportError:
     LOGGABLE = False
 
 # pylint: disable=E0611
-from . import gui_select
+from sysdevel.ui import gui_select
 
 
 

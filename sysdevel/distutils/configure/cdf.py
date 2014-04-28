@@ -4,10 +4,10 @@ import sys
 import platform
 import subprocess
 
-from ..prerequisites import find_header, find_library, find_program, convert2unixpath, check_call, mingw_check_call, admin_check_call, global_install, ConfigError
-from ..fetching import fetch, unarchive
-from ..configuration import lib_config
-from .. import options
+from sysdevel.distutils.prerequisites import find_header, find_library, find_program, convert2unixpath, check_call, mingw_check_call, admin_check_call, global_install, ConfigError
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import lib_config
+from sysdevel.distutils import options
 
 class configuration(lib_config):
     """

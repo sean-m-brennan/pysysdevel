@@ -4,11 +4,11 @@ import sys
 import platform
 import subprocess
 
-from ..prerequisites import find_header, find_libraries, compare_versions, check_call, global_install, get_python_version, ConfigError
-from ..fetching import fetch, unarchive
-from ..configuration import lib_config
-from ..headers import get_header_version
-from .. import options
+from sysdevel.distutils.prerequisites import find_header, find_libraries, compare_versions, check_call, global_install, get_python_version, ConfigError
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import lib_config
+from sysdevel.distutils.headers import get_header_version
+from sysdevel.distutils import options
 
 class configuration(lib_config):
     """

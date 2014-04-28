@@ -34,9 +34,9 @@ import glob
 
 from distutils.command.install_lib import install_lib as old_install_lib
 
-from ..filesystem import mkdir
-from ..prerequisites import get_module_location
-from .. import options
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils.prerequisites import get_module_location
+from sysdevel.distutils import options
 
 
 class install_lib(old_install_lib):

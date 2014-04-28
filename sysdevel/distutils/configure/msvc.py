@@ -2,9 +2,9 @@
 import os
 import sys
 
-from ..prerequisites import find_program, programfiles_directories, get_msvc_version, ConfigError
-from ..configuration import config
-from .. import options
+from sysdevel.distutils.prerequisites import find_program, programfiles_directories, get_msvc_version, ConfigError
+from sysdevel.distutils.configuration import config
+from sysdevel.distutils import options
 
 class configuration(config):
     """

@@ -43,9 +43,9 @@ try:
 except ImportError:
     from distutils.command.build_ext import build_ext
 
-from ..filesystem import mkdir, copy_tree
-from ..building import configure_file, configure_files
-from ..prerequisites import find_program
+from sysdevel.distutils.filesystem import mkdir, copy_tree
+from sysdevel.distutils.building import configure_file, configure_files
+from sysdevel.distutils.prerequisites import find_program
 
 
 def create_breathe_stylesheet(dirname):

@@ -27,7 +27,7 @@ permissions and limitations under the License.
 modified 'sdist' command
 """
 
-from .. import USING_SETUPTOOLS, setup_setuptools
+from sysdevel.distutils import USING_SETUPTOOLS, setup_setuptools
 setup_setuptools()
 
 import os

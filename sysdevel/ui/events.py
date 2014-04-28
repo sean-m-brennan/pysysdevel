@@ -28,7 +28,7 @@ Custom events
 """
 
 # pylint: disable=E0611
-from . import gui_select
+from sysdevel.ui import gui_select
 
 
 (FATAL, ERROR, WARNING, INFO, DEBUG, NOTICE, MESSAGE) = list(range(7))
@@ -68,12 +68,12 @@ def EventFactory(string, ident=NOTICE, context=None, tpl=()):
     backend = gui_select.BACKEND
 
     if backend == gui_select.WX:
-        from .wx_events import wxEvent
+        from sysdevel.ui.wx_events import wxEvent
         return wxEvent(string, ident, context, tpl)
     elif backend == gui_select.GTK:
-        from .gtk_events import gtkEvent
+        from sysdevel.ui.gtk_events import gtkEvent
         return gtkEvent(string, ident, context, tpl)
     ## TODO: other backends' events
     else:
-        from .txt_events import txtEvent
+        from sysdevel.ui.txt_events import txtEvent
         return txtEvent(string, ident, context, tpl)

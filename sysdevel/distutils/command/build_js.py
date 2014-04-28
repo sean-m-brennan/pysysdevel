@@ -42,11 +42,11 @@ try:
 except ImportError:
     from distutils.command.build_ext import build_ext
 
-from ..filesystem import mkdir, copy_tree, recursive_chown
-from ..prerequisites import find_program, ConfigError
-from ..building import configure_file, configure_files
-from .. import options
-from ... import CLIENT_SUPPORT_DIR
+from sysdevel.distutils.filesystem import mkdir, copy_tree, recursive_chown
+from sysdevel.distutils.prerequisites import find_program, ConfigError
+from sysdevel.distutils.building import configure_file, configure_files
+from sysdevel.distutils import options
+from sysdevel import CLIENT_SUPPORT_DIR
 
 
 class build_js(build_ext):

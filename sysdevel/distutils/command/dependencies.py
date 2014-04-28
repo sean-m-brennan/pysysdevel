@@ -34,8 +34,8 @@ import os
 import sys
 from distutils.core import Command
 
-from ..configure import configure_system
-from ..dependency_graph import get_dep_dag
+from sysdevel.distutils.configure import configure_system
+from sysdevel.distutils.dependency_graph import get_dep_dag
 
 
 # pylint: disable=W0201

@@ -1,9 +1,9 @@
 
 import sys
 
-from ..prerequisites import find_library, ConfigError
-from ..configuration import lib_config
-from .. import options
+from sysdevel.distutils.prerequisites import find_library, ConfigError
+from sysdevel.distutils.configuration import lib_config
+from sysdevel.distutils import options
 
 class configuration(lib_config):
     """

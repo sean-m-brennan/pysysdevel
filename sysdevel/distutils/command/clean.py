@@ -33,8 +33,8 @@ import shutil
 
 from distutils.command.clean import clean as old_clean
 
-from ..recur import process_subpackages
-from ..prerequisites import delete_cache, RequirementsFinder
+from sysdevel.distutils.recur import process_subpackages
+from sysdevel.distutils.prerequisites import delete_cache, RequirementsFinder
 
 
 class clean(old_clean):

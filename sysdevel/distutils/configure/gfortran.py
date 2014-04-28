@@ -1,8 +1,8 @@
 
 import platform
 
-from ..prerequisites import global_install, system_uses_macports
-from ..configuration import prog_config
+from sysdevel.distutils.prerequisites import global_install, system_uses_macports
+from sysdevel.distutils.configuration import prog_config
 
 class configuration(prog_config):
     """

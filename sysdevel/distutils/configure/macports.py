@@ -4,10 +4,10 @@ import platform
 import sys
 import glob
 
-from ..prerequisites import autotools_install, admin_check_call, macports_prefix, patch_file, system_uses_macports
-from ..configuration import config
-from ..filesystem import mkdir
-from .. import options
+from sysdevel.distutils.prerequisites import autotools_install, admin_check_call, macports_prefix, patch_file, system_uses_macports
+from sysdevel.distutils.configuration import config
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils import options
 
 class configuration(config):
     """

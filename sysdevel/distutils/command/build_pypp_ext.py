@@ -36,8 +36,8 @@ try:
 except ImportError:
     from distutils.command.build_ext import build_ext
 
-from ..filesystem import is_out_of_date
-from ..building import configure_file
+from sysdevel.distutils.filesystem import is_out_of_date
+from sysdevel.distutils.building import configure_file
 
 
 class build_pypp_ext(build_ext):

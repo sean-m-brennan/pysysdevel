@@ -1,5 +1,5 @@
 
-from ..configuration import nodejs_config
+from sysdevel.distutils.configuration import nodejs_config
 
 class configuration(nodejs_config):
     """

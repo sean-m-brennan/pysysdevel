@@ -1,7 +1,7 @@
 
-from ..fetching import fetch, unarchive
-from ..prerequisites import install_pypkg_without_fetch
-from ..configuration import py_config
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.prerequisites import install_pypkg_without_fetch
+from sysdevel.distutils.configuration import py_config
 
 class configuration(py_config):
     """

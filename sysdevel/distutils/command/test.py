@@ -36,13 +36,13 @@ import subprocess
 from distutils.core import Command
 from distutils import log
 
-from ..configure import configure_package
-from ..extensions import FortranUnitTest, CUnitTest, CppUnitTest
-from ..recur import process_subpackages
-from ..prerequisites import RequirementsFinder, check_call
-from ..filesystem import copy_tree
-from ...util import is_string
-from .. import options
+from sysdevel.distutils.configure import configure_package
+from sysdevel.distutils.extensions import FortranUnitTest, CUnitTest, CppUnitTest
+from sysdevel.distutils.recur import process_subpackages
+from sysdevel.distutils.prerequisites import RequirementsFinder, check_call
+from sysdevel.distutils.filesystem import copy_tree
+from sysdevel.util import is_string
+from sysdevel.distutils import options
 
 
 def create_test_wrapper(pyscript, target_dir, lib_dirs):

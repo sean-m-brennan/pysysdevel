@@ -24,9 +24,9 @@ permissions and limitations under the License.
 """
 import os
 
-from .dag import dag
-from .configuration import find_package_config
-from .prerequisites import RequirementsFinder
+from sysdevel.distutils.dag import dag
+from sysdevel.distutils.configuration import find_package_config
+from sysdevel.distutils.prerequisites import RequirementsFinder
 
 
 # pylint: disable=W0613

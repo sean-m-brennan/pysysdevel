@@ -29,7 +29,7 @@ Duplicates of NumPy utilities (in case numpy is not used)
 
 import re
 
-from ..util import is_string
+from sysdevel.util import is_string
 
 
 cxx_ext_match = re.compile(r'.*[.](cpp|cxx|cc)\Z',re.I).match

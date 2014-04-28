@@ -1,6 +1,6 @@
 
-from ..fetching import fetch, unarchive
-from ..configuration import py_config
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import py_config
 
 ## PyPI entry includes *only* the latest version
 class configuration(py_config):

@@ -27,7 +27,7 @@ permissions and limitations under the License.
 Custom GTK events
 """
 
-from . import events
+from sysdevel.ui import events
 
 try:
     import warnings

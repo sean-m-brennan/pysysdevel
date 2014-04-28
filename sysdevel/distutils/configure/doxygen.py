@@ -1,6 +1,6 @@
 
-from ..prerequisites import global_install
-from ..configuration import prog_config
+from sysdevel.distutils.prerequisites import global_install
+from sysdevel.distutils.configuration import prog_config
 
 class configuration(prog_config):
     """

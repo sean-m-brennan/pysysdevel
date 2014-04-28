@@ -4,11 +4,11 @@ import glob
 import sys
 import subprocess
 
-from ..prerequisites import find_program, as_admin, ConfigError
-from ..building import process_progress
-from ..configuration import py_config
-from ..fetching import fetch, unarchive
-from .. import options
+from sysdevel.distutils.prerequisites import find_program, as_admin, ConfigError
+from sysdevel.distutils.building import process_progress
+from sysdevel.distutils.configuration import py_config
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils import options
 
 class configuration(py_config):
     """

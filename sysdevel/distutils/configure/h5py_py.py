@@ -1,6 +1,6 @@
 
-from ..configuration import py_config
-from .hdf5 import configuration as hdf5_lib
+from sysdevel.distutils.configuration import py_config
+from sysdevel.distutils.configure.hdf5 import configuration as hdf5_lib
 
 ## Interdependency with hdf5 library is complex
 class configuration(py_config):

@@ -47,10 +47,10 @@ except ImportError:
     from distutils.command.build_clib import build_clib  # pylint: disable=W0611
     from distutils import log
 
-from ..util import is_string
-from .filesystem import mkdir
-from .numpy_utils import filter_sources, is_sequence
-from . import options
+from sysdevel.util import is_string
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils.numpy_utils import filter_sources, is_sequence
+from sysdevel.distutils import options
 
 
 environment_defaults = dict({

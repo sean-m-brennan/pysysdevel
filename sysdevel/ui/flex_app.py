@@ -52,14 +52,14 @@ try:
     from pyjamas.ui import HasAlignment
 
     try:
-        from . import gchartplot as plotter
+        from sysdevel.ui import gchartplot as plotter
     except ImportError:
         try:
-            from . import raphaelplot as plotter
+            from sysdevel.ui import raphaelplot as plotter
         except ImportError:
             raise ImportError('No plotting modules available')
 
-    from .web_ui import WebUI, strptime, multiline_text
+    from sysdevel.ui.web_ui import WebUI, strptime, multiline_text
     UserInterface = WebUI
 
 
@@ -72,5 +72,5 @@ except ImportError:
 
     # FIXME wx ui objects
 
-    from .flex_ui import FlexUI, multiline_text
+    from sysdevel.ui.flex_ui import FlexUI, multiline_text
     UserInterface = FlexUI

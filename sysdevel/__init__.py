@@ -42,4 +42,4 @@ SERVER_SUPPORT_MODULES = ['serve']
 CLIENT_SUPPORT_DIR = os.path.realpath(os.path.abspath(
     os.path.join(os.path.dirname(__file__), 'ui')))
 
-from .distutils.building import configure_file
+from sysdevel.distutils.building import configure_file

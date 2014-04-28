@@ -33,7 +33,7 @@ try:
 except ImportError:
     from distutils import extension as old_extension
 
-from .building import convert_ulist, DEFAULT_STYLE
+from sysdevel.distutils.building import convert_ulist, DEFAULT_STYLE
 
 
 ## Shared libraries, like static libraries, consist of

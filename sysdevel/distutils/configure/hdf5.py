@@ -4,10 +4,10 @@ import sys
 import platform
 import subprocess
 
-from ..prerequisites import programfiles_directories, find_header, find_libraries, check_call, autotools_install_without_fetch, global_install, ConfigError, compare_versions
-from ..fetching import fetch, unarchive
-from ..configuration import lib_config
-from .. import options
+from sysdevel.distutils.prerequisites import programfiles_directories, find_header, find_libraries, check_call, autotools_install_without_fetch, global_install, ConfigError, compare_versions
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import lib_config
+from sysdevel.distutils import options
 
 class configuration(lib_config):
     """

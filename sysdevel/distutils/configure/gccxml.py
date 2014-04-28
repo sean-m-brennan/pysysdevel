@@ -3,10 +3,10 @@ import os
 import sys
 import platform
 
-from ..prerequisites import programfiles_directories, find_program, system_uses_homebrew, convert2unixpath, check_call, mingw_check_call, admin_check_call, major_minor_version, global_install, ConfigError
-from ..filesystem import mkdir
-from ..configuration import prog_config
-from .. import options
+from sysdevel.distutils.prerequisites import programfiles_directories, find_program, system_uses_homebrew, convert2unixpath, check_call, mingw_check_call, admin_check_call, major_minor_version, global_install, ConfigError
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils.configuration import prog_config
+from sysdevel.distutils import options
 
 class configuration(prog_config):
     """

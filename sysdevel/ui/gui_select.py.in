@@ -152,15 +152,15 @@ def UIFactory(app, has_log, pkg=None):
         pkg_prefix = pkg + '.'
 
     if be == TEXT:
-        from . import txt_gui
+        from sysdevel.ui import txt_gui
         mod_name = pkg_prefix + 'txt_' + app.key
         return txt_gui.TXT_GUI(mod_name, app, app.resource_file, has_log)
     elif be == WX:
-        from . import wx_gui
+        from sysdevel.ui import wx_gui
         mod_name = pkg_prefix + 'wx_' + app.key
         return wx_gui.WX_GUI(mod_name, app, app.resource_file, has_log)
     elif be == GTK:
-        from . import gtk_gui
+        from sysdevel.ui import gtk_gui
         mod_name = pkg_prefix + 'gtk_' + app.key
         return gtk_gui.GTK_GUI(mod_name, app, app.resource_file, has_log)
     # TODO: implement other backends

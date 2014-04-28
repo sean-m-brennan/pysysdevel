@@ -33,8 +33,7 @@ import sys
 import os
 import platform
 
-from . import events
-from . import gui
+from sysdevel.ui import events, gui
 
 try:
     import warnings
@@ -43,7 +42,7 @@ try:
     import wx
     import wx.xrc as xrc
     warnings.resetwarnings()
-    from . import wx_bmptoggle
+    from sysdevel.ui import wx_bmptoggle
 
     ##############################
 

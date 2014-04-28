@@ -3,10 +3,10 @@ import os
 import sys
 import shutil
 
-from ..prerequisites import find_header, ConfigError
-from ..fetching import fetch
-from ..configuration import config
-from .. import options
+from sysdevel.distutils.prerequisites import find_header, ConfigError
+from sysdevel.distutils.fetching import fetch
+from sysdevel.distutils.configuration import config
+from sysdevel.distutils import options
 
 class configuration(config):
     """

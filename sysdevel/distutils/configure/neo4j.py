@@ -4,10 +4,10 @@ import sys
 import struct
 import platform
 
-from ..prerequisites import find_program, system_uses_homebrew, global_install, admin_check_call, ConfigError
-from ..fetching import fetch, unarchive
-from ..configuration import prog_config
-from .. import options
+from sysdevel.distutils.prerequisites import find_program, system_uses_homebrew, global_install, admin_check_call, ConfigError
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import prog_config
+from sysdevel.distutils import options
 
 class configuration(prog_config):
     """

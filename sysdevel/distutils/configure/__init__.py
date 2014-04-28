@@ -32,15 +32,15 @@ import sys
 import platform
 import traceback
 
-from ..prerequisites import read_cache, save_cache, in_prerequisites
-from ..prerequisites import system_uses_macports, system_uses_homebrew
-from ..prerequisites import requirement_versioning
-from ..configuration import dynamic_module, latest_pypi_version
-from ..configuration import is_pypi_listed, find_package_config
-from ..pypi_exceptions import pypi_exceptions
-from ..filesystem import mkdir
-from .. import options as opts
-from ...util import is_string
+from sysdevel.distutils.prerequisites import read_cache, save_cache, in_prerequisites
+from sysdevel.distutils.prerequisites import system_uses_macports, system_uses_homebrew
+from sysdevel.distutils.prerequisites import requirement_versioning
+from sysdevel.distutils.configuration import dynamic_module, latest_pypi_version
+from sysdevel.distutils.configuration import is_pypi_listed, find_package_config
+from sysdevel.distutils.pypi_exceptions import pypi_exceptions
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils import options as opts
+from sysdevel.util import is_string
 
 
 class FatalError(SystemExit):

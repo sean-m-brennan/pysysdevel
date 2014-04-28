@@ -36,8 +36,8 @@ try:
 except ImportError:
     from distutils.command.build import build as old_build
 
-from ..recur import process_subpackages
-from .. import options
+from sysdevel.distutils.recur import process_subpackages
+from sysdevel.distutils import options
 
 
 class build(old_build):

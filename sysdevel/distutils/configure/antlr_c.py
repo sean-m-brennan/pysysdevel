@@ -1,7 +1,7 @@
 
-from ..prerequisites import autotools_install_without_fetch
-from ..fetching import fetch, unarchive
-from ..configuration import lib_config
+from sysdevel.distutils.prerequisites import autotools_install_without_fetch
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import lib_config
 
 class configuration(lib_config):
     """

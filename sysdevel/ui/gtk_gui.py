@@ -32,7 +32,7 @@ loaded from a Glade file and provide functionality to the GUI layout
 import sys
 import os
 
-from . import gui
+from sysdevel.ui import gui
 
 try:
     import warnings

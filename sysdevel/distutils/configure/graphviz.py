@@ -3,11 +3,11 @@ import os
 import sys
 import platform
 
-from ..prerequisites import programfiles_directories, find_header, find_library, autotools_install_without_fetch, global_install, ConfigError
-from ..fetching import fetch, unarchive
-from ..filesystem import glob_insensitive
-from ..configuration import lib_config
-from .. import options
+from sysdevel.distutils.prerequisites import programfiles_directories, find_header, find_library, autotools_install_without_fetch, global_install, ConfigError
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.filesystem import glob_insensitive
+from sysdevel.distutils.configuration import lib_config
+from sysdevel.distutils import options
 
 class configuration(lib_config):
     """

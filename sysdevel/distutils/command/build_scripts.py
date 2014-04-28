@@ -35,8 +35,8 @@ try:
 except ImportError:
     from distutils.command.build_scripts import build_scripts as _build_scripts
 
-from ..filesystem import mkdir
-from ..building import create_runscript, create_script_wrapper
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils.building import create_runscript, create_script_wrapper
 
 
 class build_scripts(_build_scripts):

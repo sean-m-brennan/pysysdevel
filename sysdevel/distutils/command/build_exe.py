@@ -35,8 +35,8 @@ try:
 except ImportError:
     from distutils.command.build_clib import build_clib
 
-from ..building import build_target, EXECUTABLE
-from ..numpy_utils import has_f_sources, has_cxx_sources, all_strings
+from sysdevel.distutils.building import build_target, EXECUTABLE
+from sysdevel.distutils.numpy_utils import has_f_sources, has_cxx_sources, all_strings
 
 
 class build_exe(build_clib):

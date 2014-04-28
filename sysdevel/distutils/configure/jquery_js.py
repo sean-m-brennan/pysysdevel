@@ -1,8 +1,8 @@
 
 import os
-from ..fetching import fetch
-from ..configuration import file_config, latest_version
-from .. import options
+from sysdevel.distutils.fetching import fetch
+from sysdevel.distutils.configuration import file_config, latest_version
+from sysdevel.distutils import options
 
 class configuration(file_config):
     """

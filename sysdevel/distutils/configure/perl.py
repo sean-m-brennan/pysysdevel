@@ -3,10 +3,10 @@ import os
 import sys
 import platform
 
-from ..prerequisites import find_program, find_header, find_library, check_call, global_install, ConfigError
-from ..configuration import lib_config
-from ..fetching import fetch, unarchive
-from .. import options
+from sysdevel.distutils.prerequisites import find_program, find_header, find_library, check_call, global_install, ConfigError
+from sysdevel.distutils.configuration import lib_config
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils. import options
 
 class configuration(lib_config):
     """

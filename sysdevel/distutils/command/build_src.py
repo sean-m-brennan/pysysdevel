@@ -38,9 +38,9 @@ try:
 except ImportError:
     from distutils.command.build_ext import build_ext as _build_src
 
-from ..filesystem import mkdir
-from ..building import configure_file
-from ... import SERVER_SUPPORT_DIR, SERVER_SUPPORT_MODULES
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils.building import configure_file
+from sysdevel import SERVER_SUPPORT_DIR, SERVER_SUPPORT_MODULES
 
 
 class build_src(_build_src):

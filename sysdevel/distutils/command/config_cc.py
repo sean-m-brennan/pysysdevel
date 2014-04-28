@@ -36,7 +36,7 @@ except ImportError:
     from distutils.core import Command as old_config_cc
 from distutils import log
 
-from ...util import is_string
+from sysdevel.util import is_string
 
 
 # pylint: disable=W0201

@@ -5,9 +5,9 @@ import platform
 import glob
 import subprocess
 
-from ..prerequisites import find_program, global_install, ConfigError
-from ..configuration import config
-from .. import options
+from sysdevel.distutils.prerequisites import find_program, global_install, ConfigError
+from sysdevel.distutils.configuration import config
+from sysdevel.distutils import options
 
 class configuration(config):
     """

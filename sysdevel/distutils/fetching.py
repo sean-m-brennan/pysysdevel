@@ -45,8 +45,8 @@ except ImportError:
     from urllib import ContentTooShortError
 
 
-from .filesystem import mkdir
-from . import options
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils import options
 
 
 class DownloadError(Exception):

@@ -3,10 +3,10 @@ import os
 import sys
 import shutil
 
-from ..prerequisites import programfiles_directories, find_file, ConfigError
-from ..fetching import fetch, unarchive
-from ..configuration import prog_config
-from .. import options
+from sysdevel.distutils.prerequisites import programfiles_directories, find_file, ConfigError
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import prog_config
+from sysdevel.distutils import options
 
 class configuration(prog_config):
     """

@@ -41,6 +41,18 @@ if 'windows' in platform.system().lower():
     shell = True
 
 
+def _check_call(cmd, *args, **kwargs):
+    import subprocess
+    p = subprocess.Popen(cmd, *args, **kwargs)
+    retcode = p.wait()
+    if retcode != 0:
+        ex = subprocess.CalledProcessError()
+        ex.returncode = retcode
+        ex.cmd = cmd
+        ex.output = None
+        raise ex
+
+
 def _import_sysdevel(where, feedback=False):
     if where == '':
         where = os.getcwd()
@@ -50,7 +62,6 @@ def _import_sysdevel(where, feedback=False):
         import sysdevel
     except:
         import sys
-        import subprocess
         from distutils.spawn import find_executable
 
         if not os.path.exists(os.path.join(where, 'pysysdevel')):
@@ -72,15 +83,15 @@ def _import_sysdevel(where, feedback=False):
                             from urllib import urlretrieve
                         urlretrieve(website_zipfile, archive)
                     else:  ## wget is available
-                        subprocess.check_call(['wget', website_zipfile,
-                                               '-O', archive], shell=shell)
+                        _check_call(['wget', website_zipfile, '-O', archive],
+                                    shell=shell)
                 z = zipfile.ZipFile(archive, 'r')
                 z.extractall()
                 z.close()
                 os.rename('pysysdevel-master', 'pysysdevel')
             else:  ## git is available
-                subprocess.check_call(['git', 'clone', website + '.git'],
-                                      shell=shell)
+                _check_call(['git', 'clone', website + '.git'],
+                            shell=shell)
             os.chdir(here)
 
         sys.path.insert(0, os.path.join(where, 'pysysdevel'))
@@ -90,14 +101,13 @@ def _import_sysdevel(where, feedback=False):
 def _install_sysdevel(where):
     import sys
     import shutil
-    import subprocess
     if where == '':
         where = os.getcwd()
     else:
         where = os.path.abspath(where)
     here = os.path.abspath(os.getcwd())
     os.chdir(where)
-    subprocess.check_call([sys.executable, 'setup.py', 'install'], shell=shell)
+    _check_call([sys.executable, 'setup.py', 'install'], shell=shell)
     os.chdir(here)
     shutil.rmtree(where)
 

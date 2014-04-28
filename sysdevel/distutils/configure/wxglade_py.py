@@ -1,10 +1,10 @@
 
 import sys
 
-from ..prerequisites import find_program, compare_versions, install_pypkg_without_fetch, ConfigError
-from ..fetching import fetch, unarchive
-from ..configuration import prog_config
-from .. import options
+from sysdevel.distutils.prerequisites import find_program, compare_versions, install_pypkg_without_fetch, ConfigError
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import prog_config
+from sysdevel.distutils import options
 
 class configuration(prog_config):
     """

@@ -3,10 +3,9 @@ import os
 import platform
 import glob
 
-from ..prerequisites import get_python_version, global_install
-from ..prerequisites import system_uses_homebrew, homebrew_prefix
-from ..fetching import fetch, unarchive
-from ..configuration import py_config
+from sysdevel.distutils.prerequisites import get_python_version, global_install, system_uses_homebrew, homebrew_prefix
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import py_config
 
 class configuration(py_config):
     """

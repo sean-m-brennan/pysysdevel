@@ -4,10 +4,10 @@ import sys
 import os
 import glob
 
-from ..prerequisites import system_uses_homebrew, check_call, call, homebrew_prefix
-from ..configuration import config
-from ..filesystem import mkdir
-from .. import options
+from sysdevel.distutils.prerequisites import system_uses_homebrew, check_call, call, homebrew_prefix
+from sysdevel.distutils.configuration import config
+from sysdevel.distutils.filesystem import mkdir
+from sysdevel.distutils import options
 
 class configuration(config):
     """

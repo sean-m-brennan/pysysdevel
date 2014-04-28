@@ -34,7 +34,7 @@ try:
     # pylint: disable=W0201
     from numpy.distutils.command.config_compiler import config_fc as old_cfg_fc
 
-    from ...util import is_string
+    from sysdevel.util import is_string
 
 
     class config_fc(old_cfg_fc):
@@ -52,7 +52,7 @@ try:
 
         def finalize_options(self):
             """ Perhaps not necessary? (potential OSX problem)
-            from ..prerequisites import gcc_is_64bit
+            from sysdevel.distutils.prerequisites import gcc_is_64bit
             if ((self.f77exec is None and self.f90exec is None) or \
                 'gfortran' in self.f77exec or 'gfortran' in self.f90exec) and \
                 'darwin' in platform.system().lower():

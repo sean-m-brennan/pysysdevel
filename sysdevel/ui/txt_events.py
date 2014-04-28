@@ -29,7 +29,7 @@ Custom single-thread event handling
 
 import Queue
 
-from . import events
+from sysdevel.ui import events
 
 
 ## General asynchronous event facility ##########

@@ -27,7 +27,7 @@ permissions and limitations under the License.
 Custom setup
 """
 
-from . import USING_SETUPTOOLS, setup_setuptools, setuptools_in_use
+from sysdevel.distutils import USING_SETUPTOOLS, setup_setuptools, setuptools_in_use
 setup_setuptools()
 
 import sys
@@ -55,10 +55,10 @@ if numpy_support:
     except ImportError:
         pass
 
-from .prerequisites import read_cache
-from .numpy_utils import is_sequence
-from ..util import is_string
-from . import options
+from sysdevel.distutils.prerequisites import read_cache
+from sysdevel.distutils.numpy_utils import is_sequence
+from sysdevel.util import is_string
+from sysdevel.distutils import options
 
 
 CustomCommands = ['dependencies', 'build_doc', 'build_docbook', 'build_exe',
@@ -246,27 +246,27 @@ import warnings
 import distutils.core
 import distutils.dist
 
-from .command import config_cc
-from .command import config_fc
-from .command import build
-from .command import build_doc
-from .command import build_js
-from .command import build_py
-from .command import build_scripts
-from .command import build_pypp_ext
-from .command import build_src
-from .command import build_clib
-from .command import build_shlib
-from .command import build_exe
-from .command import sdist
-from .command import install
-from .command import install_data
-from .command import install_lib
-from .command import install_clib
-from .command import install_exe
-from .command import clean
-from .command import test
-from .command import dependencies
+from sysdevel.distutils.command import config_cc
+from sysdevel.distutils.command import config_fc
+from sysdevel.distutils.command import build
+from sysdevel.distutils.command import build_doc
+from sysdevel.distutils.command import build_js
+from sysdevel.distutils.command import build_py
+from sysdevel.distutils.command import build_scripts
+from sysdevel.distutils.command import build_pypp_ext
+from sysdevel.distutils.command import build_src
+from sysdevel.distutils.command import build_clib
+from sysdevel.distutils.command import build_shlib
+from sysdevel.distutils.command import build_exe
+from sysdevel.distutils.command import sdist
+from sysdevel.distutils.command import install
+from sysdevel.distutils.command import install_data
+from sysdevel.distutils.command import install_lib
+from sysdevel.distutils.command import install_clib
+from sysdevel.distutils.command import install_exe
+from sysdevel.distutils.command import clean
+from sysdevel.distutils.command import test
+from sysdevel.distutils.command import dependencies
 
 
 my_cmdclass = {'dependencies':     dependencies.dependencies,

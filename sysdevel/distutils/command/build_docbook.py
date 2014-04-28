@@ -37,9 +37,9 @@ try:
 except ImportError:
     from distutils.command.build_ext import build_ext
 
-from ..prerequisites import find_program, find_file
-from ..filesystem import mkdir, copy_tree
-from .. import options
+from sysdevel.distutils.prerequisites import find_program, find_file
+from sysdevel.distutils.filesystem import mkdir, copy_tree
+from sysdevel.distutils import options
 
 
 def make_doc(src_file, target_dir=None, stylesheet=None):

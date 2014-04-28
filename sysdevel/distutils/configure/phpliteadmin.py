@@ -1,9 +1,9 @@
 
 import os
 import shutil
-from ..fetching import fetch, unarchive
-from ..configuration import file_config
-from .. import options
+from sysdevel.distutils.fetching import fetch, unarchive
+from sysdevel.distutils.configuration import file_config
+from sysdevel.distutils import options
 
 class configuration(file_config):
     """

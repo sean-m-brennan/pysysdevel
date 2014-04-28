@@ -3,9 +3,9 @@ import os
 import sys
 import struct
 
-from ..prerequisites import find_program, global_install, ConfigError
-from ..configuration import prog_config
-from .. import options
+from sysdevel.distutils.prerequisites import find_program, global_install, ConfigError
+from sysdevel.distutils.configuration import prog_config
+from sysdevel.distutils import options
 
 class configuration(prog_config):
     """

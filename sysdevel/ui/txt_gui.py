@@ -29,8 +29,7 @@ Textual User Interface
 
 import sys
 
-from . import gui
-from . import txt_events
+from sysdevel.ui import gui, txt_events
 
 
 ##############################
