@@ -33,7 +33,7 @@ class configuration(lib_config):
         else:
             required_version = version.replace('.', '_')
 
-        #FIXME not detecting if boost installed
+        #TODO not detecting if boost installed
 
         options.set_debug(self.debug)
         base_dirs = []

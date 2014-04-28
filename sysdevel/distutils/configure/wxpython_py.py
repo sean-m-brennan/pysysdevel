@@ -4,8 +4,8 @@ import platform
 import glob
 
 from sysdevel.distutils.prerequisites import get_python_version, global_install, system_uses_homebrew, homebrew_prefix
-from sysdevel.distutils.fetching import fetch, unarchive
 from sysdevel.distutils.configuration import py_config
+#from sysdevel.distutils.fetching import fetch, unarchive
 
 class configuration(py_config):
     """
@@ -16,7 +16,7 @@ class configuration(py_config):
 
 
     def download(self, environ, version, strict=False):
-        return '' #FIXME
+        return '' #TODO wxPython download
 
 
     def install(self, environ, version, strict=False, locally=True):

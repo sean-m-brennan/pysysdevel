@@ -108,17 +108,17 @@ def literal_eval(node_or_string):
         _safe_names = {'None': None, 'True': True, 'False': False}
         if isinstance(node_or_string, basestring):
             node_or_string = ast_parse(node_or_string, mode='eval')
-        if isinstance(node_or_string, Expression):
-            node_or_string = node_or_string.node
+        if isinstance(node_or_string, ast.Expression):
+            node_or_string = node_or_string.node  # pylint: disable=E1103
         def _convert(node):
             if isinstance(node, ast.Const) and \
                isinstance(node.value,
                           (basestring, int, float, long, complex)):
                 return node.value
             elif isinstance(node, ast.Tuple):
-                return tuple(map(_convert, node.nodes))
+                return tuple([_convert(x) for x in node.nodes])
             elif isinstance(node, ast.List):
-                return list(map(_convert, node.nodes))
+                return list([_convert(x) for x in node.nodes])
             elif isinstance(node, ast.Dict):
                 return dict((_convert(k), _convert(v))
                             for k, v in node.items)
@@ -143,7 +143,7 @@ class RequirementsFinder(NodeVisitor):
 
     def __init__(self, filepath=None, filedescriptor=None, codestring=None,
                  debug=False):
-        NodeVisitor.__init__(self)
+        super(RequirementsFinder, self).__init__(self)
         self.variables = {}
         self.modules = []
         self.module_objects = {}
@@ -180,7 +180,7 @@ class RequirementsFinder(NodeVisitor):
 
     def _load_from_string(self, code):
         tree = ast_parse(code)
-        if COMPATIBITLIY_MODE:
+        if COMPATIBILITY_MODE:
             walk(tree, self)
         else:
             self.visit(tree)

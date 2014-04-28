@@ -85,4 +85,4 @@ class configuration(prog_config):
             self.environment['ANTLR'] = [environ['JAVA'],
                                          "-classpath", os.path.abspath(jarfile),
                                          "org.antlr.Tool",]
-            #FIXME is_installed
+            #TODO run is_installed

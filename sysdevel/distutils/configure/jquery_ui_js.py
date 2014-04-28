@@ -2,7 +2,7 @@
 import os
 from sysdevel.distutils.fetching import fetch
 from sysdevel.distutils.configuration import file_config
-from sysdevel.distutils. import options
+from sysdevel.distutils import options
 
 class configuration(file_config):
     """

@@ -67,7 +67,7 @@ class configuration(lib_config):
                 archive = src_dir + '.zip'
                 autotools_install(environ, website, archive, src_dir, locally)
             elif locally:
-                pass #FIXME non-windows local install
+                pass #TODO non-windows local install
             else:
                 global_install('wxWidgets', website,
                                brew='wxwidgets', port='wxgtk',
