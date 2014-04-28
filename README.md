@@ -21,7 +21,7 @@ Copyright 2013, Los Alamos National Security, LLC (see the 'COPYING' file).
 
 
 This package requires:
-  * Python 2.4 or greater (http://www.python.org)
+  * Python 2.6 or greater (http://www.python.org)
 
 If Fortran is at all involved in your project:
   * NumPy (http://www.numpy.org)

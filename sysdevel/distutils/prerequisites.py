@@ -35,10 +35,20 @@ import fnmatch
 import struct
 import glob
 import traceback
-import ast
 import re
 import shutil
 from distutils.sysconfig import get_python_lib
+
+COMPATIBILITY_MODE = False
+try:
+    import ast
+    from ast import parse as ast_parse
+    from ast import NodeVisitor
+except ImportError:  ## 2.4 compatibility
+    from compiler import ast, walk
+    from compiler import parse as ast_parse
+    from compiler.visitor import ASTVisitor as NodeVisitor
+    COMPATIBILITY_MODE = True
 
 try:
     import json
@@ -93,7 +103,37 @@ def requirement_versioning(name):
 
 
 
-class RequirementsFinder(ast.NodeVisitor):
+def literal_eval(node_or_string):
+    if COMPATIBILITY_MODE:
+        _safe_names = {'None': None, 'True': True, 'False': False}
+        if isinstance(node_or_string, basestring):
+            node_or_string = ast_parse(node_or_string, mode='eval')
+        if isinstance(node_or_string, Expression):
+            node_or_string = node_or_string.node
+        def _convert(node):
+            if isinstance(node, ast.Const) and \
+               isinstance(node.value,
+                          (basestring, int, float, long, complex)):
+                return node.value
+            elif isinstance(node, ast.Tuple):
+                return tuple(map(_convert, node.nodes))
+            elif isinstance(node, ast.List):
+                return list(map(_convert, node.nodes))
+            elif isinstance(node, ast.Dict):
+                return dict((_convert(k), _convert(v))
+                            for k, v in node.items)
+            elif isinstance(node, ast.Name):
+                if node.name in _safe_names:
+                    return _safe_names[node.name]
+            elif isinstance(node, ast.UnarySub):
+                return -_convert(node.expr)
+            raise ValueError('malformed string')
+        return _convert(node_or_string)
+    else:
+        return ast.literal_eval(node_or_string)
+
+
+class RequirementsFinder(NodeVisitor):
     keywords = {'setup': ['setup'],
                 'pkgs': ['packages'],
                 'subpkgs': ['subpackages'],
@@ -103,7 +143,7 @@ class RequirementsFinder(ast.NodeVisitor):
 
     def __init__(self, filepath=None, filedescriptor=None, codestring=None,
                  debug=False):
-        ast.NodeVisitor.__init__(self)
+        NodeVisitor.__init__(self)
         self.variables = {}
         self.modules = []
         self.module_objects = {}
@@ -139,8 +179,11 @@ class RequirementsFinder(ast.NodeVisitor):
 
 
     def _load_from_string(self, code):
-        tree = ast.parse(code)
-        self.visit(tree)
+        tree = ast_parse(code)
+        if COMPATIBITLIY_MODE:
+            walk(tree, self)
+        else:
+            self.visit(tree)
         required = list(self.requires_list)
         self.requires_list = []
         for r in required:
@@ -238,7 +281,7 @@ class RequirementsFinder(ast.NodeVisitor):
                 ret_lst.append(self.get_value(elt, empty))
             return ret_lst
         elif type(node) == ast.Str:
-            return ast.literal_eval(node)
+            return literal_eval(node)
         elif type(node) == ast.Name:
             return self.get_value(self.variables[node.id])
         elif type(node) == ast.BinOp:
@@ -320,9 +363,34 @@ class RequirementsFinder(ast.NodeVisitor):
             self.is_sysdevel_build = True
 
     def generic_visit(self, node):
-        ast.NodeVisitor.generic_visit(self, node)
+        NodeVisitor.generic_visit(self, node)
 
 
+    ## compatibility methods:
+
+    def visitAssign(self, node):
+        for target in node.targets:
+            self.process_assign(target, node.value)
+
+
+    def visitCall(self, node):
+        self.preprocess_call(node)
+
+
+    def visitImport(self, node):
+        for name in node.names:
+            self.modules.append(name.name)
+            if name.name.startswith('sysdevel') and not self.is_sysdevel_itself:
+                self.is_sysdevel_build = True
+
+    def visitImportFrom(self, node):
+        for name in node.names:
+            self.module_objects[name.name] = node.module
+        if node.module.startswith('sysdevel') and not self.is_sysdevel_itself:
+            self.is_sysdevel_build = True
+
+
+    
 
 
 ## Caching ###################
