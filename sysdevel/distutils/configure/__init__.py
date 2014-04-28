@@ -49,7 +49,7 @@ class FatalError(SystemExit):
     """
     # pylint: disable=W0231
     def __init__(self, what):
-        sys.stderr.write('FatalError: ' + what + '\n')
+        sys.stderr.write('Fatal Error: ' + what + '\n')
         sys.stderr.flush()
         os._exit(-1)  # pylint: disable=W0212
 
@@ -169,8 +169,6 @@ def __run_helper__(short_name, helper, version, strict,
                    environment, skip, install, quiet,
                    out=sys.stdout, err=sys.stderr,
                    locally=True, download=False):
-    out=sys.stdout #FIXME
-    err=sys.stderr #FIXME
     configured.append(short_name)
     try:
         cfg = helper.configuration()

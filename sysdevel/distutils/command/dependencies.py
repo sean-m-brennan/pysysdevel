@@ -32,16 +32,10 @@ INTERLEAVED_OUTPUT = True
 
 import os
 import sys
-import platform
-import subprocess
 from distutils.core import Command
 
-from ..prerequisites import RequirementsFinder
 from ..configure import configure_system
 from ..dependency_graph import get_dep_dag
-#from ..filesystem import mkdir
-from .. import options
-from ...util import is_string
 
 
 # pylint: disable=W0201

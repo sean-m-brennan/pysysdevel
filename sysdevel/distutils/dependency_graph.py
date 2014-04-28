@@ -27,10 +27,9 @@ import os
 from .dag import dag
 from .configuration import find_package_config
 from .prerequisites import RequirementsFinder
-from ..util import is_string
 
 
-
+# pylint: disable=W0613
 def _fetch_deps(short_name, helper, version, strict, setup_dir=None):
     try:
         cfg = helper.configuration()
@@ -67,6 +66,7 @@ def get_dep_dag(pkg_path):
     Construct a directed acyclic graph of dependencies.
     Takes the path of the root package.
     '''
+    # pylint: disable=W0212
     graph = dag(_recurse_prereqs(pkg_path))
 
     ## remove duplicates where name,version,strict tuple equals name string

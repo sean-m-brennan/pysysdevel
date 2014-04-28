@@ -17,6 +17,7 @@ class configuration(lib_config):
         lib_config.__init__(self, "hdf5", "hdf5.h", debug=False)
 
 
+    # pylint: disable=W0102
     def get_version(self, environ=dict()):
         base_dirs = []
         limit = False

@@ -1,5 +1,4 @@
 
-from ..fetching import fetch, unarchive
 from ..configuration import py_config
 from .hdf5 import configuration as hdf5_lib
 

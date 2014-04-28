@@ -22,6 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
+# pylint: disable=W0105
 
 class dag(object):
     """
@@ -31,7 +32,7 @@ class dag(object):
         if isinstance(arg, dag):
             ## pre-screened for cycles
             self._graph = arg._deepcopy()  # pylint: disable=W0212
-            self._head = arg._head
+            self._head = arg._head  # pylint: disable=W0212
         elif isinstance(arg, dict):
             ## no cycles possible (would be duplicate keys)
             self._graph = arg

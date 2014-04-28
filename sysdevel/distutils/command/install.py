@@ -37,6 +37,7 @@ except ImportError:
     from distutils.command.install import install as old_install
 
 from ..recur import process_subpackages
+from .. import options
 
 
 class install(old_install):
