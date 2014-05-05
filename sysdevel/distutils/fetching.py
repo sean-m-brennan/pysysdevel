@@ -142,12 +142,27 @@ def unarchive(archive, target, archive_dir=None):
     if not os.path.exists(os.path.join(options.target_build_dir, target)):
         mkdir(options.target_build_dir)
         os.chdir(options.target_build_dir)
-        z, _ = open_archive(archive, archive_dir)
+        z, members = open_archive(archive, archive_dir)
         if archive.endswith('.zip'):
             zipextractall(z)
         else:
             tarextractall(z)
         z.close()
+        pathlist = list(set([os.path.dirname(m) for m in members]))
+        root = os.path.commonprefix(pathlist)
+        if root == target:
+            os.chdir(here)
+            return
+        elif root == '':
+            for m in members:
+                dirname = os.path.dirname(m)
+                filename = os.path.basename(m)
+                if dirname != '':
+                    mkdir(os.path.join(target, dirname))
+                shutil.move(os.path.join(dirname, filename),
+                            os.path.join(target, dirname, filename))
+        else:  ## single common directory
+            shutil.move(root, target)
         os.chdir(here)
 
 

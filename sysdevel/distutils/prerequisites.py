@@ -507,7 +507,7 @@ def find_header(filepath, extra_paths=None, extra_subdirs=None, limit=False):
                             directory = os.path.join(rt, dname)
                             if options.DEBUG:
                                 print('Found ' + os.path.join(directory, fname))
-                            return directory.rstrip(os.sep)
+                            return os.path.dirname(directory).rstrip(os.sep)
                         for fn in filenames:
                             if dname == '' and fnmatch.fnmatch(fn, fname):
                                 if options.DEBUG:
