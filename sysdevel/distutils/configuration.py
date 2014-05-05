@@ -106,19 +106,24 @@ class lib_config(config):
         if self.lib.upper() + '_LIB_DIR' in environ and \
                 environ[self.lib.upper() + '_LIB_DIR']:
             locations.append(environ[self.lib.upper() + '_LIB_DIR'])
-            limit = True
             if self.lib.upper() + '_INCLUDE_DIR' in environ and \
                     environ[self.lib.upper() + '_INCLUDE_DIR']:
                 locations.append(environ[self.lib.upper() + '_INCLUDE_DIR'])
+                limit = True
 
         if not limit:
             try:
                 locations += os.environ['LD_LIBRARY_PATH'].split(os.pathsep)
+                locations += os.environ['LIBRARY_PATH'].split(os.pathsep)
                 locations += os.environ['CPATH'].split(os.pathsep)
             except KeyError:
                 pass
             try:
                 locations.append(os.environ[self.lib.upper() + '_ROOT'])
+            except KeyError:
+                pass
+            try:
+                locations.append(os.environ[self.lib.upper() + '_LIBRARY_DIR'])
             except KeyError:
                 pass
             for d in programfiles_directories():

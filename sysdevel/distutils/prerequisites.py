@@ -143,7 +143,7 @@ class RequirementsFinder(NodeVisitor):
 
     def __init__(self, filepath=None, filedescriptor=None, codestring=None,
                  debug=False):
-        super(RequirementsFinder, self).__init__(self)
+        super(RequirementsFinder, self).__init__()
         self.variables = {}
         self.modules = []
         self.module_objects = {}
@@ -490,7 +490,7 @@ def find_header(filepath, extra_paths=None, extra_subdirs=None, limit=False):
         pathlist += glob.glob(path_expr)
     if not limit:
         pathlist += options.default_path_prefixes + options.local_search_paths
-    filename = filepath
+    filename = os.path.basename(filepath)
     for path in pathlist:
         if path != None and os.path.exists(path):
             for sub in subdirs:
@@ -498,21 +498,22 @@ def find_header(filepath, extra_paths=None, extra_subdirs=None, limit=False):
                 for ext_path in ext_paths:
                     if options.DEBUG:
                         print('Searching ' + ext_path + ' for ' + filepath)
-                    filename = os.path.basename(filepath)
-                    dirname = os.path.dirname(filepath)
-                    for root, _, filenames in os.walk(ext_path):
+                    dname, fname = os.path.split(filepath)
+                    for root, dirnames, filenames in os.walk(ext_path):
                         rt = os.path.normpath(root)
+                        if dname in dirnames and \
+                           fname in [os.path.basename(x) for x in
+                                     glob.glob(os.path.join(rt, dname, '*'))]:
+                            directory = os.path.join(rt, dname)
+                            if options.DEBUG:
+                                print('Found ' + os.path.join(directory, fname))
+                            return directory.rstrip(os.sep)
                         for fn in filenames:
-                            if dirname == '' and fnmatch.fnmatch(fn, filename):
+                            if dname == '' and fnmatch.fnmatch(fn, fname):
                                 if options.DEBUG:
-                                    print('Found ' + os.path.join(root, filename))
-                                return root.rstrip(os.sep)
-                            elif fnmatch.fnmatch(os.path.basename(rt), dirname) \
-                                    and fnmatch.fnmatch(fn, filename):
-                                if options.DEBUG:
-                                    print('Found ' + os.path.join(rt, filename))
-                                return os.path.dirname(rt).rstrip(os.sep)
-    raise ConfigError(filename, 'Header not found.')
+                                    print('Found ' + os.path.join(rt, fname))
+                                return rt.rstrip(os.sep)
+    raise ConfigError(fname, 'Header not found.')
 
 
 def find_definitions(name, extra_paths=None, extra_subdirs=None,
