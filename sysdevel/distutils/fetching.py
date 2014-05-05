@@ -32,6 +32,7 @@ import sys
 import tarfile
 import zipfile
 import tempfile
+import shutil
 
 try:
     # pylint: disable=F0401,E0611
@@ -148,8 +149,7 @@ def unarchive(archive, target, archive_dir=None):
         else:
             tarextractall(z)
         z.close()
-        pathlist = list(set([os.path.dirname(m) for m in members]))
-        root = os.path.commonprefix(pathlist)
+        root = os.path.commonprefix(members)
         if root == target:
             os.chdir(here)
             return

@@ -490,7 +490,6 @@ def find_header(filepath, extra_paths=None, extra_subdirs=None, limit=False):
         pathlist += glob.glob(path_expr)
     if not limit:
         pathlist += options.default_path_prefixes + options.local_search_paths
-    filename = os.path.basename(filepath)
     for path in pathlist:
         if path != None and os.path.exists(path):
             for sub in subdirs:

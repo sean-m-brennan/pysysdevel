@@ -1,4 +1,4 @@
-
+import os
 from sysdevel.distutils.fetching import fetch, unarchive
 from sysdevel.distutils.configuration import py_config
 
@@ -19,4 +19,4 @@ class configuration(py_config):
         archive = src_dir + '.tar.gz' 
         fetch(website, archive, archive)
         unarchive(archive, src_dir)
-        return src_dir
+        return os.path.join(src_dir, 'src')
