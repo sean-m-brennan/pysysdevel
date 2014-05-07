@@ -354,6 +354,7 @@ class py_config(config):
         self.indexed = pkg
         if indexed_as:
             self.indexed = indexed_as
+        self.did_install = False
 
 
     def check_version(self, module, version, strict):
@@ -392,6 +393,8 @@ class py_config(config):
                os.path.exists(os.path.join(d, self.pkg, '__init__.py')):
                 self.found = True
                 break
+        if self.did_install:  ## assume correct version was just installed
+            return self.found
         if self.found and not version is None:
             try:
                 for d in local_dirs:
@@ -454,6 +457,7 @@ class py_config(config):
         if not self.found:
             src_dir = self.download(environ, version, strict)
             install_pypkg_without_fetch(self.pkg, None, src_dir, locally)
+            self.did_install = True
             if not self.is_installed(environ, version, strict):
                 raise ConfigError(self.pkg, 'Installation failed.')
 
