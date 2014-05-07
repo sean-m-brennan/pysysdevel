@@ -34,7 +34,6 @@ import subprocess
 import imp
 import glob
 import traceback
-import pkgutil
 import shutil
 from distutils.sysconfig import get_python_lib
 
@@ -349,7 +348,7 @@ class py_config(config):
     def __init__(self, pkg, version, dependencies=None, indexed_as=None,
                  debug=False, force=False):
         config.__init__(self, dependencies, debug, force)
-        self.pkg = pkg
+        self.pkg = pkg.lower()
         self.version = version
         self.indexed = pkg
         if indexed_as:
@@ -359,15 +358,18 @@ class py_config(config):
     def is_installed(self, environ, version=None, strict=False):
         local_dirs = [os.path.join(os.path.abspath(options.target_build_dir),
                                    options.local_lib_dir)]
-        search = local_dirs + [get_python_lib()] + sys.path
-        self.found = self.pkg.lower() in [m[1] for m in
-                                          pkgutil.iter_modules(search)]
+        ## pkgutil methods don't work immediately after an install
+        for d in local_dirs + [get_python_lib()] + sys.path:
+            if os.path.exists(os.path.join(d, self.pkg + '.py')) or \
+               os.path.exists(os.path.join(d, self.pkg, '__init__.py')):
+                self.found = True
+                break
         if self.found and not version is None:
             try:
                 for d in local_dirs:
                     if not d in sys.path:
                         sys.path.insert(0, d)
-                impl = __import__(self.pkg.lower())
+                impl = __import__(self.pkg)
                 check_version = False
                 if hasattr(impl, '__version__'):
                     ver = impl.__version__
@@ -442,8 +444,7 @@ class py_config(config):
             src_dir = self.download(environ, version, strict)
             install_pypkg_without_fetch(self.pkg, None, src_dir, locally)
             if not self.is_installed(environ, version, strict):
-                print(str(self.pkg) + ' claims failed')
-                #raise ConfigError(self.pkg, 'Installation failed.')
+                raise ConfigError(self.pkg, 'Installation failed.')
 
 
 

@@ -109,7 +109,7 @@ def open_archive(archive, archive_dir=None):
         archive_dir = options.download_dir
     if archive.endswith('.tar.Z'):
         if not os.path.exists(os.path.join(archive_dir, archive[:-2])):
-            ## Ugly, but neccessary (neither gzip nor zlib packages work)
+            ## Ugly, but necessary (neither gzip nor zlib packages work)
             here = os.path.abspath(os.getcwd())
             os.chdir(archive_dir)
             os.system('gunzip ' + archive)
