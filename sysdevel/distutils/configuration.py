@@ -36,6 +36,7 @@ import glob
 import traceback
 import shutil
 from distutils.sysconfig import get_python_lib
+from types import ModuleType
 
 from sysdevel.distutils.prerequisites import programfiles_directories, find_header, find_library, find_definitions, find_program, system_uses_homebrew, compare_versions, install_pypkg_without_fetch, RequirementsFinder, ConfigError, read_cache, requirement_versioning
 from sysdevel.distutils.filesystem import glob_insensitive, mkdir
@@ -374,12 +375,23 @@ class py_config(config):
                 if hasattr(impl, '__version__'):
                     ver = impl.__version__
                     check_version = True
-                elif hasattr(impl, 'version'):
-                    ver = impl.version
-                    check_version = True
                 elif hasattr(impl, 'VERSION'):
                     ver = impl.VERSION
                     check_version = True
+                elif hasattr(impl, 'version'):
+                    if isinstance(impl.version, ModuleType):
+                        if hasattr(impl, '__version__'):
+                            ver = impl.version.__version__
+                            check_version = True
+                        elif hasattr(impl, 'VERSION'):
+                            ver = impl.version.VERSION
+                            check_version = True
+                        elif hasattr(impl, 'version'):
+                            ver = impl.version.version
+                            check_version = True
+                    elif type(impl.version) == type(''):
+                        ver = impl.version
+                        check_version = True
                 if check_version:
                     not_ok = (compare_versions(ver, version) == -1)
                     if strict:
