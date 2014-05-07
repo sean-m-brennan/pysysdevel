@@ -356,6 +356,33 @@ class py_config(config):
             self.indexed = indexed_as
 
 
+    def check_version(self, module, version, strict):
+        do_check = False
+        if hasattr(module, '__version__'):
+            ver = module.__version__
+            do_check = True
+        elif hasattr(module, 'VERSION'):
+            ver = module.VERSION
+            do_check = True
+        elif hasattr(module, 'version'):
+            if isinstance(module.version, ModuleType):
+                return self.check_version(module.version, version, strict)
+            elif type(module.version) == type(''):
+                ver = module.version
+                do_check = True
+        if do_check:
+            not_ok = (compare_versions(ver, version) == -1)
+            if strict:
+                not_ok = (compare_versions(ver, version) != 0)
+            if not_ok:
+                self.found = False
+                if self.debug:
+                    sys.stderr.write('Wrong version of ' + self.pkg + ': ' +
+                                     str(ver) + ' vs ' + str(version))
+                return False
+        return True
+
+
     def is_installed(self, environ, version=None, strict=False):
         local_dirs = [os.path.join(os.path.abspath(options.target_build_dir),
                                    options.local_lib_dir)]
@@ -370,39 +397,11 @@ class py_config(config):
                 for d in local_dirs:
                     if not d in sys.path:
                         sys.path.insert(0, d)
-                impl = __import__(self.pkg)
-                check_version = False
-                if hasattr(impl, '__version__'):
-                    ver = impl.__version__
-                    check_version = True
-                elif hasattr(impl, 'VERSION'):
-                    ver = impl.VERSION
-                    check_version = True
-                elif hasattr(impl, 'version'):
-                    if isinstance(impl.version, ModuleType):
-                        if hasattr(impl, '__version__'):
-                            ver = impl.version.__version__
-                            check_version = True
-                        elif hasattr(impl, 'VERSION'):
-                            ver = impl.version.VERSION
-                            check_version = True
-                        elif hasattr(impl, 'version'):
-                            ver = impl.version.version
-                            check_version = True
-                    elif type(impl.version) == type(''):
-                        ver = impl.version
-                        check_version = True
-                if check_version:
-                    not_ok = (compare_versions(ver, version) == -1)
-                    if strict:
-                        not_ok = (compare_versions(ver, version) != 0)
-                    if not_ok:
-                        self.found = False
-                        if self.debug:
-                            print('Wrong version of ' + self.pkg + ': ' +
-                                  str(ver) + ' vs ' + str(version))
-                        return self.found
-                    self.found = True
+                if self.pkg in sys.modules.keys():
+                    impl = reload(sys.modules[self.pkg])
+                else:
+                    impl = __import__(self.pkg)
+                self.found = self.check_version(impl, version, strict)
             except ImportError:
                 self.found = False
                 if self.debug:

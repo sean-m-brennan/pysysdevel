@@ -18,4 +18,10 @@ class configuration(py_config):
             hdf5_ver = '1.8.4'
         py_config.__init__(self, 'h5py', version,
                            dependencies=['hdf5 (>=' + hdf5_ver  + ')', 'lzf'],
-                           debug=True)
+                           debug=False)
+
+    def is_installed(self, environ, version=None, strict=False):
+        return py_config.is_installed(self, environ, self.version, strict)
+
+    def install(self, environ, version, strict=False, locally=True):
+        py_config.install(self, environ, self.version, strict, locally)
