@@ -378,7 +378,7 @@ class py_config(config):
                 self.found = False
                 if self.debug:
                     sys.stderr.write('Wrong version of ' + self.pkg + ': ' +
-                                     str(ver) + ' vs ' + str(version))
+                                     str(ver) + ' vs ' + str(version) + '  ')
                 return False
         return True
 
