@@ -117,6 +117,7 @@ class build(old_build):
         if self.distribution.subpackages != None:
             if self.get_finalized_command('install').ran:
                 return  ## avoid build after install
+            ## FIXME avoid build after any install_* cmd
             try:
                 os.makedirs(self.build_base)
             except OSError:

@@ -144,6 +144,8 @@ def handle_arguments(argv, option_list=()):
     if not data_override:
         opts['data_install_dir'] = os.path.join(opts['install_dir'],
                                                 data_directory)
+        if sum([arg.startswith('install') for arg in argv]) > 0:
+            argv.append('--install-data=' + opts['data_install_dir'])
 
     build_all = True
     for opt in option_list:  ## do not build docs by default

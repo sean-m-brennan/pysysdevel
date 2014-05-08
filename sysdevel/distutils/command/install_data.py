@@ -49,9 +49,10 @@ class install_data(old_data):
  
     def finalize_options(self):
         install = self.get_finalized_command('install')
-        if not hasattr(install, 'install_data'):
+        if not hasattr(install, 'install_data') or install.install_data is None:
             if install.prefix is None:
-                self.data_install_dir = os.path.join(install.install_base, 'share')
+                self.data_install_dir = os.path.join(install.install_base,
+                                                     'share')
             else:
                 self.data_install_dir = os.path.join(install.prefix, 'share')
         else:
