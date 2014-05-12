@@ -52,6 +52,7 @@ from sysdevel.distutils import options
 
 class DownloadError(Exception):
     def __init__(self, which, url=None, code=None):
+        # pylint: disable=W0231
         self.header = 'DownloadError -- '
         self.explanation = ''
         if not url is None:
@@ -87,7 +88,7 @@ def download_progress(count, block_size, total_size):
         sys.stdout.flush()
 
 
-def fetch(website, remote, local, quiet=False):
+def fetch(website, remote, local):
     mkdir(options.download_dir)
     set_downloading_file(remote)
     if not os.path.exists(os.path.join(options.download_dir, local)):
@@ -95,7 +96,7 @@ def fetch(website, remote, local, quiet=False):
         if website.endswith('/'):
             url = website + remote
         urlretrieve(url, os.path.join(options.download_dir, local),
-                    download_progress, quiet=quiet)
+                    download_progress)
         if options.VERBOSE:
             sys.stdout.write('\n')
 
@@ -175,8 +176,7 @@ def unarchive(archive, target, archive_dir=None):
         os.chdir(here)
 
 
-def urlretrieve(url, filename=None, progress=None, data=None, proxy=None,
-                quiet=False):
+def urlretrieve(url, filename=None, progress=None, data=None, proxy=None):
     '''
     Identical to urllib.urlretrieve, except that it handles
     SSL, proxies, and redirects properly.

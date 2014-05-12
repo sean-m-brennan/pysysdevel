@@ -533,7 +533,7 @@ def is_pypi_listed(pkg):
         mkdir(options.target_build_dir)
     listing = os.path.join(options.target_build_dir, '.' + pkg + '_list_test')
     try:
-        urlretrieve(pypi_url(pkg, False), listing, quiet=True)
+        urlretrieve(pypi_url(pkg, False), listing)
         return True
     except (DownloadError, URLError, HTTPError, ContentTooShortError):
         return False
@@ -562,7 +562,7 @@ def pypi_archive(which, version):
             mkdir(options.target_build_dir)
         listing = os.path.join(options.target_build_dir, '.' + which + '_list')
         if not os.path.exists(listing):
-            urlretrieve(pypi_url(which), listing, quiet=True)
+            urlretrieve(pypi_url(which), listing)
         f = open(listing, 'r')
         contents = f.read()
         f.close()
@@ -587,7 +587,7 @@ def available_versions(what, website, pattern, archives=False):
     post = pattern.split('*')[-1]
     try:
         listing = os.path.join(options.target_build_dir, '.' + what + '_list')
-        urlretrieve(website + '/', listing, quiet=True)
+        urlretrieve(website + '/', listing)
         versions = []
         f = open(listing, 'r')
         contents = f.read()
