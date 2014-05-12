@@ -174,6 +174,18 @@ def convert_ulist(str_list):
     return converted
 
 
+def find_documentation(docbase=None, extra_suffixes=None):
+    if docbase is None:
+        docbase = '.'
+    suffixes = ['.org', '.xml', '.rst']
+    if extra_suffixes:
+        suffixes += extra_suffixes
+    directories = []
+    for root, _, filenames in os.walk(docbase):
+        for sfx in suffixes:
+            if fnmatch.filter(filenames, '*' + sfx):
+                directories.append(root)
+    return directories
 
 
 

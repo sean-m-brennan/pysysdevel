@@ -27,23 +27,26 @@ permissions and limitations under the License.
 'build_doc' command (see sub commands)
 """
 
-try:
-    from numpy.distutils.command.build_ext import build_ext
-except ImportError:
-    from distutils.command.build_ext import build_ext
+from distutils.core import Command
 
 
-class build_doc(build_ext):
-    description = "build documentation (sphinx, org-mode, or docbook)"
+class build_doc(Command):
+    description = "build documentation (sphinx, org-mode, and/or docbook)"
 
     ## Order is important
     sub_commands = [('build_org',     lambda *args: True),
                     ('build_docbook', lambda *args: True),
                     ('build_sphinx',  lambda *args: True),]
 
+    def initialize_options (self):
+        pass
+
+    def finalize_options (self):
+        pass
 
     def run(self):
         if not self.distribution.has_documents():
             return
 
-        build_ext.run(self)
+        for cmd_name in self.get_sub_commands():
+            self.run_command(cmd_name)

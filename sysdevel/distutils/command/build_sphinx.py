@@ -34,14 +34,10 @@ import glob
 import shutil
 import platform
 import subprocess
+from distutils.core import Command
 
 ## Fail if sphinx isn't available
 import sphinx  # pylint: disable=W0611
-
-try:
-    from numpy.distutils.command.build_ext import build_ext
-except ImportError:
-    from distutils.command.build_ext import build_ext
 
 from sysdevel.distutils.filesystem import mkdir, copy_tree
 from sysdevel.distutils.building import configure_file, configure_files
@@ -72,8 +68,14 @@ def create_breathe_stylesheet(dirname):
     f.close()
 
 
-class build_sphinx(build_ext):
+class build_sphinx(Command):
     description = "build sphinx documentation"
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
 
     def run(self):
         if not self.distribution.doc_modules:
@@ -97,7 +99,7 @@ class build_sphinx(build_ext):
 
             doc_dir = os.path.abspath(dext.source_directory)
             extra_dirs = dext.extra_directories
-            working_dir = os.path.abspath(os.path.join(self.build_temp,
+            working_dir = os.path.abspath(os.path.join(build.build_temp,
                                                        dext.source_directory))
             here = os.getcwd()
 
@@ -106,14 +108,13 @@ class build_sphinx(build_ext):
             root_dir = dext.name
             if os.path.exists(ref) and not self.force:
                 reprocess = False
-                docbase = os.path.join(doc_dir, 'modules')
-                for root, _, filenames in os.walk(docbase):
+                for root, _, filenames in os.walk(doc_dir):
                     for fn in fnmatch.filter(filenames, '*.rst'):
                         doc = os.path.join(root, fn)
                         if os.path.getmtime(ref) < os.path.getmtime(doc):
                             reprocess = True
                             break
-                        src = os.path.join(root_dir, root[len(docbase)+1:],
+                        src = os.path.join(root_dir, root[len(doc_dir)+1:],
                                             fn[:-3] + 'py')
                         if os.path.exists(src):
                             if os.path.getmtime(ref) < os.path.getmtime(src):
@@ -127,7 +128,7 @@ class build_sphinx(build_ext):
                 #FIXME rst files in package sources (mutiple packages)
                 #src_dir = src_dirs[0]
                 src_dir = os.path.abspath('.')
-                bld_dir = os.path.abspath(self.build_lib)
+                bld_dir = os.path.abspath(build.build_lib)
                 doc_bld_dir = os.path.join(bld_dir,
                                            os.path.relpath(doc_dir, src_dir))
                 environ['BUILD_DIR'] = bld_dir
@@ -203,7 +204,8 @@ class build_sphinx(build_ext):
                 if dext.without_sphinx:
                     return
                 if dext.sphinx_config is None:
-                    dext.sphinx_config = os.path.join(os.path.dirname(__file__),
+                    level_up = os.path.dirname(os.path.dirname(__file__))
+                    dext.sphinx_config = os.path.join(level_up,
                                                       'sphinx_conf.py.in')
                 elif os.path.dirname(dext.sphinx_config) == '':
                     dext.sphinx_config =  os.path.join(doc_dir,

@@ -37,20 +37,22 @@ from sysdevel.modeling.models import DataViewer
 
 
 def json_handler(obj):
-    import datetime
-    import numpy
+    from datetime import datetime
+    # pylint: disable=E0611
+    from numpy import ndarray
+    # pylint: enable=E0611
     HAVE_SPACEPY = False
     try:
-        import spacepy
+        from spacepy.datamodel import dmarray
         HAVE_SPACEPY = True
     except ImportError:
         pass
 
-    if type(obj) == datetime.datetime:
+    if type(obj) == datetime:
         return obj.isoformat()
-    elif type(obj) == numpy.ndarray:
+    elif type(obj) == ndarray:
         return obj.tolist()
-    elif HAVE_SPACEPY and type(obj) == spacepy.datamodel.dmarray:
+    elif HAVE_SPACEPY and type(obj) == dmarray:
         return obj.tolist()
     elif isinstance(obj, DataViewer):
         import inspect

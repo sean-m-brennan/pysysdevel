@@ -57,6 +57,7 @@ if numpy_support:
 
 from sysdevel.distutils.prerequisites import read_cache
 from sysdevel.distutils.numpy_utils import is_sequence
+from sysdevel.distutils.building import find_documentation
 from sysdevel.util import is_string
 from sysdevel.distutils import options
 
@@ -101,6 +102,10 @@ class CustomDistribution(oldDistribution):
         self.doc_modules = attrs.get('doc_modules')
         if self.doc_modules != None:
             del old_attrs['doc_modules']
+        ## Other documentation
+        self.doc_dir = attrs.get('doc_dir')
+        if self.doc_dir != None:
+            del old_attrs['doc_dir']
         ## Py++ extensions
         self.pypp_ext_modules = attrs.get('pypp_ext_modules')
         if self.pypp_ext_modules != None:
@@ -203,7 +208,8 @@ class CustomDistribution(oldDistribution):
         return self.web_ext_modules != None and len(self.web_ext_modules) > 0
 
     def has_documents(self):
-        return self.doc_modules != None and len(self.doc_modules) > 0
+        return (self.doc_modules != None and len(self.doc_modules) > 0) or \
+            bool(find_documentation(self.doc_dir))
 
     def has_executables(self):
         return self.native_executables != None and \
@@ -250,6 +256,9 @@ from sysdevel.distutils.command import config_cc
 from sysdevel.distutils.command import config_fc
 from sysdevel.distutils.command import build
 from sysdevel.distutils.command import build_doc
+from sysdevel.distutils.command import build_org
+from sysdevel.distutils.command import build_docbook
+from sysdevel.distutils.command import build_sphinx
 from sysdevel.distutils.command import build_js
 from sysdevel.distutils.command import build_py
 from sysdevel.distutils.command import build_scripts
@@ -282,6 +291,9 @@ my_cmdclass = {'dependencies':     dependencies.dependencies,
                'build_shlib':      build_shlib.build_shlib,
                'build_js':         build_js.build_js,
                'build_doc':        build_doc.build_doc,
+               'build_org':        build_org.build_org,
+               'build_docbook':    build_docbook.build_docbook,
+               'build_sphinx':     build_sphinx.build_sphinx,
                'build_pypp_ext':   build_pypp_ext.build_pypp_ext,
                'build_exe':        build_exe.build_exe,
                'sdist':            sdist,
@@ -365,18 +377,6 @@ def get_distribution(always=False):
 
 
 def setup(**attr):
-    if len(sys.argv)<=1 and not attr.get('script_args',[]):
-        try:
-            from numpy.distutils.interactive import interactive_sys_argv
-            from numpy.distutils.core import _exit_interactive_session
-            import atexit
-            atexit.register(_exit_interactive_session)
-            sys.argv[:] = interactive_sys_argv(sys.argv)
-            if len(sys.argv)>1:
-                return setup(**attr)
-        except ImportError:
-            pass
-
     # pylint: disable=W0212
     # pylint: disable=W0142
 

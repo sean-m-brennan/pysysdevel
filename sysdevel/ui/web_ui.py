@@ -92,12 +92,14 @@ def multiline_text(text):
 class WebUI(object):
     @classmethod
     def main(klass, argv=None):
-        klass(argv).__init_UI()
+        klass(argv).__init_UI()  # pylint: disable=W0212
 
 
     def __init__(self, argv=None):
         self.server = '@@{WEBSOCKET_SERVER}'
         self.resource = '@@{WEBSOCKET_RESOURCE}'
+        self.callback = None
+        self.fallback = False
         if argv:
             for arg in argv:
                 if arg == '-s' or arg == '--server':
@@ -106,6 +108,15 @@ class WebUI(object):
                 elif arg == '-r' or arg == '--resource':
                     idx = argv.index(arg)
                     self.resource = argv[idx+1]
+                elif arg == '--callback':
+                    idx = argv.index(arg)
+                    self.callback = getattr(self, argv[idx+1])
+                elif arg == '--fallback':
+                    idx = argv.index(arg)
+                    if len(argv) > idx and argv[idx+1][0] != '-':
+                        self.fallback = argv[idx+1]
+                    else:
+                        self.fallback = True
         if 'WEBSOCKET_' in self.server or 'WEBSOCKET_' in self.resource:
             raise Exception('Invalid configuration for WebUI')
         self.log = logging.getConsoleLogger()
@@ -115,21 +126,23 @@ class WebUI(object):
         self.php_dh = None
 
 
-    #FIXME why two-phase?
-    def __init_UI(self, data_callback=None):
+    def __init_UI(self):
+        ## Two-phase to mimic flex_ui class
         Window.addWindowCloseListener(self)
 
-        self.ws_dh = WSdataHandler(self, data_callback)
+        self.ws_dh = WSdataHandler(self, self.callback)
         location = Window.getLocation()
         search = location.getSearch()[1:]
         params = '/'.join(search.split('&'))
         full_resource = self.resource + '/' + params
         self.ws = websocketclient.WebSocketClient(full_resource, self.ws_dh,
-                                                  fallback=True)
+                                                  fallback=bool(self.fallback))
         self.ws.connect(self.server)
 
-        self.php_dh = PHPdataHandler(self, data_callback)
+        self.php_dh = PHPdataHandler(self, self.callback)
         self.php_script = self.resource + '.php'
+        if not isinstance(self.fallback, bool):
+            self.php_script = self.fallback
 
 
     def step_in(self, n, data):
@@ -157,9 +170,11 @@ class WebUI(object):
         self.log.debug('Sending ' + msg)
         if self.connected():
             self.ws_dh.send(msg)
-        else:  ## fallback to PHP
+        elif self.fallback:  ## fallback to PHP
             self.log.info('Server at ' + self.server + ' not available.')
             HTTPRequest().asyncPost(self.php_script, msg, self.php_dh)
+        else:
+            self.log.error('Server at ' + self.server + ' not available.')
 
 
     def onWindowClosed(self):

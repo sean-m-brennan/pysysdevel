@@ -181,8 +181,8 @@ class GenericPlot(DataViewer):
 
     '''
     ## Also an abstract class  # pylint: disable=W0223
-    def __init__(self, axes=2, **kwargs):
-        DataViewer.__init__(self) #, **kwargs) #FIXME why is this here?
+    def __init__(self, axes=2):
+        DataViewer.__init__(self)
         self.chart_title = 'Chart'
         self.axes = axes
         self._series = []

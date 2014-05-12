@@ -44,6 +44,7 @@ from sysdevel.distutils.fetching import urlretrieve, fetch, unarchive, open_arch
 from sysdevel.distutils.building import process_progress
 from sysdevel.distutils.pypi_exceptions import pypi_exceptions
 from sysdevel.distutils import options
+from sysdevel.util import is_string
 
 
 ## All these classes are abstract
@@ -182,7 +183,7 @@ class file_config(config):
         if not version is None:
             self.website = self.website + '/' + version + '/'
         for t in self.targets:
-            if isinstance(t, basestring):
+            if is_string(t):
                 fetch(self.website, t, t)
             else:
                 fetch(self.website + '/' + t[0], t[1], t[1])
@@ -191,7 +192,7 @@ class file_config(config):
 
     def is_installed(self, environ, version=None, strict=False):
         for item in self.targets:
-            if isinstance(item, basestring):
+            if is_string(item):
                 if not os.path.exists(os.path.join(self.target_dir, item)):
                     return False
             else:
@@ -206,7 +207,7 @@ class file_config(config):
         if not os.path.exists(self.target_dir):
             os.makedirs(self.target_dir)
         for t in self.targets:
-            if isinstance(t, basestring):
+            if is_string(t):
                 shutil.copy(os.path.join(options.download_dir, t),
                             self.target_dir)
             else:

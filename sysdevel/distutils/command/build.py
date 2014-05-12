@@ -88,7 +88,7 @@ class build(old_build):
             self.distribution.has_data_directories()
 
     def has_documents(self):
-        return True  #FIXME detect documentation
+        return self.distribution.has_documents()
 
 
     ## Order is important
@@ -115,9 +115,13 @@ class build(old_build):
 
         options.set_top_level(self.sublevel)
         if self.distribution.subpackages != None:
-            if self.get_finalized_command('install').ran:
+            install = self.get_finalized_command('install')
+            if install.ran:
                 return  ## avoid build after install
-            ## FIXME avoid build after any install_* cmd
+            for cmd in install.get_sub_commands():
+                if getattr(cmd, 'ran', False):
+                    return
+                ## TODO avoid build after any install_* cmd
             try:
                 os.makedirs(self.build_base)
             except OSError:

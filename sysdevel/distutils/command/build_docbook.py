@@ -30,12 +30,7 @@ permissions and limitations under the License.
 import os
 import glob
 import subprocess
-
-# pylint: disable=W0201
-try:
-    from numpy.distutils.command.build_ext import build_ext
-except ImportError:
-    from distutils.command.build_ext import build_ext
+from distutils.core import Command
 
 from sysdevel.distutils.prerequisites import find_program, find_file
 from sysdevel.distutils.filesystem import mkdir, copy_tree
@@ -111,13 +106,15 @@ def make_doc(src_file, target_dir=None, stylesheet=None):
     os.chdir(here)
 
 
-class build_docbook(build_ext):
+class build_docbook(Command):
     description = "Build pdfs from docbook xml"
     user_options = [('stylesheet=', None, 'stylesheet to use'),]
 
-
     def initialize_options(self):
-        self.stylesheet = None
+        self.stylesheet = None  # pylint: disable=W0201
+
+    def finalize_options(self):
+        pass
 
     def run(self):
         build = self.get_finalized_command('build')

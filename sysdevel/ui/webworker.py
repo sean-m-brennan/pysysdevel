@@ -33,6 +33,7 @@ from __pyjamas__ import JS
 from pyjamas import logging
 log = logging.getConsoleLogger()
 
+from sysdevel.util import is_string
 
 def _worker_supported():
     return JS("""typeof $wnd.Worker === 'function'""")
@@ -52,7 +53,7 @@ class WebWorker(object):
         """
         self.module = self.function = None
         try:
-            is_mod = isinstance(module_or_function, basestring)
+            is_mod = is_string(module_or_function)
         except NameError:
             is_mod = isinstance(module_or_function, str)
         if is_mod:

@@ -106,14 +106,15 @@ def requirement_versioning(name):
 def literal_eval(node_or_string):
     if COMPATIBILITY_MODE:
         _safe_names = {'None': None, 'True': True, 'False': False}
-        if isinstance(node_or_string, basestring):
+        if is_string(node_or_string):
             node_or_string = ast_parse(node_or_string, mode='eval')
         if isinstance(node_or_string, ast.Expression):
             node_or_string = node_or_string.node  # pylint: disable=E1103
         def _convert(node):
             if isinstance(node, ast.Const) and \
-               isinstance(node.value,
-                          (basestring, int, float, long, complex)):
+               (is_string(node.value) or 
+                isinstance(node.value,
+                           (int, float, long, complex))):
                 return node.value
             elif isinstance(node, ast.Tuple):
                 return tuple([_convert(x) for x in node.nodes])

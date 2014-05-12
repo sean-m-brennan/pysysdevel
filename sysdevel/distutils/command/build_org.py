@@ -31,11 +31,7 @@ import os
 import glob
 import shutil
 import subprocess
-
-try:
-    from numpy.distutils.command.build_ext import build_ext
-except ImportError:
-    from distutils.command.build_ext import build_ext
+from distutils.core import Command
 
 from sysdevel.distutils.prerequisites import find_program
 from sysdevel.distutils.filesystem import mkdir, copy_tree
@@ -113,7 +109,7 @@ def make_doc(src_file, target_dir=None, mode='docbook'):
 
 
 # pylint: disable=W0201
-class build_org(build_ext):
+class build_org(Command):
     description = "Transform Emacs Org-mode documentation"
     user_options = [('latex', None, 'transform org to latex'),
                     ('html', None, 'transform org to html'),
@@ -121,7 +117,7 @@ class build_org(build_ext):
                      'transform org to docbook xml (default)'),]
 
     def initialize_options(self):
-        self.latex = False
+        self.latex = False  # pylint: disable=W0201
         self.html = False
         self.docbook = False
         self.mode = 'docbook'
@@ -145,7 +141,7 @@ class build_org(build_ext):
             if dext.org_mode:  ## must be provided to trigger this
                 for src in glob.glob(os.path.join(dext.source_directory,
                                                   '*.org')):
-                    make_doc(src, target, dext.org_modemode)
+                    make_doc(src, target, dext.org_mode)
 
         if not self.distribution.doc_dir:
             return
