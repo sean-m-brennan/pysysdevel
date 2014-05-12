@@ -45,6 +45,7 @@ except ImportError:
 from sysdevel.distutils.filesystem import mkdir, copy_tree, recursive_chown
 from sysdevel.distutils.prerequisites import find_program, ConfigError
 from sysdevel.distutils.building import configure_file, configure_files
+from sysdevel.distutils.configure import configure_package
 from sysdevel.distutils import options
 from sysdevel import CLIENT_SUPPORT_DIR
 
@@ -80,8 +81,8 @@ class build_js(build_ext):
         if self.pyjscompiler is None:
             try:
                 self.pyjscompiler = find_program('pyjsbuild', [self.pyjspath])
-            except ConfigError:  # pylint: disable=W0703
-                pass
+            except ConfigError:
+                pass  ## defer resolution
 
 
     def run(self):
@@ -139,7 +140,10 @@ class build_js(build_ext):
                     except KeyError:
                         compiler = self.pyjscompiler
                     if compiler is None:
-                        raise DistutilsExecError("no pyjsbuild executable found or given")
+                        env = configure_package('pyjamas')
+                        compiler = env['PYJSBUILD']
+                        if compiler is None:
+                            raise DistutilsExecError("no pyjsbuild executable found or given")
                     cmd_line = [os.path.abspath(compiler)]
                     for arg in wext.extra_compile_args:
                         if 'debug' in arg.lower():

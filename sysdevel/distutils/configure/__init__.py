@@ -63,6 +63,11 @@ def simplify_version(version):
         return ver_tpl[0] + '.' + ver_tpl[1]
 
 
+def configure_package(which, locally=True):
+    return find_package_config(which, __run_helper__, dict(), skip=False,
+                               install=True, quiet=False, locally=locally)
+
+
 # pylint: disable=W0102
 def configure_system(prerequisite_list, version,
                      required_python_version='2.4', install=None, quiet=False,
@@ -156,11 +161,6 @@ def configure_system(prerequisite_list, version,
                   "--show'\nand install the listed packages by hand.\n" +
                   'Prerequisites might be present, so building anyway...\n')
     return environment
-
-
-def configure_package(which, locally=True):
-    return find_package_config(which, __run_helper__, dict(), skip=False,
-                               install=True, quiet=False, locally=locally)
 
 
 configured = []

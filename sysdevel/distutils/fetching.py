@@ -51,7 +51,21 @@ from sysdevel.distutils import options
 
 
 class DownloadError(Exception):
-    pass
+    def __init__(self, which, url=None, code=None):
+        self.header = 'DownloadError -- '
+        self.explanation = ''
+        if not url is None:
+            self.explanation += str(url) + ' : '
+        self.explanation += which
+        if not code is None:
+            self.explanation += ' ' + str(code)
+
+    def __str__(self):
+        return str(self.explanation)
+
+    def __repr__(self):
+        return str(self.header) + str(self.explanation)
+
 
 
 __DOWNLOAD_FILE = ''
@@ -222,9 +236,10 @@ def urlretrieve(url, filename=None, progress=None, data=None, proxy=None,
         del fp
         del tfp
     except (URLError, HTTPError):
-        if not quiet:
-            sys.stderr.write("HTTP Error connecting to " + url + ":\n")
-        raise
+        exc_class, exc, tb = sys.exc_info()
+        which = str(getattr(exc, 'reason', str(exc_class.__name__)))
+        new_exc = DownloadError(which, url, str(getattr(exc, 'code', None)))
+        raise new_exc.__class__, new_exc, tb
 
     if size >= 0 and read < size:
         raise ContentTooShortError("%s: retrieval incomplete: "

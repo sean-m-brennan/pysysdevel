@@ -71,8 +71,6 @@ class _Options(object):
     windows_postinstall = 'postinstall.py'
     default_py2exe_library = 'library.zip'
 
-    user_config_dir = 'config'  ## in package base directory
-
     def __init__(self):
         ## mutable
         self._local_search_paths = []
@@ -80,6 +78,8 @@ class _Options(object):
         self._target_download_dir  = self._default_download_dir
         self._default_build_dir = 'build'
         self._target_build_dir = self._default_build_dir
+        self._default_config_dir = 'config'  ## in package base directory
+        self._user_config_dir = self._default_config_dir
         self._VERBOSE = False
         self._DEBUG = False
 
@@ -126,6 +126,17 @@ class _Options(object):
         self._default_download_dir = d
 
     @property
+    def default_config_dir(self):
+        return self._default_config_dir
+
+    @property
+    def user_config_dir(self):
+        return self._user_config_dir
+
+    def set_config_dir(self, d):
+        self._default_config_dir = d
+
+    @property
     def target_build_dir(self):
         return self._target_build_dir
 
@@ -135,13 +146,14 @@ class _Options(object):
         self._target_build_dir = os.path.join(base_dir, self.default_build_dir)
         self._target_download_dir = os.path.join(base_dir,
                                                  self.default_download_dir)
+        self._user_config_dir = os.path.join(base_dir, self.default_config_dir)
         return self._target_build_dir
 
 options = _Options()
 
 
 from sysdevel.distutils.core import setup
-from sysdevel.distutils.configure import configure_system, FatalError
+from sysdevel.distutils.configure import configure_system, configure_package, FatalError
 from sysdevel.distutils.pkg_config import pkg_config, handle_arguments, get_options, post_setup
 from sysdevel.distutils.tree import tree
 from sysdevel.distutils.dag import dag

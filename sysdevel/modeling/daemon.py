@@ -298,8 +298,7 @@ if __name__ == "__main__":
         _svc_display_name_ = "Test Daemon"
 
         def __init__(self):
-            super(TestDaemon, self).__init__(self,
-                                             os.path.join(tempfile.gettempdir(),
+            super(TestDaemon, self).__init__(os.path.join(tempfile.gettempdir(),
                                                           'TestDaemon.log'))
             self.running = True
 
