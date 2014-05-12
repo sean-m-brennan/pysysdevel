@@ -419,31 +419,31 @@ class py_config(config):
         src_dir = self.indexed + '-' + str(version)
         archive = src_dir + '.tar.gz'
         try:
-            fetch(website, archive, archive, quiet=True)
+            fetch(website, archive, archive)
             unarchive(archive, src_dir)
             return src_dir
         except (DownloadError, URLError, HTTPError, ContentTooShortError):
             try:
                 archive = src_dir + '.zip'
-                fetch(website, archive, archive, quiet=True)
+                fetch(website, archive, archive)
                 unarchive(archive, src_dir)
                 return src_dir
             except (DownloadError, URLError, HTTPError, ContentTooShortError):
                 try:
                     archive = src_dir + '.tar.bz2'
-                    fetch(website, archive, archive, quiet=True)
+                    fetch(website, archive, archive)
                     unarchive(archive, src_dir)
                     return src_dir
                 except (DownloadError, URLError, HTTPError, ContentTooShortError):
                     try:
                         archive = src_dir + '.tgz'
-                        fetch(website, archive, archive, quiet=True)
+                        fetch(website, archive, archive)
                         unarchive(archive, src_dir)
                         return src_dir
                     except (DownloadError, URLError, HTTPError, ContentTooShortError):
                         try:
                             archive = src_dir + '.tar.Z'
-                            fetch(website, archive, archive, quiet=True)
+                            fetch(website, archive, archive)
                             unarchive(archive, src_dir)
                             return src_dir
                         except (DownloadError, URLError, HTTPError, ContentTooShortError):
