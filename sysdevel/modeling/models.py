@@ -239,10 +239,10 @@ class PlotSeries(DataViewer):
     '''
     Abstract plotting class, represents a single two or three axis data series.
     '''
-    def __init__(self, axes=2, **kwargs):
+    def __init__(self, *args, **kwargs):
         DataViewer.__init__(self, **kwargs)
         self.name = 'Series'
-        self.axes = axes
+        self.axes = kwargs.get('axes', 2)
         self.x_values = []
         self.y_values = []
         self.z_values = []

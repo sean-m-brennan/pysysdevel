@@ -137,14 +137,14 @@ class build_org(Command):
         build = self.get_finalized_command('build')
         target = os.path.abspath(os.path.join(build.build_base, 'docs'))
 
-        for dext in self.distribution.doc_modules:
-            if dext.org_mode:  ## must be provided to trigger this
-                for src in glob.glob(os.path.join(dext.source_directory,
-                                                  '*.org')):
-                    make_doc(src, target, dext.org_mode)
+        if self.distribution.doc_modules:
+            for dext in self.distribution.doc_modules:
+                if dext.org_mode:  ## must be provided to trigger this
+                    for src in glob.glob(os.path.join(dext.source_directory,
+                                                      '*.org')):
+                        make_doc(src, target, dext.org_mode)
 
-        if not self.distribution.doc_dir:
-            return
-
-        for src in glob.glob(os.path.join(self.distribution.doc_dir, '*.org')):
-            make_doc(src, target, self.mode)
+        if self.distribution.doc_dir:
+            for src in glob.glob(os.path.join(self.distribution.doc_dir,
+                                              '*.org')):
+                make_doc(src, target, self.mode)

@@ -36,12 +36,10 @@ import platform
 import subprocess
 from distutils.core import Command
 
-## Fail if sphinx isn't available
-import sphinx  # pylint: disable=W0611
-
 from sysdevel.distutils.filesystem import mkdir, copy_tree
 from sysdevel.distutils.building import configure_file, configure_files
 from sysdevel.distutils.prerequisites import find_program
+from sysdevel.distutils import options
 
 
 def create_breathe_stylesheet(dirname):
@@ -214,14 +212,16 @@ class build_sphinx(Command):
                                os.path.join(working_dir, 'conf.py'))
                 import warnings
                 try:
-                    from sphinx.application import Sphinx
-                    if 'windows' in platform.system().lower() or \
-                            not build_verbose:
-                        from sphinx.util.console import nocolor
+                    import sphinx
                 except ImportError:
-                    sys.stderr.write('ERROR: Sphinx not installed ' +
-                                     '(required for documentation).\n')
-                    return
+                    configure_package('breathe')  ## requires sphinx
+                    sys.path.insert(0, os.path.join(options.target_build_dir,
+                                                    options.local_lib_dir))
+
+                from sphinx.application import Sphinx
+                if 'windows' in platform.system().lower() or \
+                   not build_verbose:
+                    from sphinx.util.console import nocolor
                 warnings.filterwarnings("ignore",
                                         category=PendingDeprecationWarning)
                 warnings.filterwarnings("ignore", category=UserWarning)

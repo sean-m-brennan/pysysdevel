@@ -102,7 +102,11 @@ class configuration(lib_config):
         if not self.found:
             src_dir = self.download(environ, version, strict)
             if locally:
-                autotools_install_without_fetch(environ, src_dir, locally)
+                autotools_install_without_fetch(environ, src_dir, locally,
+                                                extra_cfg=['--enable-static',
+                                                           '--enable-shared'],
+                                                addtnl_env={'CFLAGS': '-fPIC'}
+                                                )
             else:
                 global_install('MPICH', None,
                                brew='mpich2', port='mpich-devel',
