@@ -197,6 +197,10 @@ class GenericPlot(DataViewer):
         return d
 
 
+    def requires(self):
+        return []
+
+
     def add(self, series):
         self._series.append(series)
 
@@ -205,13 +209,13 @@ class GenericPlot(DataViewer):
         return ['chart_title', 'series']
 
 
-    def view(self, data_model):
+    def view(self, data_model_list):
         '''
         Must override this method since 'view' is not
         implemented for PlotSeries.
         '''
         s = PlotSeries(self.axes)
-        s.view(data_model)
+        s.view(data_model_list)
         self._series.append(s)
 
 
