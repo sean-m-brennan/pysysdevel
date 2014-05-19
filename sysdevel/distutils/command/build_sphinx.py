@@ -39,6 +39,7 @@ from distutils.core import Command
 from sysdevel.distutils.filesystem import mkdir, copy_tree
 from sysdevel.distutils.building import configure_file, configure_files
 from sysdevel.distutils.prerequisites import find_program
+from sysdevel.distutils.configure import configure_package
 from sysdevel.distutils import options
 
 
@@ -212,7 +213,7 @@ class build_sphinx(Command):
                                os.path.join(working_dir, 'conf.py'))
                 import warnings
                 try:
-                    import sphinx
+                    import sphinx  # pylint: disable=W0612
                 except ImportError:
                     configure_package('breathe')  ## requires sphinx
                     sys.path.insert(0, os.path.join(options.target_build_dir,
