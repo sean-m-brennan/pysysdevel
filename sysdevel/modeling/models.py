@@ -124,8 +124,14 @@ class DataModel(dict):
         '''
         tests = [True] * len(parameters)
         for i, (k, v) in enumerate(parameters.items()):
-            if obj[k] != v: #FIXME range testing?
-                tests[i] = False
+            data = obj[k]
+            try:
+                r = sorted(v)
+                if data < r[0] or data > r[-1]:
+                    tests[i] = False
+            except TypeError:
+                if data != v:
+                    tests[i] = False
         return sum(tests)
 
 
@@ -162,10 +168,16 @@ class CSVDataModel(DataModel):
     def satisfies(cls, parameters, obj):
         keys, line = obj
         indices = dict([(k, i) for i, k in enumerate(keys)])
-        tests = [False] * len(parameters)
+        tests = [True] * len(parameters)
         for i, (k, v) in enumerate(parameters.items()):
-            if line.split(cls.FIELD_SEP)[indices[k]] == v: #FIXME range testing?
-                tests[i] = True
+            data = line.split(cls.FIELD_SEP)[indices[k]]
+            try:
+                r = sorted(v)
+                if data < r[0] or data > r[-1]:
+                    tests[i] = False
+            except TypeError:
+                if data != v:
+                    tests[i] = False
         return sum(tests)
 
 
@@ -205,8 +217,14 @@ class JSONDataModel(DataModel):
         indices = dict([(k, i) for i, k in enumerate(keys)])
         tests = [False] * len(parameters)
         for i, (k, v) in enumerate(parameters.items()):
-            if line.split(cls.FIELD_SEP)[indices[k]] == v: #FIXME range testing?
-                tests[i] = True
+            data = line.split(cls.FIELD_SEP)[indices[k]]
+            try:
+                r = sorted(v)
+                if data < r[0] or data > r[-1]:
+                    tests[i] = False
+            except TypeError:
+                if data != v:
+                    tests[i] = False
         return sum(tests)
 
 
@@ -342,8 +360,13 @@ try:
             tests = [True] * len(parameters)
             for i, (k, v) in enumerate(parameters.items()):
                 for data in obj[k]:
-                    if data != v: #FIXME range testing?
-                        tests[i] = False
+                    try:
+                        r = sorted(v)
+                        if data < r[0] or data > r[-1]:
+                            tests[i] = False
+                    except TypeError:
+                        if data != v:
+                            tests[i] = False
             return sum(tests)
 
 
@@ -420,6 +443,7 @@ try:
                         obj = self.klass(template)
                         for k in obj.keys():
                             obj[k] = numpy.array(data[k]) ##FIXME field type?
+                            #FIXME shape??
                         self.data_models.append(obj)
             h5file.close()
 
@@ -451,9 +475,15 @@ try:
                 tests = [True] * len(parameters)
                 for i, (k, v) in enumerate(parameters.items()):
                     for data in obj[k]:
-                        if data != v: #FIXME range testing?
-                            tests[i] = False
+                        try:
+                            r = sorted(v)
+                            if data < r[0] or data > r[-1]:
+                                tests[i] = False
+                        except TypeError:
+                            if data != v:
+                                tests[i] = False
                 return sum(tests)
+
 
 
         class SpaceDataStore(HDF5DataStore):
