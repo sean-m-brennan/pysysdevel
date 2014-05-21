@@ -33,37 +33,8 @@ except ImportError:
     from threading import Thread as Process
 import logging
 
-from sysdevel.modeling.models import DataViewer
-
-
-def json_handler(obj):
-    from datetime import datetime
-    # pylint: disable=E0611
-    from numpy import ndarray
-    # pylint: enable=E0611
-    HAVE_SPACEPY = False
-    try:
-        from spacepy.datamodel import dmarray
-        HAVE_SPACEPY = True
-    except ImportError:
-        pass
-
-    if type(obj) == datetime:
-        return obj.isoformat()
-    elif type(obj) == ndarray:
-        return obj.tolist()
-    elif HAVE_SPACEPY and type(obj) == dmarray:
-        return obj.tolist()
-    elif isinstance(obj, DataViewer):
-        import inspect
-        discard = dir(type('dummy', (object,), {}))
-        discard += inspect.getmembers(obj,
-                                      lambda x: inspect.isbuiltin(x) or \
-                                      inspect.ismethod(x))
-        return [item for item in inspect.getmembers(obj) if item not in discard]
-    else:
-        raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))
-
+# pylint: disable=W0611
+from sysdevel.modeling.models import DataViewer, json_handler
 
 
 

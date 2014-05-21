@@ -27,7 +27,7 @@ permissions and limitations under the License.
 
 import logging
 
-from sysdevel.modeling.websockethandler import json_handler
+from sysdevel.modeling.models import json_handler
 
 
 class Query(object):

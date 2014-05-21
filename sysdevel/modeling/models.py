@@ -27,16 +27,14 @@ permissions and limitations under the License.
 Model-View-Controller base classes
 """
 
-import os
-import shutil
 import math
-from itertools import combinations
+import numpy
+from datetime import datetime
 try:
     import json
 except ImportError:
     import simplejson as json
 
-from .websockethandler import json_handler
 
 class UnknownModelException(Exception):
     def __init__(self, explain):
@@ -59,10 +57,66 @@ class UnmatchedModelException(Exception):
 
 ##############################
 
-class DataModel(dict):
+try:
+    from spacepy import datamodel as spdm
+    dm_klass = spdm.SpaceData
+    USE_SPACEPY = True
+except ImportError:
+    dm_klass = dict
+    USE_SPACEPY = False
+
+
+def json_handler(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, numpy.ndarray):
+        return obj.tolist()
+    elif USE_SPACEPY and isinstance(obj, spdm.dmarray):
+        return obj.tolist()
+    elif USE_SPACEPY and isinstance(obj, spdm.SpaceData):
+        keyed_values = [str(k) + ':' + json.dumps(v, default=json_handler)
+                        for k, v in obj.items()]
+        attributes = json.dumps(obj.attrs, default=json_handler)
+        if attributes:
+            keyed_values.append('ATTRS:' + attributes) 
+        return '{' + ','.join(keyed_values) + '}'
+    elif isinstance(obj, DataViewer):
+        import inspect
+        discard = dir(type('dummy', (object,), {}))
+        inspector = lambda x: inspect.isbuiltin(x) or inspect.ismethod(x)
+        discard += inspect.getmembers(obj, inspector)
+        return [item for item in inspect.getmembers(obj) if item not in discard]
+    else:
+        raise TypeError('Object of type ' + type(obj) + ' with value of ' +
+                        repr(obj) + ' is not JSON serializable.')
+
+
+def json_spacedata_decoder(obj):
     '''
-    Model of Model-View-Controller pattern. Container for data updates by
+    Recursive decoding of JSON-encoded SpaceData object
+    '''
+    if USE_SPACEPY and isinstance(obj, dict) and 'ATTRS' in obj.keys():
+        data_model = spdm.SpaceData()
+        for k, v in obj:
+            if k.upper() == 'ATTRS':
+                data_model.attrs = v
+            else:
+                data_model[k] = json_spacedata_decoder(v)
+        return data_model
+    else:
+        return obj
+
+
+
+class DataModel(dm_klass):
+    '''
+    Model of Model-View-Controller pattern. Container for data, updated by
     multiple controllers, read by viewer for display.
+
+    Represents keyed access to data arrays.
+
+    If SpacePy is available, this object can also have attributes.
+    Also, CDF file backing is only supported through SpacePy.
     '''
 
     DATE_FORMAT = '%Y-%m-%d'
@@ -71,10 +125,22 @@ class DataModel(dict):
     DATETIME_TZ = 'Z'
     DATETIME_FORMAT = DATE_FORMAT + DATETIME_SEP + TIME_FORMAT + DATETIME_TZ
 
-    def __init__(self, template=()):
-        dict.__init__(self)
-        self._pipeline = dict()
-        self._index = 0
+    def __init__(self, *args, **kwargs):
+        '''
+        Other than superclass (dict) keyword arguments,
+        this can take a 'template' keyword
+        which is either a dictionary for populating keys and values
+        or a list of keys.
+
+        If SpacePy is available, this can also take a 'attrs' keyword for 
+        populating the attributes dictionary.
+        '''
+        template = ()
+        if 'template' in kwargs:
+            template = kwargs['template']
+            del kwargs['template']
+        super(DataModel, self).__init__(*args, **kwargs)
+        self._pipeline = list()
         try:
             d = dict(template)
         except ValueError:
@@ -94,8 +160,7 @@ class DataModel(dict):
         '''
         Add a producer/consumer to the pipeline.
         '''
-        self._pipeline[self._index] = controller
-        self._index += 1
+        self._pipeline.append(controller)
 
 
     def validate(self):
@@ -104,403 +169,218 @@ class DataModel(dict):
         fulfills the requirements at each step.
         '''
         prev = None
-        for idx in range(len(self._pipeline)):
-            ctrlr = self._pipeline[idx]
+        for controller in self._pipeline:
             if prev:
-                reqs = list(ctrlr.requires())
+                reqs = list(controller.requires())
                 for p in prev.provides():
                     reqs.remove(p)
                 if len(reqs) > 0:
                     return False
-            prev = ctrlr
+            prev = controller
         return True
 
 
-    @classmethod
-    def satisfies(cls, parameters, obj):
+    def satisfies(self, parameters):
         '''
-        Tests if values satisfy parameters.
-        obj is dictionary-like
+        Tests whether the dataset satisfies keyed parameters.
+        A range can be specified with a list.
         '''
-        tests = [True] * len(parameters)
-        for i, (k, v) in enumerate(parameters.items()):
-            data = obj[k]
-            try:
-                r = sorted(v)
-                if data < r[0] or data > r[-1]:
-                    tests[i] = False
-            except TypeError:
-                if data != v:
-                    tests[i] = False
-        return sum(tests)
-
-
-
-class CSVDataModel(DataModel):
-    '''
-    Comma-separated-value storage-backed data. Represents one row of a file.
-    '''
-    FIELD_SEP = ','
-
-    def __init__(self, template=()):
-        super(CSVDataModel, self).__init__(template)
-
-
-    def header(self):
-        return self.FIELD_SEP.join(self.keys())
-
-
-    def fromstr(self, line, parameters=()):
-        params = dict(parameters)
-        if self.satisfies(params, (self.keys(), line)):
-            for i, k in enumerate(self.keys()):
-                self[k] = line.split(self.FIELD_SEP)[i]
-        else:
-            raise UnmatchedModelException('Parameters not satified: ' +
-                                          str(params))
-
-
-    def __str__(self):
-        return self.FIELD_SEP.join(self.values()) + '\n'
-
-
-    @classmethod
-    def satisfies(cls, parameters, obj):
-        keys, line = obj
-        indices = dict([(k, i) for i, k in enumerate(keys)])
-        tests = [True] * len(parameters)
-        for i, (k, v) in enumerate(parameters.items()):
-            data = line.split(cls.FIELD_SEP)[indices[k]]
-            try:
-                r = sorted(v)
-                if data < r[0] or data > r[-1]:
-                    tests[i] = False
-            except TypeError:
-                if data != v:
-                    tests[i] = False
-        return sum(tests)
-
-
-
-class JSONDataModel(DataModel):
-    '''
-    JSON-encoded storage-backed data. Represents one row of a file.
-    '''
-    FIELD_SEP = ' | '
-
-    def __init__(self, template=()):
-        super(JSONDataModel, self).__init__(template)
-
-
-    def header(self):
-        return self.FIELD_SEP.join(self.keys())
-
-
-    def fromstr(self, line, parameters=()):
-        params = dict(parameters)
-        if self.satisfies(params, (self.keys(), line)):
-            for i, k in enumerate(self.keys()):
-                self[k] = json.loads(line.split(self.FIELD_SEP)[i])
-        else:
-            raise UnmatchedModelException('Parameters not satified: ' +
-                                          str(params))
-
-
-    def __str__(self):
-        row = [json.dumps(self[k], default=json_handler) for k in self.keys()]
-        return self.FIELD_SEP.join(row) + '\n'
-
-
-    @classmethod
-    def satisfies(cls, parameters, obj):
-        keys, line = obj
-        indices = dict([(k, i) for i, k in enumerate(keys)])
-        tests = [False] * len(parameters)
-        for i, (k, v) in enumerate(parameters.items()):
-            data = line.split(cls.FIELD_SEP)[indices[k]]
-            try:
-                r = sorted(v)
-                if data < r[0] or data > r[-1]:
-                    tests[i] = False
-            except TypeError:
-                if data != v:
-                    tests[i] = False
-        return sum(tests)
-
-
-
-####################
-
-class DataStore(object):
-    '''
-    Storage-backed data-model collection.
-
-    Extend for non-text files.
-    '''
-    def __init__(self, klass, name, directory, keys, ext='dat'):
-        self.klass = klass
-        self.name = name
-        self.path = os.path.join(directory, name + '.' + ext)
-        self.fields = keys
-        self.data_models = {}  # dict of (line-number, data-model-idx) tuples
-        self.last_idx = 0
-
-
-    def check_validity(self):
-        '''
-        Test if file contents correspond to the expected data structure.
-        '''
-        if not os.path.exists(self.path):
-            raise UnmatchedModelException(os.path.basename(self.path) +
-                                          ' does not exist.')
-        data_file = open(self.path, mode='r')
-        line = data_file.readline()
-        data_file.close()
-        if line == self.klass.header():
-            raise UnmatchedModelException(os.path.basename(self.path) +
-                                          ' is not a ' + self.klass.__name__ +
-                                          ' data model store.')
-
-    def check_consistency(self, data_models):
-        how_many = 0
-        for d1, d2 in combinations(data_models):
-            if not d1.header() == d2.header():
-                how_many += 1
-        if how_many:
-            raise UnmatchedModelException('Inconsistent data collection: ' +
-                                          str(how_many) +
-                                          ' do not match model signature.')
-        return self.klass.FIELD_SEP.join(self.fields)
-
-
-    def add(self, obj):
-        '''
-        Add-in an additional data-model.
-        '''
-        if isinstance(obj, dict):
-            template = dict(obj)
-            obj = self.klass(template)
-        if not isinstance(obj, self.klass) or obj.keys() != self.fields:
-            raise UnmatchedModelException('Attempting to add unmatched ' +
-                                          'data model to collection.')
-        self.last_idx += 1
-        self.data_models[self.last_idx] = obj
-
-
-    def load(self, parameters=()):
-        '''
-        Populate the data objects from file.
-        '''
-        params = dict(parameters)
-        self.check_validity()
-        data_file = open(self.path, mode='r')
-        for idx, line in enumerate(data_file):
-            try:
-                obj = self.klass(self.fields)
-                obj.fromstr(line, params)
-                self.data_models[idx] = obj
-                self.last_idx = idx
-            except UnmatchedModelException:
-                pass
-        data_file.close()
-
-
-    def unload(self):
-        '''
-        Store the data objects to file.
-        '''
-        header = self.check_consistency(self.data_models.values())
-        written = []
-        out_exists = os.path.exists(self.path)
-        if out_exists:
-            self.check_validity()
-            shutil.move(self.path, self.path + '.tmp')
-            data_in_file = open(self.path + '.tmp', 'r')
-        data_out_file = open(self.path, mode='a')
-        data_out_file.write(header + '\n')
-        if out_exists:
-            for idx, line in enumerate(data_in_file):
-                try:
-                    ## changed lines
-                    data_out_file.write(str(self.data_models[idx]) + '\n')
-                    written.append(idx)
-                except KeyError:
-                    ## lines not changed/ingested
-                    data_out_file.write(line + '\n')
-        for idx, data in self.data_models.items():
-            if not idx in written:
-                ## data that is new
-                data_out_file.write(str(data) + '\n')
-        if out_exists:
-            data_in_file.close()
-            os.remove(self.path + '.tmp')
-        data_out_file.close()
-
-
-
-try:
-    import h5py
-    import numpy
-
-    class HDF5DataModel(DataModel):
-        '''
-        HDF5 storage-backed data. Represents one row of a file.
-        '''
-        def __init__(self, template=()):
-            '''
-            Template can be a dictionary of dictionaries for implementing
-            multilevel attributes.
-            Basic type is an array.
-            '''
-            super(HDF5DataModel, self).__init__(template)
-
-
-        @classmethod
-        def satisfies(cls, parameters, obj):
-            tests = [True] * len(parameters)
-            for i, (k, v) in enumerate(parameters.items()):
-                for data in obj[k]:
+        passes = True
+        for k, v in parameters.items():
+            if USE_SPACEPY and k.upper() == 'ATTRS':
+                for ak, av in v.items():
+                    attr = self.attrs[ak]
                     try:
-                        r = sorted(v)
-                        if data < r[0] or data > r[-1]:
-                            tests[i] = False
+                        arng = sorted(av)
+                        if attr < arng[0] or attr > arng[-1]:
+                            passes = False
                     except TypeError:
-                        if data != v:
-                            tests[i] = False
-            return sum(tests)
-
-
-
-    class HDF5DataStore(DataStore):
-        '''
-        HDF5 storage-backed data container.
-        Represents one specific group in the hierarchy of the file.
-        Description is a nested dictionary where leaves are types.
-        '''
-        def __init__(self, name, directory, description,
-                     hierarchy=(), dm=HDF5DataModel):
-            super(HDF5DataStore, self).__init__(dm, name, directory,
-                                            description, 'h5')
-            self.hierarchy = list(hierarchy)
-            self.data_models = []
-
-
-        def __recur(self, head, items, do_this, assign=False):
-            for k, v in items:
+                        if attr != av:
+                            passes = False
+                continue
+            try:
+                data_array = self[k]
+            except KeyError:
+                passes = False
+                continue
+            try:
+                len(data_array)
+            except TypeError:
+                data_array = [data_array]
+            for datum in data_array:
                 try:
-                    if isinstance(v, dict):
-                        self.__recur(head[k], v.items(), do_this, assign)
-                    elif assign:
-                        head[k] = do_this(head[k])
-                    else:
-                        do_this(head[k])
-                except KeyError:
-                    filename = os.path.basename(self.path)
-                    raise UnmatchedModelException(filename + ' is not a ' +
-                                                  self.klass.__name__ +
-                                                  ' data model store.')
+                    rng = sorted(v)
+                    if datum < rng[0] or datum > rng[-1]:
+                        passes = False
+                except TypeError:
+                    if datum != v:
+                        passes = False
+        return passes
 
 
-        def check_validity(self):
-            if not os.path.exists(self.path):
-                raise UnmatchedModelException(os.path.basename(self.path) +
-                                              ' does not exist.')
-            h5file = open(self.path, mode='r')
-            self.__recur(h5file, self.fields.items(), lambda: None)
+    @classmethod
+    def fromSpaceData(cls, sd, data_model=None):
+        '''
+        Convert a SpaceData object to a DataModel object.
+        If 'data_model' is None, return a new DataModel object,
+        otherwise, modify 'data_model'.
+        '''
+        if data_model is None:
+            kwargs = {}
+            try:
+                kwargs['attrs'] = sd.attrs
+            except AttributeError:
+                pass
+            return cls(template=dict(sd), **kwargs)  # pylint: disable=W0142
+        else:
+            try:
+                data_model.attrs = sd.attrs
+            except AttributeError:
+                pass
+            for k, v in sd.items():
+                data_model[k] = v
+
+
+    @classmethod
+    def fromCDF(cls, filepath, **kwargs):
+        '''
+        Create a DataModel from a CDF data file.
+        Not available without SpacePy.
+        '''
+        if USE_SPACEPY:
+            return cls.fromSpaceData(spdm.fromCDF(filepath, **kwargs))
+        else:
+            raise NotImplementedError
+
+
+    def toCDF(self, filepath, **kwargs):
+        '''
+        Save this DataModel to a CDF data file.
+        Not available without SpacePy.
+        '''
+        if USE_SPACEPY:
+            spdm.toCDF(filepath, self, **kwargs)
+        else:
+            raise NotImplementedError
+        
+
+    @classmethod
+    def fromHDF5(cls, filepath, **kwargs):
+        '''
+        Create a DataModel from a HDF5 data file.
+        Attributes are not available without SpacePy.
+        '''
+        if USE_SPACEPY:
+            return cls.fromSpaceData(spdm.fromHDF5(filepath, **kwargs))
+        else:
+            import h5py
+            data_model = cls()
+            path = '/'
+            if 'path' in kwargs:
+                path = kwargs['path']
+            h5file = h5py.File(filepath, mode='r')
+            for key in h5file[path]:
+                data_model[key] = numpy.array(h5file[path][key])
+            h5file.close()
+            return data_model
+
+
+    def toHDF5(self, filepath, **kwargs):
+        '''
+        Save this DataModel to a HDF5 data file.
+        Attributes are not available without SpacePy.
+        '''
+        if USE_SPACEPY:
+            spdm.toHDF5(filepath, self, **kwargs)
+        else:
+            import h5py
+            path = '/'
+            if 'path' in kwargs:
+                path = kwargs['path']
+            h5file = h5py.File(filepath, mode='w')
+            for k, v in self.items():
+                h5file[path][k] = v
             h5file.close()
 
 
-        def add(self, obj):
-            '''
-            Add-in an additional data-model.
-            '''
-            if isinstance(obj, dict):
-                template = dict(obj)
-                self.__recur(template, template.items(),
-                             lambda x: None if isinstance(x, type) else x, True)
-                obj = self.klass(template)
-            if not isinstance(obj, self.klass) or obj.keys() != self.fields:
-                raise UnmatchedModelException('Attempting to add unmatched ' +
-                                              'data model to collection.')
-            self.data_models.append(obj)
+    @classmethod
+    def fromJSON(cls, filepath, **kwargs):
+        '''
+        Create a DataModel from a JSON-encoded data file.
+        Not compatible with SpacePy readJSONheadedASCII function.
+        Attributes are not available without SpacePy.
+        '''
+        data_file = open(filepath, mode='r')
+        dictionary = dict({'/': json_spacedata_decoder(json.load(data_file))})
+        data_file.close()
+        return cls(template=dictionary)
 
 
-        def load(self, parameters=()):
-            params = dict(parameters)
-            self.check_validity()
-            h5file = h5py.File(self.path, mode='r')
-            node = h5file
-            for path in self.hierarchy:
-                for level in path.split('/'):
-                    if level:
-                        node = node[level]
-                for data in node:
-                    if self.klass.satisfies(params, data):
-                        template = dict(self.fields)
-                        ## set all leaves to None
-                        self.__recur(template, template.items(),
-                                     lambda: None, True)
-                        obj = self.klass(template)
-                        for k in obj.keys():
-                            obj[k] = numpy.array(data[k]) ##FIXME field type?
-                            #FIXME shape??
-                        self.data_models.append(obj)
-            h5file.close()
+    def toJSON(self, filepath, **kwargs):
+        '''
+        Save this DataModel to a JSON-encoded data file.
+        Not compatible with SpacePy toJSONheadedASCII function.
+        Attributes are not available without SpacePy.
+        '''
+        data_file = open(filepath, mode='w')
+        json.dump(self['/'], data_file, default=json_handler)
+        data_file.close()
+            
+
+    @classmethod
+    def fromCSV(cls, filepath, **kwargs):
+        '''
+        Create a DataModel from a CSV-encoded data file.
+        Data arrays are column-based (each row is one entry).
+        Does not support attributes.
+        '''
+        with_hdr = True
+        if 'header' in kwargs:
+            with_hdr = bool(kwargs['header'])
+        fields = []
+        data_model = cls()
+        data_file = open(filepath, mode='r')
+        for line in data_file:
+            if with_hdr:
+                with_hdr = False
+                fields = [l.strip() for l in line.split(',')]
+                continue
+            data = [l.strip() for l in line.split(',')]
+            for i, k in enumerate(fields):
+                if not k in data_model.keys():
+                    data_model[k] = []
+                data_model[k].append(data[i])
+        return data_model
 
 
-        def unload(self):
-            h5file = h5py.File(self.path, mode='w')
-            node = h5file
-            for path in self.hierarchy:
-                for level in path.split('/'):
-                    if level:
-                        node = node[level]
-                for data in self.data_models:
-                    for k, v in data:
-                        node[k] = v
-            h5file.close()
-
-
-    
-
-    try:
-        from spacepy import datamodel
-
-        class SpaceDataModel(datamodel.SpaceData):
-            '''
-            HDF5 storage-backed spacepy datamodel. Represents one row of a file.
-            '''
-            @classmethod
-            def satisfies(cls, parameters, obj):
-                tests = [True] * len(parameters)
-                for i, (k, v) in enumerate(parameters.items()):
-                    for data in obj[k]:
-                        try:
-                            r = sorted(v)
-                            if data < r[0] or data > r[-1]:
-                                tests[i] = False
-                        except TypeError:
-                            if data != v:
-                                tests[i] = False
-                return sum(tests)
-
-
-
-        class SpaceDataStore(HDF5DataStore):
-            def __init__(self, name, directory, description,
-                         hierarchy=(), dm=SpaceDataModel):
-                super(SpaceDataStore, self).__init__(name, directory,
-                                                     description, hierarchy, dm)
-
-
-            ##FIXME
-
-
-    except ImportError:
-        pass
-
-except ImportError:
-    pass
+    def toCSV(self, filepath, **kwargs):
+        '''
+        Save this DataModel to a CSV-encoded data file.
+        Data arrays are column-based (each row is one entry).
+        Does not support attributes.
+        '''
+        with_hdr = True
+        if 'header' in kwargs:
+            with_hdr = bool(kwargs['header'])
+        data_file = open(filepath, mode='w')
+        if with_hdr:
+            data_file.write(','.join(self.keys()) + '\n')
+        wrote = True
+        line_num = 0
+        while wrote:
+            wrote = False
+            val_list = []
+            for v in self.values():
+                try:
+                    val_list.append(str(v[line_num]))
+                    wrote = True
+                except IndexError:
+                    val_list.append('')
+            line_num += 1
+            if wrote:
+                data_file.write(','.join(val_list) + '\n')
+        data_file.close()
+            
 
 
 ##############################

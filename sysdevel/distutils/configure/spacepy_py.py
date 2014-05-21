@@ -9,7 +9,8 @@ class configuration(py_config):
     """
     def __init__(self):
         py_config.__init__(self, 'spacepy', '0.1.4',
-                           dependencies=['gfortran', 'cdf', 'ffnet', 'h5py'],
+                           dependencies=['gfortran', 'cdf', 'ffnet', 'h5py',
+                                         'numpy', 'scipy', 'matplotlib'],
                            debug=True)
 
 
