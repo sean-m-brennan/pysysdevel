@@ -20,7 +20,7 @@ INSTALLER=false
 TARGET_PROVIDER=virtualbox
 VM_WORKING_DIR="${PWD}/VM"
 
-VM_SRC_DIR="$(pwd)"
+VM_SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
 VM_TFTP_DIR="${VM_WORKING_DIR}/TFTP"
 VM_SERVER_PIDS=()
 VM_NAME=""
@@ -31,8 +31,6 @@ SERVER_IP=${SERVER_NAME}
 SERVER_PORT=7999
 SERVER_ADDRESS=http://${SERVER_IP}:${SERVER_PORT}
 
-TARGET_SUBNET=10.0.2
-TARGET_ADRESS=${TARGET_SUBNET}.150
 
 
 function create_repository {
@@ -263,6 +261,13 @@ function vbox_init {
     LOGO_FILE=${lower_name}.bmp
 
     VBOX_VM_DIR="${VM_WORKING_DIR}"
+    ORIG_HOME="${VBOX_USER_HOME}"
+    if [ "x$ORIG_HOME" = "x" ]; then
+	ORIG_HOME="${XDG_CONFIG_HOME}"
+	if [ "x$ORIG_HOME" = "x" ]; then
+	    ORIG_HOME="${HOME}"
+	fi
+    fi
     export VBOX_USER_HOME="${VBOX_VM_DIR}"
     export VBOX_IPC_SOCKETID=${VM_NET_NAME}
     echo "VBOX home: $VBOX_USER_HOME" 1>&2
@@ -284,7 +289,7 @@ function vbox_init {
 
     VBOX_DEF="${VBOX_VM_DIR}/VirtualBox.xml"
     if [ ! -e "${VBOX_DEF}" ]; then
-	xml_file=$(find ${HOME} -name VirtualBox.xml -print -quit)
+	xml_file=$(find ${ORIG_HOME}/.VirtualBox -name VirtualBox.xml -print -quit)
 	if [ $? -ne 0 ]; then
 	    echo "VirtualBox must be run at least once before using this script."
 	    exit 1

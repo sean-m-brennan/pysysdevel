@@ -134,6 +134,10 @@ class DataModel(dm_klass):
 
         If SpacePy is available, this can also take a 'attrs' keyword for 
         populating the attributes dictionary.
+
+        To subclass this class with data-file backing,
+        do not use __init__() directly, use this idiom instead:
+        DataModel.fromSpaceData(DataModel.fromHDF5(filepath), self)
         '''
         template = ()
         if 'template' in kwargs:
