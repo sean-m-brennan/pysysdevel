@@ -20,11 +20,17 @@ INSTALLER=false
 TARGET_PROVIDER=virtualbox
 VM_WORKING_DIR="${PWD}/VM"
 
+## KVM network: DEFAULT or USER or NONE (default network, no port forwarding)
+KVM_NETWORK_TYPE=NONE
+## KVM local disk image or libvirt pool
+KVM_POOL_DISK=false
+
 VM_SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
 VM_TFTP_DIR="${VM_WORKING_DIR}/TFTP"
 VM_SERVER_PIDS=()
-VM_NAME=""
-VM_NET_NAME=""
+VM_NAME=
+VM_NET_NAME=
+VM_ADRESS=
 
 SERVER_NAME=$(hostname)
 SERVER_IP=${SERVER_NAME}
@@ -130,11 +136,6 @@ function tftp_prep {
 
     mkdir -p "${VM_WORKING_DIR}"
     cd "${VM_WORKING_DIR}"
-
-    if [ "$TARGET_PROVIDER" != "virtualbox" ]; then
-	cd "${here}"
-	return 0
-    fi
 
     echo "Fetch SysLinux" 1>&2
     if $VERBOSE; then
@@ -258,6 +259,10 @@ function vbox_init {
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
     VM_NET_NAME=${lower_name}
     VM_NAME=${lower_name}_vm_${version}_${TARGET_ARCH}${name_extra}
+    VM_ADDRESS=$nataddr
+    if [ "x$VM_ADDRESS" = "x" ] || [ "$VM_ADDRESS" = "0" ]; then
+	VM_ADDRESS=$(get_target_subnet $@).50
+    fi
     LOGO_FILE=${lower_name}.bmp
 
     VBOX_VM_DIR="${VM_WORKING_DIR}"
@@ -289,7 +294,7 @@ function vbox_init {
 
     VBOX_DEF="${VBOX_VM_DIR}/VirtualBox.xml"
     if [ ! -e "${VBOX_DEF}" ]; then
-	xml_file=$(find ${ORIG_HOME}/.VirtualBox -name VirtualBox.xml -print -quit)
+	xml_file=$(find ${ORIG_HOME} -mount -name VirtualBox.xml -print -quit)
 	if [ $? -ne 0 ]; then
 	    echo "VirtualBox must be run at least once before using this script."
 	    exit 1
@@ -318,22 +323,19 @@ function vbox_init {
 	    VBoxManage modifyvm "${VM_NAME}" --bioslogoimagepath "${VM_NAME}/${LOGO_FILE}"
 	fi
 
-	if [ "$nataddr" = "0" ]; then
-	    nataddr=""
-	fi
 	VBoxManage modifyvm "${VM_NAME}" --nictype1 ${NIC}
 	VBoxManage modifyvm "${VM_NAME}" --nic1 nat
 	## Allow static IPs on the NAT network
 	VBoxManage modifyvm "${VM_NAME}" --natdnsproxy1 on
 	VBoxManage modifyvm "${VM_NAME}" --natdnshostresolver1 on
-	echo "Port forwarding to $nataddr"
-	VBoxManage modifyvm "${VM_NAME}" --natpf1 "guestweb,tcp,,8080,$nataddr,80"
-	VBoxManage modifyvm "${VM_NAME}" --natpf1 "guestssh,tcp,,2222,$nataddr,22"
+	echo "Port forwarding to $VM_ADDRESS"
+	VBoxManage modifyvm "${VM_NAME}" --natpf1 "guestweb,tcp,,8080,$VM_ADDRESS,80"
+	VBoxManage modifyvm "${VM_NAME}" --natpf1 "guestssh,tcp,,2222,$VM_ADDRESS,22"
 
 	VBoxManage setextradata "${VM_NAME}" "VBoxInternal/Devices/${NIC_TYPE}/0/LUN#0/Config/BootFile" "pxelinux.0"
 	VBoxManage setextradata "${VM_NAME}" "VBoxInternal/Devices/${NIC_TYPE}/0/LUN#0/Config/TFTPPrefix" "${VM_TFTP_DIR}"
 
-	if [ x"$hostonly" != x0 ]; then
+	if [ "x$hostonly" != "x0" ]; then
 	    echo "Host-Only interface IP ${hostonly}"
 	    VBoxManage hostonlyif ipconfig vboxnet0 --ip ${hostonly} --netmask 255.255.255.0
 	    if [ $? -ne 0 ]; then
@@ -414,6 +416,10 @@ function libvirt_init {
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
     VM_NET_NAME=${lower_name}
     VM_NAME=${lower_name}_vm_${version}_${TARGET_ARCH}
+    VM_ADDRESS=$nataddr
+    if [ "x$VM_ADDRESS" = "x" ] || [ "$VM_ADDRESS" = "0" ]; then
+	VM_ADDRESS=$(get_target_subnet $@).50
+    fi
     LOGO_FILE=${lower_name}.bmp
 
     ## To connect to the hypervisor as a non-root user,
@@ -436,9 +442,7 @@ function libvirt_init {
 	echo "Create LibVirt machine" 1>&2
 	mkdir -p "${VM_NAME}"
 	qemu-img create -f qcow2 "${VM_NAME}/${VM_NAME}".img ${disk_size}M
-	## FIXME enable port forwarding?
-	#cat >${VM_NAME}/${VM_NET_NAME}-net.xml <<EOF
-#EOF
+	libvirt_network_preinstall $KVM_NETWORK_TYPE $VM_NET_NAME $VM_NAME
 	if [ -e "${VM_SRC_DIR}/${LOGO_FILE}" ]; then
 	    echo "Using logo: ${VM_SRC_DIR}/${LOGO_FILE}"
 	    cp "${VM_SRC_DIR}/${LOGO_FILE}" "${VM_NAME}/"
@@ -463,15 +467,24 @@ function libvirt_init {
     if $INSTALLER; then
 	cat >install_${VM_NAME}.sh <<EOF
 #!/bin/sh
-virsh -c qemu:///system create "${VM_NAME}/${VM_NAME}.xml"
+virt-install -c qemu:///system --import --disk path=${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img
 EOF
     fi
 
+    disk_option="path=${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img,format=qcow2,bus=ide"
+    if $KVM_POOL_DISK; then
+	disk_option="${disk_option},size=$(($disk_size / 1024))"
+    fi
+    network_option="network=default"
+    if [ $KVM_NETWORK_TYPE == "USER" ]; then
+	network_option="network=${VM_NET_NAME}"
+    fi
     virt-install --connect qemu:///system --name ${VM_NAME} --ram ${mem_size} \
 	--vcpus 1 --noreboot --hvm ${virt_type} --noautoconsole \
-	--disk path=${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img,format=qcow2 \
-	--network network:default --location=${TARGET_WEBSITE} \
-	--initrd-inject=${here}/ks.cfg --extra-args="ks=file:/ks.cfg"
+	--disk ${disk_option} --network ${network_option} \
+	--location=${TARGET_WEBSITE} \
+        --initrd-inject=${here}/ks.cfg --extra-args="ks=file:/ks.cfg"
+
 
     if $OVERSEE; then
 	virt-viewer -c qemu:///system "${VM_NAME}" || true
@@ -488,13 +501,16 @@ EOF
 
 function libvirt_cleanup {
     set +e
+    libvirt_network_postinstall
+
     echo "Restore original LibVirt config" 1>&2
     if [[ $(virsh -c qemu:///system list) == *${VM_NAME}* ]]; then
 	virsh -c qemu:///system destroy ${VM_NAME}
     fi
-    if [[ $(virsh -c qemu:///system list --all) == *${VM_NAME}* ]]; then
-	virsh -c qemu:///system undefine ${VM_NAME}
-    fi
+    ##FIXME
+    #if [[ $(virsh -c qemu:///system list --all) == *${VM_NAME}* ]]; then
+	#virsh -c qemu:///system undefine ${VM_NAME}
+    #fi
     if [[ $(virsh -c qemu:///system net-list) == *${VM_NET_NAME}* ]]; then
 	virsh -c qemu:///system net-destroy ${VM_NET_NAME}
     fi
@@ -503,46 +519,91 @@ function libvirt_cleanup {
     fi
 }
 
-function libvirt_port_forwarding {
-    name=$1
-    vendor=$2
-    version=$3
-    mem_size=$4
-    disk_size=$5
-    license_file=$6
-    nataddr=$7
-    hostonly=$8
-    name_extra=$9
-
-    lower_name=$(echo ${name} | tr [:upper:] [:lower:])
-    VM_NET_NAME=${lower_name}
-    VM_NAME=${lower_name}_vm_${version}_${TARGET_ARCH}
-
-    prologue="#!/bin/bash"
-    if [ -e /etc/libvirt/hooks/qemu ]; then
-	cp /etc/libvirt/hooks/qemu old_hooks.sh
-	prologue=""
+function libvirt_network_preinstall {
+    if [ $KVM_NETWORK_TYPE == "USER" ]; then
+	target_gateway=$(get_target_gateway)  ## using default subnet
+	##FIXME dhcp and dns settings
+	cat >${VM_NAME}/${VM_NET_NAME}-net.xml <<EOF
+<network>
+  <name>${VM_NET_NAME}</name>
+  <forward mode='nat'/>
+  <ip address='${target_gateway}' netmask='255.255.255.0'>
+  </ip>
+</network>
+EOF
     fi
-    cat >>/etc/libvirt/hooks/qemu <<EOF
+}
+
+function libvirt_network_postinstall {
+    if [ "$KVM_NETWORK_TYPE" == "USER" ]; then
+	sed -i '.bak' -e "s|<domain type='kvm'>|<domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+  <qemu:commandline>
+    <qemu:arg value='-redir'/>
+    <qemu:arg value='tcp:2222::22'/>
+    <qemu:arg value='-redir'/>
+    <qemu:arg value='tcp:8080::80'/>
+  </qemu:commandline>|" ${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml
+	## Not persistent?
+	#virsh -c qemu:///system qemu-monitor-command --hmp ${VM_NAME} 'hostfwd_add ::2222-::22'
+	#virsh -c qemu:///system qemu-monitor-command --hmp ${VM_NAME} 'hostfwd_add ::8080-::80'
+
+    elif [ "$KVM_NETWORK_TYPE" == "DEFAULT" ]; then
+	pre=
+	if [[ $EUID -ne 0 ]]; then
+	    pre=sudo
+	    echo "Adding QEMU network hooks, requires elevated privileges."
+	fi
+	prologue="#!/bin/sh"
+	$pre find /etc/libvirt/hooks -name qemu >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+	    $pre cp /etc/libvirt/hooks/qemu /etc/libvirt/hooks/qemu_hooks.bak
+	    prologue=""
+	fi
+	$pre mkdir -p /etc/libvirt/hooks
+	host_ip=$(get_host_ip_address)
+	if [ "x$host_ip" == "x" ]; then
+	    host_ip=$(get_host_ip_address br0)
+	fi
+	cat >qemu-hooks.sh <<EOF
 ${prologue}
 
-Guest_name="${VM_NAME}"
-Host_port=8888
-Guest_ipaddr=${nataddr}
-Guest_port=80
+vm_name="${VM_NAME}"
+vm_addr=${VM_ADDRESS}
+vm_ports=( '22' '80' )
+host_ports=( '2222' '8080' )
+host_addrs=( '${host_ip}' '127.0.0.1' )
+port_len=\$(( \${#host_ports[@]} - 1 ))
+addr_len=\$(( \${#host_addrs[@]} - 1 ))
 
-if [ $1 = $Guest_name ]; then
-    if [[ $2 = "stopped" || $2 = "reconnect" ]]; then
-        iptables -t nat -D PREROUTING -p tcp --dport $Host_port -j DNAT  --to $Guest_ipaddr:$Guest_port
-       	iptables -D FORWARD -d $Guest_ipaddr/32 -p tcp -m state --state NEW,RELATED,ESTABLISHED -m tcp --dport $Guest_port -j ACCEPT
+if [ "\${1}" == "\${vm_name}" ]; then
+    if [ "\${2}" == "stopped" ] || [ "\${2}" == "reconnect" ]; then
+        for i in \$(seq 0 \$host_len); do
+            for j in \$(seq 0 \$port_len); do
+                iptables -t nat -D PREROUTING -p tcp -d \${host_addrs[\$i]} \\
+                         --dport \${host_ports[\$j]} -j DNAT \\
+                         --to-destination \${vm_addr}:\${vm_ports[\$j]}
+            done
+        done
+        iptables -D FORWARD -d \${vm_addr}/24 -m state \\
+                 --state NEW,RELATED,ESTABLISHED -j ACCEPT
     fi
-    if [[ $2 = "start" || $2 = "reconnect" ]]; then
-        iptables -t nat -I PREROUTING -p tcp --dport $Host_port -j DNAT --to $Guest_ipaddr:$Guest_port
-       	iptables -I FORWARD -d $Guest_ipaddr/32 -p tcp -m state --state NEW,RELATED,ESTABLISHED -m tcp --dport $Guest_port -j ACCEPT
+    if [ "\${2}" == "start" ] || [ "\${2}" == "reconnect" ]; then
+        for i in \$(seq 0 \$host_len); do
+            for j in \$(seq 0 \$port_len); do
+                iptables -t nat -I PREROUTING -p tcp -d \${host_addrs[\$i]} \\
+                         --dport \${host_ports[\$j]} -j DNAT \\
+                         --to-destination \${vm_addr}:\${vm_ports[\$j]}
+            done
+        done
+        iptables -I FORWARD -d \${vm_addr}/24 -m state \\
+                 --state NEW,RELATED,ESTABLISHED -j ACCEPT
     fi
 fi
 EOF
-    chmod +x /etc/libvirt/hooks/qemu
+	$pre cp qemu-hooks.sh /etc/libvirt/hooks/qemu
+	$pre chmod +x /etc/libvirt/hooks/qemu
+	$pre service libvirtd restart
+    fi
 }
 
 
@@ -681,7 +742,7 @@ function vm_init {
     done
 
     tftp_prep $prep_args
-    if [ $VAGRANT ]; then
+    if $VAGRANT; then
 	vagrant_init $args
     else
 	if [ "${VIRTUALIZER}" = "vbox" ]; then
@@ -694,19 +755,27 @@ function vm_init {
 
 function vm_cleanup {
     set +e
-    if [ $VAGRANT ]; then
+    if $VAGRANT; then
 	vagrant_cleanup
     else
 	if [ "${VIRTUALIZER}" = "vbox" ]; then
 	    vbox_cleanup
 	else
-	    libvirt_cleanup
+	    libvirt_cleanup $7
 	fi
     fi
     tftp_cleanup
 }
 
 
+
+function get_host_ip_address {
+    dev=eth0
+    if [ $# -gt 0 ]; then
+	dev=$1
+    fi
+    ifconfig $dev | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'
+}
 
 function get_target_gateway {
     gw=10.0.2.2  ## virtualbox default
@@ -796,10 +865,12 @@ function create_virtual_machine {
 		;;
 	    --nat-address)
 		nat_addr="$2"
+		KVM_NETWORK_TYPE=DEFAULT
 		shift
 		;;
 	    --hostonly-address)
 		hostonly_net="$2"
+		KVM_NETWORK_TYPE=NONE
 		shift
 		;;
 	    --with-installer)
