@@ -77,11 +77,12 @@ class config(object):
 
 
 class lib_config(config):
-    def __init__(self, lib, header, dependencies=None,
+    def __init__(self, lib, header, incl_dir=None, dependencies=None,
                  debug=False, force=False):
         config.__init__(self, dependencies, debug, force)
         self.lib = lib
         self.hdr = header
+        self.hdr_dir = incl_dir
 
 
     def null(self):
@@ -137,7 +138,11 @@ class lib_config(config):
                 pass
         try:
             if self.hdr:
-                incl_dir = find_header(self.hdr, locations, limit=limit)
+                subdirs = None
+                if self.hdr_dir:
+                    subdirs = [self.hdr_dir]
+                incl_dir = find_header(self.hdr, locations, subdirs,
+                                       limit=limit)
                 default_lib_paths = ['lib64', 'lib', '']
                 for lib in default_lib_paths:
                     locations.insert(0,
