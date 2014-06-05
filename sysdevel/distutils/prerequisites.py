@@ -887,7 +887,8 @@ def install_pypkg_process(cmd_line, environ, log, shell):
 
 
 def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
-                                patch=None, extra_cmds=None, extra_args=None):
+                                patch=None, extra_cmds=None, extra_args=None,
+                                not_python=False):
     compiler = []
     if 'windows' in platform.system().lower():
         # TODO compiler=mingw32 iff windows is using mingw (handle vcpp also?)
@@ -923,10 +924,15 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
                 environ[key] = value
         environ['LDFLAGS'] = '-shared'
         if locally:
-            environ['PYTHONPATH'] = target_lib_dir
-            cmd_line = [sys.executable, 'setup.py'] + extra_cmds + \
-                ['build'] + compiler + ['install_lib',
-                 '--install-dir=' + target_lib_dir,] + extra_args
+            if not_python:
+                cmd_line = [sys.executable, 'setup.py'] + extra_cmds + \
+                           ['build'] + compiler + ['install',
+                            '--prefix=' + target_dir,] + extra_args
+            else:
+                environ['PYTHONPATH'] = target_lib_dir
+                cmd_line = [sys.executable, 'setup.py'] + extra_cmds + \
+                           ['build'] + compiler + ['install_lib',
+                            '--install-dir=' + target_lib_dir,] + extra_args
         else:
             sudo_prefix = []
             if not as_admin():
@@ -976,7 +982,8 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
         raise ConfigError(name, 'Unable to install:\n' +
                           str(sys.exc_info()[1]) + '\n' +
                           traceback.format_exc())
-
+    if not_python:
+        return None
     if locally:
         return target_lib_dir
     try:
@@ -1030,6 +1037,9 @@ def autotools_install_without_fetch(environ, src_dir, locally=True,
     try:
         if 'windows' in platform.system().lower():
             ## Assumes MinGW present, detected, and loaded in environment
+            if not os.path.exists('configure'):
+                 mingw_check_call(environ, ['autoreconf', '-i'],
+                                  stdout=log, stderr=log)
             mingw_check_call(environ, ['./configure',
                                        '--prefix="' + prefix + '"'] +
                              extra_cfg, stdout=log, stderr=log,
@@ -1045,6 +1055,8 @@ def autotools_install_without_fetch(environ, src_dir, locally=True,
             os_environ = os.environ.copy()
             os_environ = dict(list(os_environ.items()) +
                               list(addtnl_env.items()))
+            if not os.path.exists('configure'):
+                 check_call(['autoreconf', '-i'], stdout=log, stderr=log)
             check_call(['./configure', '--prefix=' + prefix] + extra_cfg,
                        stdout=log, stderr=log, env=os_environ)
             check_call(['make'], stdout=log, stderr=log, env=os_environ)
