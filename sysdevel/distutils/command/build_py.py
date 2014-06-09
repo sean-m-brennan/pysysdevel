@@ -24,7 +24,7 @@ permissions and limitations under the License.
 """
 # pylint: disable=W0105
 """
-'build_src' command, adding module generation using ANTLR grammars
+'build_py' command, adding sources configurable by environment
 """
 
 import os

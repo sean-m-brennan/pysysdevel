@@ -924,12 +924,12 @@ def install_pypkg_without_fetch(name, env=None, src_dir=None, locally=True,
                 environ[key] = value
         environ['LDFLAGS'] = '-shared'
         if locally:
+            environ['PYTHONPATH'] = target_lib_dir
             if not_python:
                 cmd_line = [sys.executable, 'setup.py'] + extra_cmds + \
                            ['build'] + compiler + ['install',
                             '--prefix=' + target_dir,] + extra_args
             else:
-                environ['PYTHONPATH'] = target_lib_dir
                 cmd_line = [sys.executable, 'setup.py'] + extra_cmds + \
                            ['build'] + compiler + ['install_lib',
                             '--install-dir=' + target_lib_dir,] + extra_args

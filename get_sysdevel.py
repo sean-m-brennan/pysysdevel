@@ -32,6 +32,7 @@ Either import this script, or fetch/install sysdevel by running:
 """
 
 import os
+import sys
 import platform
 
 website = 'https://github.com/sean-m-brennan/pysysdevel'
@@ -64,11 +65,19 @@ def _import_sysdevel(where, feedback=False):
         import sys
         from distutils.spawn import find_executable
 
-        if not os.path.exists(os.path.join(where, 'pysysdevel')):
+        build_dir = os.path.join(where, 'build')
+        for arg in list(sys.argv):
+            if arg == '-b' or arg == '--build_base':
+                idx = sys.argv.index(arg)
+                build_dir = os.path.abspath(sys.argv[idx+1])
+
+        if not os.path.exists(os.path.join(build_dir, 'pysysdevel')):
             if feedback:
                 print('Fetching SysDevel from ' + website)
             here = os.path.abspath(os.getcwd())
-            os.chdir(where)
+            if not os.path.exists(build_dir):
+                os.mkdir(build_dir)
+            os.chdir(build_dir)
             if find_executable('git') is None:
                 import zipfile
                 website_zipfile = website + '/archive/master.zip'
@@ -94,7 +103,7 @@ def _import_sysdevel(where, feedback=False):
                             shell=shell)
             os.chdir(here)
 
-        sys.path.insert(0, os.path.join(where, 'pysysdevel'))
+        sys.path.insert(0, os.path.join(build_dir, 'pysysdevel'))
         import sysdevel
 
 
