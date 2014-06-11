@@ -687,40 +687,6 @@ function vagrant_cleanup {
 }
 
 
-function get_vagrant_location {
-    version=$(vagrant --version | cut -d ' ' -f2)
-    case $(uname) in
-	Linux)
-	    prefix="/opt/vagrant"
-	    if [ ! -d $prefix ]; then
-		## Installed through Ruby
-		prefix="/usr/local/vagrant"
-	    fi
-	    ;;
-	Darwin)
-	    prefix="/Applications/Vagrant"
-	    ;;
-	MINGW* | CYGWIN*)
-	    prefix=$(which vagrant | xargs dirname | xargs dirname)
-	    ;;
-    esac
-    echo "${prefix}/embedded/gems/gems/vagrant-${version}"
-}
-
-function get_vagrant_keys {
-    if [ "$1" = "--insecure" ]; then
-	echo $(get_vagrant_location)/keys/vagrant.pub
-    else
-	if [ ! -e vagrant_key ] || [ ! -e vagrant_key.pub ]; then
-	    rm -f vagrant_key*
-	    ssh-keygen -t rsa -C "Secure vagrant key" -N '' -f vagrant_key -q
-	fi
-	echo vagrant_key.pub
-    fi
-}
-
-
-
 function vm_init {
     args=""
     prep_args=""
@@ -767,6 +733,47 @@ function vm_cleanup {
     tftp_cleanup
 }
 
+
+
+function get_vagrant_location {
+    version=$(vagrant --version | cut -d ' ' -f2)
+    case $(uname) in
+	Linux)
+	    prefix="/opt/vagrant"
+	    if [ ! -d $prefix ]; then
+		## Installed through Ruby
+		prefix="/usr/local/vagrant"
+	    fi
+	    ;;
+	Darwin)
+	    prefix="/Applications/Vagrant"
+	    ;;
+	MINGW* | CYGWIN*)
+	    prefix=$(which vagrant | xargs dirname | xargs dirname)
+	    ;;
+    esac
+    echo "${prefix}/embedded/gems/gems/vagrant-${version}"
+}
+
+function get_vagrant_keys {
+    if [ "$1" = "--insecure" ]; then
+	echo $(get_vagrant_location)/keys/vagrant.pub
+    else
+	if [ ! -e vagrant_key ] || [ ! -e vagrant_key.pub ]; then
+	    rm -f vagrant_key*
+	    ssh-keygen -t rsa -C "Secure vagrant key" -N '' -f vagrant_key -q
+	fi
+	echo vagrant_key.pub
+    fi
+}
+
+
+
+function create_password_hash {
+    pwd=$1
+    here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    python "${here}/mkpasswd.py" "$pwd"
+}
 
 
 function get_host_ip_address {
