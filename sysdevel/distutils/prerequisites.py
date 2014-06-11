@@ -482,10 +482,10 @@ def find_header(filepath, extra_paths=None, extra_subdirs=None, limit=False):
         extra_paths = []
     if extra_subdirs is None:
         extra_subdirs = []
-    subdirs = ['include',]
+    subdirs = []
     for sub in extra_subdirs:
         subdirs += [os.path.join('include', sub), sub]
-    subdirs += ['']  ## lastly, widen search
+    subdirs += ['include', '']  ## lastly, widen search
     pathlist = []
     for path_expr in extra_paths:
         pathlist += glob.glob(path_expr)
@@ -1038,8 +1038,8 @@ def autotools_install_without_fetch(environ, src_dir, locally=True,
         if 'windows' in platform.system().lower():
             ## Assumes MinGW present, detected, and loaded in environment
             if not os.path.exists('configure'):
-                 mingw_check_call(environ, ['autoreconf', '-i'],
-                                  stdout=log, stderr=log)
+                mingw_check_call(environ, ['autoreconf', '-i'],
+                                 stdout=log, stderr=log)
             mingw_check_call(environ, ['./configure',
                                        '--prefix="' + prefix + '"'] +
                              extra_cfg, stdout=log, stderr=log,
@@ -1056,7 +1056,7 @@ def autotools_install_without_fetch(environ, src_dir, locally=True,
             os_environ = dict(list(os_environ.items()) +
                               list(addtnl_env.items()))
             if not os.path.exists('configure'):
-                 check_call(['autoreconf', '-i'], stdout=log, stderr=log)
+                check_call(['autoreconf', '-i'], stdout=log, stderr=log)
             check_call(['./configure', '--prefix=' + prefix] + extra_cfg,
                        stdout=log, stderr=log, env=os_environ)
             check_call(['make'], stdout=log, stderr=log, env=os_environ)
