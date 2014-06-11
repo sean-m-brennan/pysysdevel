@@ -36,6 +36,7 @@ except ImportError:
     from distutils.command.build_py import build_py as _build_py
 
 from sysdevel.distutils.building import configure_file
+from sysdevel.distutils import code_generation_builtins
 
 
 class build_py(_build_py):
@@ -44,6 +45,8 @@ class build_py(_build_py):
     '''
     def build_module (self, module, module_file, package):
         environ = self.distribution.environment
+        for k, v in code_generation_builtins.items():
+            environ[k] = v
 
         if type(package) is StringType:
             package = package.split('.')

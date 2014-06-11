@@ -152,6 +152,15 @@ class _Options(object):
 options = _Options()
 
 
+
+from sysdevel.distutils.building import set_python_site, get_python_site_code
+
+code_generation_builtins = dict({
+    'SET_PYTHON_SITE': get_python_site_code(),
+    })
+
+
+
 from sysdevel.distutils.core import setup
 from sysdevel.distutils.configure import configure_system, configure_package, FatalError
 from sysdevel.distutils.pkg_config import pkg_config, handle_arguments, get_options, post_setup

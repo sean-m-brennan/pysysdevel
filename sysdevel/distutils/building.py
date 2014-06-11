@@ -30,6 +30,7 @@ Utilities for package installation
 import os
 import sys
 import platform
+import inspect
 import fnmatch
 import time
 from glob import glob
@@ -102,6 +103,7 @@ def create_script_wrapper(pyscript, target_dir):
             #wexe = os.path.join(os.path.dirname(sys.executable), 'pythonw')
             exe = os.path.join(os.path.dirname(sys.executable), 'python')
             f.write('@echo off\nsetlocal\n' +
+                    'set LOCAL_BIN_PATH=%~dp0\n' +
                     'set PATH=%~dp0..\\Lib;%PATH%\n' +
                     exe + ' "%~dp0' + pyscript + '" %*')
         else:
@@ -111,10 +113,36 @@ def create_script_wrapper(pyscript, target_dir):
                 'path=`cd "$loc/.."; pwd`\n' + 
                 'export LD_LIBRARY_PATH=$path/lib:$path/lib64:$LD_LIBRARY_PATH\n' +
                 'export DYLD_LIBRARY_PATH=$path/lib:$path/lib64:$DYLD_LIBRARY_PATH\n' +
+                'export LOCAL_BIN_PATH=$loc\n' +
                 sys.executable + ' $path/bin/' + pyscript + ' $@\n')
         f.close()
         os.chmod(dst_file, int('777', 8))
     return dst_file
+
+
+def set_python_site(where=None):
+    from inspect import getfile
+    from distutils.sysconfig import get_python_lib
+    if not where:
+        if hasattr(sys, 'frozen'):
+            where = os.path.dirname(unicode(sys.executable,
+                                            sys.getfilesystemencoding()))
+        else:
+            where = os.path.dirname(unicode(getfile(sys._getframe(1)),
+                                            sys.getfilesystemencoding()))
+    elif not os.path.isabs(where):
+        where = os.path.abspath(os.path.join(
+            os.path.dirname(unicode(__file__, sys.getfilesystemencoding())),
+            where))
+    for base in [get_python_lib(prefix=where),
+                 get_python_lib(True, prefix=where)]:
+        if not base in sys.path:
+            sys.path.insert(0, base)
+
+
+def get_python_site_code():
+    return "import sys\nimport os\n" + \
+        "".join(inspect.getsourcelines(set_python_site)[0])
 
 
 def create_runscript(pkg, mod, target, extra):
@@ -123,38 +151,17 @@ def create_runscript(pkg, mod, target, extra):
             extra = ''
         if options.DEBUG:
             print('Creating runscript ' + target)
+        script = "#!/usr/bin/env python\n" + \
+                "# -*- coding: utf-8 -*-\n\n" + \
+                "## In case the app is not installed in the standard location\n" + \
+                get_python_site_code() + "\n" + \
+                "set_python_site('..')\n" + \
+                "##############################\n\n" + \
+                extra + \
+                "from " + pkg + " import " + mod + "\n" + \
+                mod + ".main()\n"
         f = open(target, 'w')
-        f.write("#!/usr/bin/env python\n" +
-                "# -*- coding: utf-8 -*-\n\n" +
-                "## In case the app is not installed in the standard location\n" + 
-                "import sys\n" +
-                "import os\n" +
-                "import platform\n" + 
-                "import struct\n\n" + 
-                "if hasattr(sys, 'frozen'):\n" + 
-                "    here = os.path.dirname(unicode(sys.executable,\n" +
-                "                                   sys.getfilesystemencoding()))\n" + 
-                "else:\n" +
-                "    here = os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))\n" +
-                "ver = 'python'+ str(sys.version_info[0]) +'.'+ str(sys.version_info[1])\n" +
-                "bases = [here]\n" +
-                "if 'windows' in platform.system().lower():\n" +
-                "    bases.append(os.path.join(here, '..', 'Lib', 'site-packages'))\n" +
-                "else:\n" +
-                "    lib = 'lib'\n" +
-                "    bases.append(os.path.join(here, '..', lib, ver, 'site-packages'))\n" +
-                "    if struct.calcsize('P') == 8:\n" +
-                "        lib = 'lib64'\n" +
-                "        bases.append(os.path.join(here, '..', lib, ver, 'site-packages'))\n" +
-                "for base in bases:\n" +
-                "    sys.path.insert(0, os.path.abspath(base))\n\n" +
-                "#import site\n" +
-                "#for base in bases:\n" +
-                "#    site.addsitedir(os.path.abspath(base))\n\n" +
-                "##############################\n\n" +
-                extra +
-                "from " + pkg + " import " + mod + "\n" +
-                mod + ".main()\n")
+        f.write(script)
         f.close()
         os.chmod(target, int('777', 8))
 
