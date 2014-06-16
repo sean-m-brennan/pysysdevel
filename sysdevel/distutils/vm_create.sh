@@ -6,7 +6,7 @@
 ##   virtualbox, or qemu-kvm/libvirt
 ##
 ## Also needs:
-## Kickstart/Preseed files: centos.cfg and/or debian.cfg
+## Kickstart/Preseed file: ks.cfg
 ## Optional image: ``project''.bmp
 
 
@@ -83,7 +83,7 @@ function pull_repository {
 
 
 function tftp_prep {
-    here="${VM_SRC_DIR}"
+    here="${PWD}"
     local_repos=()
     remote_repos=()
     while test $# -gt 0; do
@@ -519,6 +519,7 @@ function libvirt_cleanup {
     fi
 }
 
+
 function libvirt_network_preinstall {
     if [ $KVM_NETWORK_TYPE == "USER" ]; then
 	target_gateway=$(get_target_gateway)  ## using default subnet
@@ -531,21 +532,6 @@ function libvirt_network_preinstall {
   </ip>
 </network>
 EOF
-    fi
-}
-
-function libvirt_network_postinstall {
-    if [ "$KVM_NETWORK_TYPE" == "USER" ]; then
-	sed -i '.bak' -e "s|<domain type='kvm'>|<domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
-  <qemu:commandline>
-    <qemu:arg value='-redir'/>
-    <qemu:arg value='tcp:2222::22'/>
-    <qemu:arg value='-redir'/>
-    <qemu:arg value='tcp:8080::80'/>
-  </qemu:commandline>|" ${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml
-	## Not persistent?
-	#virsh -c qemu:///system qemu-monitor-command --hmp ${VM_NAME} 'hostfwd_add ::2222-::22'
-	#virsh -c qemu:///system qemu-monitor-command --hmp ${VM_NAME} 'hostfwd_add ::8080-::80'
 
     elif [ "$KVM_NETWORK_TYPE" == "DEFAULT" ]; then
 	pre=
@@ -603,6 +589,22 @@ EOF
 	$pre cp qemu-hooks.sh /etc/libvirt/hooks/qemu
 	$pre chmod +x /etc/libvirt/hooks/qemu
 	$pre service libvirtd restart
+    fi
+}
+
+function libvirt_network_postinstall {
+    if [ "$KVM_NETWORK_TYPE" == "USER" ]; then
+	sed -i '.bak' -e "s|<domain type='kvm'>|<domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+  <qemu:commandline>
+    <qemu:arg value='-redir'/>
+    <qemu:arg value='tcp:2222::22'/>
+    <qemu:arg value='-redir'/>
+    <qemu:arg value='tcp:8080::80'/>
+  </qemu:commandline>|" ${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml
+	## Not persistent?
+	#virsh -c qemu:///system qemu-monitor-command --hmp ${VM_NAME} 'hostfwd_add ::2222-::22'
+	#virsh -c qemu:///system qemu-monitor-command --hmp ${VM_NAME} 'hostfwd_add ::8080-::80'
+
     fi
 }
 
@@ -672,7 +674,7 @@ end
 EOF
 	echo "Packaging ${VM_NAME}"
 	rm -f ${lower_name}.${TARGET_PROVIDER}.box
-	mv "${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img" "${VM_WORKING_DIR}/${VM_NAME}/box.img"
+	cp "${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img" "${VM_WORKING_DIR}/${VM_NAME}/box.img"
 
 	sed "s|source file='${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.img'|source file='box.img'|" <"${VM_WORKING_DIR}/${VM_NAME}/${VM_NAME}.xml" | sed "s|source network='default'|source network='${net_name}'|" >"${VM_WORKING_DIR}/${VM_NAME}/box.xml"
 	cd ${here}

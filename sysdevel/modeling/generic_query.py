@@ -80,7 +80,7 @@ class Query(object):
     def main(self, args=None):
         import sys
         if args is None:
-            args = sys.argv
+            args = sys.argv[1:]
 
         try:
             ## example: ./query.py --web 3 some_json_encoded_params_string
@@ -134,11 +134,3 @@ class Query(object):
                     continue  ## ignore bare values
 
             self.show(self.query(kwargs))
-
-
-
-## singleton
-query = Query()
-
-if __name__ == "__main__":
-    query.main()

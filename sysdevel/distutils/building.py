@@ -113,7 +113,7 @@ def create_script_wrapper(pyscript, target_dir):
                 'path=`cd "$loc/.."; pwd`\n' + 
                 'export LD_LIBRARY_PATH=$path/lib:$path/lib64:$LD_LIBRARY_PATH\n' +
                 'export DYLD_LIBRARY_PATH=$path/lib:$path/lib64:$DYLD_LIBRARY_PATH\n' +
-                'export LOCAL_BIN_PATH=$loc\n' +
+                'export LOCAL_BIN_PATH=$path/bin\n' +
                 sys.executable + ' $path/bin/' + pyscript + ' $@\n')
         f.close()
         os.chmod(dst_file, int('777', 8))
