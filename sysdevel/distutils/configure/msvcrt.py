@@ -6,6 +6,12 @@ from sysdevel.distutils.prerequisites import get_msvc_version, programfiles_dire
 from sysdevel.distutils.configuration import config
 from sysdevel.distutils import options
 
+try:
+    input = raw_input
+except NameError:
+    pass
+
+
 class configuration(config):
     """
     Find/fetch/install msvcr??.dll (required if linking to Python on Windows)
