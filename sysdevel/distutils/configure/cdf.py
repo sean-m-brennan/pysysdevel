@@ -25,7 +25,7 @@ class configuration(lib_config):
         if 'windows' in platform.system().lower():
             lib_name += 'NativeLibrary'
         if version is None:
-            version = '34_1'
+            version = '35_0'
 
         limit = False
         base_dirs = []

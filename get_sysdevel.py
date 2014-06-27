@@ -51,10 +51,7 @@ def _check_call(cmd, *args, **kwargs):
     p = subprocess.Popen(cmd, *args, **kwargs)
     retcode = p.wait()
     if retcode != 0:
-        ex = subprocess.CalledProcessError()
-        ex.returncode = retcode
-        ex.cmd = cmd
-        ex.output = None
+        ex = subprocess.CalledProcessError(retcode, cmd, None)
         raise ex
 
 
@@ -101,6 +98,8 @@ def _import_sysdevel(where, feedback=False, force_archive=False):
                 os.rename('pysysdevel-master', 'pysysdevel')
             elif force_archive or find_executable('git') is None:
                 ## download the archive
+                if not os.path.exists(download_dir):
+                    os.mkdir(download_dir)
                 website_zipfile = website + '/archive/master.zip'
                 if find_executable('wget') is None:
                     print("WARNING: if you are behind a proxy, " +\
