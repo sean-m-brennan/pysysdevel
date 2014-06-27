@@ -38,6 +38,7 @@ import platform
 import shutil
 
 website = 'https://github.com/sean-m-brennan/pysysdevel'
+default_build_dir = 'build'
 default_dnld_dir = 'third_party'
 
 shell = False
@@ -64,8 +65,7 @@ def _extract_zip_archive(archive_path):
     z.close()
 
 
-def _import_sysdevel(where, feedback=False, download_dir=default_dnld_dir,
-                     force_archive=False):
+def _import_sysdevel(where, feedback=False, force_archive=False):
     if where == '':
         where = os.path.abspath(os.getcwd())
     else:
@@ -76,11 +76,15 @@ def _import_sysdevel(where, feedback=False, download_dir=default_dnld_dir,
         import sys
         from distutils.spawn import find_executable
 
-        build_dir = os.path.join(where, 'build')
+        build_dir = os.path.join(where, default_build_dir)
+        download_dir = os.path.join(where, default_dnld_dir)
         for arg in list(sys.argv):
             if arg == '-b' or arg == '--build_base':
-                idx = sys.argv.index(arg)
-                build_dir = os.path.abspath(sys.argv[idx+1])
+                idx = sys.argv.index(arg) + 1
+                build_dir = os.path.abspath(sys.argv[idx])
+            if arg == '-d' or arg == '--download-dir':
+                idx = sys.argv.index(arg) + 1
+                download_dir = os.path.abspath(sys.argv[idx])
 
         if not os.path.exists(os.path.join(build_dir, 'pysysdevel')):
             if feedback:
@@ -146,16 +150,12 @@ if __name__ == "__main__":
         import sysdevel
         print('SysDevel found at ' + os.path.dirname(sysdevel.__file__))
     except:
-        download_dir = default_dnld_dir
         force_archive = False
         install = False
         where = ''
         last_idx = 0
         for arg in list(sys.argv):
-            if arg == '-d' or arg == '--download-dir':
-                idx = sys.argv.index(arg) + 1
-                download_dir = sys.argv[idx]
-            elif arg == '-f' or arg == '--force':
+            if arg == '-f' or arg == '--force':
                 force_archive = True
             elif arg == '-I' or arg == '--install':
                 install = True
@@ -171,18 +171,11 @@ if __name__ == "__main__":
 
         if where == '':
             where = os.path.abspath(os.getcwd())
-        _import_sysdevel(where, True, download_dir, force_archive)
+        _import_sysdevel(where, True, force_archive)
         if install:
             _install_sysdevel(os.path.join(where, 'pysysdevel'))
         import sysdevel
         print('SysDevel is now at ' + os.path.dirname(sysdevel.__file__))
 
 else:
-    try:
-        ## If you really need a custom download dir, before importing include:
-        ##  __builtins__.DOWNLOAD_DIRECTORY = 'relative_path_to_downloads'
-        print("SysDevel downloads into " + str(DOWNLOAD_DIRECTORY))
-        _import_sysdevel(os.path.abspath(os.path.dirname(__file__)),
-                         download_dir=DOWNLOAD_DIRECTORY)
-    except NameError:
-        _import_sysdevel(os.path.abspath(os.path.dirname(__file__)))
+    _import_sysdevel(os.path.abspath(os.path.dirname(__file__)))
