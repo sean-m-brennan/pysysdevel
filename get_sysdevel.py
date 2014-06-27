@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Copyright 2013.  Los Alamos National Security, LLC.
 This material was produced under U.S. Government contract
@@ -34,8 +35,10 @@ Either import this script, or fetch/install sysdevel by running:
 import os
 import sys
 import platform
+import shutil
 
 website = 'https://github.com/sean-m-brennan/pysysdevel'
+default_dnld_dir = 'third_party'
 
 shell = False
 if 'windows' in platform.system().lower():
@@ -54,9 +57,17 @@ def _check_call(cmd, *args, **kwargs):
         raise ex
 
 
-def _import_sysdevel(where, feedback=False):
+def _extract_zip_archive(archive_path):
+    import zipfile
+    z = zipfile.ZipFile(archive_path, 'r')
+    z.extractall()
+    z.close()
+
+
+def _import_sysdevel(where, feedback=False, download_dir=default_dnld_dir,
+                     force_archive=False):
     if where == '':
-        where = os.getcwd()
+        where = os.path.abspath(os.getcwd())
     else:
         where = os.path.abspath(where)
     try:
@@ -78,25 +89,31 @@ def _import_sysdevel(where, feedback=False):
             if not os.path.exists(build_dir):
                 os.mkdir(build_dir)
             os.chdir(build_dir)
-            if find_executable('git') is None:
-                import zipfile
+            archive = 'pysysdevel.zip'
+            archive_path = os.path.join(here, download_dir, archive)
+            if not force_archive and os.path.exists(archive_path):
+                ## exists, just extract
+                _extract_zip_archive(archive_path)
+                os.rename('pysysdevel-master', 'pysysdevel')
+            elif force_archive or find_executable('git') is None:
+                ## download the archive
                 website_zipfile = website + '/archive/master.zip'
-                archive = 'pysysdevel.zip'
-                if not os.path.exists(archive):
-                    if find_executable('wget') is None:
-                        print("WARNING: if you are behind a proxy, " +\
-                            "this download will hang.")
-                        try:
-                            from urllib.request import urlretrieve
-                        except ImportError:
-                            from urllib import urlretrieve
-                        urlretrieve(website_zipfile, archive)
-                    else:  ## wget is available
-                        _check_call(['wget', website_zipfile, '-O', archive],
-                                    shell=shell)
-                z = zipfile.ZipFile(archive, 'r')
-                z.extractall()
-                z.close()
+                if find_executable('wget') is None:
+                    print("WARNING: if you are behind a proxy, " +\
+                          "this download will hang.")
+                    try:
+                        from urllib.request import urlretrieve
+                    except ImportError:
+                        from urllib import urlretrieve
+                    urlretrieve(website_zipfile, archive_path)
+                else:  ## wget is available
+                    _check_call(['wget', website_zipfile, '-O', archive_path],
+                                shell=shell)
+                try:
+                    shutil.rmtree('pysysdevel', ignore_errors=True)
+                except:
+                    pass
+                _extract_zip_archive(archive_path)
                 os.rename('pysysdevel-master', 'pysysdevel')
             else:  ## git is available
                 _check_call(['git', 'clone', website + '.git'],
@@ -111,7 +128,7 @@ def _install_sysdevel(where):
     import sys
     import shutil
     if where == '':
-        where = os.getcwd()
+        where = os.path.abspath(os.getcwd())
     else:
         where = os.path.abspath(where)
     here = os.path.abspath(os.getcwd())
@@ -129,23 +146,43 @@ if __name__ == "__main__":
         import sysdevel
         print('SysDevel found at ' + os.path.dirname(sysdevel.__file__))
     except:
-        print('Enter the full path where you want SysDevel to reside locally')
-        msg = '    or just hit enter if you are going to install it globally:'
-        try:
-            where = raw_input(msg)
-        except NameError:
-            where = eval(input(msg))
-        _import_sysdevel(where, True)
-        msg2 = 'Do you want to install SysDevel into your default ' + \
-               'Python site-packages? (y/N):'
-        try:
-            which = raw_input(msg2)
-        except NameError:
-            which = eval(input(msg2))
-        if which.lower() == 'y' or which.lower() == 'yes':
+        download_dir = default_dnld_dir
+        force_archive = False
+        install = False
+        where = ''
+        last_idx = 0
+        for arg in list(sys.argv):
+            if arg == '-d' or arg == '--download-dir':
+                idx = sys.argv.index(arg) + 1
+                download_dir = sys.argv[idx]
+            elif arg == '-f' or arg == '--force':
+                force_archive = True
+            elif arg == '-I' or arg == '--install':
+                install = True
+            elif arg == '-C' or arg == '--local-dir':
+                idx = sys.argv.index(arg) + 1
+                where = sys.argv[idx]
+            elif arg == '-h' or arg == '--help':
+                print("Usage: " + +
+                      " [-d | --download-dir download_dir]" +
+                      " [-f | --force]" +
+                      " [-I | --install]" +
+                      " [-C | --local-dir user_installation_path]")
+
+        if where == '':
+            where = os.path.abspath(os.getcwd())
+        _import_sysdevel(where, True, download_dir, force_archive)
+        if install:
             _install_sysdevel(os.path.join(where, 'pysysdevel'))
         import sysdevel
         print('SysDevel is now at ' + os.path.dirname(sysdevel.__file__))
 
 else:
-    _import_sysdevel(os.path.abspath(os.path.dirname(__file__)))
+    try:
+        ## If you really need a custom download dir, before importing include:
+        ##  __builtins__.DOWNLOAD_DIRECTORY = 'relative_path_to_downloads'
+        print("SysDevel downloads into " + str(DOWNLOAD_DIRECTORY))
+        _import_sysdevel(os.path.abspath(os.path.dirname(__file__)),
+                         download_dir=DOWNLOAD_DIRECTORY)
+    except NameError:
+        _import_sysdevel(os.path.abspath(os.path.dirname(__file__)))
