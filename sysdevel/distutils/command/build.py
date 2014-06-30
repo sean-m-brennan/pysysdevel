@@ -55,7 +55,9 @@ class build(old_build):
     def finalize_options(self):
         old_build.finalize_options(self)
         self.sublevel = int(self.sublevel)
-
+        if self.build_base[-1] == '/' or self.build_base[-1] == '\\':
+            self.build_base = self.build_base[:-1]
+        options.set_build_dir(os.path.basename(self.build_base))
 
     def has_pure_modules(self):
         return self.distribution.has_pure_modules() or \
@@ -108,8 +110,16 @@ class build(old_build):
 
 
     def run(self):
-        ## before anything else
         deps = self.get_finalized_command('dependencies')
+        install = self.get_finalized_command('install')
+        level_list = [deps.sublevel, self.sublevel, install.sublevel]
+        ## detect malformed usage
+        if len(set([l for l in level_list if l])) > 1:
+            raise Exception("Multiple sublevels specified.")
+        level = max(self.sublevel, install.sublevel, deps.sublevel)
+        self.sublevel = install.sublevel = deps.sublevel = max(*level_list)
+
+        ## before anything else
         if self.sublevel == 0 and not deps.ran:
             self.run_command('dependencies')
 

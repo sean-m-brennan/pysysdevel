@@ -83,7 +83,7 @@ class configuration(lib_config):
 
     def download(self, environ, version, strict=False):
         if version is None:
-            version = '34_1'
+            version = '35_0'
         website = 'http://cdaweb.gsfc.nasa.gov/pub/software/cdf/dist/cdf' + \
                   str(version)
         os_dir = 'linux'

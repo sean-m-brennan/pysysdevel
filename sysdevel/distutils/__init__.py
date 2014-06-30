@@ -75,11 +75,11 @@ class _Options(object):
         ## mutable
         self._local_search_paths = []
         self._default_download_dir  = 'third_party'
-        self._target_download_dir  = self._default_download_dir
+        self._target_download_dir  = os.path.abspath(self._default_download_dir)
         self._default_build_dir = 'build'
-        self._target_build_dir = self._default_build_dir
+        self._target_build_dir = os.path.abspath(self._default_build_dir)
         self._default_config_dir = 'config'  ## in package base directory
-        self._user_config_dir = self._default_config_dir
+        self._user_config_dir = os.path.abspath(self._default_config_dir)
         self._VERBOSE = False
         self._DEBUG = False
 
@@ -120,7 +120,7 @@ class _Options(object):
 
     @property
     def default_download_dir(self):
-        return self._target_download_dir
+        return self._default_download_dir
 
     def set_download_dir(self, d):
         self._default_download_dir = d
@@ -140,14 +140,17 @@ class _Options(object):
     def target_build_dir(self):
         return self._target_build_dir
 
-    def set_top_level(self, num):
-        base_dir = os.path.realpath(os.path.abspath(
-            os.path.sep.join(['..' for _ in range(num)])))
+    def set_top_level_dir(self, base_dir):
         self._target_build_dir = os.path.join(base_dir, self.default_build_dir)
         self._target_download_dir = os.path.join(base_dir,
                                                  self.default_download_dir)
         self._user_config_dir = os.path.join(base_dir, self.default_config_dir)
         return self._target_build_dir
+
+    def set_top_level(self, num):
+        base_dir = os.path.realpath(os.path.abspath(
+            os.path.sep.join(['..' for _ in range(num)])))
+        return self.set_top_level_dir(base_dir)
 
 options = _Options()
 

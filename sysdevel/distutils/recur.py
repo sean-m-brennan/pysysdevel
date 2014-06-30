@@ -32,6 +32,7 @@ import sys
 import subprocess
 
 from sysdevel.distutils.building import process_progress
+from sysdevel.distutils import options
 
 
 def process_package(fnctn, build_base, progress, pyexe, argv,
@@ -54,7 +55,7 @@ def process_package(fnctn, build_base, progress, pyexe, argv,
     if not rf.is_sysdevel_build:  ## regular distutils
         args = list(argv)
         for arg in args:
-            if '--sublevel' in arg:
+            if '--sublevel' in arg or '--download-dir' in arg:
                 argv.remove(arg)
             if arg in CustomCommands:
                 argv.remove(arg)
@@ -62,9 +63,9 @@ def process_package(fnctn, build_base, progress, pyexe, argv,
             argv.append('build')
 
     try:
-        p = subprocess.Popen([pyexe, os.path.join(pkg_dir, 'setup.py'),
-                              ] + argv + addtnl_args,
-                             stdout=log, stderr=log)
+        cmd_line = [pyexe, os.path.join(pkg_dir, 'setup.py'),
+                    ] + argv + addtnl_args
+        p = subprocess.Popen(cmd_line, stdout=log, stderr=log)
         status = progress(p)
         log.close()
     except KeyboardInterrupt:

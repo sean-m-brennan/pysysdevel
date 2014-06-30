@@ -76,15 +76,20 @@ class install(old_install):
                     ]
 
     def run(self):
-        ## before anything else (runs in case build hasn't run)
         deps = self.get_finalized_command('dependencies')
+        build = self.get_finalized_command('build')
+        level_list = [deps.sublevel, build.sublevel, self.sublevel]
+        ## detect malformed usage
+        if len(set([l for l in level_list if l])) > 1:
+            raise Exception("Multiple sublevels specified.")
+        self.sublevel = build.sublevel = deps.sublevel = max(*level_list)
+
+        ## before anything else (runs in case build hasn't run)
         if self.sublevel == 0 and not deps.ran:
             self.run_command('dependencies')
 
         options.set_top_level(self.sublevel)
         if self.distribution.subpackages != None:
-            build = self.get_finalized_command('build')
-
             try:
                 os.makedirs(build.build_base)
             except OSError:

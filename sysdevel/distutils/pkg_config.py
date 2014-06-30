@@ -39,6 +39,28 @@ from sysdevel.util import flatten
 from sysdevel.distutils import options
 
 
+def _recurse_directories(path):
+    path, d = os.path.split(path)
+    if not d:
+        return 0
+    return _recurse_directories(path) + 1
+
+
+def _set_options_dir(where, setter):
+    prev = os.path.dirname(options.target_build_dir)
+    path, d = os.path.split(where)
+    setter(d)
+    if path:
+        options.set_top_level_dir(path)
+    idx = len(os.path.commonprefix([path, prev]))
+    if len(path) > idx:
+        diff = path[idx:]
+    else:
+        diff = prev[idx:]
+    num = _recurse_directories(diff)
+    return num
+
+
 #TODO unify argv, environ and options handling
 
 def handle_arguments(argv, option_list=()):
@@ -59,6 +81,7 @@ def handle_arguments(argv, option_list=()):
     opts['download'] = False
     opts['sublevel'] = 0
     opts['locally'] = True
+    sublevel_set = False
 
     bundle = False
     if 'py2exe' in argv:
@@ -75,12 +98,32 @@ def handle_arguments(argv, option_list=()):
         if arg == '--download':
             opts['download'] = True
             opts['install'] = False
+
+        if arg == '--sublevel':
+            idx = argv.index(arg)
+            opts['sublevel'] = int(argv[idx+1])
+            sublevel_set = True
         if arg.startswith('--sublevel='):
             opts['sublevel'] = int(arg[11:])
-
-        if arg == '-b' or arg == '--build_base':
+            sublevel_set = True
+        if arg == '-b' or arg == '--build-base':
             idx = argv.index(arg)
-            options.set_build_dir(argv[idx+1])
+            lvl = _set_options_dir(argv[idx+1], options.set_build_dir)
+            if not sublevel_set:
+                opts['sublevel'] = lvl
+        if arg.startswith('--build-base='):
+            lvl = _set_options_dir(arg[13:], options.set_build_dir)
+            if not sublevel_set:
+                opts['sublevel'] = lvl
+        if arg == '--download-dir':
+            idx = argv.index(arg)
+            lvl = _set_options_dir(argv[idx+1], options.set_download_dir)
+            if not sublevel_set:
+                opts['sublevel'] = lvl
+        if arg.startswith('--download-dir='):
+            lvl = _set_options_dir(arg[15:], options.set_download_dir)
+            if not sublevel_set:
+                opts['sublevel'] = lvl
 
         ## args that won't work with setup
         if arg.startswith('--app='):

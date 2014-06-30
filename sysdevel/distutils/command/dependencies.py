@@ -36,17 +36,20 @@ from distutils.core import Command
 
 from sysdevel.distutils.configure import configure_system
 from sysdevel.distutils.dependency_graph import get_dep_dag
+from sysdevel.distutils import options
 
 
 # pylint: disable=W0201
 class dependencies(Command):
     description = "package dependencies"
-    user_options = [('show', 's', 'show the dependencies'),
+    user_options = [('sublevel=', None, 'sub-package level'),
+                    ('show', 's', 'show the dependencies'),
                     ('system-install', None,
                      'system-wide installation of dependencies'),
                     ('download', None,
-                     'download all listed dependencies'),]
-
+                     'download all listed dependencies'),
+                    ('download-dir=', None,
+                     'set the third-party software download directory')]
 
     def initialize_options(self):
         self.show = False
@@ -54,13 +57,25 @@ class dependencies(Command):
         self.download = False
         self.log_only = False
         self.ran = False
-
+        self.download_dir = options.default_download_dir
+        self.sublevel = 0
 
     def finalize_options(self):
+        self.sublevel = int(self.sublevel)
+        if self.download_dir[-1] == '/' or self.download_dir[-1] == '\\':
+            self.download_dir = self.download_dir[:-1]
+        options.set_download_dir(os.path.basename(self.download_dir))
         self.requirements = []  ## may contain (dep_name, version) tuples
 
-
     def run(self):
+        build = self.get_finalized_command('build')
+        install = self.get_finalized_command('install')
+        level_list = [self.sublevel, build.sublevel, install.sublevel]
+        ## detect malformed usage
+        if len(set([l for l in level_list if l])) > 1:
+            raise Exception("Multiple sublevels specified.")
+        self.sublevel = build.sublevel = install.sublevel = max(*level_list)
+
         dep_graph = get_dep_dag(os.getcwd())  ## assumes cwd is setup dir
         if self.show:
             print dep_graph
@@ -75,6 +90,7 @@ class dependencies(Command):
                         ts.remove(dep)
         self.requirements += ts
         env_old = self.distribution.environment
+        options.set_top_level(self.sublevel)
         env = configure_system(self.requirements, self.distribution.version,
                                install=(not self.download),
                                locally=(not self.system_install),

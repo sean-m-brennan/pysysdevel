@@ -96,10 +96,7 @@ def configure_system(prerequisite_list, version,
             download = False  ## default value
     if sublevel is None:  ## parameter value overrides
         if 'sublevel' in options.keys():
-            sublevel = options['sublevel']
-        else:
-            sublevel = 0  ## default value
-    opts.set_top_level(sublevel)
+            opts.set_top_level(options['sublevel'])
 
     environment = dict()
     try:
@@ -121,6 +118,7 @@ def configure_system(prerequisite_list, version,
             if len(environment):
                 out.write('(from cache)')
             out.write('\n')
+
         environment['PACKAGE_VERSION'] = version
 
         prerequisite_list.insert(0, 'httpsproxy_urllib2')
@@ -158,8 +156,8 @@ def configure_system(prerequisite_list, version,
         log.close()
         err.write('Configuration error; see ' + logfile + ' for details.\n' +
                   "If the build fails, run 'python setup.py dependencies " + 
-                  "--show'\nand install the listed packages by hand.\n" +
-                  'Prerequisites might be present, so building anyway...\n')
+                  "--show'\nand install the listed packages by hand.\n")
+        raise
     return environment
 
 

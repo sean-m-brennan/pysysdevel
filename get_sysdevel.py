@@ -76,10 +76,10 @@ def _import_sysdevel(where, feedback=False, force_archive=False):
         build_dir = os.path.join(where, default_build_dir)
         download_dir = os.path.join(where, default_dnld_dir)
         for arg in list(sys.argv):
-            if arg == '-b' or arg == '--build_base':
+            if arg == '-b' or arg == '--build-base':
                 idx = sys.argv.index(arg) + 1
                 build_dir = os.path.abspath(sys.argv[idx])
-            if arg == '-d' or arg == '--download-dir':
+            if arg == '--download-dir':
                 idx = sys.argv.index(arg) + 1
                 download_dir = os.path.abspath(sys.argv[idx])
 
@@ -162,8 +162,9 @@ if __name__ == "__main__":
                 idx = sys.argv.index(arg) + 1
                 where = sys.argv[idx]
             elif arg == '-h' or arg == '--help':
-                print("Usage: " + +
-                      " [-d | --download-dir download_dir]" +
+                print("Usage: " + os.path.basename(__file__) +
+                      " [-b | --build_base custom_build_dir]" +
+                      " [--download_dir custom_download_dir]" +
                       " [-f | --force]" +
                       " [-I | --install]" +
                       " [-C | --local-dir user_installation_path]")
