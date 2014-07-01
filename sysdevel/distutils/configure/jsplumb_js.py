@@ -22,7 +22,7 @@ class configuration(file_config):
         file_pattern = 'jquery.jsPlumb-*-min.js'
         if version is None:
             website = 'https://raw.github.com/sporritt/jsPlumb/master/dist/js/'
-            version = latest_version('jsPlumb', website, file_pattern)
+            version = '1.6.2' #latest_version('jsPlumb', website, file_pattern)
         else:
             website = 'https://raw.github.com/sporritt/jsPlumb/dev/' + \
                       version + '/dist/js/'
