@@ -151,7 +151,7 @@ def create_runscript(pkg, mod, target, extra):
             extra = ''
         if options.DEBUG:
             print('Creating runscript ' + target)
-        script = "#!/usr/bin/env python\n" + \
+        script = "#!/usr/bin/env " + os.path.basename(sys.executable) + "\n" + \
                 "# -*- coding: utf-8 -*-\n\n" + \
                 "## In case the app is not installed in the standard location\n" + \
                 get_python_site_code() + "\n" + \
