@@ -138,8 +138,8 @@ class RequirementsFinder(NodeVisitor):
     keywords = {'setup': ['setup'],
                 'pkgs': ['packages'],
                 'subpkgs': ['subpackages'],
-                'reqs': ['requires', #'install_requires',
-                         ],
+                'reqs': ['requires', 'extern_requires',
+                         'build_requires', 'install_requires',],
                 'cfgsys': ['configure_system'],}
 
     def __init__(self, filepath=None, filedescriptor=None, codestring=None,

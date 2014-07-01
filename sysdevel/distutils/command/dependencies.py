@@ -89,6 +89,9 @@ class dependencies(Command):
                        (isinstance(dep, tuple) and pkg_name == dep[0]):
                         ts.remove(dep)
         self.requirements += ts
+        req_modules = [r[0] if isinstance(r, tuple) else r
+                       for r in self.requirements]
+        self.distribution.extra_install_modules += req_modules
         env_old = self.distribution.environment
         options.set_top_level(self.sublevel)
         env = configure_system(self.requirements, self.distribution.version,
