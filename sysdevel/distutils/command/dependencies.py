@@ -113,8 +113,6 @@ class dependencies(Command):
                     break
             if not seen:
                 py_reqs.append(dep)
-        print 'Python requires ' + str(py_reqs)
-        print 'Non-python requires ' + str(non_py_reqs)
         self.distribution.extra_install_modules += py_reqs
 
         env_old = self.distribution.environment
