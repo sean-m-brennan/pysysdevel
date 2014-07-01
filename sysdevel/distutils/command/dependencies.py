@@ -32,9 +32,10 @@ INTERLEAVED_OUTPUT = True
 
 import os
 import sys
+import glob
 from distutils.core import Command
 
-from sysdevel.distutils.configure import configure_system
+from sysdevel.distutils import configure
 from sysdevel.distutils.dependency_graph import get_dep_dag
 from sysdevel.distutils import options
 
@@ -89,15 +90,40 @@ class dependencies(Command):
                        (isinstance(dep, tuple) and pkg_name == dep[0]):
                         ts.remove(dep)
         self.requirements += ts
-        req_modules = [r[0] if isinstance(r, tuple) else r
-                       for r in self.requirements]
-        self.distribution.extra_install_modules += req_modules
+
+        ## differentiate between python and other prereqs
+        py_reqs = []
+        non_py_reqs = []
+        sys_cfg_dir = os.path.dirname(configure.__file__)
+        usr_cfg_dir = options.user_config_dir
+        non_py_configs = glob.glob(os.path.join(sys_cfg_dir, '*.py')) + \
+                         glob.glob(os.path.join(usr_cfg_dir, '*.py'))
+        non_py_configs = [os.path.basename(cfg) for cfg in non_py_configs]
+        for cfg in list(non_py_configs):
+            if '_py.py' in cfg:
+                non_py_configs.remove(cfg)
+        for dep in self.requirements:
+            if isinstance(dep, tuple):
+                dep = dep[0]
+            seen = False
+            for cfg in non_py_configs:
+                if cfg.startswith(dep):
+                    non_py_reqs.append(dep)
+                    seen = True
+                    break
+            if not seen:
+                py_reqs.append(dep)
+        print 'Python requires ' + str(py_reqs)
+        print 'Non-python requires ' + str(non_py_reqs)
+        self.distribution.extra_install_modules += py_reqs
+
         env_old = self.distribution.environment
         options.set_top_level(self.sublevel)
-        env = configure_system(self.requirements, self.distribution.version,
-                               install=(not self.download),
-                               locally=(not self.system_install),
-                               download=self.download)
+        env = configure.configure_system(self.requirements,
+                                         self.distribution.version,
+                                         install=(not self.download),
+                                         locally=(not self.system_install),
+                                         download=self.download)
         self.distribution.environment = dict(list(env_old.items()) +
                                              list(env.items()))
         self.ran = True
