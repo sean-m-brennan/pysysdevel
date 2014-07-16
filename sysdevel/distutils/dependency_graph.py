@@ -48,26 +48,29 @@ def _fetch_deps(short_name, helper, version, strict, setup_dir=None):
     return results
 
 
-def _recurse_prereqs(path):
+def _recurse_prereqs(path, req_only=False):
     rf = RequirementsFinder(os.path.join(path, 'setup.py'))
-    required = [rf.package]
+    required = [rf.package]  ## must be first
     for _, pkg_dir in rf.subpackages_list:
-        required.append(_recurse_prereqs(os.path.join(path, pkg_dir)))
+        required.append(_recurse_prereqs(os.path.join(path, pkg_dir),
+                                         req_only))
+    if not req_only:
+        for pkg in rf.prerequisite_list:
+            required.append(find_package_config(pkg, _fetch_deps,
+                                                setup_dir=path))
     for pkg in rf.requires_list:
-        required.append(find_package_config(pkg, _fetch_deps, setup_dir=path))
-    for pkg in rf.prerequisite_list:
         required.append(find_package_config(pkg, _fetch_deps, setup_dir=path))
     return required
 
 
 
-def get_dep_dag(pkg_path):
+def get_dep_dag(pkg_path, req_only=False):
     '''
     Construct a directed acyclic graph of dependencies.
     Takes the path of the root package.
     '''
     # pylint: disable=W0212
-    graph = dag(_recurse_prereqs(pkg_path))
+    graph = dag(_recurse_prereqs(pkg_path, req_only))
 
     ## remove duplicates where name,version,strict tuple equals name string
     adjacency_list = dict(graph.adjacency_list())

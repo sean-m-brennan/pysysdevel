@@ -82,17 +82,19 @@ class dependencies(Command):
             print dep_graph
             sys.exit(0)
 
+        prereq_graph = get_dep_dag(os.getcwd(), True)
         ts = dep_graph.topological_sort()[:-1]
+        pre_ts = prereq_graph.topological_sort()[:-1]
         if self.distribution.subpackages != None:
             for pkg_name, _ in self.distribution.subpackages:
                 for dep in dep_graph.adjacency_list().keys():
                     if pkg_name == dep or \
                        (isinstance(dep, tuple) and pkg_name == dep[0]):
                         ts.remove(dep)
+                        pre_ts.remove(dep)
         self.requirements += ts
 
         ## differentiate between python and other prereqs
-        py_reqs = []
         non_py_reqs = []
         sys_cfg_dir = os.path.dirname(configure.__file__)
         usr_cfg_dir = options.user_config_dir
@@ -105,10 +107,17 @@ class dependencies(Command):
         for dep in self.requirements:
             if isinstance(dep, tuple):
                 dep = dep[0]
-            seen = False
             for cfg in non_py_configs:
                 if cfg.startswith(dep):
                     non_py_reqs.append(dep)
+                    break
+        py_reqs = []
+        for dep in pre_ts:
+            if isinstance(dep, tuple):
+                dep = dep[0]
+            seen = False
+            for cfg in non_py_configs:
+                if cfg.startswith(dep):
                     seen = True
                     break
             if not seen:

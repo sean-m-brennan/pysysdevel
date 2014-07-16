@@ -138,8 +138,8 @@ class RequirementsFinder(NodeVisitor):
     keywords = {'setup': ['setup'],
                 'pkgs': ['packages'],
                 'subpkgs': ['subpackages'],
-                'reqs': ['requires', 'extern_requires',
-                         'build_requires', 'install_requires',],
+                'reqs': ['requires', 'extern_requires'],
+                'mkreqs': ['build_requires', 'install_requires'],
                 'cfgsys': ['configure_system'],}
 
     def __init__(self, filepath=None, filedescriptor=None, codestring=None,
@@ -340,6 +340,10 @@ class RequirementsFinder(NodeVisitor):
                     self.requires_list += self.get_value(keywd.value)
                     if self.debug:
                         print 'Requires: ' + str(self.requires_list)
+                elif keywd.arg in self.keywords['mkreqs']:
+                    self.prerequisite_list += self.get_value(keywd.value)
+                    if self.debug:
+                        print 'Prerequisites: ' + str(self.prerequisite_list)
 
 
     def visit_Assign(self, node):

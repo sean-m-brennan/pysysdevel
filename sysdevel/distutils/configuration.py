@@ -486,7 +486,7 @@ class pypi_config(py_config):
                 member = [s for s in names if 'setup.py' in s][0]
                 z.extract(member, extract_dir)
                 rf = RequirementsFinder(os.path.join(extract_dir, member))
-                dependencies = rf.requires_list
+                dependencies = rf.requires_list + rf.prerequisite_list
             except Exception:  # pylint: disable=W0703
                 if debug:
                     traceback.print_exc()
