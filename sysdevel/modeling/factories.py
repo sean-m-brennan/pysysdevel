@@ -231,8 +231,8 @@ def ListFactoryFactory(type_key, def_list):
     of type 'type_key' given a definition list 'def_list'.
     'def_list' must be a DefinitionList or convertable type.
     The factory creates an object for each element of the list
-    at kwargs[type_key], or a default is there is no list,
-    or raises an exception is there is no default.
+    at kwargs[type_key], or a default if there is no list,
+    or raises an exception if there is no default.
     '''
     def __listfactory(type_key, def_list, kwargs):
         d_list = DefinitionList.convert(def_list)

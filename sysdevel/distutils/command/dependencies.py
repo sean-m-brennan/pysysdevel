@@ -125,7 +125,6 @@ class dependencies(Command):
                     __import__(dep)
                 except ImportError:
                     py_reqs.append(dep)
-        print 'Python reqs ' + str(py_reqs)
         self.distribution.extra_install_modules += py_reqs
 
         env_old = self.distribution.environment
