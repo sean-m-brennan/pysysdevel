@@ -826,6 +826,7 @@ def get_pyd_suffix():
             return s[0]
 
 def get_module_location(modname, preferred_dir=None):
+    modname = modname.lower()
     if preferred_dir is not None and os.path.exists(preferred_dir):
         if modname in os.listdir(preferred_dir):
             return os.path.join(preferred_dir, modname)

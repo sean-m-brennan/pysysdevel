@@ -7,7 +7,8 @@ class configuration(py_config):
     Find/install ANTLR3 Python runtime
     """
     def __init__(self):
-        py_config.__init__(self, 'antlr3', '3.1.3', debug=False)
+        py_config.__init__(self, 'antlr3', '3.1.3',
+                           dependencies=['antlr'], debug=False)
 
 
     def download(self, environ, version, strict=False):

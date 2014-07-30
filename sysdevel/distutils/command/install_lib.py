@@ -38,6 +38,8 @@ from sysdevel.distutils.filesystem import mkdir
 from sysdevel.distutils.prerequisites import get_module_location
 from sysdevel.distutils import options
 
+## FIXME don't ignore these
+EXCEPTIONS = ['httpsproxy_urllib2', 'pyjamas', 'wxpython']
 
 class install_lib(old_install_lib):
     def run (self):
@@ -82,6 +84,8 @@ class install_lib(old_install_lib):
 
             module_dir = install.install_platlib
             for mod in self.distribution.extra_install_modules:
+                if mod in EXCEPTIONS:
+                    continue
                 source = get_module_location(mod, local_pkgs_dir)
                 if os.path.isdir(source):
                     self.copy_tree(source, os.path.join(module_dir, mod))
