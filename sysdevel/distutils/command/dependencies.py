@@ -35,10 +35,9 @@ import sys
 import glob
 from distutils.core import Command
 
-from sysdevel.distutils import configure
+from sysdevel.distutils import configure, options
 from sysdevel.distutils.dependency_graph import get_dep_dag
-from sysdevel.distutils import options
-
+from sysdevel.distutils.prerequisites import read_cache, save_cache
 
 # pylint: disable=W0201
 class dependencies(Command):
@@ -69,6 +68,8 @@ class dependencies(Command):
         self.requirements = []  ## may contain (dep_name, version) tuples
 
     def run(self):
+        save_cache(self.distribution.environment)
+
         build = self.get_finalized_command('build')
         install = self.get_finalized_command('install')
         level_list = [self.sublevel, build.sublevel, install.sublevel]

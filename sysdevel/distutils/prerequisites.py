@@ -93,6 +93,8 @@ def requirement_versioning(name):
                 n_end = name.find('=')
         v_begin = name.rfind('=') + 1
         v_end = name.find(')')
+        if v_end < 0:
+            v_end = len(name)
         if '==' in name[n_end:]:
             strict = True
         version = name[v_begin:v_end].strip()
@@ -230,7 +232,7 @@ class RequirementsFinder(NodeVisitor):
             elif type(target.value) == ast.Attribute:
                 self.variables[target.value.attr] = (value, start, end, step)
         elif self.debug:
-            print 'Unhandled assign type: ' + str(type(target))
+            print('Unhandled assign type: ' + str(type(target)))
         if type(value) == ast.Call:
             self.preprocess_call(value)
 
@@ -253,7 +255,7 @@ class RequirementsFinder(NodeVisitor):
             else:
                 attr = locals()[name]
         elif self.debug:
-            print 'Unhandled attribute value type: ' + str(type(node.value))
+            print('Unhandled attribute value type: ' + str(type(node.value)))
         return attr
 
 
@@ -305,7 +307,7 @@ class RequirementsFinder(NodeVisitor):
                 return self.get_call_value(ast_call, idx)
         else:
             if self.debug:
-                print 'Unhandled value type: ' + str(type(node))
+                print('Unhandled value type: ' + str(type(node)))
             return empty
 
 
@@ -315,7 +317,7 @@ class RequirementsFinder(NodeVisitor):
         elif type(node.func) == ast.Attribute:
             self.process_call(node.func.attr, node)
         elif self.debug:
-            print 'Unhandled call type: ' + str(type(node.func))
+            print('Unhandled call type: ' + str(type(node.func)))
 
 
     def process_call(self, name, node):
@@ -323,7 +325,7 @@ class RequirementsFinder(NodeVisitor):
             self.needs_early_config = True
             self.prerequisite_list += self.get_value(node.args[0])
             if self.debug:
-                print 'Prerequisites: ' + str(self.prerequisite_list)
+                print('Prerequisites: ' + str(self.prerequisite_list))
         elif name in self.keywords['setup']:  ## keywords in setup function
             for keywd in node.keywords:
                 if keywd.arg in self.keywords['pkgs']:
@@ -331,19 +333,19 @@ class RequirementsFinder(NodeVisitor):
                     if pkg_list:
                         self.package = [p for p in pkg_list if not '.' in p][0]
                         if self.debug:
-                            print 'Package: ' + str(self.package)
+                            print('Package: ' + str(self.package))
                 elif keywd.arg in 'subpackages':
                     self.subpackages_list += self.get_value(keywd.value)
                     if self.debug:
-                        print 'Subpackages: ' + str(self.subpackages_list)
+                        print('Subpackages: ' + str(self.subpackages_list))
                 elif keywd.arg in self.keywords['reqs']:
                     self.requires_list += self.get_value(keywd.value)
                     if self.debug:
-                        print 'Requires: ' + str(self.requires_list)
+                        print('Requires: ' + str(self.requires_list))
                 elif keywd.arg in self.keywords['mkreqs']:
                     self.prerequisite_list += self.get_value(keywd.value)
                     if self.debug:
-                        print 'Prerequisites: ' + str(self.prerequisite_list)
+                        print('Prerequisites: ' + str(self.prerequisite_list))
 
 
     def visit_Assign(self, node):

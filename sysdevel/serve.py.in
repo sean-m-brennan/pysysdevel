@@ -27,6 +27,7 @@ permissions and limitations under the License.
 # pylint: disable=W0105
 '''
 NOTE: requires the following be defined in distutils environment:
+  WEBSOCKET_PORT
   WEBSOCKET_ORIGIN
   WEBSOCKET_TLS_PKEY
   WEBSOCKET_TLS_CERT
@@ -54,7 +55,7 @@ from .query import query  ##FIXME incompatible with 2.4
 
 
 WEBSOCKET_HOST     = socket.getfqdn()
-WEBSOCKET_PORT     = 9876
+WEBSOCKET_PORT     = @@{WEBSOCKET_PORT}
 WEBSOCKET_ORIGIN   = "@@{WEBSOCKET_ORIGIN}"
 WEBSOCKET_TLS_PKEY = @@{WEBSOCKET_TLS_PKEY}
 WEBSOCKET_TLS_CERT = @@{WEBSOCKET_TLS_CERT}

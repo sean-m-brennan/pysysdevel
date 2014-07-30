@@ -99,11 +99,14 @@ class build_js(build_ext):
                 print('building web extension "' + \
                     os.path.join(wext.public_subdir, wext.name) + '" sources')
 
-            target = os.path.abspath(os.path.join(build.build_base, 'http',
-                                                  wext.public_subdir))
+            target = os.path.abspath(os.path.join(build.build_base,
+                                                  'http', wext.public_subdir))
+            #target = os.path.abspath(os.path.join(options.target_build_dir,
+            #                                      'http', wext.public_subdir))
             mkdir(target)
             here = os.getcwd()
             src_dir = os.path.abspath(wext.source_directory)
+            ## FIXME build.build_base points to local
             working_dir = os.path.abspath(os.path.join(build.build_temp,
                                                        'web', wext.name))
             mkdir(working_dir)
