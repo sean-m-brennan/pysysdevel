@@ -64,11 +64,12 @@ class configuration(config):
                 try:
                     msvcr_rel_dirs.append(os.environ['SYSTEM'])
                 except KeyError:
-                    try:
-                        msvcr_rel_dirs.append(os.path.join(os.environ['WINDIR'],
-                                                           'System32'))
-                    except KeyError:
-                        pass
+                    pass
+                try:
+                    msvcr_rel_dirs.append(os.path.join(os.environ['WINDIR'],
+                                                       'System32'))
+                except KeyError:
+                    pass
         release_dir = None
         debug_dir = None
         try:
