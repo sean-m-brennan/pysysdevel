@@ -66,8 +66,7 @@ class configuration(config):
                 except KeyError:
                     pass
                 try:
-                    msvcr_rel_dirs.append(os.path.join(os.environ['WINDIR'],
-                                                       'System32'))
+                    msvcr_rel_dirs.append(os.environ['WINDIR'])
                 except KeyError:
                     pass
         release_dir = None
@@ -76,8 +75,9 @@ class configuration(config):
             # Just the DLLs
             release_dir, _ = find_library('msvcr' + ver, msvcr_rel_dirs,
                                           limit=limit)
-            debug_dir, _ = find_library('msvcr' + ver, msvcr_dbg_dirs,
-                                        limit=limit)
+            if msvs_present:
+                debug_dir, _ = find_library('msvcr' + ver, msvcr_dbg_dirs,
+                                            limit=limit)
             self.found = True
         except ConfigError:
             if self.debug:
@@ -85,7 +85,8 @@ class configuration(config):
             return self.found
 
         self.environment['MSVCRT_DIR'] = release_dir
-        self.environment['MSVCRT_DEBUG_DIR'] = debug_dir
+        if msvs_present:
+            self.environment['MSVCRT_DEBUG_DIR'] = debug_dir
         self.environment['MSVCRT_LIBRARIES'] = ['msvcr' + ver, 'msvcp' + ver]
         return self.found
 
