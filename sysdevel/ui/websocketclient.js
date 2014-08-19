@@ -23,6 +23,10 @@
  * permissions and limitations under the License.
  */
 
+if (typeof DEBUG === "undefined") {
+    DEBUG = false;
+}
+
 function WebSocketsHandler(callback) {
     this.sender = null;
     this.callback = null;
@@ -140,6 +144,7 @@ function WebSocketsClient(resource, params, handler, fallback) {
             this.uri = proto + '://' + host + ':' + port.toString() +
 		'/' + this.resource;
             this._ws = new WebSocket(this.uri);
+	    this._ws.binaryType = "arraybuffer";
             this._ws.onopen = this.setOnOpen();
             this._ws.onclose = this.setOnClose();
             this._ws.onerror = this.setOnError();
@@ -261,6 +266,21 @@ function ServerLink(server, resource, data_callback){
 	    this._send(msg);
     };
 
+    this.sendFile = function(filename, data) {
+	if (this.ws.isConnecting()) {
+	    // in case the socket is not yet up
+	    setTimeout(function(link, filename, data) { 
+		link._send('filename=' + filename);
+		link._send(data);
+	    },
+		       2000, this, filename, data);
+	}
+	else {
+	    this._send('filename=' + filename);
+	    this._send(data);
+	}
+    };
+
     this._send = function(msg) {
         if (DEBUG)
 	    console.debug("Sending '" + msg + "'");
@@ -271,4 +291,9 @@ function ServerLink(server, resource, data_callback){
 	    this.php_dh.newRequest(this.php_script, msg);
 	}
     };
+
+    this.close = function() {
+	if (this.ws.isOpen())
+	    this.ws.close();
+    }
 }

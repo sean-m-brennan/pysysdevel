@@ -25,7 +25,9 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 """
 
+import sys
 import logging
+import traceback
 
 from sysdevel.modeling.models import json_handler
 
@@ -97,7 +99,12 @@ class Query(object):
                 import simplejson as json
             params = json.loads(json_str)
             method = getattr(self, method_name)
-            results = method(params)
+            try:
+                results = method(params)
+            except ValueError:
+                ## don't confuse with other parsing mode below
+                traceback.print_exc()
+                sys.exit(1)
             print(json.dumps(results, default=json_handler))
         except ValueError:
             ## example: ./query.py --param1=val1 --param2 val2 --param3 = val3

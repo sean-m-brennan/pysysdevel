@@ -8,15 +8,19 @@ error_reporting(E_ALL);
  * 
  * @author Simon Samtleben <web@lemmingzshadow.net>
  * @version 2011-10-18
+ *
+ * https://github.com/lemmingzshadow/php-websocket
  */
 
-class WebsocketClient {
+class WebSocketClient {
   private $_host;
   private $_port;
   private $_path;
   private $_origin;
   private $_Socket = null;
   private $_connected = false;
+
+  public $error = '';
 	
   public function __construct() { }
 	
@@ -26,26 +30,79 @@ class WebsocketClient {
 
   public function sendData($data, $type = 'text', $masked = true) {
     if ($this->_connected === false) {
+      $this->error = "WS - Not connected";
       return false;
     }
     if (empty($data)) {
+      $this->error = "WS send - No data given";
       return false;
     }
-    $res = @fwrite($this->_Socket, $this->_hybi10Encode($data, $type, $masked));		
-    if ($res === 0 || $res === false) {
-      return false;
+    $encoded_data = $this->_hybi10Encode($data, $type, $masked);
+    $written = 0;
+    while (strlen($encoded_data) > $written) {
+      $count = fwrite($this->_Socket, $encoded_data);
+      if ($count === 0 || $count === false) {
+	$this->error = 'WS send - ' . $this->get_socket_error();
+	return false;
+      }
+      $written += $count;
     }
+    fflush($this->_Socket);
+    return true;
+  }
+
+  public function receiveData() {
     $response= '';
-    $buffer = ' ';
-    while ($buffer !== '') {			
-      $buffer = fread($this->_Socket, 512);
-      $response .= $buffer;
-    }
-    if (empty($response)) {			
-      return false;
+    $buffer = true;
+    $response = '';
+    $len = 0;
+    $final = 0;
+    while ($final === 0) {
+      $response .= fread($this->_Socket, 2);
+      if (empty($response)) {
+	$this->error = 'WS recv frame - ' . $this->get_socket_error();
+	return false;
+      }
+      $final = ord($response[0]) >> 7; // first bit
+      $masked = ord($response[1]) >> 7; // first bit
+      $len = ord($response[1]) & 7; // all but first bit
+      if ($len === 126) {
+	$response .= fread($this->_Socket, 2);
+	if (empty($response)) {
+	  $this->error = 'WS recv frame len - ' . $this->get_socket_error();
+	  return false;
+	}
+	$len = bindec(sprintf('%08b', ord($response[2])) .
+		      sprintf('%08b', ord($response[3])));
+      }
+      elseif ($len === 127) {
+	$response .= fread($this->_Socket, 8);
+	if (empty($response)) {
+	  $this->error = 'WS recv frame len - ' . $this->get_socket_error();
+	  return false;
+	}
+	$tmp = '';
+	for ($i = 0; $i < 8; $i++) {
+	  $tmp .= sprintf('%08b', ord($response[$i+2]));
+	}
+	$len = bindec($tmp);
+      }
+      if ($masked) {
+        $len += 4;
+      }
+      $response .= fread($this->_Socket, $len);
+      if (empty($response)) {
+	$this->error = 'WS recv - ' . $this->get_socket_error();
+	return false;
+      }
     }
 
     return $this->_hybi10Decode($response);
+  }
+
+  public function get_socket_error() {
+    $sock = socket_import_stream($this->_Socket);
+    return socket_strerror(socket_last_error($sock));
   }
 
   public function connect($host, $port, $path, $origin = false) {
@@ -54,7 +111,9 @@ class WebsocketClient {
     $this->_path = $path;
     $this->_origin = $origin;
 		
-    $key = base64_encode($this->_generateRandomString(16, false, true));				
+    $key = base64_encode($this->_generateRandomString(16, false, true));
+    $magic_string = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+
     $header = "GET " . $path . " HTTP/1.1\r\n";
     $header.= "Host: ".$host.":".$port."\r\n";
     $header.= "Upgrade: websocket\r\n";
@@ -63,18 +122,36 @@ class WebsocketClient {
     if ($origin !== false) {
       $header.= "Sec-WebSocket-Origin: " . $origin . "\r\n";
     }
-    $header.= "Sec-WebSocket-Version: 13\r\n";			
-		
-    $this->_Socket = fsockopen($host, $port, $errno, $errstr, 2);
-    socket_set_timeout($this->_Socket, 0, 10000);
-    @fwrite($this->_Socket, $header); 
-    $response = @fread($this->_Socket, 1500);		
+    $header.= "Sec-WebSocket-Version: 13\r\n\r\n";			
+
+    //$this->_Socket = fsockopen($host, $port, $errno, $errstr, 5);
+    $this->_Socket = stream_socket_client("$host:$port", $errno, $errstr, 5);
+    if ($this->_Socket === false || $errno !== 0) {
+      $this->_connected = false;
+      $this->error = 'WS opening connection - ' . $errstr;
+      return $this->_connected;
+      }
+    socket_set_timeout($this->_Socket, 0, 300);
+    fwrite($this->_Socket, $header);
+    $response = '';
+    while (!feof($this->_Socket)) {
+      $response .= fread($this->_Socket, 1);
+      if (substr($response, -4) == '\r\n\r\n') {
+    	break;
+      }
+    }
+    if (empty($response)) {
+      $this->_connected = false;
+      $this->error = 'WS handshake - ' . $this->get_socket_error();
+      return $this->_connected;	
+    }
 
     preg_match('#Sec-WebSocket-Accept:\s(.*)$#mU', $response, $matches);
     $keyAccept = trim($matches[1]);
-    $expectedResonse = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
-		
-    $this->_connected = ($keyAccept === $expectedResonse) ? true : false;
+    $expectedResponse = base64_encode(pack('H*', sha1($key . $magic_string)));
+
+    $this->_connected = ($keyAccept === $expectedResponse) ? true : false;
+    sleep(1);
     return $this->_connected;	
   }
 	
@@ -84,16 +161,21 @@ class WebsocketClient {
 		
     // send ping:
     $data = 'ping?';
-    @fwrite($this->_Socket, $this->_hybi10Encode($data, 'ping', true));
-    $response = @fread($this->_Socket, 300);
-    if (empty($response)) {			
+    if (!fwrite($this->_Socket, $this->_hybi10Encode($data, 'ping', true))) {
+      $this->error = 'WS send ping - ' . $this->get_socket_error();
       return false;
     }
-    $response = $this->_hybi10Decode($response);
+    $response = $this->receiveData();
+    if (!$response) {
+      $this->error = 'WS recv pong - ' . $this->get_socket_error();
+      return false;
+    }
     if (!is_array($response)) {			
+      $this->error = "WS - Invalid pong decoding";
       return false;
     }
     if (!isset($response['type']) || $response['type'] !== 'pong') {
+      $this->error = "WS - Bad pong response";
       return false;
     }
     $this->_connected = true;
@@ -103,7 +185,8 @@ class WebsocketClient {
 
   public function disconnect() {
     $this->_connected = false;
-    fclose($this->_Socket);
+    if ($this->_Socket)
+      fclose($this->_Socket);
   }
 	
   public function reconnect() {
@@ -142,6 +225,11 @@ class WebsocketClient {
     case 'text':
       // first byte indicates FIN, Text-Frame (10000001):
       $frameHead[0] = 129;				
+      break;			
+      
+    case 'binary':
+      // first byte indicates FIN, Text-Frame (10000010):
+      $frameHead[0] = 130;				
       break;			
       
     case 'close':
@@ -208,6 +296,9 @@ class WebsocketClient {
   }
 	
   private function _hybi10Decode($data)	{
+    if (!$data)
+      return false;
+
     $payloadLength = '';
     $mask = '';
     $unmaskedPayload = '';

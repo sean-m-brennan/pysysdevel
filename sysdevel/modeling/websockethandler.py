@@ -55,6 +55,9 @@ class WebHandlerService(Process):
     def handle_message(self, message):
         raise NotImplementedError('WebHandlerService must be subclassed.')
 
+    def handle_binary(self, message):
+        raise NotImplementedError('WebHandlerService must be subclassed.')
+
 
 
 class WebResourceFactory(object):

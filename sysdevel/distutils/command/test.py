@@ -310,19 +310,20 @@ class test(Command):
 
             argv += ['--sublevel=' + str(self.sublevel + 1)]
             failed = process_subpackages(build.distribution.parallel_build,
-                                         'test', build.build_base, subs,
-                                         argv, False)
+                                         'test',
+                                         os.path.abspath(build.build_base),
+                                         subs, argv, False)
 
         ## PYTHON
         if self._has_python_tests():
             self.run_command('build')
             build = self.get_finalized_command('build')
-            build_dir = build.build_base
+            build_dir = os.path.abspath(build.build_base)
             environ = self.distribution.environment
 
-            pkg_dirs = [build_dir, build.build_lib,
+            pkg_dirs = [build_dir, os.path.abspath(build.build_lib),
                         os.path.join(build_dir, 'python')]
-            lib_dirs = [build.build_temp]
+            lib_dirs = [os.path.abspath(build.build_temp)]
             try:
                 lib_dirs += environ['PATH']  ## need dlls for windows
             except KeyError:
@@ -362,7 +363,7 @@ class test(Command):
             orig_exes = self.distribution.native_executables
 
             build = self.get_finalized_command('build')
-            lib_dir = build.build_temp
+            lib_dir = os.path.abspath(build.build_temp)
             for pkg, units in self._get_fortran_tests():
                 for unit in units:
                     unit.sources = fortran_unittest_framework + unit.sources + \
@@ -391,7 +392,7 @@ class test(Command):
             orig_exes = self.distribution.native_executables
 
             build = self.get_finalized_command('build')
-            lib_dir = build.build_temp
+            lib_dir = os.path.abspath(build.build_temp)
             for pkg, units in self._get_c_tests():
                 for unit in units:
                     unit.sources += create_cunit_driver(unit.name,
@@ -422,7 +423,7 @@ class test(Command):
             orig_exes = self.distribution.native_executables
 
             build = self.get_finalized_command('build')
-            lib_dir = build.build_temp
+            lib_dir = os.path.abspath(build.build_temp)
             for pkg, units in self._get_cpp_tests():
                 for unit in units:
                     unit.sources += create_cppunit_driver(unit.name)

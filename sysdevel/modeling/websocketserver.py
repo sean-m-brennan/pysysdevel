@@ -68,15 +68,21 @@ from mod_pywebsocket.stream import ConnectionTerminatedException
 ## derived partially from mod_pywebsocket.standalone
 
 
-_WEBSOCKET_HOST             = socket.getfqdn()
-_WEBSOCKET_PORT             = 9876
-
+_DEFAULT_HOST               = socket.getfqdn()
+_DEFAULT_PORT               = 9876
 _DEFAULT_LOG_MAX_BYTES      = 1024 * 256
 _DEFAULT_LOG_BACKUP_COUNT   = 5
 _DEFAULT_REQUEST_QUEUE_SIZE = 128
 _MAX_MEMORIZED_LINES        = 1024  ## for WebSocket handshake lines.
 
 _DEBUG = True
+
+
+def is_string(item):
+    try:
+        return isinstance(item, basestring)
+    except NameError:
+        return isinstance(item, str)
 
 
 def get_ws_logger(cls, debug=False):
@@ -104,8 +110,8 @@ class WebSocketServer(Process,
     # pylint: disable=W0231
     ## Not using HTTPServer.__init__
     def __init__(self, resource_handler,
-                 host=_WEBSOCKET_HOST, port=_WEBSOCKET_PORT,
-                 origin=_WEBSOCKET_HOST,
+                 host=_DEFAULT_HOST, port=_DEFAULT_PORT,
+                 origin=_DEFAULT_HOST,
                  tls_pkey=None, tls_cert=None, permissive=False,
                  debug=False):
         '''
@@ -300,10 +306,12 @@ class WebsocketDispatch(dispatch.Dispatcher):
 
     def do_extra_handshake(self, request):
         if (not self.permissive and (self.origin is None or
+                                     request.ws_origin is None or
                                      request.ws_origin == 'null' or
                                      request.ws_origin.startswith('file://') or
                                      request.ws_origin != self.origin)) or \
               (self.permissive and (self.origin is not None and
+                                    request.ws_origin is not None and
                                     request.ws_origin != 'null' and
                                     not request.ws_origin.startswith('file://') and
                                     request.ws_origin != self.origin)):
@@ -323,7 +331,10 @@ class WebsocketDispatch(dispatch.Dispatcher):
         while not service.closing():
             try:
                 msg = request.ws_stream.receive_message()
-                service.handle_message(msg)
+                if isinstance(msg, unicode):
+                    service.handle_message(msg)
+                else:
+                    service.handle_binary(msg)
             except ConnectionTerminatedException:
                 break
             except socket.herror:

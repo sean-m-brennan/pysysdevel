@@ -65,8 +65,8 @@ class build_src(_build_src):
             for target in self.sysdevel_server:
                 if self.distribution.verbose:
                     print('adding sysdevel support to ' + target)
-                target_dir = os.path.abspath(os.path.join(self.build_lib,
-                                                          *target.split('.')))
+                target_dir = os.path.join(os.path.abspath(self.build_lib),
+                                          *target.split('.'))
                 mkdir(target_dir)
                 source_dir = SERVER_SUPPORT_DIR
                 for mod in SERVER_SUPPORT_MODULES:
@@ -84,8 +84,8 @@ class build_src(_build_src):
                     print('building antlr grammar "' + \
                         grammar.name + '" sources')
                 ##TODO build in build_src, add to build_lib modules
-                target = os.path.abspath(os.path.join(self.build_lib,
-                                                      grammar.directory))
+                target = os.path.join(os.path.abspath(self.build_lib),
+                                      grammar.directory)
                 mkdir(target)
                 source_dir = os.path.abspath(grammar.directory)
                 os.chdir(target)

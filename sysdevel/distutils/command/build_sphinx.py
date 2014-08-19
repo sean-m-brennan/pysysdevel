@@ -87,7 +87,8 @@ class build_sphinx(Command):
 
         build = self.get_finalized_command('build')
         buildpy = self.get_finalized_command('build_py')
-        target = os.path.abspath(os.path.join(build.build_base, 'http'))
+        ## packages and files are in build.build_lib (see build_py.py)
+        target = os.path.join(os.path.abspath(build.build_base), 'http')
         mkdir(target)
         build_verbose = self.distribution.verbose
         environ = self.distribution.environment
@@ -98,8 +99,7 @@ class build_sphinx(Command):
 
             doc_dir = os.path.abspath(dext.source_directory)
             extra_dirs = dext.extra_directories
-            working_dir = os.path.abspath(os.path.join(build.build_temp,
-                                                       dext.source_directory))
+            src_dir = os.path.abspath(dext.name)
             here = os.getcwd()
 
             reprocess = True
@@ -107,7 +107,7 @@ class build_sphinx(Command):
             root_dir = dext.name
             if os.path.exists(ref) and not self.force:
                 reprocess = False
-                for root, _, filenames in os.walk(doc_dir):
+                for root, _, filenames in os.walk(src_dir):
                     for fn in fnmatch.filter(filenames, '*.rst'):
                         doc = os.path.join(root, fn)
                         if os.path.getmtime(ref) < os.path.getmtime(doc):
@@ -120,30 +120,25 @@ class build_sphinx(Command):
                                 reprocess = True
                                 break
             if reprocess:
-                src_dirs = []
+                working_dir = os.path.abspath(build.build_lib)
                 for package in buildpy.packages:
-                    # Locate package source directory
-                    src_dirs.append(os.path.abspath(buildpy.get_package_dir(package)))
-                #FIXME rst files in package sources (mutiple packages)
-                #src_dir = src_dirs[0]
-                src_dir = os.path.abspath('.')
-                bld_dir = os.path.abspath(build.build_lib)
-                doc_bld_dir = os.path.join(bld_dir,
-                                           os.path.relpath(doc_dir, src_dir))
-                environ['BUILD_DIR'] = bld_dir
-                environ['SOURCE_DIR'] = src_dir
-                environ['RELATIVE_SOURCE_DIR'] = os.path.relpath(src_dir,
-                                                                 doc_bld_dir)
+                    pkgdir = buildpy.get_package_dir(package)
+                    pkgsrcdir = os.path.join(os.path.dirname(src_dir), pkgdir)
+                    configure_files(environ, pkgsrcdir,
+                                    '*.rst', os.path.join(working_dir, pkgdir))
+
+                cfg_dir = os.path.join(working_dir, dext.source_directory)
+                environ['BUILD_DIR'] = working_dir
 
                 copy_tree(doc_dir, working_dir, True,
+                          excludes=[dext.name, '.svn', 'CVS', '.git', '.hg*'])
+                copy_tree(os.path.join(doc_dir, dext.name),
+                          os.path.join(cfg_dir, dext.name), True,
                           excludes=['.svn', 'CVS', '.git', '.hg*'])
                 for d in extra_dirs:
                     subdir = os.path.basename(os.path.normpath(d))
                     copy_tree(d, os.path.join(target, subdir), True,
                               excludes=['.svn', 'CVS', '.git', '.hg*'])
-
-                ## Configure rst files
-                configure_files(environ, src_dir, '*.rst', working_dir)
 
                 if os.path.exists(os.path.join(doc_dir, dext.doxygen_cfg)):
                     ## Doxygen + breathe
@@ -193,6 +188,7 @@ class build_sphinx(Command):
                             out.close()
                         copy_tree('html', os.path.join(target, 'html'), True,
                                   excludes=['.svn', 'CVS', '.git', '.hg*'])
+                        copy_tree('xml', os.path.join(cfg_dir, 'xml'), True)
                         os.chdir(here)
                         create_breathe_stylesheet(target)
 
@@ -210,7 +206,7 @@ class build_sphinx(Command):
                     dext.sphinx_config =  os.path.join(doc_dir,
                                                        dext.sphinx_config)
                 configure_file(environ, dext.sphinx_config,
-                               os.path.join(working_dir, 'conf.py'))
+                               os.path.join(cfg_dir, 'conf.py'))
                 import warnings
                 try:
                     import sphinx  # pylint: disable=W0612
@@ -233,10 +229,12 @@ class build_sphinx(Command):
                 if 'windows' in platform.system().lower() or not build_verbose:
                     nocolor()
                 try:
-                    sphinx_app = Sphinx(working_dir, working_dir, target,
+                    ## args: srcdir, confdir, outdir, doctreedir, buildername
+                    sphinx_app = Sphinx(os.path.join(working_dir, dext.name),
+                                        cfg_dir, target,
                                         os.path.join(target, '.doctrees'),
-                                        'html', None, status)
-                    sphinx_app.build(True)
+                                        'html', status=status)
+                    sphinx_app.build(force_all=True, filenames=None)
                 except Exception:  # pylint: disable=W0703
                     if build_verbose:
                         print('ERROR: ' + str(sys.exc_info()[1]))

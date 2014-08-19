@@ -26,6 +26,9 @@
 
 // Download POSTed data string as a file.
 
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 if (php_sapi_name() === 'cli') {
   $input = getopt("", array("filename:", "data:",));
 }
@@ -33,10 +36,11 @@ else {
   $input =& $_REQUEST;
 }
 
-$file_path = pathinfo($input["filename"])
-$file_name = $file_path["basename"]
-$file_ext = $file_path["extension"]
+$file_path = pathinfo($input["filename"]);
+$file_name = $file_path["basename"];
+$file_ext = $file_path["extension"];
 
+header("Content-Description: File Transfer"); 
 if ($file_ext == 'zip') {
   header('Content-Type: application/zip');
 } else if ($file_ext == 'json') {
@@ -46,12 +50,12 @@ if ($file_ext == 'zip') {
 } else {
   header('Content-Type: application/octet-stream');
 }
-header('Content-Disposition: attachment; filename=' . $file_name);
+header('Content-Disposition: attachment; filename="' . $file_name. '"');
 header('Pragma: public');
 header('Expires: -1');
 header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-header('Content-Length: ' . strlen($input["data"]);
-ob_clean();
+//header("Cache-Control: private", false);
+header('Content-Length: ' . strlen($input["data"]));
 flush();
 echo $input["data"];
 exit;

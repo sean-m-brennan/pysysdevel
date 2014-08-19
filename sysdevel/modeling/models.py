@@ -74,18 +74,14 @@ def json_handler(obj):
     elif USE_SPACEPY and isinstance(obj, spdm.dmarray):
         return obj.tolist()
     elif USE_SPACEPY and isinstance(obj, spdm.SpaceData):
-        keyed_values = [str(k) + ':' + json.dumps(v, default=json_handler)
-                        for k, v in obj.items()]
-        attributes = json.dumps(obj.attrs, default=json_handler)
-        if attributes:
-            keyed_values.append('ATTRS:' + attributes) 
-        return '{' + ','.join(keyed_values) + '}'
+        return dict(obj.items() + dict({'ATTRS': obj.attrs}).items())
     elif isinstance(obj, DataViewer):
         import inspect
         discard = dir(type('dummy', (object,), {}))
         inspector = lambda x: inspect.isbuiltin(x) or inspect.ismethod(x)
-        discard += inspect.getmembers(obj, inspector)
-        return [item for item in inspect.getmembers(obj) if item not in discard]
+        discard += [k for k,v in inspect.getmembers(obj, inspector)]
+        return dict((k,v) for k, v in inspect.getmembers(obj)
+                    if k not in discard)
     else:
         raise TypeError('Object of type ' + type(obj) + ' with value of ' +
                         repr(obj) + ' is not JSON serializable.')
@@ -475,20 +471,11 @@ class GenericPlot(DataViewer):
 
     '''
     ## Also an abstract class  # pylint: disable=W0223
-    def __init__(self, axes=2):
+    def __init__(self, axes=2, **kwargs):
         DataViewer.__init__(self)
         self.chart_title = 'Chart'
         self.axes = axes
-        self._series = []
-
-
-    @property
-    def series(self):
-        d = dict()
-        for s in self._series:
-            for z in dir(s):
-                d[z] = getattr(s, z)
-        return d
+        self.series = []
 
 
     def requires(self):
@@ -496,7 +483,7 @@ class GenericPlot(DataViewer):
 
 
     def add(self, series):
-        self._series.append(series)
+        self.series.append(series)
 
 
     def __dir__(self):
@@ -510,14 +497,14 @@ class GenericPlot(DataViewer):
         '''
         s = PlotSeries(self.axes)
         s.view(data_model_list)
-        self._series.append(s)
+        self.add(s)
 
 
     def plot(self):
         import pylab as plot
 
         fig = plot.figure()
-        for s in self._series:
+        for s in self.series:
             axes = fig.add_subplot(111)
             if s.axes == 3:
                 axes.plot(s.x_values, s.y_values, s.z_values)

@@ -88,15 +88,14 @@ def download_progress(count, block_size, total_size):
         sys.stdout.flush()
 
 
-def fetch(website, remote, local):
-    mkdir(options.download_dir)
+def fetch(website, remote, local, dwnld_dir=options.download_dir):
+    mkdir(dwnld_dir)
     set_downloading_file(remote)
-    if not os.path.exists(os.path.join(options.download_dir, local)):
+    if not os.path.exists(os.path.join(dwnld_dir, local)):
         url = website + '/' + remote
         if website.endswith('/'):
             url = website + remote
-        urlretrieve(url, os.path.join(options.download_dir, local),
-                    download_progress)
+        urlretrieve(url, os.path.join(dwnld_dir, local), download_progress)
         if options.VERBOSE:
             sys.stdout.write('\n')
 

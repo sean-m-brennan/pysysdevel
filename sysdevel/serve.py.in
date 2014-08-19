@@ -28,6 +28,7 @@ permissions and limitations under the License.
 '''
 NOTE: requires the following be defined in distutils environment:
   WEBSOCKET_PORT
+  ALTSOCKET_PORT
   WEBSOCKET_ORIGIN
   WEBSOCKET_TLS_PKEY
   WEBSOCKET_TLS_CERT
@@ -35,6 +36,7 @@ NOTE: requires the following be defined in distutils environment:
   WEBSOCKET_ADD_RESOURCES
 '''
 
+ALLOW_ALT_SOCKETS = False  ##FIXME implement direct sockets
 
 import os
 import sys
@@ -56,6 +58,7 @@ from .query import query  ##FIXME incompatible with 2.4
 
 WEBSOCKET_HOST     = socket.getfqdn()
 WEBSOCKET_PORT     = @@{WEBSOCKET_PORT}
+ALTSOCKET_PORT     = @@{ALTSOCKET_PORT}
 WEBSOCKET_ORIGIN   = "@@{WEBSOCKET_ORIGIN}"
 WEBSOCKET_TLS_PKEY = @@{WEBSOCKET_TLS_PKEY}
 WEBSOCKET_TLS_CERT = @@{WEBSOCKET_TLS_CERT}
@@ -72,6 +75,19 @@ class ServiceQuery(websockethandler.WebHandlerService):
                                                     ' query service')
         self.socket_dispatch = dispatcher
         self.extra_resource = extra_resource.strip('/')
+
+
+    def handle_binary(self, message):
+        handled = False
+        for resource in ADDTNL_RESOURCES:
+            if resource == self.extra_resource:
+                handler = __import__(resource,
+                                     globals={"__name__": __name__})
+                self.log.info('Handling binary through "' + resource + '"')
+                if handler.handle_binary(self, message):
+                    handled = True
+        if not handled:
+            self.log.warn("Binary data not handled")
 
 
     def handle_message(self, message):
@@ -166,6 +182,12 @@ class ServiceBatch(websockethandler.WebHandlerService):
         except:  # pylint: disable=W0702
             pass
 
+
+    def handle_binary(self, _):
+        error = "ERROR: Batch service does not accept binary data"
+        if self.socket_dispatch != None:
+            self.socket_dispatch.send_data(error)
+
     def handle_message(self, _):
         ## not using input
         results = "RESULT:"
@@ -222,9 +244,16 @@ class ServiceServer(websockethandler.WebServer):
                                                          WEBSOCKET_TLS_PKEY,
                                                          WEBSOCKET_TLS_CERT,
                                                          True, verbose)
+        if ALLOW_ALT_SOCKETS:
+            self.server = socketserver.SocketServer(ServiceSpawn,
+                                                    WEBSOCKET_HOST,
+                                                    ALTSOCKET_PORT,
+                                                    True)
 
     def run(self):
         self.webserver.start()
+        if ALLOW_ALT_SOCKETS:
+            self.server.start()
         while True:
             time.sleep(.05)
 
@@ -232,6 +261,9 @@ class ServiceServer(websockethandler.WebServer):
         try:
             self.webserver.quit()
             self.webserver.join(1)
+            if ALLOW_ALT_SOCKETS:
+                self.server.quit()
+                self.server.join(1)
         except RuntimeError:
             logging.getLogger().error('webserver thread: ' +
                                       str(sys.exc_info()[1]))
@@ -254,12 +286,20 @@ class ServiceDaemon(daemon.Daemon):
                                                          WEBSOCKET_TLS_PKEY,
                                                          WEBSOCKET_TLS_CERT,
                                                          True)
+        if ALLOW_ALT_SOCKETS:
+            self.server = socketserver.SocketServer(ServiceSpawn,
+                                                    WEBSOCKET_HOST,
+                                                    ALTSOCKET_PORT,
+                                                    True)
         super(ServiceDaemon, self).__init__(log_file)
         self.log = logging.getLogger()
 
     def stop(self):
         self.webserver.quit()
         self.webserver.join(1)
+        if ALLOW_ALT_SOCKETS:
+            self.server.quit()
+            self.server.join(1)
         self.sleep(1)
         self.log.info('Shutting down ' + SERVICE_NAME + ' websocket server.')
         self.log.info('----------------------------------------')
@@ -267,6 +307,8 @@ class ServiceDaemon(daemon.Daemon):
   
     def run(self):
         self.webserver.start()
+        if ALLOW_ALT_SOCKETS:
+            self.server.start()
         self.log.info('Started ' + SERVICE_NAME + ' websocket server.')
         while True:
             time.sleep(.05)

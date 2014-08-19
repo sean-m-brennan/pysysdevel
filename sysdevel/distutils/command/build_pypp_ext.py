@@ -55,7 +55,7 @@ class build_pypp_ext(build_ext):
         if self.distribution.verbose:
             print('Creating Py++ code generators ...')
 
-        my_build_temp = os.path.join(build.build_base, 'pypp')
+        my_build_temp = os.path.join(os.path.abspath(build.build_base), 'pypp')
         builders = []
         for pext in self.distribution.pypp_ext_modules:
             builder = os.path.basename(pext.pyppdef)[:-6]  ## assumes '.py.in'
@@ -71,7 +71,8 @@ class build_pypp_ext(build_ext):
         main = open(os.path.join(my_build_temp, '__main__.py'), 'w')
         main.write('for m in __all__:\n    m.generate()\n\n')
         main.close()
-        init = open(os.path.join(build.build_base, '__init__.py'), 'w')
+        init = open(os.path.join(os.path.abspath(build.build_base),
+                                 '__init__.py'), 'w')
         init.write("__all__ = ['" + os.path.basename(my_build_temp) + "']\n\n")
         init.close()
 

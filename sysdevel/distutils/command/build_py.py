@@ -56,7 +56,8 @@ class build_py(_build_py):
         # Now put the module source file into the "build" area -- this is
         # easy, we just copy it somewhere under self.build_lib (the build
         # directory for Python source).
-        outfile = self.get_module_outfile(self.build_lib, package, module)
+        outfile = self.get_module_outfile(os.path.abspath(self.build_lib),
+                                          package, module)
         d = os.path.dirname(outfile)
         self.mkpath(d)
         configure_file(environ, module_file, outfile)
