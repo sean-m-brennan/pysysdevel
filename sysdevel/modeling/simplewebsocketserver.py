@@ -28,6 +28,8 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 from StringIO import StringIO
 from select import select
 
+from websockethandler import WebResourceFactory
+
 
 class HTTPRequest(BaseHTTPRequestHandler):
    def __init__(self, request_text):
@@ -102,6 +104,7 @@ class WebSocket(object):
       self.maxheader = 65536
       self.maxpayload = 4194304
 
+
    def close(self):
       self.client.close()
       self.state = self.HEADERB1
@@ -115,7 +118,11 @@ class WebSocket(object):
 
 
    def handle_connected(self):
-      pass
+      logging.debug("Handshake complete")
+      if isinstance(self.handler, WebResourceFactory):
+         logging.debug("Creating WebResource for " + self.request.path)
+         self.handler = self.handler(self, self.request.path)
+
 
    def handle_close(self):
       self.handler.closing()
@@ -128,15 +135,15 @@ class WebSocket(object):
          raise Exception("received client close")
       # ping
       elif self.opcode == self.PING:
-         self.sendMessage(self.data, self.PONG)
+         self.sendMessage(str(self.data), self.PONG)
       
       # pong
       elif self.opcode == self.PONG:
-         pass
+         logging.debug("Received PONG: " + str(self.data));
       
       # data
       elif self.opcode == self.STREAM or self.opcode == self.TEXT:
-         self.handler.handle_message(self.data)
+         self.handler.handle_message(str(self.data))
 
       elif self.opcode == self.BINARY:
          self.handler.handle_binary(self.data)	
@@ -169,8 +176,9 @@ class WebSocket(object):
             # indicates end of HTTP header
             elif '\r\n\r\n' in self.headerbuffer:
                self.request = HTTPRequest(self.headerbuffer)
-               # hixie handshake
-               if self.request.headers.has_key('Sec-WebSocket-Key1'.lower()) and self.request.headers.has_key('Sec-WebSocket-Key2'.lower()):
+               if self.request.headers.has_key('Sec-WebSocket-Key1'.lower()) and \
+                  self.request.headers.has_key('Sec-WebSocket-Key2'.lower()):
+                  logging.debug("Hixie76 handshake")
                   # check if we have the key in our buffer
                   index = self.headerbuffer.find('\r\n\r\n') + 4
                   # determine how much of the 8 byte key we have
@@ -188,8 +196,8 @@ class WebSocket(object):
                      # complete hixie handshake
                      self.handshake_hixie76()
                      
-               # handshake rfc 6455
                elif self.request.headers.has_key('Sec-WebSocket-Key'.lower()):
+                  logging.debug("RFC 6455 handshake")
                   key = self.request.headers['Sec-WebSocket-Key'.lower()]
                   hStr = self.handshakeStr % { 'acceptstr' :  base64.b64encode(hashlib.sha1(key + self.GUIDStr).digest()) }
                   self.sendBuffer(hStr)
@@ -239,7 +247,12 @@ class WebSocket(object):
       if self.usingssl is True:
          typestr = 'wss'
 
-      response = self.hixiehandshakedStr % { 'type' : typestr, 'origin' : self.request.headers['Origin'.lower()], 'host' : self.request.headers['Host'.lower()], 'location' : self.request.path }
+      response = self.hixiehandshakedStr % {
+         'type' : typestr,
+         'origin' : self.request.headers['Origin'.lower()],
+         'host' : self.request.headers['Host'.lower()],
+         'location' : self.request.path,
+      }
 
       self.sendBuffer(response)
       self.sendBuffer(hashlib.md5(key).digest())
@@ -359,7 +372,7 @@ class WebSocket(object):
                self.state = self.HEADERB1
          else	:
             self.data.append(byte)
-            # if length exceeds allowable size then we except and remove the connection
+            # if length exceeds allowable size, die
             if len(self.data) >= self.maxpayload:
                raise Exception('payload exceeded allowable size')
 
@@ -498,7 +511,7 @@ class WebSocket(object):
          else:
             self.data.append( byte )
 
-         # if length exceeds allowable size then we except and remove the connection
+         # if length exceeds allowable size, die
          if len(self.data) >= self.maxpayload:
             raise Exception('payload exceeded allowable size')
 
@@ -554,7 +567,8 @@ class SimpleWebSocketServer(object):
                   newsock.setblocking(0)
                   fileno = newsock.fileno()
                   self.listeners.append(fileno)
-                  self.connections[fileno] = self.constructWebSocket(newsock, address)
+                  self.connections[fileno] = self.constructWebSocket(newsock,
+                                                                     address)
 
                except Exception as n:
 
@@ -604,7 +618,8 @@ class SimpleWebSocketServer(object):
 
 class SimpleSSLWebSocketServer(SimpleWebSocketServer):
 
-   def __init__(self, host, port, websocketclass, certfile, keyfile, version = ssl.PROTOCOL_TLSv1):
+   def __init__(self, host, port, websocketclass,
+                certfile, keyfile, version = ssl.PROTOCOL_TLSv1):
 
       SimpleWebSocketServer.__init__(self, host, port, websocketclass)
 

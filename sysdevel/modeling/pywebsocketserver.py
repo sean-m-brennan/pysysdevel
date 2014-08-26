@@ -147,9 +147,9 @@ class WebSocketServer(Process,
         self.__ws_serving = False
 
         socketserver.BaseServer.__init__(self, (host, port),
-                                         WebSocketRequestHandler)
-        self.wsdispatcher = WebsocketDispatch(resource_handler,
-                                              self._logger, origin, permissive)
+                                         _WebSocketRequestHandler)
+        self.wsdispatcher = _WebSocketDispatch(resource_handler,
+                                               self._logger, origin, permissive)
         self._create_sockets()
         self.server_bind()
         self.server_activate()
@@ -295,7 +295,7 @@ class WebSocketServer(Process,
 
 
 
-class WebsocketDispatch(dispatch.Dispatcher):
+class _WebSocketDispatch(dispatch.Dispatcher):
     def __init__(self, res_hndlr, log, origin=None, permissive=False):
         self.resource_handler = res_hndlr
         self.log = log
@@ -375,7 +375,7 @@ class WebsocketDispatch(dispatch.Dispatcher):
 
 # pylint: disable=W0231
 
-class WebSocketRequestHandler(SimpleHTTPRequestHandler):
+class _WebSocketRequestHandler(SimpleHTTPRequestHandler):
     MessageClass = HTTPMessage
 
     def setup(self):
@@ -386,7 +386,7 @@ class WebSocketRequestHandler(SimpleHTTPRequestHandler):
         before calling BaseHTTPRequestHandler.handle.
         BaseHTTPRequestHandler.handle will call
         BaseHTTPRequestHandler.handle_one_request and it will call
-        WebSocketRequestHandler.parse_request.
+        _WebSocketRequestHandler.parse_request.
         """
         # Call superclass's setup to prepare rfile, wfile, etc. See setup
         # definition on the root class SocketServer.StreamRequestHandler to

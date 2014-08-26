@@ -220,10 +220,10 @@ class ServiceBatch(websockethandler.WebHandlerService):
 class ServiceSpawn(websockethandler.WebResourceFactory):
     def __call__(self, dispatcher, resource):
         service = None
-        if resource.startswith('/' + RESOURCE + '/'):
+        if resource.startswith('/' + RESOURCE + '/'):  ## like POST
             service = ServiceQuery(dispatcher, resource[len(RESOURCE)+2:])
             service.start()
-        elif resource.startswith('/' + RESOURCE + '_batch/'):
+        elif resource.startswith('/' + RESOURCE + '_batch/'):  ## like GET
             subs = resource[len(RESOURCE)+8:].split('/')
             params = dict()
             for sub in subs:

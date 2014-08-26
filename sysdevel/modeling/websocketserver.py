@@ -27,18 +27,21 @@ permissions and limitations under the License.
 WebSocket standalone server
 """
 
+(PYWEBSOCKET, WS4PY, SIMPLEWEBSOCKETSERVER) = range(3)
+
 ## choose only one:
-#IMPLEMENTATION = 'mod_pywebsocket'  ## faulty
-#IMPLEMENTATION = 'ws4py'  ## not implemented
-IMPLEMENTATION = 'simplewebsocketserver'
+implementation = SIMPLEWEBSOCKETSERVER
 
-if IMPLEMENTATION == 'mod_pywebsocket':
-    from pywebsocketserver import *
 
-elif IMPLEMENTATION == 'simplewebsocketserver':
+if implementation == PYWEBSOCKET:
+    from pywebsocketserver import WebSocketServer
+
+
+elif implementation == SIMPLEWEBSOCKETSERVER:
     import socket
     import select
     import ssl
+    import logging
     try:
         from multiprocessing import Process, Event
     except ImportError:
@@ -61,6 +64,11 @@ elif IMPLEMENTATION == 'simplewebsocketserver':
             a websockethandler.WebResourceFactory derived class.
             Use with SSL requires the files 'tls_pkey' and 'tls_cert'.
             '''
+            log_level = logging.WARNING
+            if debug:
+                log_level = logging.DEBUG
+            logging.basicConfig(level=log_level)
+
             Process.__init__(self, name='Websocket server')
             SimpleWebSocketServer.__init__(self, host, port, None)
 
@@ -68,6 +76,8 @@ elif IMPLEMENTATION == 'simplewebsocketserver':
             self.__ws_serving = False
 
             self.handler = resource_handler
+            if type(self.handler) == type(self.__class__):
+                self.handler = self.handler()
             self.using_tls = False
             if tls_pkey != None and tls_cert != None:
                 self.certfile = certfile
@@ -106,6 +116,7 @@ elif IMPLEMENTATION == 'simplewebsocketserver':
                             newsock.setblocking(0)
                             fileno = newsock.fileno()
                             self.listeners.append(fileno)
+                            
                             self.connections[fileno] = WebSocket(self, newsock,
                                                                  address,
                                                                  self.handler)
