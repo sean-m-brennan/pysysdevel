@@ -12,6 +12,18 @@ error_reporting(E_ALL);
  * https://github.com/lemmingzshadow/php-websocket
  */
 
+/*
+ * DO WHAT THE F*** YOU WANT TO PUBLIC LICENSE
+ * Version 2, December 2004
+ * Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
+ * Everyone is permitted to copy and distribute verbatim or modified
+ * copies of this license document, and changing it is allowed as long
+ * as the name is changed.
+ * DO WHAT THE F*** YOU WANT TO PUBLIC LICENSE
+ * TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+ * 0. You just DO WHAT THE F*** YOU WANT TO.
+ */
+
 class WebSocketClient {
   private $_host;
   private $_port;
@@ -42,7 +54,7 @@ class WebSocketClient {
     while (strlen($encoded_data) > $written) {
       $count = fwrite($this->_Socket, $encoded_data);
       if ($count === 0 || $count === false) {
-	$this->error = 'WS send - ' . $this->get_socket_error();
+	$this->error = 'WS send - broken pipe.';
 	return false;
       }
       $written += $count;
@@ -57,52 +69,18 @@ class WebSocketClient {
     $response = '';
     $len = 0;
     $final = 0;
-    while ($final === 0) {
-      $response .= fread($this->_Socket, 2);
-      if (empty($response)) {
-	$this->error = 'WS recv frame - ' . $this->get_socket_error();
+    $bytes = ' ';
+    while ($bytes !== '') {
+      $bytes = fread($this->_Socket, 512);
+      /*
+      if ($bytes === false || $bytes == 0) {
+	$this->error = 'WS recv - incomplete.';
 	return false;
       }
-      $final = ord($response[0]) >> 7; // first bit
-      $masked = ord($response[1]) >> 7; // first bit
-      $len = ord($response[1]) & 7; // all but first bit
-      if ($len === 126) {
-	$response .= fread($this->_Socket, 2);
-	if (empty($response)) {
-	  $this->error = 'WS recv frame len - ' . $this->get_socket_error();
-	  return false;
-	}
-	$len = bindec(sprintf('%08b', ord($response[2])) .
-		      sprintf('%08b', ord($response[3])));
-      }
-      elseif ($len === 127) {
-	$response .= fread($this->_Socket, 8);
-	if (empty($response)) {
-	  $this->error = 'WS recv frame len - ' . $this->get_socket_error();
-	  return false;
-	}
-	$tmp = '';
-	for ($i = 0; $i < 8; $i++) {
-	  $tmp .= sprintf('%08b', ord($response[$i+2]));
-	}
-	$len = bindec($tmp);
-      }
-      if ($masked) {
-        $len += 4;
-      }
-      $response .= fread($this->_Socket, $len);
-      if (empty($response)) {
-	$this->error = 'WS recv - ' . $this->get_socket_error();
-	return false;
-      }
+      */
+      $response .= $bytes;
     }
-
     return $this->_hybi10Decode($response);
-  }
-
-  public function get_socket_error() {
-    $sock = socket_import_stream($this->_Socket);
-    return socket_strerror(socket_last_error($sock));
   }
 
   public function connect($host, $port, $path, $origin = false) {
@@ -124,25 +102,20 @@ class WebSocketClient {
     }
     $header.= "Sec-WebSocket-Version: 13\r\n\r\n";			
 
-    //$this->_Socket = fsockopen($host, $port, $errno, $errstr, 5);
     $this->_Socket = stream_socket_client("$host:$port", $errno, $errstr, 5);
     if ($this->_Socket === false || $errno !== 0) {
       $this->_connected = false;
       $this->error = 'WS opening connection - ' . $errstr;
       return $this->_connected;
       }
-    socket_set_timeout($this->_Socket, 0, 300);
+    stream_set_timeout($this->_Socket, 1);//0, 300);
     fwrite($this->_Socket, $header);
-    $response = '';
-    while (!feof($this->_Socket)) {
-      $response .= fread($this->_Socket, 1);
-      if (substr($response, -4) == '\r\n\r\n') {
-    	break;
-      }
-    }
-    if (empty($response)) {
+    fflush($this->_Socket);
+
+    $response = fread($this->_Socket, 8196);
+    if ($response === false) {
       $this->_connected = false;
-      $this->error = 'WS handshake - ' . $this->get_socket_error();
+      $this->error = 'WS handshake - incomplete.';
       return $this->_connected;	
     }
 
@@ -150,8 +123,8 @@ class WebSocketClient {
     $keyAccept = trim($matches[1]);
     $expectedResponse = base64_encode(pack('H*', sha1($key . $magic_string)));
 
+    fflush($this->_Socket);
     $this->_connected = ($keyAccept === $expectedResponse) ? true : false;
-    sleep(1);
     return $this->_connected;	
   }
 	
@@ -161,13 +134,15 @@ class WebSocketClient {
 		
     // send ping:
     $data = 'ping?';
-    if (!fwrite($this->_Socket, $this->_hybi10Encode($data, 'ping', true))) {
-      $this->error = 'WS send ping - ' . $this->get_socket_error();
+    $status = fwrite($this->_Socket, $this->_hybi10Encode($data, 'ping', true));
+    if ($status === false || $status == 0) {
+      $this->error = 'WS send ping - broken pipe.';
       return false;
     }
+    fflush($this->_Socket);
     $response = $this->receiveData();
-    if (!$response) {
-      $this->error = 'WS recv pong - ' . $this->get_socket_error();
+    if ($response === false) {
+      $this->error = 'WS recv pong - incomplete.';
       return false;
     }
     if (!is_array($response)) {			
@@ -181,7 +156,6 @@ class WebSocketClient {
     $this->_connected = true;
     return true;
   }
-
 
   public function disconnect() {
     $this->_connected = false;
