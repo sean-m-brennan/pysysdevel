@@ -24,6 +24,11 @@ error_reporting(E_ALL);
  * 0. You just DO WHAT THE F*** YOU WANT TO.
  */
 
+/*
+ * May have 'permission denied' due to SELinux, if so run (as root):
+ *   setsebool httpd_can_network_connect=1
+ */
+
 class WebSocketClient {
   private $_host;
   private $_port;
@@ -41,7 +46,8 @@ class WebSocketClient {
     $this->disconnect();
   }
 
-  public function sendData($data, $type = 'text', $masked = TRUE) {
+  public function sendData($data, $type = 'text', $masked = TRUE,
+                           $chunk_size=512) {
     if ($this->_connected === FALSE) {
       $this->error = "WS - Not connected";
       return FALSE;
@@ -51,16 +57,30 @@ class WebSocketClient {
       return FALSE;
     }
     $encoded_data = $this->_hybi10Encode($data, $type, $masked);
-    $written = 0;
-    while (strlen($encoded_data) > $written) {
-      $count = fwrite($this->_Socket, $encoded_data);
-      if ($count === 0 || $count === FALSE) {
-	$this->error = 'WS send - broken pipe.';
-	return FALSE;
+    $chunks = array();
+    if (strlen($encoded_data) > $chunk_size) {
+      $num_chunks = ceil(strlen($encoded_data) / $chunk_size);
+      for ($num=0; $num < $num_chunks; $num++) {
+        $i = $num * $chunk_size;
+        array_push($chunks, substr($encoded_data, $i, $chunk_size));
       }
-      $written += $count;
     }
-    fflush($this->_Socket);
+    else {
+      array_push($chunks, $encoded_data);
+    }
+    foreach ($chunks as $chunk) {
+      $written = 0;
+      while (strlen($chunk) > $written) {
+        $count = fwrite($this->_Socket, $chunk);
+        if ($count === 0 || $count === FALSE) {
+          $this->error = 'WS send - broken pipe.';
+          return FALSE;
+        }
+        $written += $count;
+      }
+      usleep(5000);  // 5ms wait so we don't disconnect (!)
+      fflush($this->_Socket);
+    }
     return TRUE;
   }
 

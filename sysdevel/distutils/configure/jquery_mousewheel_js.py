@@ -9,17 +9,15 @@ class configuration(file_config):
     Fetch jQuery UI
     """
     def __init__(self):
-        file_config.__init__(self, 'jquery-ui.min.js',
+        file_config.__init__(self, 'jquery.mousewheel.js',
                              os.path.join(options.target_build_dir,
                                           options.javascript_dir),
-                             'http://code.jquery.com/ui/',
-                             dependencies=['jquery'], debug=False)
+                             'https://github.com/brandonaaron/jquery-mousewheel',
+                             dependencies=['jquery_ui'], debug=False)
 
 
     def download(self, environ, version, strict=False):
-        if version is None:
-            version = '1.8.23'
-        website = 'http://code.jquery.com/ui/' + version + '/'
+        website = 'https://raw.github.com/brandonaaron/jquery-mousewheel/master/'
         js_file = self.targets[0]
         fetch(website, js_file, js_file)
         return ''

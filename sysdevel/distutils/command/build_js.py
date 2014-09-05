@@ -99,14 +99,11 @@ class build_js(build_ext):
                 print('building web extension "' + \
                     os.path.join(wext.public_subdir, wext.name) + '" sources')
 
-            target = os.path.abspath(os.path.join(build.build_base,
+            target = os.path.abspath(os.path.join(options.target_build_dir,
                                                   'http', wext.public_subdir))
-            #target = os.path.abspath(os.path.join(options.target_build_dir,
-            #                                      'http', wext.public_subdir))
             mkdir(target)
             here = os.getcwd()
             src_dir = os.path.abspath(wext.source_directory)
-            ## FIXME build.build_base points to local
             working_dir = os.path.abspath(os.path.join(build.build_temp,
                                                        'web', wext.name))
             mkdir(working_dir)
@@ -190,13 +187,15 @@ class build_js(build_ext):
                     configure_file(environ, filepath, targetfile)
 
             ## Copy over downloaded files
-            js_dir = os.path.join(build.build_base, options.javascript_dir)
+            js_dir = os.path.join(options.target_build_dir,
+                                  options.javascript_dir)
             if os.path.exists(js_dir):
                 copy_tree(js_dir, os.path.join(target, options.javascript_dir))
-            css_dir = os.path.join(build.build_base, options.stylesheet_dir)
+            css_dir = os.path.join(options.target_build_dir,
+                                   options.stylesheet_dir)
             if os.path.exists(css_dir):
                 copy_tree(css_dir, os.path.join(target, options.stylesheet_dir))
-            php_dir = os.path.join(build.build_base, options.script_dir)
+            php_dir = os.path.join(options.target_build_dir, options.script_dir)
             if os.path.exists(php_dir):
                 copy_tree(php_dir, target)
 
