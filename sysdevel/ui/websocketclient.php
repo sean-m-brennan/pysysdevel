@@ -26,7 +26,7 @@ error_reporting(E_ALL);
 
 /*
  * May have 'permission denied' due to SELinux, if so run (as root):
- *   setsebool httpd_can_network_connect=1
+ *   setsebool -P httpd_can_network_connect=1
  */
 
 class WebSocketClient {
