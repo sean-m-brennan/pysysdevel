@@ -38,14 +38,16 @@ if implementation == PYWEBSOCKET:
 
 
 elif implementation == SIMPLEWEBSOCKETSERVER:
+    import sys
     import socket
     import select
     import ssl
     import logging
+    from threading import Thread, Event
     try:
-        from multiprocessing import Process, Event
+        import queue as Queue
     except ImportError:
-        from threading import Thread as Process, Event
+        import Queue
 
     from simplewebsocketserver import SimpleWebSocketServer, WebSocket
 
@@ -53,7 +55,27 @@ elif implementation == SIMPLEWEBSOCKETSERVER:
     _DEFAULT_PORT = 9876
 
 
-    class WebSocketServer(Process, SimpleWebSocketServer):
+    class ExceptionThread(Thread):
+        def __init__(self, queue, group=None, target=None, name=None,
+                     args=(), kwargs=None):
+            Thread.__init__(self, group, target, name, args, kwargs)
+            if kwargs is None:
+                kwargs = {}
+            self.target_p = target
+            self.p_args = args
+            self.p_kwargs = kwargs
+            self.exception_q = queue
+
+
+        def run(self):
+            try:
+                self.target_p(*self.p_args, **self.p_kwargs)
+            except Exception:
+                self.exception_q.put(sys.exc_info())
+
+
+
+    class WebSocketServer(Thread, SimpleWebSocketServer):
         def __init__(self, resource_handler,
                      host=_DEFAULT_HOST, port=_DEFAULT_PORT,
                      origin=_DEFAULT_HOST,
@@ -69,7 +91,7 @@ elif implementation == SIMPLEWEBSOCKETSERVER:
                 log_level = logging.DEBUG
             logging.basicConfig(level=log_level)
 
-            Process.__init__(self, name='Websocket server')
+            Thread.__init__(self, name='Websocket server')
             SimpleWebSocketServer.__init__(self, host, port, None)
 
             self.__ws_is_shut_down = Event()
@@ -105,6 +127,8 @@ elif implementation == SIMPLEWEBSOCKETSERVER:
         def serve_forever(self, poll_interval=0.5):
             ## same as superclass, but with better shutdown
             self.__ws_serving = True
+            process_threads = {}
+            exception_qs = {}
             try:
                 while self.__ws_serving:
                     r, _, x = select.select(self.listeners, [],
@@ -116,27 +140,47 @@ elif implementation == SIMPLEWEBSOCKETSERVER:
                             newsock.setblocking(0)
                             fileno = newsock.fileno()
                             self.listeners.append(fileno)
-                            
                             self.connections[fileno] = WebSocket(self, newsock,
                                                                  address,
                                                                  self.handler)
                         else:
                             client = self.connections[ready]
                             fileno = client.client.fileno()
-            
-                            try:
-                                client.handle_data()
-                            except Exception as n:
-                                logging.debug(str(client.address) + ' ' + str(n))
-                                try:
-                                    client.handle_close()
-                                except:
-                                    pass
-                                client.close()
 
-                                del self.connections[fileno]
-                                self.listeners.remove(ready)
-      
+                            if not fileno in process_threads.keys():
+                                exception_qs[fileno] = Queue.Queue()
+                                t = ExceptionThread(exception_qs[fileno],
+                                                    target=client.handle_data)
+                                process_threads[fileno] = t
+                                t.setDaemon(False)
+                                t.start()
+                            else:
+                                t = process_threads[fileno]
+                                if not t.isAlive():
+                                    del process_threads[fileno]
+                                try:
+                                    ex = exception_qs[fileno].get(block=False)
+                                except Queue.Empty:
+                                    pass
+                                else:
+                                    _, exc, _ = ex
+                                    logging.debug(str(client.address) + ' ' +
+                                                  str(exc))
+                                    try:
+                                        del process_threads[fileno]
+                                    except KeyError:
+                                        pass
+                                    del exception_qs[fileno]
+
+                                    try:
+                                        client.handle_close()
+                                    except:
+                                        pass
+                                    client.close()
+
+                                    del self.connections[fileno]
+                                    self.listeners.remove(fileno)
+
                     for failed in x:
                         if failed == self.serversocket:
                             self.close()
@@ -144,6 +188,15 @@ elif implementation == SIMPLEWEBSOCKETSERVER:
                         else:
                             client = self.connections[failed]
                             fileno = client.client.fileno()
+
+                            try:
+                                del process_threads[fileno]
+                            except KeyError:
+                                pass
+                            try:
+                                del exception_qs[fileno]
+                            except KeyError:
+                                pass
                             try:
                                 client.handle_close()
                             except:

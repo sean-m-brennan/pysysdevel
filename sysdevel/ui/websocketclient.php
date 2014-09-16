@@ -35,8 +35,8 @@ class WebSocketClient {
   private $_path;
   private $_origin;
   private $_Socket = null;
-  private $_connected = FALSE;
-  private $_timeout = FALSE;
+  private $_connected = false;
+  private $_timeout = false;
 
   public $error = '';
 	
@@ -46,15 +46,15 @@ class WebSocketClient {
     $this->disconnect();
   }
 
-  public function sendData($data, $type = 'text', $masked = TRUE,
+  public function sendData($data, $type = 'text', $masked = true,
                            $chunk_size=512) {
-    if ($this->_connected === FALSE) {
+    if ($this->_connected === false) {
       $this->error = "WS - Not connected";
-      return FALSE;
+      return false;
     }
     if (empty($data)) {
       $this->error = "WS send - No data given";
-      return FALSE;
+      return false;
     }
     $encoded_data = $this->_hybi10Encode($data, $type, $masked);
     $chunks = array();
@@ -72,41 +72,41 @@ class WebSocketClient {
       $written = 0;
       while (strlen($chunk) > $written) {
         $count = fwrite($this->_Socket, $chunk);
-        if ($count === 0 || $count === FALSE) {
+        if ($count === 0 || $count === false) {
           $this->error = 'WS send - broken pipe.';
-          return FALSE;
+          return false;
         }
         $written += $count;
       }
       usleep(5000);  // 5ms wait so we don't disconnect (!)
       fflush($this->_Socket);
     }
-    return TRUE;
+    return true;
   }
 
   public function receiveData() {
     $response = '';
-    $started = FALSE;
-    $finished = FALSE;
+    $started = false;
+    $finished = false;
     $elapsed = 0;
     $start = time();
     while (!$finished) {
       $bytes = fread($this->_Socket, 512);
-      if ($bytes === FALSE) {
+      if ($bytes === false) {
         $this->error = 'WS recv - interrupted stream.';
-        return FALSE;
+        return false;
       }
       if (!$started && $bytes != '') {
-        $started = TRUE;
+        $started = true;
       }
       if ($started && $bytes == '') {
-        $finished = TRUE;
+        $finished = true;
       }
       $response .= $bytes;
       $current = time();
       if ($this->_timeout && ($current - $start) >= $this->_timeout) {
         $this->error = 'WS recv - timeout exceeded.';
-        return FALSE;
+        return false;
       }
       if (!$started) {
         usleep(5000);  // 5ms
@@ -116,15 +116,15 @@ class WebSocketClient {
   }
 
   public function connect($host, $port, $path,
-                          $origin=FALSE, $timeout_secs=FALSE) {
+                          $origin=false, $timeout_secs=false) {
     $this->_host = $host;
     $this->_port = $port;
     $this->_path = $path;
     $this->_origin = $origin;
     $this->_timeout = $timeout_secs;
-    $this->_connected = FALSE;
+    $this->_connected = false;
 		
-    $key = base64_encode($this->_generateRandomString(16, FALSE, TRUE));
+    $key = base64_encode($this->_generateRandomString(16, false, true));
     $magic_string = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 
     $header = "GET " . $path . " HTTP/1.1\r\n";
@@ -132,14 +132,14 @@ class WebSocketClient {
     $header.= "Upgrade: websocket\r\n";
     $header.= "Connection: Upgrade\r\n";
     $header.= "Sec-WebSocket-Key: " . $key . "\r\n";
-    if ($origin !== FALSE) {
+    if ($origin !== false) {
       $header.= "Sec-WebSocket-Origin: " . $origin . "\r\n";
     }
     $header.= "Sec-WebSocket-Version: 13\r\n\r\n";			
 
     $this->_Socket = stream_socket_client("$host:$port", $errno, $errstr, 5);
-    if ($this->_Socket === FALSE || $errno !== 0) {
-      $this->_connected = FALSE;
+    if ($this->_Socket === false || $errno !== 0) {
+      $this->_connected = false;
       $this->error = 'WS opening connection - ' . $errstr;
       return $this->_connected;
       }
@@ -150,56 +150,61 @@ class WebSocketClient {
     fflush($this->_Socket);
 
     $response = fread($this->_Socket, 8192);
-    if ($response === FALSE) {
+    if ($response === false) {
       $this->error = 'WS handshake - incomplete.';
       return $this->_connected;	
     }
 
     preg_match('#Sec-WebSocket-Accept:\s(.*)$#mU', $response, $matches);
+    if (count($matches) < 1) {
+      $this->error = 'WS handshake - invalid.';
+      return $this->_connected;
+    }
     $keyAccept = trim($matches[1]);
     $expectedResponse = base64_encode(pack('H*', sha1($key . $magic_string)));
 
     fflush($this->_Socket);
-    $this->_connected = ($keyAccept === $expectedResponse) ? TRUE : FALSE;
-    stream_set_blocking($this->_Socket, FALSE);
+    $this->_connected = ($keyAccept === $expectedResponse) ? true : false;
+    stream_set_blocking($this->_Socket, false);
     return $this->_connected;	
   }
 	
   public function checkConnection()
   {
-    $this->_connected = FALSE;
-    stream_set_blocking($this->_Socket, TRUE);
+    $this->_connected = false;
+    stream_set_blocking($this->_Socket, true);
 		
     // send ping:
     $data = 'ping?';
-    $status = fwrite($this->_Socket, $this->_hybi10Encode($data, 'ping', TRUE));
-    if ($status === FALSE || $status == 0) {
+    $status = fwrite($this->_Socket, $this->_hybi10Encode($data, 'ping', true));
+    if ($status === false || $status == 0) {
       $this->error = 'WS send ping - broken pipe.';
-      return FALSE;
+      return false;
     }
     fflush($this->_Socket);
     $response = fread($this->_Socket, 8192);
-    if ($response === FALSE) {
-      $this->error = 'WS recv pong - incomplete.';
-      return FALSE;
+    if ($response === false) {
+      $this->error = "WS recv pong - incomplete.";
+      return false;
     }
+    $full = $response;
     $response = $this->_hybi10Decode($response);
-    if (!is_array($response)) {			
-      $this->error = "WS - Invalid pong decoding";
-      return FALSE;
+    if (!is_array($response)) {
+      $this->error = "WS - Invalid pong decoding.";
+      return false;
     }
     if (!isset($response['type']) || $response['type'] !== 'pong') {
-      $this->error = "WS - Bad pong response";
-      return FALSE;
+      $this->error = "WS - Bad pong response.";
+      return false;
     }
-    $this->_connected = TRUE;
-    stream_set_blocking($this->_Socket, FALSE);
-    return TRUE;
+    $this->_connected = true;
+    stream_set_blocking($this->_Socket, false);
+    return true;
   }
 
   public function disconnect() {
     if ($this->_connected) {
-      $this->_connected = FALSE;
+      $this->_connected = false;
       if ($this->_Socket)
         fclose($this->_Socket);
     }
@@ -207,12 +212,12 @@ class WebSocketClient {
 	
   public function reconnect() {
     sleep(10);
-    $this->_connected = FALSE;
+    $this->_connected = false;
     fclose($this->_Socket);
     $this->connect($this->_host, $this->_port, $this->_path, $this->_origin);
   }
 
-  private function _generateRandomString($length = 10, $addSpaces = TRUE, $addNumbers = TRUE) {  
+  private function _generateRandomString($length = 10, $addSpaces = true, $addNumbers = true) {  
     $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"§$%&/()=[]{}';
     $useChars = array();
     // select some random chars:    
@@ -220,10 +225,10 @@ class WebSocketClient {
       $useChars[] = $characters[mt_rand(0, strlen($characters)-1)];
     }
     // add spaces and numbers:
-    if ($addSpaces === TRUE) {
+    if ($addSpaces === true) {
       array_push($useChars, ' ', ' ', ' ', ' ', ' ', ' ');
     }
-    if ($addNumbers === TRUE) {
+    if ($addNumbers === true) {
       array_push($useChars, rand(0,9), rand(0,9), rand(0,9));
     }
     shuffle($useChars);
@@ -232,7 +237,7 @@ class WebSocketClient {
     return $randomString;
   }
 	
-  private function _hybi10Encode($payload, $type = 'text', $masked = TRUE) {
+  private function _hybi10Encode($payload, $type = 'text', $masked = true) {
     $frameHead = array();
     $frame = '';
     $payloadLength = strlen($payload);
@@ -267,31 +272,31 @@ class WebSocketClient {
     // set mask and payload length (using 1, 3 or 9 bytes) 
     if ($payloadLength > 65535)	{
       $payloadLengthBin = str_split(sprintf('%064b', $payloadLength), 8);
-      $frameHead[1] = ($masked === TRUE) ? 255 : 127;
+      $frameHead[1] = ($masked === true) ? 255 : 127;
       for ($i = 0; $i < 8; $i++) {
 	$frameHead[$i+2] = bindec($payloadLengthBin[$i]);
       }
       // most significant bit MUST be 0 (close connection if frame too big)
       if ($frameHead[2] > 127) {
 	$this->close(1004);
-	return FALSE;
+	return false;
       }
     }
     elseif ($payloadLength > 125) {
       $payloadLengthBin = str_split(sprintf('%016b', $payloadLength), 8);
-      $frameHead[1] = ($masked === TRUE) ? 254 : 126;
+      $frameHead[1] = ($masked === true) ? 254 : 126;
       $frameHead[2] = bindec($payloadLengthBin[0]);
       $frameHead[3] = bindec($payloadLengthBin[1]);
     }
     else {
-      $frameHead[1] = ($masked === TRUE) ? $payloadLength + 128 : $payloadLength;
+      $frameHead[1] = ($masked === true) ? $payloadLength + 128 : $payloadLength;
     }
 
     // convert frame-head to string:
     foreach (array_keys($frameHead) as $i) {
       $frameHead[$i] = chr($frameHead[$i]);
     }
-    if ($masked === TRUE) {
+    if ($masked === true) {
       // generate a random mask:
       $mask = array();
       for ($i = 0; $i < 4; $i++) {
@@ -305,7 +310,7 @@ class WebSocketClient {
     // append payload to frame:
     $framePayload = array();	
     for ($i = 0; $i < $payloadLength; $i++) {		
-      $frame .= ($masked === TRUE) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
+      $frame .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
     }
 
     return $frame;
@@ -313,7 +318,7 @@ class WebSocketClient {
 	
   private function _hybi10Decode($data)	{
     if (!$data)
-      return FALSE;
+      return false;
 
     $payloadLength = '';
     $mask = '';
@@ -324,7 +329,7 @@ class WebSocketClient {
     $firstByteBinary = sprintf('%08b', ord($data[0]));		
     $secondByteBinary = sprintf('%08b', ord($data[1]));
     $opcode = bindec(substr($firstByteBinary, 4, 4));
-    $isMasked = ($secondByteBinary[0] == '1') ? TRUE : FALSE;
+    $isMasked = ($secondByteBinary[0] == '1') ? true : false;
     $payloadLength = ord($data[1]) & 127;		
 		
     switch($opcode) {
@@ -353,7 +358,7 @@ class WebSocketClient {
       break;
 			
     default:
-      return FALSE;
+      return false;
       break;
     }
 		
@@ -378,7 +383,7 @@ class WebSocketClient {
       $dataLength = $payloadLength + $payloadOffset;
     }	
 		
-    if ($isMasked === TRUE) {
+    if ($isMasked === true) {
       for ($i = $payloadOffset; $i < $dataLength; $i++)	{
 	$j = $i - $payloadOffset;
 	if (isset($data[$i])) {

@@ -213,7 +213,7 @@ class WebSocket(object):
 
          # remote connection has been closed
          else:
-            raise Exception("remote socket closed")
+            raise Exception("remote socket closed in handshake")
             
       # else do normal data		
       else:
