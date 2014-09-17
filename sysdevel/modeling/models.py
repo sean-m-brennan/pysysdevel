@@ -552,8 +552,8 @@ class PlotSeries(DataViewer):
     def x_ticks(self):
         if len(self.x_values) < 1:
             return [-1, 1]
-        lo = int(min(self.x_values))-1
-        hi = int(max(self.x_values))+2
+        lo = int(math.floor(float(min(self.x_values))))-1
+        hi = int(math.ceilfloat((max(self.x_values))))+2
         if hi - lo < 10:
             step = 1
         else:
@@ -572,8 +572,8 @@ class PlotSeries(DataViewer):
             degree = 2
         else:
             degree = (10 ** int(math.log10(mx))) / 2
-        lo = int(min(self.y_values))-1
-        hi = int(max(self.y_values))+degree
+        lo = int(math.floor(float(min(self.y_values))))-1
+        hi = int(math.ceil(float(max(self.y_values))))+degree
         if hi - lo < 10:
             step = 1
         else:
@@ -589,8 +589,8 @@ class PlotSeries(DataViewer):
             return [-1, 1]
         if len(self.z_values) < 2:
             return [int(self.z_values[0] - 1), int(self.z_values[0] + 1)]
-        lo = int(min(self.z_values))-1
-        hi = int(max(self.z_values))+1
+        lo = int(math.floor(float(min(self.z_values))))-1
+        hi = int(math.ceil(float(max(self.z_values))))+1
         if hi - lo < 10:
             step = 1
         else:
