@@ -328,7 +328,8 @@ function vbox_init {
 	fi
 
         # Guest Additions iso
-        VBoxManage storageattach "${VM_NAME}" --storagectl "IDE controller" --port 0 --device 0 --type dvddrive --medium "${GA_ISO_LOCATION}"
+        VBoxManage storagectl "${VM_NAME}" --name "IDE Controller" --add ide
+        VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium "${GA_ISO_LOCATION}"
 
 	VBoxManage modifyvm "${VM_NAME}" --nictype1 ${NIC}
 	VBoxManage modifyvm "${VM_NAME}" --nic1 nat
@@ -401,7 +402,7 @@ EOF
 function vbox_cleanup {
     set +e
     echo "Restore original VirtualBox config" 1>&2
-    VBoxManage storageattach "${VM_NAME}" --storagectl "IDE controller" --port 0 --device 0 --medium "none"
+    VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --device 0 --medium "none"
     VBoxManage unregistervm "${VM_NAME}"
     unset VBOX_USER_HOME
     unset VBOX_IPC_SOCKETID
@@ -782,9 +783,9 @@ function get_vagrant_keys {
 
 
 function create_password_hash {
-    pwd=$1
+    passwd=$1
     here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    python "${here}/mkpasswd.py" "$pwd"
+    python "${here}/mkpasswd.py" "$passwd"
 }
 
 
