@@ -59,6 +59,7 @@ elif implementation == SIMPLEWEBSOCKETSERVER:
         def __init__(self, queue, group=None, target=None, name=None,
                      args=(), kwargs=None):
             Thread.__init__(self, group, target, name, args, kwargs)
+            self.daemon = True
             if kwargs is None:
                 kwargs = {}
             self.target_p = target
@@ -92,6 +93,7 @@ elif implementation == SIMPLEWEBSOCKETSERVER:
             logging.basicConfig(level=log_level)
 
             Thread.__init__(self, name='Websocket server')
+            self.daemon = True
             SimpleWebSocketServer.__init__(self, host, port, None)
 
             self.__ws_is_shut_down = Event()
@@ -152,7 +154,6 @@ elif implementation == SIMPLEWEBSOCKETSERVER:
                                 t = ExceptionThread(exception_qs[fileno],
                                                     target=client.handle_data)
                                 process_threads[fileno] = t
-                                t.setDaemon(False)
                                 t.start()
                             else:
                                 t = process_threads[fileno]

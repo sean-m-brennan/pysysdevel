@@ -83,7 +83,7 @@ function pull_repository {
 
 
 function tftp_prep {
-    here="${PWD}"
+    here="${VM_SRC_DIR}"
     local_repos=()
     remote_repos=()
     while test $# -gt 0; do
@@ -251,10 +251,11 @@ function vbox_init {
     version=$3
     mem_size=$4
     disk_size=$5
-    license_file=$6
-    nataddr=$7
-    hostonly=$8
-    name_extra=$9
+    cpus=$6
+    license_file=$7
+    nataddr=$8
+    hostonly=$9
+    name_extra=${10}
 
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
     VM_NET_NAME=${lower_name}
@@ -264,6 +265,8 @@ function vbox_init {
 	VM_ADDRESS=$(get_target_subnet $@).50
     fi
     LOGO_FILE=${lower_name}.bmp
+
+    GA_ISO_LOCATION="/usr/share/virtualbox/VBoxGuestAdditions.iso"
 
     VBOX_VM_DIR="${VM_WORKING_DIR}"
     ORIG_HOME="${VBOX_USER_HOME}"
@@ -316,12 +319,16 @@ function vbox_init {
 	VBoxManage storagectl "${VM_NAME}" --name "SATA Controller" --add sata --controller IntelAHCI --hostiocache on
 	VBoxManage storageattach "${VM_NAME}" --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium "${VM_NAME}/${VM_NAME}.vdi"
 	VBoxManage modifyvm "${VM_NAME}" --memory ${mem_size}
+	VBoxManage modifyvm "${VM_NAME}" --cpus ${cpus}
 	VBoxManage modifyvm "${VM_NAME}" --boot1 disk --boot2 net --boot3 dvd --boot4 none
 	if [ -e "${VM_SRC_DIR}/${LOGO_FILE}" ]; then
 	    echo "Using logo: ${VM_SRC_DIR}/${LOGO_FILE}"
 	    cp "${VM_SRC_DIR}/${LOGO_FILE}" "${VM_NAME}/"
 	    VBoxManage modifyvm "${VM_NAME}" --bioslogoimagepath "${VM_NAME}/${LOGO_FILE}"
 	fi
+
+        # Guest Additions iso
+        VBoxManage storageattach "${VM_NAME}" --storagectl "IDE controller" --port 0 --device 0 --type dvddrive --medium "${GA_ISO_LOCATION}"
 
 	VBoxManage modifyvm "${VM_NAME}" --nictype1 ${NIC}
 	VBoxManage modifyvm "${VM_NAME}" --nic1 nat
@@ -394,6 +401,7 @@ EOF
 function vbox_cleanup {
     set +e
     echo "Restore original VirtualBox config" 1>&2
+    VBoxManage storageattach "${VM_NAME}" --storagectl "IDE controller" --port 0 --device 0 --medium "none"
     VBoxManage unregistervm "${VM_NAME}"
     unset VBOX_USER_HOME
     unset VBOX_IPC_SOCKETID
@@ -408,10 +416,11 @@ function libvirt_init {
     version=$3
     mem_size=$4
     disk_size=$5
-    license_file=$6
-    nataddr=$7
-    hostonly=$8
-    name_extra=$9
+    cpus=$6
+    license_file=$7
+    nataddr=$8
+    hostonly=$9
+    name_extra=${10}
 
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
     VM_NET_NAME=${lower_name}
@@ -480,7 +489,7 @@ EOF
 	network_option="network=${VM_NET_NAME}"
     fi
     virt-install --connect qemu:///system --name ${VM_NAME} --ram ${mem_size} \
-	--vcpus 1 --noreboot --hvm ${virt_type} --noautoconsole \
+	--vcpus ${cpus} --noreboot --hvm ${virt_type} --noautoconsole \
 	--disk ${disk_option} --network ${network_option} \
 	--location=${TARGET_WEBSITE} \
         --initrd-inject=${here}/ks.cfg --extra-args="ks=file:/ks.cfg"
@@ -616,8 +625,9 @@ function vagrant_init {
     version=$3
     mem_size=$4
     disk_size=$5
-    license_file=$6
-    nataddr=$7
+    cpus=$6
+    license_file=$7
+    nataddr=$8
     lower_name=$(echo ${name} | tr [:upper:] [:lower:])
 
     export VAGRANT_DEFAULT_PROVIDER=$TARGET_PROVIDER
@@ -825,6 +835,7 @@ function create_virtual_machine {
     remote_args=""
     mem_size=2048
     disk_size=8096
+    n_cpus=1
     name="project"
     vendor="me"
     extra_name=""
@@ -862,6 +873,10 @@ function create_virtual_machine {
 		;;
 	    --disk)
 		disk_size=$2
+		shift
+		;;
+	    --cpus)
+		n_cpus=$2
 		shift
 		;;
 	    --version)
@@ -963,7 +978,7 @@ function create_virtual_machine {
 	exit
     fi
 
-    vm_init ${name} ${vendor} ${version} ${mem_size} ${disk_size} ${license_file} ${nat_addr} ${hostonly_net} ${extra_name} ${local_args} ${remote_args}
+    vm_init ${name} ${vendor} ${version} ${mem_size} ${disk_size} ${n_cpus} ${license_file} ${nat_addr} ${hostonly_net} ${extra_name} ${local_args} ${remote_args}
     if $INSTALLER; then
 	echo "Archiving ${VM_NAME}" 1>&2
 	tar cjf ${VM_NAME}.tar.bz2 -C ${VM_WORKING_DIR} ${VM_NAME} install_${VM_NAME}.sh
