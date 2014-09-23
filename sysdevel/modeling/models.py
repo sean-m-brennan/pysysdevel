@@ -567,7 +567,7 @@ class PlotSeries(DataViewer):
     def y_ticks(self):
         if len(self.y_values) < 1:
             return [-1, 1]
-        mx = abs(max(self.y_values) - min(self.y_values))
+        mx = abs(float(max(self.y_values)) - float(min(self.y_values)))
         if mx < 10:
             degree = 2
         else:
@@ -588,7 +588,8 @@ class PlotSeries(DataViewer):
         if len(self.z_values) < 1:
             return [-1, 1]
         if len(self.z_values) < 2:
-            return [int(self.z_values[0] - 1), int(self.z_values[0] + 1)]
+            return [int(float(self.z_values[0]) - 1),
+                    int(float(self.z_values[0]) + 1)]
         lo = int(math.floor(float(min(self.z_values))))-1
         hi = int(math.ceil(float(max(self.z_values))))+1
         if hi - lo < 10:
