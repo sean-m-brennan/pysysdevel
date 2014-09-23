@@ -553,7 +553,7 @@ class PlotSeries(DataViewer):
         if len(self.x_values) < 1:
             return [-1, 1]
         lo = int(math.floor(float(min(self.x_values))))-1
-        hi = int(math.ceilfloat((max(self.x_values))))+2
+        hi = int(math.ceil(float(max(self.x_values))))+2
         if hi - lo < 10:
             step = 1
         else:
