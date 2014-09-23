@@ -56,7 +56,7 @@ from sysdevel.modeling import websocketserver, websockethandler, daemon, models
 from .query import query  ##FIXME incompatible with 2.4
 
 
-WEBSOCKET_HOST     = socket.getfqdn()
+WEBSOCKET_HOST     = "0.0.0.0"
 WEBSOCKET_PORT     = @@{WEBSOCKET_PORT}
 ALTSOCKET_PORT     = @@{ALTSOCKET_PORT}
 WEBSOCKET_ORIGIN   = "@@{WEBSOCKET_ORIGIN}"

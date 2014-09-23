@@ -31,6 +31,8 @@ import traceback
 
 from sysdevel.modeling.models import json_handler
 
+_DEBUG = True
+
 
 class Query(object):
     def __init__(self):
@@ -97,6 +99,8 @@ class Query(object):
                 import json
             except ImportError:
                 import simplejson as json
+            if _DEBUG:
+                print('Got "' + method_name + '=' + json_str + '"')
             params = json.loads(json_str)
             method = getattr(self, method_name)
             try:
