@@ -271,9 +271,9 @@ class RequirementsFinder(NodeVisitor):
             function = self.get_attribute(ast_call.func.attr, ast_call.func)
         if not function is None:
             if not idx is None:
-                return function(ast_call.args)[idx]
+                return function(self.get_value(ast_call.args))[idx]
             else:
-                return function(ast_call.args)
+                return function(self.get_value(ast_call.args))
         return None
 
 
