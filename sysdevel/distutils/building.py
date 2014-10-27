@@ -122,7 +122,6 @@ def create_script_wrapper(pyscript, target_dir):
 
 def set_python_site(where=None):
     from inspect import getfile
-    from distutils.sysconfig import get_python_lib
     if not where:
         if hasattr(sys, 'frozen'):
             where = os.path.dirname(unicode(sys.executable,
@@ -134,8 +133,18 @@ def set_python_site(where=None):
         where = os.path.abspath(os.path.join(
             os.path.dirname(unicode(__file__, sys.getfilesystemencoding())),
             where))
-    for base in [get_python_lib(prefix=where),
-                 get_python_lib(True, prefix=where)]:
+    lib_dirs = []
+    python_version = sys.version[:3]
+    if os.name == "posix":
+        lib_dirs = [os.path.join(where, "lib",
+                                 "python" + python_version, "site-packages"),
+                    os.path.join(where, "lib64",
+                                 "python" + python_version, "site-packages")]
+    elif os.name == "nt" and python_version < "2.2":
+        lib_dirs = [where]
+    else:
+        lib_dirs = [os.path.join(where, "Lib", "site-packages")]
+    for base in lib_dirs:
         if not base in sys.path:
             sys.path.insert(0, base)
 
