@@ -130,9 +130,15 @@ def set_python_site(where=None):
             where = os.path.dirname(unicode(getfile(sys._getframe(1)),
                                             sys.getfilesystemencoding()))
     elif not os.path.isabs(where):
-        where = os.path.abspath(os.path.join(
-            os.path.dirname(unicode(__file__, sys.getfilesystemencoding())),
-            where))
+        if hasattr(sys, 'frozen'):
+            where = os.path.abspath(os.path.join(
+                os.path.dirname(unicode(sys.executable,
+                                        sys.getfilesystemencoding())),
+                where))
+        else:
+            where = os.path.abspath(os.path.join(
+                os.path.dirname(unicode(__file__, sys.getfilesystemencoding())),
+                where))
     lib_dirs = []
     python_version = sys.version[:3]
     if os.name == "posix":
