@@ -528,9 +528,11 @@ def is_pypi_listed(pkg):
 
 def pypi_url(pkg, src=True):
     if src:
+        #webaddr = 'https://pypi.python.org/packages/source/'
+        # Apparently, they reorganized:
+        webaddr = 'https://pypi.python.org/pypi/'
         ## This ensures that there are sources available:
-        return 'https://pypi.python.org/packages/source/' + \
-            pkg[0] + '/' + pkg + '/'
+        return webaddr + pkg[0] + '/' + pkg + '/'
     else:
         ## This is what pip uses:
         return 'http://pypi.python.org/simple/' + pkg + '/'
